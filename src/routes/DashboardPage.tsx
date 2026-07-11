@@ -1,4 +1,4 @@
-import React from 'react';
+
 import {
   Sparkles,
   CheckSquare,
@@ -76,11 +76,18 @@ export function DashboardPage() {
           color="success"
           isLive
         />
+<StatCard
+          icon={<Flame size={18} />}
+          label="Productivity Score"
+          value={`${dashboard.productivityScore ?? 0}/100`}
+          color="warning"
+          isLive
+        />
         <StatCard
           icon={<Flame size={18} />}
           label="Current Streak"
           value={`${dashboard.currentHabitStreak}d`}
-          color="warning"
+          color="accent"
         />
         <StatCard
           icon={<Flame size={18} />}

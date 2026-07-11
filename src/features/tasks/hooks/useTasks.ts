@@ -16,7 +16,10 @@ export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateTaskRequest) => tasksApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: TASKS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TASKS_KEY });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -24,7 +27,10 @@ export function useUpdateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateTaskRequest }) => tasksApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: TASKS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TASKS_KEY });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -32,6 +38,9 @@ export function useDeleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => tasksApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: TASKS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TASKS_KEY });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }

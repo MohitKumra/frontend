@@ -13,7 +13,10 @@ export function useCreateHabit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateHabitRequest) => habitsApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: HABITS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -21,7 +24,10 @@ export function useToggleHabit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => habitsApi.toggle(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: HABITS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -29,6 +35,9 @@ export function useDeleteHabit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => habitsApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: HABITS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }

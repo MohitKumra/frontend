@@ -1,5 +1,5 @@
-import React from 'react';
-import { Flame, TrendingUp, Target } from 'lucide-react';
+
+import { Flame, TrendingUp, Target, Activity } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { useAuthStore } from '../../store/authStore';
 import type { AnalyticsSummaryDTO } from '../../types';
@@ -46,9 +46,29 @@ export function ProfileWidget({ summary }: ProfileWidgetProps) {
         <p className="text-xs text-text-muted font-bold mb-4">
           {user.email}
         </p>
+        
+        {/* Productivity Score Highlight */}
+        <div className="mb-4 p-3 rounded-xl" style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Activity size={14} className="text-warning" />
+              <span className="text-xs font-bold text-text-muted">Productivity Score</span>
+            </div>
+            <span className="text-xl font-extrabold text-text-primary">{(summary.productivityScore ?? 0)}/100</span>
+          </div>
+          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+            <div 
+              className="h-full rounded-full"
+              style={{ 
+                width: `${summary.productivityScore ?? 0}%`,
+                background: 'var(--gradient-accent)'
+              }}
+            />
+          </div>
+        </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-2 gap-3">
           {/* Tasks Completed */}
           <div 
             className="p-3 rounded-xl"

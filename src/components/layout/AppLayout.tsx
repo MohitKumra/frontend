@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, Calendar, Target, FileText,
@@ -9,6 +9,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { useLogout } from '../../features/auth/hooks/useAuth';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
+import { SearchModal } from '../../features/search/components/SearchModal';
 import { Tooltip } from '../ui/Tooltip';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Badge } from '../ui/Badge';
@@ -47,8 +48,21 @@ export function AppLayout() {
   const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme } = useUIStore();
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const { data: todayData } = useDashboardToday();
+
+  // Keyboard shortcut for search (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const taskBadge = todayData?.pendingTasks ?? 0;
   const habitBadge = todayData?.habitsToComplete ?? 0;
@@ -234,17 +248,30 @@ export function AppLayout() {
             </div>
           </div>
 
-          <div className="hidden sm:flex relative items-center max-w-md w-64 md:w-80 transition-all duration-300">
+          {/* Desktop search button/input */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="hidden sm:flex relative items-center max-w-md w-64 md:w-80 transition-all duration-300"
+          >
             <Search size={16} className="absolute left-3.5 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search tasks, habits..."
-              value={searchVal}
-              onChange={(e) => setSearchVal(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs font-bold border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              style={{ background: 'var(--topbar-search-bg)', borderColor: 'var(--topbar-search-border)', color: 'var(--color-text-primary)' }}
-            />
-          </div>
+            <div className="w-full pl-10 pr-4 py-2 text-xs font-bold border rounded-xl text-left"
+                 style={{ background: 'var(--topbar-search-bg)', borderColor: 'var(--topbar-search-border)', color: 'var(--color-text-muted)' }}>
+              Search tasks, habits...
+            </div>
+            <div className="absolute right-3 flex items-center gap-1 text-[10px] text-text-muted font-bold">
+              <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>⌘</span>
+              <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>K</span>
+            </div>
+          </button>
+
+          {/* Mobile search button */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="sm:hidden p-2.5 rounded-xl text-text-muted hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            aria-label="Search"
+          >
+            <Search size={18} />
+          </button>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
             <button
@@ -367,6 +394,9 @@ export function AppLayout() {
           </button>
         </div>
       </BottomSheet>
+
+      {/* Search Modal */}
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

@@ -173,6 +173,7 @@ export interface AnalyticsSummaryDTO {
   focusSessionsTotal: number;
   longestHabitStreak: number;
   currentHabitStreak: number; // Current active streak (not broken)
+  productivityScore: number; // 0-100 productivity score
 }
 
 export interface DailyAnalyticsDTO {
@@ -318,4 +319,14 @@ export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
     dueDate: string;
     daysUntilDue: number;
   }>;
+}
+
+export interface SearchResult {
+  type: 'task' | 'habit' | 'note' | 'project' | 'message';
+  id: string;
+  title: string;
+  description?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  metadata?: any;
 }

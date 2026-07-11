@@ -110,7 +110,7 @@ export function HabitCard({ habit }: { habit: HabitDTO }) {
           >
             <WeekPatternDots pattern={weekPattern} color={category.color} />
 
-            <div>
+            <div>a
               <HabitHeatmap completionDates={habit.completionDates} color={category.color} />
             </div>
           </div>
