@@ -1,6 +1,12 @@
 // frontend/src/features/auth/api.ts
 import apiClient from '../../lib/apiClient';
-import type { AuthResponse, LoginRequest, SignupRequest } from '../../types';
+import type {
+  AuthResponse,
+  LoginRequest,
+  SignupRequest,
+  ChangePasswordRequest,
+  SetPasswordRequest,
+} from '../../types';
 
 export const authApi = {
   signup: (data: SignupRequest) =>
@@ -22,4 +28,13 @@ export const authApi = {
 
   getMe: () =>
     apiClient.get('/auth/me').then((r) => r.data),
+
+  googleStart: (purpose: 'signin' | 'calendar-connect', returnTo: string) =>
+    apiClient.get<{ url: string }>('/auth/google/start', { params: { purpose, returnTo } }).then((r) => r.data),
+
+  changePassword: (data: ChangePasswordRequest) =>
+    apiClient.post('/auth/change-password', data).then((r) => r.data),
+
+  setPassword: (data: SetPasswordRequest) =>
+    apiClient.post('/auth/set-password', data).then((r) => r.data),
 };

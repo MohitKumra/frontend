@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Chrome } from 'lucide-react';
 import { useSignup } from '../hooks/useAuth';
+import { authApi } from '../api';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 
@@ -15,6 +16,11 @@ export function SignupForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     signup.mutate({ email, password, name: name || undefined });
+  };
+
+  const handleGoogleSignUp = async () => {
+    const { url } = await authApi.googleStart('signin', '/google/callback');
+    window.location.href = url;
   };
 
   return (
@@ -68,6 +74,23 @@ export function SignupForm() {
 
       <Button type="submit" fullWidth loading={signup.isPending}>
         Create Account
+      </Button>
+
+      <div className="relative py-1">
+        <div className="h-px bg-border" />
+        <span className="absolute inset-x-0 -top-2 text-center text-[10px] font-bold uppercase tracking-wider text-text-muted">
+          Or continue with
+        </span>
+      </div>
+
+      <Button
+        type="button"
+        variant="secondary"
+        fullWidth
+        leftIcon={<Chrome size={15} />}
+        onClick={handleGoogleSignUp}
+      >
+        Google
       </Button>
 
       <p className="text-center text-sm text-text-muted">

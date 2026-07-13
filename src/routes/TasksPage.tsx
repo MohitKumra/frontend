@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useRef, useLayoutEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useLayoutEffect, useCallback, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import {
   CheckSquare,
   Plus,
@@ -7,8 +8,20 @@ import {
   AlertCircle,
   Calendar,
   MoreVertical,
+  RefreshCw,
+  LayoutList,
+  Columns3,
+  CheckCircle2,
+  Circle,
+  ChevronDown,
+  X,
+  Search,
+  Square,
+  Paperclip,
 } from 'lucide-react';
 import { useTasks, useUpdateTask, useDeleteTask } from '../features/tasks/hooks/useTasks';
+import { tasksApi } from '../features/tasks/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
@@ -16,9 +29,11 @@ import { Badge } from '../components/ui/Badge';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { EditTaskModal } from '../components/tasks/EditTaskModal';
 import { TaskCheckbox } from '../components/tasks/TaskCheckbox';
-import type { TaskDTO } from '../types';
+import { TaskBoardView } from '../components/tasks/TaskBoardView';
+import type { TaskDTO, TaskStatus } from '../types';
 
 type TaskFilter = 'all' | 'today' | 'upcoming' | 'completed' | 'overdue';
+type ViewMode = 'list' | 'board';
 
 const priorityConfig = {
   LOW: { color: 'info', label: 'Low' },
@@ -39,11 +54,52 @@ interface PillRect {
   height: number;
 }
 
+// Helper to get recurrence label from RRULE
+function getRecurrenceLabel(recurrenceRule: string | null): string | null {
+  if (!recurrenceRule) return null;
+  if (recurrenceRule.includes('FREQ=DAILY')) return 'Daily';
+  if (recurrenceRule.includes('FREQ=WEEKLY')) return 'Weekly';
+  if (recurrenceRule.includes('FREQ=MONTHLY')) return 'Monthly';
+  if (recurrenceRule.includes('FREQ=YEARLY')) return 'Yearly';
+  if (recurrenceRule.includes('INTERVAL=2') && recurrenceRule.includes('FREQ=WEEKLY')) return 'Fortnightly';
+  if (recurrenceRule.includes('INTERVAL=3') && recurrenceRule.includes('FREQ=MONTHLY')) return 'Quarterly';
+  return 'Recurring';
+}
+
+function getNextRecurrenceDate(task: TaskDTO): string | null {
+  if (!task.recurrenceRule || !task.dueDate) return null;
+  try {
+    const currentDate = new Date(task.dueDate);
+    const nextDate = new Date(currentDate);
+    if (task.recurrenceRule.includes('FREQ=DAILY')) {
+      nextDate.setDate(currentDate.getDate() + 1);
+    } else if (task.recurrenceRule.includes('FREQ=WEEKLY')) {
+      nextDate.setDate(currentDate.getDate() + 7);
+    } else if (task.recurrenceRule.includes('FREQ=MONTHLY')) {
+      nextDate.setMonth(currentDate.getMonth() + (task.recurrenceRule.includes('INTERVAL=3') ? 3 : 1));
+    }
+    return nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return null;
+  }
+}
+
 export function TasksPage() {
   const [filter, setFilter] = useState<TaskFilter>('all');
+  const [view, setView] = useState<ViewMode>('list');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskDTO | null>(null);
   const [taskMenuOpen, setTaskMenuOpen] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set<string>());
+  const [bulkAction, setBulkAction] = useState<'done' | 'todo' | 'delete' | null>(null);
+
+  // Subtasks: which tasks have their subtask panel expanded, and draft text
+  // for the "add subtask" inputs, keyed by task id.
+  const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({});
+  const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
+
+  const queryClient = useQueryClient();
 
   // Sliding pill background for filter tabs
   const filterContainerRef = useRef<HTMLDivElement>(null);
@@ -62,6 +118,73 @@ export function TasksPage() {
   const deleteTask = useDeleteTask();
 
   const tasks = tasksData?.data ?? [];
+
+  const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: ['tasks'] });
+
+  // Subtask mutations — each hits the dedicated subtask endpoint directly
+  // rather than round-tripping the whole task through updateTask, so toggling
+  // or adding one subtask can never clobber the others' state.
+  const updateSubTaskMutation = useMutation({
+    mutationFn: ({ taskId, subTaskId, data }: { taskId: string; subTaskId: string; data: { completed?: boolean; title?: string } }) =>
+      tasksApi.updateSubTask(taskId, subTaskId, data),
+    onSuccess: invalidateTasks,
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error?.message ?? 'Failed to update subtask');
+    },
+  });
+
+  const createSubTaskMutation = useMutation({
+    mutationFn: ({ taskId, title, order }: { taskId: string; title: string; order: number }) =>
+      tasksApi.createSubTask(taskId, { title, order }),
+    onSuccess: invalidateTasks,
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error?.message ?? 'Failed to create subtask');
+    },
+  });
+
+  const deleteSubTaskMutation = useMutation({
+    mutationFn: ({ taskId, subTaskId }: { taskId: string; subTaskId: string }) =>
+      tasksApi.deleteSubTask(taskId, subTaskId),
+    onSuccess: invalidateTasks,
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error?.message ?? 'Failed to delete subtask');
+    },
+  });
+
+  const getNextSubTaskOrder = useCallback((task: TaskDTO) => {
+    const orders = task.subTasks?.map((subTask) => subTask.order) ?? [];
+    return orders.length > 0 ? Math.max(...orders) + 1 : 0;
+  }, []);
+
+  const handleAddSubtask = async (taskId: string) => {
+    const title = (subtaskDraft[taskId] ?? '').trim();
+    if (!title) return;
+    const task = tasks.find((t) => t.id === taskId);
+    const order = task ? getNextSubTaskOrder(task) : 0;
+    try {
+      await createSubTaskMutation.mutateAsync({ taskId, title, order });
+      setSubtaskDraft((prev) => ({ ...prev, [taskId]: '' }));
+    } catch {
+      // Toast is handled by the mutation; keep the draft so the user can retry.
+    }
+  };
+
+  const toggleSubtaskPanel = (taskId: string) => {
+    setExpandedSubtasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }));
+  };
+
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const clearSelection = useCallback(() => {
+    setSelectedTaskIds(new Set<string>());
+  }, []);
 
   // Helper functions
   const isToday = (date: string | null) => {
@@ -91,21 +214,96 @@ export function TasksPage() {
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
     return tasks.filter((task) => {
       switch (filter) {
         case 'today':
-          return isToday(task.dueDate) && task.status !== 'DONE';
+          if (!(isToday(task.dueDate) && task.status !== 'DONE')) return false;
+          break;
         case 'upcoming':
-          return isUpcoming(task.dueDate) && task.status !== 'DONE';
+          if (!(isUpcoming(task.dueDate) && task.status !== 'DONE')) return false;
+          break;
         case 'completed':
-          return task.status === 'DONE';
+          if (task.status !== 'DONE') return false;
+          break;
         case 'overdue':
-          return isOverdue(task.dueDate, task.status);
+          if (!isOverdue(task.dueDate, task.status)) return false;
+          break;
         default:
-          return true;
+          break;
       }
+
+      if (!query) return true;
+
+      const haystack = [
+        task.title,
+        task.description ?? '',
+        task.priority,
+        task.status,
+        task.recurrenceRule ?? '',
+        task.attachmentUrl ?? '',
+        ...(task.subTasks?.map((subTask) => subTask.title) ?? []),
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(query);
     });
-  }, [tasks, filter]);
+  }, [tasks, filter, searchQuery]);
+
+  useEffect(() => {
+    clearSelection();
+  }, [filter, view, searchQuery, clearSelection]);
+
+  const visibleSelectedTasks = useMemo(
+    () => filteredTasks.filter((task) => selectedTaskIds.has(task.id)),
+    [filteredTasks, selectedTaskIds]
+  );
+
+  const allVisibleSelected = filteredTasks.length > 0 && visibleSelectedTasks.length === filteredTasks.length;
+
+  const toggleVisibleSelection = () => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        filteredTasks.forEach((task) => next.delete(task.id));
+      } else {
+        filteredTasks.forEach((task) => next.add(task.id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkStatusChange = async (status: TaskStatus) => {
+    if (visibleSelectedTasks.length === 0) return;
+    setBulkAction(status === 'DONE' ? 'done' : 'todo');
+    try {
+      await Promise.all(
+        visibleSelectedTasks.map((task) => tasksApi.update(task.id, { status }))
+      );
+      await invalidateTasks();
+      clearSelection();
+    } finally {
+      setBulkAction(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (visibleSelectedTasks.length === 0) return;
+    if (!confirm(`Delete ${visibleSelectedTasks.length} selected task${visibleSelectedTasks.length === 1 ? '' : 's'}?`)) {
+      return;
+    }
+
+    setBulkAction('delete');
+    try {
+      await Promise.all(visibleSelectedTasks.map((task) => tasksApi.delete(task.id)));
+      await invalidateTasks();
+      clearSelection();
+      setTaskMenuOpen(null);
+    } finally {
+      setBulkAction(null);
+    }
+  };
 
   // Count by filter
   const counts = {
@@ -116,9 +314,6 @@ export function TasksPage() {
     overdue: tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
   };
 
-  // Measure the active filter button and position the pill on top of it.
-  // Uses offsetLeft/offsetTop (relative to the positioned container) so it
-  // works regardless of horizontal scroll position.
   const measurePill = useCallback((f: TaskFilter) => {
     const btn = filterRefs.current[f];
     if (!btn) return;
@@ -131,14 +326,10 @@ export function TasksPage() {
     setPillReady(true);
   }, []);
 
-  // Reposition the pill whenever the active filter changes. useLayoutEffect
-  // avoids a visible flash before the first paint.
   useLayoutEffect(() => {
     measurePill(filter);
   }, [filter, measurePill]);
 
-  // Keep the pill aligned on window resize (button widths can change,
-  // e.g. text reflow at different breakpoints).
   useLayoutEffect(() => {
     const handleResize = () => measurePill(filter);
     window.addEventListener('resize', handleResize);
@@ -148,6 +339,10 @@ export function TasksPage() {
   const toggleTaskStatus = (task: TaskDTO) => {
     const nextStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
     updateTask.mutate({ id: task.id, data: { status: nextStatus } });
+  };
+
+  const changeTaskStatus = (task: TaskDTO, status: TaskStatus) => {
+    updateTask.mutate({ id: task.id, data: { status } });
   };
 
   const handleDeleteTask = (id: string) => {
@@ -181,6 +376,7 @@ export function TasksPage() {
   }
 
   const isPillDanger = filter === 'overdue';
+  const hasSearch = searchQuery.trim().length > 0;
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8 max-w-[1400px] mx-auto">
@@ -190,21 +386,52 @@ export function TasksPage() {
           <PageHeader
             icon={<CheckSquare size={28} />}
             title="Tasks"
-            subtitle={`${filteredTasks.length} ${filter === 'all' ? 'total' : filter} tasks`}
+            subtitle={`${filteredTasks.length} visible task${filteredTasks.length === 1 ? '' : 's'}${hasSearch ? ` for "${searchQuery.trim()}"` : ''}`}
           />
           <p className="text-xs mt-3" style={{ color: 'var(--color-text-secondary)' }}>
             Manage and track all your work in one place
           </p>
         </div>
 
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
-          style={{ background: 'var(--gradient-accent)' }}
-        >
-          <Plus size={18} />
-          New Task
-        </button>
+        <div className="flex items-center gap-2 pb-6 sm:pb-0">
+          {/* View Switcher */}
+          <div
+            className="flex items-center gap-1 p-1 rounded-xl"
+            style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
+          >
+            <button
+              onClick={() => setView('list')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all"
+              style={
+                view === 'list'
+                  ? { background: 'var(--gradient-accent)', color: 'white' }
+                  : { color: 'var(--color-text-muted)' }
+              }
+            >
+              <LayoutList size={14} /> List
+            </button>
+            <button
+              onClick={() => setView('board')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all"
+              style={
+                view === 'board'
+                  ? { background: 'var(--gradient-accent)', color: 'white' }
+                  : { color: 'var(--color-text-muted)' }
+              }
+            >
+              <Columns3 size={14} /> Board
+            </button>
+          </div>
+
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-bold text-white transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+            style={{ background: 'var(--gradient-accent)' }}
+          >
+            <Plus size={18} />
+            New Task
+          </button>
+        </div>
       </div>
 
       {/* Overdue Alert Banner */}
@@ -250,15 +477,134 @@ export function TasksPage() {
         </div>
       )}
 
+      {/* Search + bulk actions */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="relative flex-1"
+        >
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search title, description, subtasks, attachments..."
+            className="w-full rounded-xl border pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            style={{
+              background: 'var(--color-surface-raised)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+            }}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            disabled={!hasSearch}
+            className="px-4 py-3 rounded-xl text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: 'var(--color-surface-raised)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            Clear Search
+          </button>
+
+          {view === 'list' && (
+            <button
+              type="button"
+              onClick={toggleVisibleSelection}
+              disabled={filteredTasks.length === 0}
+              className="px-4 py-3 rounded-xl text-xs font-bold border transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: 'var(--color-surface-raised)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {allVisibleSelected ? 'Deselect Visible' : 'Select Visible'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {view === 'list' && visibleSelectedTasks.length > 0 && (
+        <div
+          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border p-4 shadow-sm"
+          style={{
+            background: 'color-mix(in srgb, var(--color-accent) 6%, var(--color-surface))',
+            borderColor: 'var(--color-accent-border)',
+          }}
+        >
+          <div>
+            <div className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+              {visibleSelectedTasks.length} task{visibleSelectedTasks.length === 1 ? '' : 's'} selected
+            </div>
+            <div className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+              Bulk changes apply only to the tasks currently visible in this view.
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleBulkStatusChange('DONE')}
+              disabled={bulkAction !== null}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-60"
+              style={{ background: 'var(--color-success)' }}
+            >
+              {bulkAction === 'done' ? 'Updating...' : 'Mark Done'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkStatusChange('TODO')}
+              disabled={bulkAction !== null}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all disabled:opacity-60"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              {bulkAction === 'todo' ? 'Updating...' : 'Mark To Do'}
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={bulkAction !== null}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-60"
+              style={{ background: 'var(--color-danger)' }}
+            >
+              {bulkAction === 'delete' ? 'Deleting...' : 'Delete'}
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              disabled={bulkAction !== null}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all disabled:opacity-60"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Filter Tabs — sliding pill background */}
       <div
         ref={filterContainerRef}
         className="relative flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1"
       >
-        {/* The traveling pill. It sits behind the buttons and animates its
-            left/top/width/height to match whichever tab is active, so it
-            visually "slides" from the old tab and becomes the new tab's
-            background. */}
         {pillRect && (
           <div
             className="absolute rounded-xl shadow-md pointer-events-none"
@@ -305,8 +651,18 @@ export function TasksPage() {
         })}
       </div>
 
-      {/* Tasks List */}
-      {filteredTasks.length === 0 ? (
+      {/* Tasks by View */}
+      {view === 'board' ? (
+        <TaskBoardView
+          tasks={filteredTasks}
+          onStatusChange={changeTaskStatus}
+          onEdit={setEditingTask}
+          onDelete={handleDeleteTask}
+          formatDueDate={formatDueDate}
+          isOverdue={isOverdue}
+          getRecurrenceLabel={getRecurrenceLabel}
+        />
+      ) : filteredTasks.length === 0 ? (
         <Card variant="default" className="p-16 text-center border-2" style={{ borderColor: 'var(--color-border)' }}>
           <div
             className="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center"
@@ -330,21 +686,36 @@ export function TasksPage() {
           )}
         </Card>
       ) : (
+        /* Enhanced List View with inline subtasks */
         <div className="space-y-3">
           {filteredTasks.map((task, index) => {
             const dueDate = formatDueDate(task.dueDate);
             const overdue = isOverdue(task.dueDate, task.status);
             const today = isToday(task.dueDate);
             const done = task.status === 'DONE';
+            const recurrenceLabel = getRecurrenceLabel(task.recurrenceRule);
+            const nextRecurrence = getNextRecurrenceDate(task);
+            const subTotal = task.subTasks?.length ?? 0;
+            const subDone = task.subTasks?.filter((s) => s.completed).length ?? 0;
+            const subPct = subTotal > 0 ? Math.round((subDone / subTotal) * 100) : 0;
+            const subExpanded = !!expandedSubtasks[task.id];
+            const priorityAccent =
+              task.priority === 'HIGH'
+                ? 'var(--color-danger)'
+                : task.priority === 'MEDIUM'
+                ? 'var(--color-warning)'
+                : 'var(--color-info)';
 
             return (
               <Card
                 key={task.id}
                 variant="default"
-                className="p-5 hover:shadow-md transition-all duration-300 group border"
+                className="p-5 hover:shadow-md transition-all duration-300 group border relative"
                 style={{
-                  borderColor: done ? 'var(--color-border)' : 'var(--color-border)',
-                  borderLeft: done ? '3px solid var(--color-success)' : '3px solid transparent',
+                  borderColor: 'var(--color-border)',
+                  borderLeft: done
+                    ? '3px solid var(--color-success)'
+                    : `3px solid ${priorityAccent}`,
                   background: done
                     ? 'color-mix(in srgb, var(--color-success) 4%, var(--color-surface))'
                     : 'var(--color-surface)',
@@ -352,6 +723,14 @@ export function TasksPage() {
                   animationDelay: `${index * 50}ms`,
                 }}
               >
+                {/* Priority top bar accent */}
+                {!done && (
+                  <div
+                    className="absolute top-0 left-0 right-0 h-0.5 opacity-50"
+                    style={{ background: priorityAccent }}
+                  />
+                )}
+
                 <div className="flex items-start gap-4">
                   {/* Completion control */}
                   <div className="pt-0.5">
@@ -362,7 +741,7 @@ export function TasksPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <h3
-                        className="text-sm font-bold leading-tight transition-colors duration-300"
+                        className="text-sm font-bold leading-tight transition-colors duration-300 flex items-center gap-2 flex-wrap"
                         style={{
                           color: done ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
                           textDecorationLine: done ? 'line-through' : 'none',
@@ -371,6 +750,18 @@ export function TasksPage() {
                         }}
                       >
                         {task.title}
+                        {recurrenceLabel && (
+                          <div
+                            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap"
+                            style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}
+                          >
+                            <RefreshCw size={10} />
+                            <span>{recurrenceLabel}</span>
+                            {nextRecurrence && (
+                              <span className="opacity-70">· Next: {nextRecurrence}</span>
+                            )}
+                          </div>
+                        )}
                       </h3>
                     </div>
 
@@ -391,6 +782,7 @@ export function TasksPage() {
                         size="sm"
                         className="inline-flex items-center gap-1 font-semibold text-xs"
                       >
+                        {task.priority === 'HIGH' ? '🚩 ' : task.priority === 'MEDIUM' ? '📌 ' : '📋 '}
                         {priorityConfig[task.priority].label}
                       </Badge>
 
@@ -427,14 +819,174 @@ export function TasksPage() {
                           {overdue && <span className="opacity-75">• Overdue</span>}
                         </div>
                       )}
+
+                      {task.attachmentUrl && (
+                        <a
+                          href={task.attachmentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:shadow-sm"
+                          style={{
+                            color: 'var(--color-text-secondary)',
+                            background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+                          }}
+                        >
+                          <Paperclip size={12} />
+                          <span>Attachment</span>
+                        </a>
+                      )}
+                    </div>
+
+                    {/* ---- Redesigned Subtasks Section ---- */}
+                    <div
+                      className="mt-3.5 rounded-xl border overflow-hidden"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      {/* Header row: progress + expand toggle. Always visible,
+                          even with zero subtasks, so "add" is never hidden
+                          behind a modal. */}
+                      <button
+                        type="button"
+                        onClick={() => toggleSubtaskPanel(task.id)}
+                        className="w-full flex items-center gap-3 px-3.5 py-2.5 transition-colors"
+                        style={{ background: 'var(--color-surface-raised)' }}
+                      >
+                        <ChevronDown
+                          size={14}
+                          className="shrink-0 transition-transform duration-200"
+                          style={{
+                            color: 'var(--color-text-muted)',
+                            transform: subExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                          }}
+                        />
+
+                        <span
+                          className="text-[11px] font-bold shrink-0"
+                          style={{ color: 'var(--color-text-secondary)' }}
+                        >
+                          Subtasks
+                        </span>
+
+                        {subTotal > 0 ? (
+                          <>
+                            <span
+                              className="relative flex-1 max-w-[120px] h-1.5 rounded-full overflow-hidden"
+                              style={{ background: 'color-mix(in srgb, var(--color-text-muted) 18%, transparent)' }}
+                            >
+                              <span
+                                className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${subPct}%`,
+                                  background: subPct === 100 ? 'var(--color-success)' : 'var(--color-accent)',
+                                }}
+                              />
+                            </span>
+                            <span
+                              className="text-[11px] font-bold shrink-0 ml-auto"
+                              style={{ color: subPct === 100 ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+                            >
+                              {subDone}/{subTotal}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[11px] font-medium ml-auto" style={{ color: 'var(--color-text-muted)' }}>
+                            None yet
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Expanded panel: subtask list + quick-add input */}
+                      {subExpanded && (
+                        <div
+                          className="px-3.5 py-3 space-y-1"
+                          style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}
+                        >
+                          {task.subTasks?.map((subTask) => (
+                            <div
+                              key={subTask.id}
+                              className="flex items-center gap-2.5 group/sub py-1 -mx-1.5 px-1.5 rounded-lg hover:bg-black/[0.02]"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => updateSubTaskMutation.mutate({
+                                  taskId: task.id,
+                                  subTaskId: subTask.id,
+                                  data: { completed: !subTask.completed }
+                                })}
+                                className="shrink-0"
+                              >
+                                {subTask.completed ? (
+                                  <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
+                                ) : (
+                                  <Circle size={16} style={{ color: 'var(--color-border)' }} />
+                                )}
+                              </button>
+                              <span
+                                className="text-xs leading-tight flex-1 transition-colors"
+                                style={{
+                                  color: subTask.completed ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+                                  textDecorationLine: subTask.completed ? 'line-through' : 'none',
+                                }}
+                              >
+                                {subTask.title}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => deleteSubTaskMutation.mutate({ taskId: task.id, subTaskId: subTask.id })}
+                                className="shrink-0 p-1 rounded-md opacity-0 group-hover/sub:opacity-100 transition-opacity"
+                                style={{ color: 'var(--color-danger)' }}
+                                aria-label="Delete subtask"
+                              >
+                                <X size={13} />
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* Quick add */}
+                          <div className="flex items-center gap-2 pt-1.5">
+                            <Plus size={14} className="shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                            <input
+                              type="text"
+                              value={subtaskDraft[task.id] ?? ''}
+                              onChange={(e) => setSubtaskDraft((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddSubtask(task.id);
+                                }
+                              }}
+                              placeholder="Add a subtask and press Enter"
+                              className="flex-1 text-xs font-medium bg-transparent focus:outline-none py-1"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Action Menu */}
                   <div className="relative shrink-0">
                     <button
+                      type="button"
+                      onClick={() => toggleTaskSelection(task.id)}
+                      className="p-2 rounded-lg transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                      style={{
+                        color: selectedTaskIds.has(task.id)
+                          ? 'var(--color-accent)'
+                          : 'var(--color-text-muted)',
+                        background: selectedTaskIds.has(task.id)
+                          ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)'
+                          : 'transparent',
+                      }}
+                      aria-label={selectedTaskIds.has(task.id) ? 'Deselect task' : 'Select task'}
+                    >
+                      {selectedTaskIds.has(task.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                    </button>
+
+                    <button
                       onClick={() => setTaskMenuOpen(taskMenuOpen === task.id ? null : task.id)}
-                      className="p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      className="p-2 rounded-lg transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                       style={{
                         color: 'var(--color-text-muted)',
                         background: 'transparent'

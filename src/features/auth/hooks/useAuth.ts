@@ -57,3 +57,15 @@ export function useResetPassword() {
     onSuccess: () => navigate('/login'),
   });
 }
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { currentPassword?: string; newPassword: string }) => authApi.changePassword(data),
+  });
+}
+
+export function useSetPassword() {
+  return useMutation({
+    mutationFn: (data: { newPassword: string }) => authApi.setPassword(data),
+  });
+}

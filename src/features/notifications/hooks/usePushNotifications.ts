@@ -48,7 +48,7 @@ export function usePushNotifications() {
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
-    checkSubscription();
+    void checkSubscription();
   }, []);
 
   async function checkSubscription() {
@@ -56,7 +56,50 @@ export function usePushNotifications() {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setIsSubscribed(!!subscription);
+      if (!subscription) {
+        setIsSubscribed(false);
+        return;
+      }
+
+      setIsSubscribed(true);
+
+      // Refresh the backend's copy of the subscription whenever we detect one.
+      // This helps repair stale backend state after a browser reload or key rotation.
+      const rawSub = subscription.toJSON();
+      if (rawSub.endpoint && rawSub.keys?.p256dh && rawSub.keys?.auth) {
+        await notificationsApi.subscribe({
+          endpoint: rawSub.endpoint,
+          keys: {
+            p256dh: rawSub.keys.p256dh,
+            auth: rawSub.keys.auth,
+          },
+        });
+      }
+
+      // If the permission is already granted, re-subscribe once so the endpoint
+      // is guaranteed to match the current VAPID key pair.
+      if (Notification.permission === 'granted') {
+        await subscription.unsubscribe();
+        const keyData = await notificationsApi.getVapidKey();
+        if (keyData.publicKey) {
+          const freshRegistration = await navigator.serviceWorker.register('/sw.js');
+          const freshSubscription = await freshRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
+          });
+          const freshRaw = freshSubscription.toJSON();
+          if (freshRaw.endpoint && freshRaw.keys?.p256dh && freshRaw.keys?.auth) {
+            await notificationsApi.subscribe({
+              endpoint: freshRaw.endpoint,
+              keys: {
+                p256dh: freshRaw.keys.p256dh,
+                auth: freshRaw.keys.auth,
+              },
+            });
+            setIsSubscribed(true);
+          }
+        }
+      }
     } catch (err) {
       console.warn('Failed to check push subscription status:', err);
     }
@@ -86,8 +129,13 @@ export function usePushNotifications() {
       }
 
       // 3. Register SW and Subscribe
-      // Ensure sw.js is registered
       const registration = await navigator.serviceWorker.register('/sw.js');
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe();
+      }
+
+      // Ensure sw.js is registered
       await navigator.serviceWorker.ready;
 
       const subscription = await registration.pushManager.subscribe({
