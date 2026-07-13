@@ -11,9 +11,11 @@ import type {
 const SETTINGS_KEY = ['settings'] as const;
 
 export function useSettings() {
+  const accessToken = useAuthStore((s) => s.accessToken);
   return useQuery({
     queryKey: SETTINGS_KEY,
     queryFn: settingsApi.getSettings,
+    enabled: Boolean(accessToken),
   });
 }
 
@@ -21,6 +23,7 @@ export function useUpdateAppearance() {
   const qc = useQueryClient();
   const setTheme = useUIStore((s) => s.setTheme);
   const setLayoutPreference = useUIStore((s) => s.setLayoutPreference);
+  const setCalendarViewPreference = useUIStore((s) => s.setCalendarViewPreference);
 
   return useMutation({
     mutationFn: (data: UpdateAppearanceRequest) => settingsApi.updateAppearance(data),
@@ -28,6 +31,9 @@ export function useUpdateAppearance() {
       await setTheme(data.themePreference === 'SYSTEM' ? 'system' : data.themePreference === 'DARK' ? 'dark' : 'light');
       if (data.layoutPreference) {
         setLayoutPreference(data.layoutPreference);
+      }
+      if (data.calendarView) {
+        setCalendarViewPreference(data.calendarView);
       }
       qc.invalidateQueries({ queryKey: SETTINGS_KEY });
       toast.success('Appearance updated');

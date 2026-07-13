@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Chrome } from 'lucide-react';
+import { Link, Meta } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, Globe } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useLogin } from '../hooks/useAuth';
 import { authApi } from '../api';
 import { Button } from '../../../components/ui/Button';
@@ -18,8 +19,12 @@ export function LoginForm() {
   };
 
   const handleGoogleSignIn = async () => {
-    const { url } = await authApi.googleStart('signin', '/google/callback');
-    window.location.href = url;
+    try {
+      const { url } = await authApi.googleStart('signin' , `${import.meta.env.VITE_APP_BASE_URL}/google/callback`);
+      window.location.href = url;
+    } catch (err) {
+      toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-in is not available right now.');
+    }
   };
 
   return (
@@ -46,7 +51,7 @@ export function LoginForm() {
         id="login-password"
         label="Password"
         type={showPass ? 'text' : 'password'}
-        placeholder="••••••••"
+        placeholder="********"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         leftIcon={<Lock size={16} />}
@@ -80,11 +85,15 @@ export function LoginForm() {
         type="button"
         variant="secondary"
         fullWidth
-        leftIcon={<Chrome size={15} />}
+        leftIcon={<Globe size={15} />}
         onClick={handleGoogleSignIn}
       >
-        Google
+        Continue with Google
       </Button>
+
+      <p className="text-center text-xs text-text-muted leading-snug">
+        Google sign-in links the account automatically. Calendar sync stays separate in Settings.
+      </p>
 
       <p className="text-center text-sm text-text-muted">
         Don't have an account?{' '}

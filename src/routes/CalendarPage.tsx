@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addMonths } from 'date-fns';
 import {
@@ -32,6 +32,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { TabBar } from '../components/ui/TabBar';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
+import { useUIStore } from '../store/uiStore';
 import type { CalendarEventDTO } from '../types';
 
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
@@ -115,9 +116,14 @@ function getEventSummary(events: CalendarEventDTO[]) {
 
 export function CalendarPage() {
   const navigate = useNavigate();
-  const [view, setView] = useState<CalendarView>('month');
+  const calendarViewPreference = useUIStore((s) => s.calendarViewPreference);
+  const [view, setView] = useState<CalendarView>(calendarViewPreference);
   const [reference, setReference] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setView(calendarViewPreference);
+  }, [calendarViewPreference]);
 
   const range = getRange(view, reference);
   const calendarRange = useMemo(

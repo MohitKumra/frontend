@@ -8,12 +8,14 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { useLogout } from '../../features/auth/hooks/useAuth';
+import { useSettings } from '../../features/settings/hooks/useSettings';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { SearchModal } from '../../features/search/components/SearchModal';
 import { Tooltip } from '../ui/Tooltip';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Badge } from '../ui/Badge';
 import { useDashboardToday } from '../../features/dashboard/hooks/useDashboard';
+import { applyLayoutPreference } from '../../platform/layout';
 
 const navItems = [
   { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
@@ -47,11 +49,13 @@ const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
-  const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme } = useUIStore();
+  const setUser = useAuthStore((s) => s.setUser);
+  const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme, layoutPreference, setTheme, setLayoutPreference, setCalendarViewPreference } = useUIStore();
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: todayData } = useDashboardToday();
+  const { data: settings } = useSettings();
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -65,6 +69,54 @@ export function AppLayout() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    applyLayoutPreference(layoutPreference);
+  }, [layoutPreference]);
+
+  useEffect(() => {
+    if (!settings) return;
+
+    void setTheme(settings.appearance.themePreference === 'SYSTEM'
+      ? 'system'
+      : settings.appearance.themePreference === 'DARK'
+        ? 'dark'
+        : 'light');
+    setLayoutPreference(settings.appearance.layoutPreference);
+    setCalendarViewPreference(settings.appearance.calendarView);
+
+    if (user && user.recoveryEmail !== settings.security.recoveryEmail) {
+      setUser({ ...user, recoveryEmail: settings.security.recoveryEmail });
+    }
+  }, [
+    settings,
+    setCalendarViewPreference,
+    setLayoutPreference,
+    setTheme,
+    setUser,
+    user,
+  ]);
+
+  const contentPaddingClass =
+    layoutPreference === 'COMPACT'
+      ? 'p-3 sm:p-4 md:p-5'
+      : layoutPreference === 'EXPANDED'
+        ? 'p-5 sm:p-7 md:p-10'
+        : 'p-4 sm:p-6 md:p-8';
+
+  const headerPaddingClass =
+    layoutPreference === 'COMPACT'
+      ? 'px-3 sm:px-4 md:px-5'
+      : layoutPreference === 'EXPANDED'
+        ? 'px-5 sm:px-8 md:px-10'
+        : 'px-4 sm:px-6 md:px-8';
+
+  const navPaddingClass =
+    layoutPreference === 'COMPACT'
+      ? 'px-2 py-3 gap-0.5'
+      : layoutPreference === 'EXPANDED'
+        ? 'px-4 py-5 gap-1.5'
+        : 'px-3 py-4 gap-1';
 
   const taskBadge = todayData?.pendingTasks ?? 0;
   const habitBadge = todayData?.habitsToComplete ?? 0;
@@ -80,6 +132,14 @@ export function AppLayout() {
         }
         .sidebar-nav-link {
           transition: background-color 150ms ease, color 150ms ease;
+        }
+        [data-layout='compact'] .sidebar-nav-link {
+          gap: 0.5rem;
+          padding-top: 0.55rem;
+          padding-bottom: 0.55rem;
+        }
+        [data-layout='compact'] .page-enter > * {
+          max-width: 100%;
         }
         .sidebar-nav-link-active {
           background: color-mix(in srgb, var(--color-accent) 8%, transparent);
@@ -118,7 +178,7 @@ export function AppLayout() {
       >
         {/* Logo section */}
         <div
-          className="flex items-center gap-3 px-5 border-b shrink-0 justify-between"
+          className={`flex items-center gap-3 border-b shrink-0 justify-between ${headerPaddingClass}`}
           style={{ height: 'var(--topbar-height)', borderColor: 'var(--sidebar-border)' }}
         >
           {sidebarOpen ? (
@@ -152,7 +212,7 @@ export function AppLayout() {
         </div>
 
         {/* Navigation links */}
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto no-scrollbar">
+        <nav className={`flex-1 flex flex-col overflow-y-auto no-scrollbar ${navPaddingClass}`}>
           {sidebarOpen && (
             <span className="px-3.5 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 select-none">
               Navigation
@@ -230,7 +290,7 @@ export function AppLayout() {
       {/* ── Main content area (unchanged) ──────────────────────────────── */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         <header
-          className="flex items-center justify-between px-4 sm:px-6 md:px-8 border-b bg-white dark:bg-slate-900 shrink-0 gap-4"
+          className={`flex items-center justify-between border-b bg-white dark:bg-slate-900 shrink-0 gap-4 ${headerPaddingClass}`}
           style={{ height: 'var(--topbar-height)', background: 'var(--topbar-bg)', borderColor: 'var(--topbar-border)' }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-initial">
@@ -307,7 +367,7 @@ export function AppLayout() {
         </header>
 
         <div className="flex-1 overflow-y-auto pb-24 md:pb-0 relative min-w-0">
-          <div className="page-enter p-4 sm:p-6 md:p-8">
+          <div className={`page-enter ${contentPaddingClass}`}>
             <Outlet />
           </div>
         </div>

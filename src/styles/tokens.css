@@ -81,6 +81,8 @@
   --bottomnav-text: #94A3B8;
   --bottomnav-text-active: #4F46E5;
   --bottomnav-indicator: #EEF2FF;
+  --layout-page-padding-x: 1rem;
+  --layout-page-padding-y: 1rem;
 
   /* ====== MODAL / OVERLAY TOKENS ====== */
   --overlay-bg: rgba(15, 23, 42, 0.6);
@@ -223,6 +225,24 @@
   --icon-text-danger: #FB7171;
   --icon-bg-info: rgba(96, 165, 250, 0.15);
   --icon-text-info: #60A5FA;
+}
+
+[data-layout='compact'] {
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 72px;
+  --topbar-height: 56px;
+  --bottomnav-height: 64px;
+  --layout-page-padding-x: 0.75rem;
+  --layout-page-padding-y: 0.75rem;
+}
+
+[data-layout='expanded'] {
+  --sidebar-width: 300px;
+  --sidebar-width-collapsed: 88px;
+  --topbar-height: 68px;
+  --bottomnav-height: 76px;
+  --layout-page-padding-x: 1.25rem;
+  --layout-page-padding-y: 1.25rem;
 }
 
 /* ====== GLOBAL BASE STYLES ====== */

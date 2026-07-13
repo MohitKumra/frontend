@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, Chrome } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Globe } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useSignup } from '../hooks/useAuth';
 import { authApi } from '../api';
 import { Button } from '../../../components/ui/Button';
@@ -19,8 +20,12 @@ export function SignupForm() {
   };
 
   const handleGoogleSignUp = async () => {
-    const { url } = await authApi.googleStart('signin', '/google/callback');
-    window.location.href = url;
+    try {
+      const { url } = await authApi.googleStart('signin', '/google/callback');
+      window.location.href = url;
+    } catch (err) {
+      toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-up is not available right now.');
+    }
   };
 
   return (
@@ -87,11 +92,15 @@ export function SignupForm() {
         type="button"
         variant="secondary"
         fullWidth
-        leftIcon={<Chrome size={15} />}
+        leftIcon={<Globe size={15} />}
         onClick={handleGoogleSignUp}
       >
-        Google
+        Continue with Google
       </Button>
+
+      <p className="text-center text-xs text-text-muted leading-snug">
+        Google will link the account automatically. Calendar integration remains a separate step in Settings.
+      </p>
 
       <p className="text-center text-sm text-text-muted">
         Already have an account?{' '}

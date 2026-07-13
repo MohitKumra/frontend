@@ -1,8 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
-import { authApi } from '../features/auth/api';
 import { useAuthStore } from '../store/authStore';
+
+async function completeGoogleSession() {
+  const refreshResponse = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!refreshResponse.ok) {
+    const payload = await refreshResponse.json().catch(() => null);
+    throw new Error(payload?.error?.message ?? 'Google sign-in could not be completed.');
+  }
+
+  const refreshData = await refreshResponse.json() as { accessToken: string };
+
+  const meResponse = await fetch('/api/auth/me', {
+    credentials: 'include',
+    headers: {
+      Authorization: `Bearer ${refreshData.accessToken}`,
+    },
+  });
+
+  if (!meResponse.ok) {
+    const payload = await meResponse.json().catch(() => null);
+    throw new Error(payload?.error?.message ?? 'Google sign-in could not load your account.');
+  }
+
+  const user = await meResponse.json();
+  return { accessToken: refreshData.accessToken, user };
+}
 
 export function GoogleAuthCallbackPage() {
   const navigate = useNavigate();
@@ -13,21 +42,21 @@ export function GoogleAuthCallbackPage() {
   useEffect(() => {
     let active = true;
 
-    async function completeGoogleLogin() {
+    async function run() {
       try {
-        const refreshed = await authApi.refresh();
-        const user = await authApi.getMe();
+        const result = await completeGoogleSession();
         if (!active) return;
-        setAuth(refreshed.accessToken, user);
+        setAuth(result.accessToken, result.user);
         setMessage('Signed in successfully');
         setTimeout(() => navigate('/', { replace: true }), 600);
       } catch (err) {
         if (!active) return;
-        setError((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-in could not be completed.');
+        const fallback = (err as { message?: string })?.message ?? 'Google sign-in could not be completed.';
+        setError(fallback);
       }
     }
 
-    void completeGoogleLogin();
+    void run();
     return () => {
       active = false;
     };
@@ -52,7 +81,21 @@ export function GoogleAuthCallbackPage() {
 
         <div className="mt-8 rounded-2xl border p-6 bg-surface shadow-xl text-center">
           {error ? (
-            <div className="text-sm text-danger font-semibold leading-relaxed">{error}</div>
+            <div className="space-y-3">
+              <div className="text-sm text-danger font-semibold leading-relaxed">{error}</div>
+              <button
+                type="button"
+                onClick={() => navigate('/login', { replace: true })}
+                className="px-4 py-2 rounded-xl text-sm font-bold border transition-all hover:shadow-sm"
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Back to login
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
               <Loader2 size={28} className="text-accent animate-spin" />

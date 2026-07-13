@@ -686,7 +686,7 @@ export function TasksPage() {
           )}
         </Card>
       ) : (
-        /* Enhanced List View with inline subtasks */
+        /* Enterprise-style list view with inline subtasks */
         <div className="space-y-3">
           {filteredTasks.map((task, index) => {
             const dueDate = formatDueDate(task.dueDate);
@@ -699,6 +699,7 @@ export function TasksPage() {
             const subDone = task.subTasks?.filter((s) => s.completed).length ?? 0;
             const subPct = subTotal > 0 ? Math.round((subDone / subTotal) * 100) : 0;
             const subExpanded = !!expandedSubtasks[task.id];
+            const isSelected = selectedTaskIds.has(task.id);
             const priorityAccent =
               task.priority === 'HIGH'
                 ? 'var(--color-danger)'
@@ -710,320 +711,314 @@ export function TasksPage() {
               <Card
                 key={task.id}
                 variant="default"
-                className="p-5 hover:shadow-md transition-all duration-300 group border relative"
+                className="group relative overflow-hidden transition-all duration-200 hover:shadow-md"
                 style={{
-                  borderColor: 'var(--color-border)',
-                  borderLeft: done
-                    ? '3px solid var(--color-success)'
-                    : `3px solid ${priorityAccent}`,
+                  borderColor: isSelected ? 'var(--color-accent-border)' : 'var(--color-border)',
                   background: done
-                    ? 'color-mix(in srgb, var(--color-success) 4%, var(--color-surface))'
+                    ? 'color-mix(in srgb, var(--color-success) 3%, var(--color-surface))'
+                    : isSelected
+                    ? 'color-mix(in srgb, var(--color-accent) 4%, var(--color-surface))'
                     : 'var(--color-surface)',
                   animation: `fade-in 0.3s ease-out both`,
-                  animationDelay: `${index * 50}ms`,
+                  animationDelay: `${index * 30}ms`,
                 }}
               >
-                {/* Priority top bar accent */}
-                {!done && (
-                  <div
-                    className="absolute top-0 left-0 right-0 h-0.5 opacity-50"
-                    style={{ background: priorityAccent }}
-                  />
-                )}
+                {/* Full-height priority/status accent bar */}
+                <div
+                  className="absolute top-0 left-0 bottom-0 w-[3px]"
+                  style={{ background: done ? 'var(--color-success)' : priorityAccent }}
+                />
 
-                <div className="flex items-start gap-4">
-                  {/* Completion control */}
-                  <div className="pt-0.5">
-                    <TaskCheckbox checked={done} onToggle={() => toggleTaskStatus(task)} />
-                  </div>
-
-                  {/* Task Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3
-                        className="text-sm font-bold leading-tight transition-colors duration-300 flex items-center gap-2 flex-wrap"
-                        style={{
-                          color: done ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
-                          textDecorationLine: done ? 'line-through' : 'none',
-                          textDecorationColor: 'var(--color-success)',
-                          textDecorationThickness: '1.5px',
-                        }}
-                      >
-                        {task.title}
-                        {recurrenceLabel && (
-                          <div
-                            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap"
-                            style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}
-                          >
-                            <RefreshCw size={10} />
-                            <span>{recurrenceLabel}</span>
-                            {nextRecurrence && (
-                              <span className="opacity-70">· Next: {nextRecurrence}</span>
-                            )}
-                          </div>
-                        )}
-                      </h3>
+                <div className="pl-5 pr-4 py-4 sm:pl-6 sm:pr-5 sm:py-4">
+                  <div className="flex items-start gap-3.5">
+                    {/* Completion control */}
+                    <div className="pt-0.5 shrink-0">
+                      <TaskCheckbox checked={done} onToggle={() => toggleTaskStatus(task)} />
                     </div>
 
-                    {task.description && (
-                      <p
-                        className="text-xs mb-3 line-clamp-2 leading-relaxed transition-colors duration-300"
-                        style={{ color: done ? 'var(--color-text-muted)' : 'var(--color-text-secondary)' }}
-                      >
-                        {task.description}
-                      </p>
-                    )}
+                    {/* Main content column */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center flex-wrap gap-2">
+                            <h3
+                              className="text-sm font-bold leading-tight transition-colors duration-300"
+                              style={{
+                                color: done ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                                textDecorationLine: done ? 'line-through' : 'none',
+                                textDecorationColor: 'var(--color-success)',
+                                textDecorationThickness: '1.5px',
+                              }}
+                            >
+                              {task.title}
+                            </h3>
+                            {recurrenceLabel && (
+                              <div
+                                className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0"
+                                style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}
+                              >
+                                <RefreshCw size={10} />
+                                <span>{recurrenceLabel}</span>
+                                {nextRecurrence && <span className="opacity-70">· Next {nextRecurrence}</span>}
+                              </div>
+                            )}
+                          </div>
 
-                    {/* Task Metadata */}
-                    <div className="flex items-center flex-wrap gap-2.5">
-                      {/* Priority Badge */}
-                      <Badge
-                        variant={priorityConfig[task.priority].color}
-                        size="sm"
-                        className="inline-flex items-center gap-1 font-semibold text-xs"
-                      >
-                        {task.priority === 'HIGH' ? '🚩 ' : task.priority === 'MEDIUM' ? '📌 ' : '📋 '}
-                        {priorityConfig[task.priority].label}
-                      </Badge>
+                          {task.description && (
+                            <p
+                              className="text-xs mt-1.5 line-clamp-2 leading-relaxed transition-colors duration-300"
+                              style={{ color: done ? 'var(--color-text-muted)' : 'var(--color-text-secondary)' }}
+                            >
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
 
-                      {/* Status Badge */}
-                      {task.status !== 'TODO' && (
+                        {/* Actions cluster */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleTaskSelection(task.id)}
+                            className="p-1.5 rounded-lg transition-all"
+                            style={{
+                              color: isSelected ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                              background: isSelected ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'transparent',
+                              opacity: isSelected ? 1 : 0.45,
+                            }}
+                            aria-label={isSelected ? 'Deselect task' : 'Select task'}
+                          >
+                            {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                          </button>
+
+                          <div className="relative">
+                            <button
+                              onClick={() => setTaskMenuOpen(taskMenuOpen === task.id ? null : task.id)}
+                              className="p-1.5 rounded-lg transition-all opacity-45 hover:opacity-100"
+                              style={{ color: 'var(--color-text-muted)' }}
+                              aria-label="Task actions"
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+
+                            {taskMenuOpen === task.id && (
+                              <div
+                                className="absolute right-0 top-full mt-2 w-44 rounded-xl shadow-lg z-10 py-2 animate-scale-in"
+                                style={{
+                                  background: 'var(--color-surface-raised)',
+                                  border: '1px solid var(--color-border)',
+                                }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    setEditingTask(task);
+                                    setTaskMenuOpen(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-xs font-semibold transition-all flex items-center gap-3 hover:pl-5"
+                                  style={{ color: 'var(--color-text-primary)' }}
+                                >
+                                  <Edit3 size={14} />
+                                  Edit Task
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="w-full px-4 py-2.5 text-left text-xs font-semibold transition-all flex items-center gap-3 hover:pl-5"
+                                  style={{ color: 'var(--color-danger)' }}
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Meta chips row */}
+                      <div className="flex items-center flex-wrap gap-2 mt-3">
                         <Badge
-                          variant={statusConfig[task.status].color}
+                          variant={priorityConfig[task.priority].color}
                           size="sm"
                           className="inline-flex items-center gap-1 font-semibold text-xs"
                         >
-                          {statusConfig[task.status].label}
+                          {task.priority === 'HIGH' ? '🚩 ' : task.priority === 'MEDIUM' ? '📌 ' : '📋 '}
+                          {priorityConfig[task.priority].label}
                         </Badge>
-                      )}
 
-                      {/* Due Date */}
-                      {task.dueDate && (
-                        <div
-                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all"
-                          style={{
-                            color: overdue
-                              ? 'var(--color-danger)'
-                              : today
-                              ? 'var(--color-warning)'
-                              : 'var(--color-text-muted)',
-                            background: overdue
-                              ? 'color-mix(in srgb, var(--color-danger) 10%, transparent)'
-                              : today
-                              ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)'
-                              : 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)'
-                          }}
-                        >
-                          <Calendar size={12} />
-                          <span>{dueDate}</span>
-                          {overdue && <span className="opacity-75">• Overdue</span>}
-                        </div>
-                      )}
-
-                      {task.attachmentUrl && (
-                        <a
-                          href={task.attachmentUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:shadow-sm"
-                          style={{
-                            color: 'var(--color-text-secondary)',
-                            background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
-                          }}
-                        >
-                          <Paperclip size={12} />
-                          <span>Attachment</span>
-                        </a>
-                      )}
-                    </div>
-
-                    {/* ---- Redesigned Subtasks Section ---- */}
-                    <div
-                      className="mt-3.5 rounded-xl border overflow-hidden"
-                      style={{ borderColor: 'var(--color-border)' }}
-                    >
-                      {/* Header row: progress + expand toggle. Always visible,
-                          even with zero subtasks, so "add" is never hidden
-                          behind a modal. */}
-                      <button
-                        type="button"
-                        onClick={() => toggleSubtaskPanel(task.id)}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 transition-colors"
-                        style={{ background: 'var(--color-surface-raised)' }}
-                      >
-                        <ChevronDown
-                          size={14}
-                          className="shrink-0 transition-transform duration-200"
-                          style={{
-                            color: 'var(--color-text-muted)',
-                            transform: subExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                          }}
-                        />
-
-                        <span
-                          className="text-[11px] font-bold shrink-0"
-                          style={{ color: 'var(--color-text-secondary)' }}
-                        >
-                          Subtasks
-                        </span>
-
-                        {subTotal > 0 ? (
-                          <>
-                            <span
-                              className="relative flex-1 max-w-[120px] h-1.5 rounded-full overflow-hidden"
-                              style={{ background: 'color-mix(in srgb, var(--color-text-muted) 18%, transparent)' }}
-                            >
-                              <span
-                                className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${subPct}%`,
-                                  background: subPct === 100 ? 'var(--color-success)' : 'var(--color-accent)',
-                                }}
-                              />
-                            </span>
-                            <span
-                              className="text-[11px] font-bold shrink-0 ml-auto"
-                              style={{ color: subPct === 100 ? 'var(--color-success)' : 'var(--color-text-muted)' }}
-                            >
-                              {subDone}/{subTotal}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-[11px] font-medium ml-auto" style={{ color: 'var(--color-text-muted)' }}>
-                            None yet
-                          </span>
+                        {task.status !== 'TODO' && (
+                          <Badge
+                            variant={statusConfig[task.status].color}
+                            size="sm"
+                            className="inline-flex items-center gap-1 font-semibold text-xs"
+                          >
+                            {statusConfig[task.status].label}
+                          </Badge>
                         )}
-                      </button>
 
-                      {/* Expanded panel: subtask list + quick-add input */}
-                      {subExpanded && (
-                        <div
-                          className="px-3.5 py-3 space-y-1"
-                          style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}
-                        >
-                          {task.subTasks?.map((subTask) => (
-                            <div
-                              key={subTask.id}
-                              className="flex items-center gap-2.5 group/sub py-1 -mx-1.5 px-1.5 rounded-lg hover:bg-black/[0.02]"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => updateSubTaskMutation.mutate({
-                                  taskId: task.id,
-                                  subTaskId: subTask.id,
-                                  data: { completed: !subTask.completed }
-                                })}
-                                className="shrink-0"
-                              >
-                                {subTask.completed ? (
-                                  <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
-                                ) : (
-                                  <Circle size={16} style={{ color: 'var(--color-border)' }} />
-                                )}
-                              </button>
-                              <span
-                                className="text-xs leading-tight flex-1 transition-colors"
-                                style={{
-                                  color: subTask.completed ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                                  textDecorationLine: subTask.completed ? 'line-through' : 'none',
-                                }}
-                              >
-                                {subTask.title}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => deleteSubTaskMutation.mutate({ taskId: task.id, subTaskId: subTask.id })}
-                                className="shrink-0 p-1 rounded-md opacity-0 group-hover/sub:opacity-100 transition-opacity"
-                                style={{ color: 'var(--color-danger)' }}
-                                aria-label="Delete subtask"
-                              >
-                                <X size={13} />
-                              </button>
-                            </div>
-                          ))}
-
-                          {/* Quick add */}
-                          <div className="flex items-center gap-2 pt-1.5">
-                            <Plus size={14} className="shrink-0" style={{ color: 'var(--color-text-muted)' }} />
-                            <input
-                              type="text"
-                              value={subtaskDraft[task.id] ?? ''}
-                              onChange={(e) => setSubtaskDraft((prev) => ({ ...prev, [task.id]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleAddSubtask(task.id);
-                                }
-                              }}
-                              placeholder="Add a subtask and press Enter"
-                              className="flex-1 text-xs font-medium bg-transparent focus:outline-none py-1"
-                              style={{ color: 'var(--color-text-primary)' }}
-                            />
+                        {task.dueDate && (
+                          <div
+                            className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all"
+                            style={{
+                              color: overdue
+                                ? 'var(--color-danger)'
+                                : today
+                                ? 'var(--color-warning)'
+                                : 'var(--color-text-muted)',
+                              background: overdue
+                                ? 'color-mix(in srgb, var(--color-danger) 10%, transparent)'
+                                : today
+                                ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)'
+                                : 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+                            }}
+                          >
+                            <Calendar size={12} />
+                            <span>{dueDate}</span>
+                            {overdue && <span className="opacity-75">• Overdue</span>}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                        )}
 
-                  {/* Action Menu */}
-                  <div className="relative shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleTaskSelection(task.id)}
-                      className="p-2 rounded-lg transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                      style={{
-                        color: selectedTaskIds.has(task.id)
-                          ? 'var(--color-accent)'
-                          : 'var(--color-text-muted)',
-                        background: selectedTaskIds.has(task.id)
-                          ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)'
-                          : 'transparent',
-                      }}
-                      aria-label={selectedTaskIds.has(task.id) ? 'Deselect task' : 'Select task'}
-                    >
-                      {selectedTaskIds.has(task.id) ? <CheckSquare size={18} /> : <Square size={18} />}
-                    </button>
+                        {task.attachmentUrl && (
+                          <a
+                            href={task.attachmentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:shadow-sm"
+                            style={{
+                              color: 'var(--color-text-secondary)',
+                              background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+                            }}
+                          >
+                            <Paperclip size={12} />
+                            <span>Attachment</span>
+                          </a>
+                        )}
+                      </div>
 
-                    <button
-                      onClick={() => setTaskMenuOpen(taskMenuOpen === task.id ? null : task.id)}
-                      className="p-2 rounded-lg transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                      style={{
-                        color: 'var(--color-text-muted)',
-                        background: 'transparent'
-                      }}
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-
-                    {taskMenuOpen === task.id && (
+                      {/* Subtasks */}
                       <div
-                        className="absolute right-0 top-full mt-2 w-44 rounded-xl shadow-lg z-10 py-2 animate-scale-in"
-                        style={{
-                          background: 'var(--color-surface-raised)',
-                          border: '1px solid var(--color-border)',
-                        }}
+                        className="mt-3.5 rounded-xl border overflow-hidden"
+                        style={{ borderColor: 'var(--color-border)' }}
                       >
                         <button
-                          onClick={() => {
-                            setEditingTask(task);
-                            setTaskMenuOpen(null);
-                          }}
-                          className="w-full px-4 py-2.5 text-left text-xs font-semibold transition-all flex items-center gap-3 hover:pl-5"
-                          style={{ color: 'var(--color-text-primary)' }}
+                          type="button"
+                          onClick={() => toggleSubtaskPanel(task.id)}
+                          className="w-full flex items-center gap-3 px-3.5 py-2.5 transition-colors hover:brightness-95"
+                          style={{ background: 'var(--color-surface-raised)' }}
                         >
-                          <Edit3 size={14} />
-                          Edit Task
+                          <ChevronDown
+                            size={14}
+                            className="shrink-0 transition-transform duration-200"
+                            style={{
+                              color: 'var(--color-text-muted)',
+                              transform: subExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                            }}
+                          />
+
+                          <span
+                            className="text-[11px] font-bold shrink-0"
+                            style={{ color: 'var(--color-text-secondary)' }}
+                          >
+                            Subtasks
+                          </span>
+
+                          {subTotal > 0 ? (
+                            <>
+                              <span
+                                className="relative flex-1 max-w-[120px] h-1.5 rounded-full overflow-hidden"
+                                style={{ background: 'color-mix(in srgb, var(--color-text-muted) 18%, transparent)' }}
+                              >
+                                <span
+                                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${subPct}%`,
+                                    background: subPct === 100 ? 'var(--color-success)' : 'var(--color-accent)',
+                                  }}
+                                />
+                              </span>
+                              <span
+                                className="text-[11px] font-bold shrink-0 ml-auto"
+                                style={{ color: subPct === 100 ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+                              >
+                                {subDone}/{subTotal}
+                              </span>
+                            </>
+                          ) : (
+                            <span
+                              className="text-[11px] font-medium ml-auto italic"
+                              style={{ color: 'var(--color-text-muted)' }}
+                            >
+                              No subtasks yet — add one below
+                            </span>
+                          )}
                         </button>
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          className="w-full px-4 py-2.5 text-left text-xs font-semibold transition-all flex items-center gap-3 hover:pl-5"
-                          style={{ color: 'var(--color-danger)' }}
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
+
+                        {subExpanded && (
+                          <div
+                            className="px-3.5 py-3 space-y-1"
+                            style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)' }}
+                          >
+                            {task.subTasks?.map((subTask) => (
+                              <div
+                                key={subTask.id}
+                                className="flex items-center gap-2.5 group/sub py-1 -mx-1.5 px-1.5 rounded-lg hover:bg-black/[0.02]"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => updateSubTaskMutation.mutate({
+                                    taskId: task.id,
+                                    subTaskId: subTask.id,
+                                    data: { completed: !subTask.completed }
+                                  })}
+                                  className="shrink-0"
+                                >
+                                  {subTask.completed ? (
+                                    <CheckCircle2 size={16} style={{ color: 'var(--color-success)' }} />
+                                  ) : (
+                                    <Circle size={16} style={{ color: 'var(--color-border)' }} />
+                                  )}
+                                </button>
+                                <span
+                                  className="text-xs leading-tight flex-1 transition-colors"
+                                  style={{
+                                    color: subTask.completed ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+                                    textDecorationLine: subTask.completed ? 'line-through' : 'none',
+                                  }}
+                                >
+                                  {subTask.title}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteSubTaskMutation.mutate({ taskId: task.id, subTaskId: subTask.id })}
+                                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/sub:opacity-100 transition-opacity"
+                                  style={{ color: 'var(--color-danger)' }}
+                                  aria-label="Delete subtask"
+                                >
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            ))}
+
+                            {/* Quick add */}
+                            <div className="flex items-center gap-2 pt-1.5">
+                              <Plus size={14} className="shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                              <input
+                                type="text"
+                                value={subtaskDraft[task.id] ?? ''}
+                                onChange={(e) => setSubtaskDraft((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddSubtask(task.id);
+                                  }
+                                }}
+                                placeholder="Add a subtask and press Enter"
+                                className="flex-1 text-xs font-medium bg-transparent focus:outline-none py-1"
+                                style={{ color: 'var(--color-text-primary)' }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </Card>

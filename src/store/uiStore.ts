@@ -9,18 +9,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { setTheme as applyTheme, type Theme } from '../platform/theme';
+import { applyLayoutPreference as applyShellLayout, type LayoutPreference as ShellLayoutPreference } from '../platform/layout';
 
 type ThemePreference = Theme | 'system';
-type LayoutPreference = 'COMFORTABLE' | 'COMPACT' | 'EXPANDED';
 
 interface UIState {
   theme: Theme;
   themePreference: ThemePreference;
-  layoutPreference: LayoutPreference;
+  layoutPreference: ShellLayoutPreference;
+  calendarViewPreference: 'day' | 'week' | 'month' | 'agenda';
   sidebarOpen: boolean;
   focusMode: boolean;
   setTheme: (theme: ThemePreference) => Promise<Theme>;
-  setLayoutPreference: (layout: LayoutPreference) => void;
+  setLayoutPreference: (layout: ShellLayoutPreference) => void;
+  setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
   toggleTheme: () => Promise<Theme>;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -34,6 +36,7 @@ export const useUIStore = create<UIState>()(
       theme: 'light',
       themePreference: 'system',
       layoutPreference: 'COMFORTABLE',
+      calendarViewPreference: 'month',
       sidebarOpen: true,
       focusMode: false,
 
@@ -42,7 +45,11 @@ export const useUIStore = create<UIState>()(
         set({ theme: resolved, themePreference: theme });
         return resolved;
       },
-      setLayoutPreference: (layout) => set({ layoutPreference: layout }),
+      setLayoutPreference: (layout) => {
+        applyShellLayout(layout);
+        set({ layoutPreference: layout });
+      },
+      setCalendarViewPreference: (view) => set({ calendarViewPreference: view }),
       toggleTheme: async () => {
         const current = document.documentElement.getAttribute('data-theme') as Theme | null;
         const next = current === 'dark' ? 'light' : 'dark';
