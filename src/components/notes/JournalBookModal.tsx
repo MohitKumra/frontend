@@ -14,15 +14,13 @@ interface JournalBookModalProps {
 
 const Page = forwardRef<HTMLDivElement, { className?: string; children: React.ReactNode }>(
   ({ className, children }, ref) => (
-    <div className={className} ref={ref}>
+    <div className={className} ref={ref} style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
       {children}
     </div>
   )
 );
 Page.displayName = 'Page';
 
-// Splits content into page-sized chunks, breaking on paragraph/word boundaries
-// rather than mid-word, so each page reads naturally without needing to scroll.
 function paginateContent(content: string, maxCharsPerPage = 420): string[] {
   if (!content) return [''];
 
@@ -36,25 +34,21 @@ function paginateContent(content: string, maxCharsPerPage = 420): string[] {
   };
 
   for (const para of paragraphs) {
-    if ((current + '\n\n' + para).length <= maxCharsPerPage) {
+    if ((current ? current + '\n\n' + para : para).length <= maxCharsPerPage) {
       current = current ? `${current}\n\n${para}` : para;
       continue;
     }
 
-    // paragraph itself may be longer than a page — split it on words
     const words = para.split(/\s+/);
-    let chunk = current;
     for (const word of words) {
-      if ((chunk + ' ' + word).length > maxCharsPerPage) {
-        pushCurrent();
-        current = chunk.trim();
-        pushCurrent();
-        chunk = word;
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length > maxCharsPerPage) {
+        pushCurrent();       // push exactly once
+        current = word;      // start the new page with this word
       } else {
-        chunk = chunk ? `${chunk} ${word}` : word;
+        current = candidate;
       }
     }
-    current = chunk;
   }
   pushCurrent();
 
@@ -80,11 +74,10 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
     year: 'numeric',
   });
 
+  // One unique chunk per physical page — no pairing, no duplication
   const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
-  // Total leaves: front cover + content pages + back cover
-  const totalPages = contentPages.length + 2;
+  const totalPages = contentPages.length + 2; // fake cover + content + fake back cover
 
-  // --- FLIP animation: grow the stage from the clicked card's rect to fullscreen ---
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage || !originRect) return;
@@ -92,10 +85,8 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
     const finalRect = stage.getBoundingClientRect();
     if (finalRect.width === 0 || finalRect.height === 0) return;
 
-    const dx =
-      originRect.left + originRect.width / 2 - (finalRect.left + finalRect.width / 2);
-    const dy =
-      originRect.top + originRect.height / 2 - (finalRect.top + finalRect.height / 2);
+    const dx = originRect.left + originRect.width / 2 - (finalRect.left + finalRect.width / 2);
+    const dy = originRect.top + originRect.height / 2 - (finalRect.top + finalRect.height / 2);
     const sx = originRect.width / finalRect.width;
     const sy = originRect.height / finalRect.height;
 
@@ -103,7 +94,6 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
     stage.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
     stage.style.opacity = '0.4';
 
-    // force reflow so the browser registers the starting transform
     void stage.offsetWidth;
 
     requestAnimationFrame(() => {
@@ -111,7 +101,6 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
       stage.style.transform = 'translate(0, 0) scale(1, 1)';
       stage.style.opacity = '1';
     });
-    // only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -141,10 +130,8 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
     const stage = stageRef.current;
     if (stage && originRect) {
       const finalRect = stage.getBoundingClientRect();
-      const dx =
-        originRect.left + originRect.width / 2 - (finalRect.left + finalRect.width / 2);
-      const dy =
-        originRect.top + originRect.height / 2 - (finalRect.top + finalRect.height / 2);
+      const dx = originRect.left + originRect.width / 2 - (finalRect.left + finalRect.width / 2);
+      const dy = originRect.top + originRect.height / 2 - (finalRect.top + finalRect.height / 2);
       const sx = originRect.width / finalRect.width;
       const sy = originRect.height / finalRect.height;
 
@@ -169,7 +156,6 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
-      {/* Desktop close button - hidden on mobile, mobile uses the Close button in the action bar */}
       <button className="entry-close-btn entry-close-btn--desktop" onClick={handleClose} aria-label="Close journal">
         <X size={22} />
       </button>
@@ -186,7 +172,7 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
             maxWidth={560}
             minHeight={360}
             maxHeight={720}
-            showCover
+            showCover={true}
             usePortrait
             mobileScrollSupport
             drawShadow
@@ -201,7 +187,8 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
             ref={bookRef}
             style={{}}
 >
-          {/* Front cover */}
+
+          {/* Fake front cover using CSS class (not library cover) */}
           <Page className="rpf-page rpf-cover rpf-cover-front">
             <div className="journal-cover-face">
               <span className="journal-cover-kicker">Journal</span>
@@ -215,7 +202,7 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
             </div>
           </Page>
 
-          {/* Content pages — one per chunk */}
+          {/* One unique chunk per page — no left/right columns */}
           {contentPages.map((chunk, i) => (
             <Page className="rpf-page rpf-content" key={`content-${i}`}>
               <div className="journal-paper-face">
@@ -247,7 +234,7 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
             </Page>
           ))}
 
-          {/* Back cover */}
+          {/* Fake back cover */}
           <Page className="rpf-page rpf-cover rpf-cover-back">
             <div className="journal-cover-face journal-cover-face-back">
               <div className="journal-cover-rule" />

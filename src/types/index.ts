@@ -160,6 +160,8 @@ export interface TaskDTO {
   skipDates: string[]; // YYYY-MM-DD
   parentTaskId: string | null;
   attachmentUrl: string | null;
+  inProgressAt: string | null;
+  completedAt: string | null;
   subTasks?: SubTaskDTO[];
   createdAt: string;
   updatedAt: string;
@@ -168,6 +170,7 @@ export interface TaskDTO {
 export interface CreateTaskRequest {
   title: string;
   description?: string;
+  status?: TaskStatus;
   priority?: Priority;
   dueDate?: string;
   recurrenceRule?: string;
@@ -200,22 +203,21 @@ export interface HabitDTO {
   reminderTime: string | null;
   createdAt: string;
   currentStreak: number;
-  bestStreak: number;            // real longest streak from backend
+  bestStreak: number;
   completedToday: boolean;
   completionsThisWeek: number;
-  completionsLastWeek: number;   // used for weekly trend calc
-  weekPattern: boolean[];        // real Mon..Sun completion, length 7
-  completionDates: string[]           // real daily history, 12 weeks, oldest -> newest
+  completionsLastWeek: number;
+  weekPattern: boolean[];
+  completionDates: string[];
 }
 
 export interface HabitsListResponse {
   data: HabitDTO[];
   meta: {
     total: number;
-    weeklyTrend: number;         // real % change vs last week, computed server-side
+    weeklyTrend: number;
   };
 }
-
 
 export interface CreateHabitRequest {
   title: string;
@@ -270,12 +272,16 @@ export interface FocusSessionDTO {
   durationMin: number;
   startedAt: string;
   completed: boolean;
+  taskId: string | null;
+  isBreak: boolean;
 }
 
 export interface CreateFocusSessionRequest {
   durationMin: number;
   startedAt: string;
   completed: boolean;
+  taskId?: string | null;
+  isBreak?: boolean;
 }
 
 // ─── Calendar ────────────────────────────────────────────────────────────────

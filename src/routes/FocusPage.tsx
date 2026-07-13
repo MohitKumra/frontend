@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Timer, Play, Pause, RotateCcw, Maximize2, X, Flame, CheckCircle2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Timer, Play, Pause, RotateCcw, Maximize2, X, Flame, CheckCircle2, ChevronDown, Target } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
 import { useAuthStore } from '../store/authStore';
@@ -9,7 +10,9 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { TabBar } from '../components/ui/TabBar';
 import { Card } from '../components/ui/Card';
 import { useUIStore } from '../store/uiStore';
-import type { FocusSessionDTO, CreateFocusSessionRequest, ListResponse } from '../types';
+import { TaskTimeAnalysis } from '../components/tasks/TaskTimeAnalysis';
+import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
+import type { FocusSessionDTO, CreateFocusSessionRequest, ListResponse, TaskDTO } from '../types';
 
 type TimerMode = 'focus' | 'short_break' | 'long_break';
 const DURATIONS: Record<TimerMode, number> = {
@@ -41,6 +44,23 @@ function isFullscreenActive() {
   const anyDoc = document as any;
   return !!(document.fullscreenElement || anyDoc.webkitFullscreenElement || anyDoc.msFullscreenElement);
 }
+
+// ─── Duration formatter ──────────────────────────────────────────────────────
+
+function formatDuration(ms: number): string {
+  if (ms <= 0) return '0m';
+  const totalMinutes = Math.floor(ms / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+  return parts.join(' ');
+}
+
+// ─── Progress Ring ───────────────────────────────────────────────────────────
 
 function ProgressRing({ size, progress, colors, running }: { size: number; progress: number; colors: ReturnType<typeof getModeColors>; running: boolean }) {
   const stroke = size > 200 ? 12 : 10;
@@ -92,10 +112,13 @@ function ProgressRing({ size, progress, colors, running }: { size: number; progr
   );
 }
 
+// ─── Fullscreen Focus Mode ──────────────────────────────────────────────────
+
 function FocusModeFullScreen({
-  mode, minutes, seconds, progress, running, onExit, onReset, onStartPause,
+  mode, minutes, seconds, progress, running, selectedTaskTitle, onExit, onReset, onStartPause,
 }: {
   mode: TimerMode; minutes: string; seconds: string; progress: number; running: boolean;
+  selectedTaskTitle: string | null;
   onExit: () => void; onReset: () => void; onStartPause: () => void;
 }) {
   const colors = getModeColors(mode);
@@ -119,8 +142,15 @@ function FocusModeFullScreen({
           <X size={22} />
         </button>
 
-        <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: colors.subtle, color: colors.primary }}>
-          {mode.replace('_', ' ')}
+        <div className="flex flex-col items-center gap-2">
+          <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: colors.subtle, color: colors.primary }}>
+            {mode.replace('_', ' ')}
+          </div>
+          {selectedTaskTitle && (
+            <div className="px-4 py-1 rounded-full text-xs font-semibold text-text-secondary bg-surface border border-border max-w-[300px] truncate">
+              🎯 {selectedTaskTitle}
+            </div>
+          )}
         </div>
 
         <div
@@ -170,20 +200,192 @@ function FocusModeFullScreen({
   );
 }
 
+// ─── Task Selector ───────────────────────────────────────────────────────────
+
+function TaskSelector({
+  tasks,
+  selectedTaskId,
+  onSelect,
+}: {
+  tasks: TaskDTO[];
+  selectedTaskId: string | null;
+  onSelect: (taskId: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selectedTask = tasks.find((t) => t.id === selectedTaskId);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-sm font-semibold transition-all hover:border-accent/50"
+        style={{
+          background: 'var(--color-surface)',
+          borderColor: selectedTaskId ? 'var(--color-accent)' : 'var(--color-border)',
+          color: selectedTaskId ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Target size={16} className="shrink-0" style={{ color: selectedTaskId ? 'var(--color-accent)' : undefined }} />
+          <span className="truncate">
+            {selectedTask ? selectedTask.title : 'Link a task (optional)'}
+          </span>
+        </div>
+        <ChevronDown size={16} className="shrink-0" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full left-0 right-0 mt-2 rounded-xl border shadow-xl overflow-hidden"
+          style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', zIndex: 50, maxHeight: 280, overflowY: 'auto' }}
+        >
+          <button
+            onClick={() => { onSelect(null); setOpen(false); }}
+            className="w-full text-left px-4 py-3 text-sm font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            No task (general focus)
+          </button>
+          {tasks.length === 0 && (
+            <div className="px-4 py-3 text-xs text-text-muted">No active tasks found</div>
+          )}
+          {tasks.map((task) => {
+            const isActive = task.id === selectedTaskId;
+            return (
+              <button
+                key={task.id}
+                onClick={() => { onSelect(task.id); setOpen(false); }}
+                className="w-full text-left px-4 py-3 text-sm font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-3"
+                style={{ background: isActive ? 'var(--color-accent-subtle)' : undefined }}
+              >
+                <span className="truncate" style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-primary)' }}>
+                  {task.title}
+                </span>
+                <span
+                  className="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                  style={{
+                    background: task.status === 'IN_PROGRESS'
+                      ? 'color-mix(in srgb, var(--color-info) 15%, transparent)'
+                      : 'color-mix(in srgb, var(--color-text-muted) 15%, transparent)',
+                    color: task.status === 'IN_PROGRESS' ? 'var(--color-info)' : 'var(--color-text-muted)',
+                  }}
+                >
+                  {task.status === 'IN_PROGRESS' ? 'In Progress' : 'To Do'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Focus Page ─────────────────────────────────────────────────────────
+
 export function FocusPage() {
+  const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<TimerMode>('focus');
   const [secondsLeft, setSecondsLeft] = useState(DURATIONS.focus * 60);
   const [running, setRunning] = useState(false);
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const qc = useQueryClient();
   const { focusMode, setFocusMode } = useUIStore();
+  const restoredRef = useRef(false);
 
+  // ── Restore timer state from localStorage ────────────────────────────────
+  useEffect(() => {
+    const restored = restoreTimerState();
+    if (restored && !searchParams.get('taskId')) {
+      // Calculate time that passed while the user was away
+      const elapsed = new Date().getTime() - new Date(restored.savedAt).getTime();
+      const elapsedSec = Math.floor(elapsed / 1000);
+
+      let newSecondsLeft = restored.secondsLeft;
+      let newElapsedSec = restored.elapsedSeconds;
+
+      if (restored.running) {
+        // Timer was running — subtract the away time from secondsLeft
+        newSecondsLeft = Math.max(0, restored.secondsLeft - elapsedSec);
+        newElapsedSec = restored.elapsedSeconds + Math.min(elapsedSec, restored.secondsLeft);
+
+        // If timer expired while away, we just show 0 — user can restart
+        if (newSecondsLeft <= 0) {
+          setMode('focus');
+          setSecondsLeft(DURATIONS.focus * 60);
+          setRunning(false);
+          setStartedAt(null);
+          setElapsedSeconds(0);
+          setSelectedTaskId(null);
+          clearTimerState();
+          restoredRef.current = true;
+          return;
+        }
+      }
+
+      setMode(restored.mode as TimerMode);
+      setSecondsLeft(newSecondsLeft);
+      setRunning(restored.running);
+      setStartedAt(restored.startedAt);
+      setElapsedSeconds(newElapsedSec);
+      setSelectedTaskId(restored.selectedTaskId);
+    } else if (searchParams.get('taskId')) {
+      setSelectedTaskId(searchParams.get('taskId'));
+    }
+    restoredRef.current = true;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Persist timer state whenever it changes ──────────────────────────────
+  useEffect(() => {
+    // Skip save until initial restore is done
+    if (!restoredRef.current) return;
+    // Only persist if there's an active/paused timer (startedAt is set)
+    // This avoids the default "empty" state overwriting good persisted data
+    // on initial mount before React applies restored state updates.
+    if (startedAt) {
+      saveTimerState({
+        mode,
+        secondsLeft,
+        running,
+        startedAt,
+        elapsedSeconds,
+        selectedTaskId,
+      });
+    }
+  }, [mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId]);
+
+  // Fetch focus sessions
   const { data: sessions } = useQuery({
     queryKey: ['focus'],
     queryFn: () => apiClient.get<ListResponse<FocusSessionDTO>>('/focus').then((r) => r.data),
   });
+
+  // Fetch active tasks (TODO and IN_PROGRESS)
+  const { data: tasksData } = useQuery({
+    queryKey: ['tasks', 'focus-active'],
+    queryFn: () => apiClient.get<ListResponse<TaskDTO>>('/tasks').then((r) => r.data),
+  });
+
+  const activeTasks = useMemo(
+    () => (tasksData?.data ?? []).filter((t) => t.status === 'TODO' || t.status === 'IN_PROGRESS'),
+    [tasksData]
+  );
+
+  // All tasks for analysis (including DONE)
+  const allTasks = tasksData?.data ?? [];
+  const selectedTask = allTasks.find((t) => t.id === selectedTaskId) ?? null;
 
   const logSession = useMutation({
     mutationFn: (data: CreateFocusSessionRequest) =>
@@ -196,13 +398,21 @@ export function FocusPage() {
 
   const getElapsedMinutes = useCallback(() => Math.floor(elapsedSeconds / 60), [elapsedSeconds]);
 
+  const isBreakMode = mode === 'short_break' || mode === 'long_break';
+
   const saveSession = useCallback((completed: boolean) => {
     if (!startedAt) return;
     const elapsedMin = getElapsedMinutes();
-    if (elapsedMin >= 1 && mode === 'focus') {
-      logSession.mutate({ durationMin: elapsedMin, startedAt, completed });
+    if (elapsedMin >= 1) {
+      logSession.mutate({
+        durationMin: elapsedMin,
+        startedAt,
+        completed,
+        taskId: selectedTaskId,
+        isBreak: isBreakMode,
+      });
     }
-  }, [startedAt, getElapsedMinutes, mode, logSession]);
+  }, [startedAt, getElapsedMinutes, selectedTaskId, isBreakMode, logSession]);
 
   useEffect(() => {
     if (running) {
@@ -211,10 +421,16 @@ export function FocusPage() {
           if (s <= 1) {
             clearInterval(intervalRef.current!);
             setRunning(false);
-            if (mode === 'focus' && startedAt) {
+            if (startedAt) {
               const elapsedMin = getElapsedMinutes() + 1;
               if (elapsedMin >= 1) {
-                logSession.mutate({ durationMin: elapsedMin, startedAt, completed: true });
+                logSession.mutate({
+                  durationMin: elapsedMin,
+                  startedAt,
+                  completed: true,
+                  taskId: selectedTaskId,
+                  isBreak: isBreakMode,
+                });
               }
             }
             return 0;
@@ -227,12 +443,12 @@ export function FocusPage() {
       clearInterval(intervalRef.current);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running, mode, startedAt, getElapsedMinutes, logSession]);
+  }, [running, startedAt, getElapsedMinutes, logSession, selectedTaskId, isBreakMode]);
 
   useEffect(() => {
     const handler = () => {
       if (!isFullscreenActive() && focusMode) {
-        saveSession(false);
+        setRunning(false);
         setFocusMode(false);
       }
     };
@@ -246,21 +462,14 @@ export function FocusPage() {
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (running && startedAt && mode === 'focus') {
-        const elapsedMin = getElapsedMinutes();
-        if (elapsedMin >= 1) {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', '/api/focus', false);
-          xhr.setRequestHeader('Content-Type', 'application/json');
-          const token = useAuthStore.getState().accessToken;
-          if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-          xhr.send(JSON.stringify({ durationMin: elapsedMin, startedAt, completed: false }));
-        }
+      if (running) {
+        // Just pause the timer — don't discard or save
+        setRunning(false);
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [running, startedAt, mode, getElapsedMinutes]);
+  }, [running]);
 
   const enterFocusMode = async () => {
     try {
@@ -272,7 +481,7 @@ export function FocusPage() {
   };
 
   const exitFocusMode = async () => {
-    saveSession(false);
+    setRunning(false);
     if (isFullscreenActive()) {
       try { await exitFullscreen(); } catch { /* no-op */ }
     }
@@ -280,7 +489,6 @@ export function FocusPage() {
   };
 
   const changeMode = (m: TimerMode) => {
-    if (mode === 'focus' && startedAt) saveSession(false);
     setMode(m);
     setSecondsLeft(DURATIONS[m] * 60);
     setRunning(false);
@@ -289,16 +497,22 @@ export function FocusPage() {
   };
 
   const handleStartPause = () => {
-    if (!running && !startedAt) setStartedAt(new Date().toISOString());
-    setRunning((r) => !r);
+    if (running) {
+      // Pausing — log the session up to this point
+      saveSession(false);
+      setRunning(false);
+    } else {
+      if (!startedAt) setStartedAt(new Date().toISOString());
+      setRunning(true);
+    }
   };
 
   const handleReset = () => {
-    if (startedAt) saveSession(false);
     setRunning(false);
     setSecondsLeft(DURATIONS[mode] * 60);
     setStartedAt(null);
     setElapsedSeconds(0);
+    clearTimerState();
   };
 
   const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
@@ -306,7 +520,9 @@ export function FocusPage() {
   const progress = 1 - secondsLeft / (DURATIONS[mode] * 60);
   const colors = getModeColors(mode);
 
-  const totalFocusMin = sessions?.data.reduce((acc, s) => acc + s.durationMin, 0) ?? 0;
+  const focusOnlySessions = sessions?.data.filter((s) => !s.isBreak) ?? [];
+  const totalFocusMin = focusOnlySessions.reduce((acc, s) => acc + s.durationMin, 0);
+  const totalFocusCount = focusOnlySessions.length;
 
   const weekBars = useMemo(() => {
     const dateKeys = Array.from({ length: 7 }, (_, i) => {
@@ -322,7 +538,7 @@ export function FocusPage() {
       return { date: d, label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), minutes: 0, key };
     });
 
-    (sessions?.data ?? []).forEach((s) => {
+    (focusOnlySessions).forEach((s) => {
       const sd = new Date(s.startedAt);
       sd.setHours(0, 0, 0, 0);
       const sessionKey = sd.toISOString().split('T')[0];
@@ -332,7 +548,7 @@ export function FocusPage() {
 
     const max = Math.max(...days.map((d) => d.minutes), 1);
     return days.map((d) => ({ ...d, pct: d.minutes > 0 ? Math.round((d.minutes / max) * 100) : 0 }));
-  }, [sessions]);
+  }, [focusOnlySessions]);
 
   const modeTabs = [
     { id: 'focus', label: 'Focus' },
@@ -349,6 +565,7 @@ export function FocusPage() {
           seconds={seconds}
           progress={progress}
           running={running}
+          selectedTaskTitle={selectedTask?.title ?? null}
           onExit={exitFocusMode}
           onReset={handleReset}
           onStartPause={handleStartPause}
@@ -367,6 +584,13 @@ export function FocusPage() {
             Focus Mode
           </button>
         </div>
+
+        {/* Task selector */}
+        <TaskSelector
+          tasks={activeTasks}
+          selectedTaskId={selectedTaskId}
+          onSelect={setSelectedTaskId}
+        />
 
         <TabBar tabs={modeTabs} activeTab={mode} onTabChange={(m) => changeMode(m as TimerMode)} variant="pill" className="w-full justify-center" />
 
@@ -408,7 +632,7 @@ export function FocusPage() {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Sessions</p>
-                <p className="text-xl font-black text-text-primary leading-tight">{sessions?.meta.total ?? 0}</p>
+                <p className="text-xl font-black text-text-primary leading-tight">{totalFocusCount}</p>
               </div>
             </div>
           </Card>
@@ -424,6 +648,14 @@ export function FocusPage() {
             </div>
           </Card>
         </div>
+
+        {/* Task Time Analysis (shown when a task is selected) */}
+        {selectedTask && sessions && (
+          <TaskTimeAnalysis
+            task={selectedTask}
+            sessions={sessions.data}
+          />
+        )}
 
         <Card variant="default" className="p-6 sm:p-8 w-full">
           <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-5">This Week</p>

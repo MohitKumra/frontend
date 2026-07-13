@@ -4,7 +4,7 @@
    Notes use a lightweight full-screen sheet styled as a giant
    sticky note — no flip library.
    Grid cards: journals render as leather books, notes as sticky notes.
-   Modal chrome (close button + action bar) is SHARED between both
+   Modal (close button + action bar) is SHARED between both
    via .entry-* classes, themed per-overlay with CSS variables.
    Edit modals reuse the same .journal-overlay / .journal-book-stage
    and .note-overlay / .note-sheet containers as the view modals —
@@ -333,6 +333,12 @@
   background: var(--journal-paper);
 }
 
+.journal-spread {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
 .journal-paper-face {
   position: relative;
   width: 100%;
@@ -346,7 +352,11 @@
   box-shadow: inset 0 0 40px rgba(92, 64, 51, 0.12);
 }
 
-.journal-paper-face::before {
+.journal-paper-face-left {
+  border-right: 1px solid rgba(92, 64, 51, 0.2);
+}
+
+.journal-paper-face-left::before {
   content: '';
   position: absolute;
   top: 0;
@@ -354,6 +364,17 @@
   left: 0;
   width: 26px;
   background: linear-gradient(to right, rgba(92, 64, 51, 0.14), transparent);
+  pointer-events: none;
+}
+
+.journal-paper-face-right::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 26px;
+  background: linear-gradient(to left, rgba(92, 64, 51, 0.14), transparent);
   pointer-events: none;
 }
 

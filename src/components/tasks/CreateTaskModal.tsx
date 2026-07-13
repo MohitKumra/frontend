@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Flag, Plus, Trash2, Repeat, ListChecks } from 'lucide-react';
 import { useCreateTask } from '../../features/tasks/hooks/useTasks';
-import type { CreateTaskRequest, Priority, CreateSubTaskRequest } from '../../types';
+import type { CreateTaskRequest, Priority, CreateSubTaskRequest, TaskStatus } from '../../types';
 import { Modal } from '../ui/Modal';
 
 interface CreateTaskModalProps {
@@ -52,6 +52,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
   const [formData, setFormData] = useState<CreateTaskRequest>({
     title: '',
     description: '',
+    status: 'TODO',
     priority: 'MEDIUM',
     dueDate: '',
   });
@@ -100,6 +101,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
 
       const body: Record<string, any> = {
         title: cleanData.title,
+        status: cleanData.status,
       };
       if (cleanData.description) body.description = cleanData.description;
       if (cleanData.priority) body.priority = cleanData.priority;
@@ -119,6 +121,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
       setFormData({
         title: '',
         description: '',
+        status: 'TODO',
         priority: 'MEDIUM',
         dueDate: '',
       });
@@ -183,6 +186,25 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
               color: 'var(--color-text-primary)',
             }}
           />
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-xs font-bold text-text-primary mb-2">Status</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
+            className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            style={{
+              background: 'var(--color-surface)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            <option value="TODO">To Do</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="DONE">Done</option>
+          </select>
         </div>
 
         {/* Priority */}
@@ -365,21 +387,21 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
           </div>
         </div>
 
-      {/* Error message */}
-      {errorMessage && (
-        <div
-          className="p-3 rounded-xl text-xs font-bold border"
-          style={{
-            background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-            borderColor: 'var(--color-danger)',
-            color: 'var(--color-danger)',
-          }}
-        >
-          {errorMessage}
-        </div>
-      )}
+        {/* Error message */}
+        {errorMessage && (
+          <div
+            className="p-3 rounded-xl text-xs font-bold border"
+            style={{
+              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+              borderColor: 'var(--color-danger)',
+              color: 'var(--color-danger)',
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
 
-      {/* Actions */}
+        {/* Actions */}
         <div className="flex items-center gap-3 pt-4">
           <button
             type="button"

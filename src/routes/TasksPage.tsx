@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useLayoutEffect, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare,
   Plus,
@@ -18,6 +19,10 @@ import {
   Search,
   Square,
   Paperclip,
+  Play,
+  Pause,
+  Timer,
+  ChevronUp,
 } from 'lucide-react';
 import { useTasks, useUpdateTask, useDeleteTask } from '../features/tasks/hooks/useTasks';
 import { tasksApi } from '../features/tasks/api';
@@ -30,6 +35,7 @@ import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { EditTaskModal } from '../components/tasks/EditTaskModal';
 import { TaskCheckbox } from '../components/tasks/TaskCheckbox';
 import { TaskBoardView } from '../components/tasks/TaskBoardView';
+import { TaskTimeAnalysis } from '../components/tasks/TaskTimeAnalysis';
 import type { TaskDTO, TaskStatus } from '../types';
 
 type TaskFilter = 'all' | 'today' | 'upcoming' | 'completed' | 'overdue';
@@ -85,6 +91,7 @@ function getNextRecurrenceDate(task: TaskDTO): string | null {
 }
 
 export function TasksPage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<TaskFilter>('all');
   const [view, setView] = useState<ViewMode>('list');
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -98,6 +105,9 @@ export function TasksPage() {
   // for the "add subtask" inputs, keyed by task id.
   const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({});
   const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
+
+  // Task analysis: which tasks have their time analysis panel expanded (for DONE tasks)
+  const [expandedAnalysis, setExpandedAnalysis] = useState<Record<string, boolean>>({});
 
   const queryClient = useQueryClient();
 
@@ -776,6 +786,34 @@ export function TasksPage() {
 
                         {/* Actions cluster */}
                         <div className="flex items-center gap-1 shrink-0">
+                          {/* Focus timer quick-link */}
+                          {!done && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/focus?taskId=${task.id}`)}
+                              className="p-1.5 rounded-lg transition-all hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+                              style={{ color: 'var(--color-accent)' }}
+                              title="Focus on this task"
+                            >
+                              <Timer size={16} />
+                            </button>
+                          )}
+
+                          {/* Play/Pause control for In Progress status */}
+                          {!done && (
+                            <button
+                              type="button"
+                              onClick={() => changeTaskStatus(task, task.status === 'IN_PROGRESS' ? 'TODO' : 'IN_PROGRESS')}
+                              className="p-1.5 rounded-lg transition-all hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+                              style={{
+                                color: task.status === 'IN_PROGRESS' ? 'var(--color-warning)' : 'var(--color-text-muted)',
+                              }}
+                              title={task.status === 'IN_PROGRESS' ? 'Pause Task (Set to To Do)' : 'Start Task (Set to In Progress)'}
+                            >
+                              {task.status === 'IN_PROGRESS' ? <Pause size={16} /> : <Play size={16} />}
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => toggleTaskSelection(task.id)}
@@ -808,6 +846,32 @@ export function TasksPage() {
                                   border: '1px solid var(--color-border)',
                                 }}
                               >
+                                {task.status !== 'IN_PROGRESS' && !done && (
+                                  <button
+                                    onClick={() => {
+                                      changeTaskStatus(task, 'IN_PROGRESS');
+                                      setTaskMenuOpen(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-xs font-semibold transition-all flex items-center gap-3 hover:pl-5"
+                                    style={{ color: 'var(--color-text-primary)' }}
+                                  >
+                                    <Play size={14} style={{ color: 'var(--color-warning)' }} />
+                                    Start Progress
+                                  </button>
+                                )}
+                                {task.status === 'IN_PROGRESS' && (
+                                  <button
+                                    onClick={() => {
+                                      changeTaskStatus(task, 'TODO');
+                                      setTaskMenuOpen(null);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-xs font-semibold transition-all flex items-center gap-3 hover:pl-5"
+                                    style={{ color: 'var(--color-text-primary)' }}
+                                  >
+                                    <Pause size={14} style={{ color: 'var(--color-text-muted)' }} />
+                                    Pause Progress
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => {
                                     setEditingTask(task);
@@ -892,6 +956,35 @@ export function TasksPage() {
                           </a>
                         )}
                       </div>
+
+                      {/* Time Analysis (for completed tasks) */}
+                      {done && (
+                        <div className="mt-3.5">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedAnalysis((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}
+                            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-colors hover:brightness-95"
+                            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+                          >
+                            {expandedAnalysis[task.id] ? (
+                              <ChevronUp size={14} className="shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                            ) : (
+                              <ChevronDown size={14} className="shrink-0 -rotate-90" style={{ color: 'var(--color-text-muted)' }} />
+                            )}
+                            <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-secondary)' }}>
+                              Time Analysis
+                            </span>
+                            <span className="text-[10px] font-semibold ml-auto" style={{ color: 'var(--color-text-muted)' }}>
+                              {expandedAnalysis[task.id] ? 'Hide' : 'Show'}
+                            </span>
+                          </button>
+                          {expandedAnalysis[task.id] && (
+                            <div className="mt-3">
+                              <TaskTimeAnalysis task={task} />
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Subtasks */}
                       <div
