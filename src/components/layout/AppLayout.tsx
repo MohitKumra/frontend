@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, Calendar, CalendarDays, Target, FileText,
   Timer, BarChart2, LogOut, X, Sparkles, Moon, Sun,
-  Search, MoreHorizontal, ChevronRight, User, Settings2
+  Search, MoreHorizontal, ChevronRight, User, Settings2, Mail
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -24,6 +24,7 @@ const navItems = [
   { to: '/calendar',  icon: CalendarDays,    label: 'Calendar' },
   { to: '/habits',    icon: Target,          label: 'Habits',     badgeKey: 'habits' },
   { to: '/notes',     icon: FileText,        label: 'Notes' },
+  { to: '/messages',  icon: Mail,            label: 'Messages' },
   { to: '/focus',     icon: Timer,           label: 'Focus' },
   { to: '/analytics', icon: BarChart2,       label: 'Analytics' },
   { to: '/settings',  icon: Settings2,       label: 'Settings' },

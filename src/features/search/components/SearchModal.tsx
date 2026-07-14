@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, CheckSquare, Flame, FileText, FolderKanban, MessageSquare } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import { BottomSheet } from '../../../components/ui/BottomSheet';
@@ -30,6 +31,7 @@ const getIconForType = (type: SearchResult['type']) => {
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const { data: results, isLoading } = useSearch(query);
 
@@ -42,8 +44,27 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   }, [isOpen]);
 
   const handleResultClick = (result: SearchResult) => {
-    // TODO: Navigate to the relevant page for this result
-    console.log('Clicked result:', result);
+    switch (result.type) {
+      case 'task':
+        navigate(`/tasks/${result.id}`);
+        break;
+      case 'project':
+        navigate(`/projects/${result.id}`);
+        break;
+      case 'note':
+        if (result.metadata?.taskId) navigate(`/tasks/${result.metadata.taskId}`);
+        else if (result.metadata?.projectId) navigate(`/projects/${result.metadata.projectId}`);
+        else navigate('/notes');
+        break;
+      case 'habit':
+        navigate('/habits');
+        break;
+      case 'message':
+        navigate('/messages');
+        break;
+      default:
+        break;
+    }
     onClose();
   };
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Folder,
   Plus,
@@ -36,6 +37,7 @@ const statusConfig = {
 } as const;
 
 export function ProjectsPage() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -176,7 +178,7 @@ export function ProjectsPage() {
             const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 3;
 
             return (
-              <Card key={project.id} variant="default" className="overflow-hidden hover:shadow-lg transition-all group">
+            <Card key={project.id} variant="default" className="hover:shadow-lg transition-all group cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
                 {/* Project Header */}
                 <div className="p-4 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -193,7 +195,10 @@ export function ProjectsPage() {
                     {/* Menu */}
                     <div className="relative">
                       <button
-                        onClick={() => setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id);
+                        }}
                         className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg text-text-muted transition-colors"
                       >
                         <MoreVertical size={14} />
@@ -205,7 +210,8 @@ export function ProjectsPage() {
                           style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
                         >
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingProject(project);
                               setProjectMenuOpen(null);
                             }}
@@ -215,7 +221,10 @@ export function ProjectsPage() {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDeleteProject(project.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project.id);
+                            }}
                             className="w-full px-3 py-2 text-left text-xs font-bold text-danger hover:bg-danger/10 transition-colors flex items-center gap-2"
                           >
                             <Trash2 size={12} />
@@ -268,14 +277,14 @@ export function ProjectsPage() {
           })}
         </div>
       ) : (
-        <Card variant="default" className="overflow-hidden">
+        <Card variant="default">
           <div className="divide-y" style={{ borderColor: 'var(--color-border-subtle)' }}>
             {filteredProjects.map((project) => {
               const StatusIcon = statusConfig[project.status].icon;
               const daysRemaining = getDaysRemaining(project.dueDate);
 
               return (
-                <div key={project.id} className="p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+                <div key={project.id} className="p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
                   <div className="flex items-center gap-4">
                     {/* Color Indicator */}
                     <div className="w-1 h-12 rounded-full shrink-0" style={{ background: project.color }} />
@@ -318,7 +327,10 @@ export function ProjectsPage() {
                     {/* Menu */}
                     <div className="relative">
                       <button
-                        onClick={() => setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id);
+                        }}
                         className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg text-text-muted transition-colors"
                       >
                         <MoreVertical size={16} />
@@ -330,7 +342,8 @@ export function ProjectsPage() {
                           style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
                         >
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingProject(project);
                               setProjectMenuOpen(null);
                             }}
@@ -340,7 +353,10 @@ export function ProjectsPage() {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDeleteProject(project.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project.id);
+                            }}
                             className="w-full px-3 py-2 text-left text-xs font-bold text-danger hover:bg-danger/10 transition-colors flex items-center gap-2"
                           >
                             <Trash2 size={12} />

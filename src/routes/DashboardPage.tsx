@@ -18,8 +18,10 @@ import { MessagesWidget } from '../components/dashboard/MessagesWidget';
 import { ProfileWidget } from '../components/dashboard/ProfileWidget';
 import { WeeklyProgressChart } from '../components/dashboard/WeeklyProgressChart';
 import { UpcomingDeadlines } from '../components/dashboard/UpcomingDeadlines';
+import { DailyBriefingCard } from '../components/dashboard/DailyBriefingCard';
 import { useAuthStore } from '../store/authStore';
 import { useEnhancedDashboard, useDashboardToday } from '../features/dashboard/hooks/useDashboard';
+import { useTasks } from '../features/tasks/hooks/useTasks';
 import { Card } from '../components/ui/Card';
 
 export function DashboardPage() {
@@ -27,6 +29,7 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { data: dashboard, isLoading } = useEnhancedDashboard();
   const { data: today } = useDashboardToday();
+  const { data: tasksData } = useTasks();
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -109,6 +112,12 @@ export function DashboardPage() {
           isLive
         />
       </div>
+
+      <DailyBriefingCard
+        tasks={tasksData?.data ?? []}
+        focusMinutes={dashboard.focusMinutesTotal}
+        pendingTasks={today?.pendingTasks ?? 0}
+      />
 
       {/* Today Snapshot + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">

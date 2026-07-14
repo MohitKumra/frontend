@@ -7,12 +7,14 @@ const priorityDot: Record<TaskDTO['priority'], string> = {
   LOW: 'var(--color-info)',
   MEDIUM: 'var(--color-warning)',
   HIGH: 'var(--color-danger)',
+  CRITICAL: '#7c3aed',
 };
 
 const priorityLabel: Record<TaskDTO['priority'], string> = {
   LOW: 'Low',
   MEDIUM: 'Medium',
   HIGH: 'High',
+  CRITICAL: 'Critical',
 };
 
 const columns: { status: TaskStatus; label: string; accent: string; icon: typeof Circle }[] = [

@@ -20,7 +20,7 @@ export function LoginForm() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { url } = await authApi.googleStart('signin' , `${import.meta.env.VITE_APP_BASE_URL}/google/callback`);
+      const { url } = await authApi.googleStart('signin' , `${import.meta.env.VITE_APP_BASE_URL}/google/callback` || 'http://localhost:5173/google/callback');
       window.location.href = url;
     } catch (err) {
       toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-in is not available right now.');

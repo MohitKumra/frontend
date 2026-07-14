@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
+import { AppErrorBoundary } from './components/layout/AppErrorBoundary';
 import { useAuthStore } from './store/authStore';
 
 // Auth pages (public)
@@ -21,6 +22,10 @@ import { FocusPage }      from './routes/FocusPage';
 import { AnalyticsPage }  from './routes/AnalyticsPage';
 import { ProjectsPage }   from './routes/ProjectsPage';
 import { SettingsPage }   from './routes/SettingsPage';
+import { TaskDetailPage } from './routes/TaskDetailPage';
+import { ProjectDetailPage } from './routes/ProjectDetailPage';
+import { MessagesPage } from './routes/MessagesPage';
+import { NotFoundPage } from './routes/NotFoundPage';
 
 /** Redirects unauthenticated users to /login. */
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -42,13 +47,16 @@ export default function App() {
       {/* Protected routes — inside AppLayout */}
       <Route
         element={
-          <RequireAuth>
-            <AppLayout />
+        <RequireAuth>
+            <AppErrorBoundary>
+              <AppLayout />
+            </AppErrorBoundary>
           </RequireAuth>
         }
       >
         <Route index               element={<DashboardPage />} />
         <Route path="tasks"        element={<TasksPage />} />
+        <Route path="tasks/:id"    element={<TaskDetailPage />} />
         <Route path="planner"      element={<PlannerPage />} />
         <Route path="calendar"     element={<CalendarPage />} />
         <Route path="habits"       element={<HabitsPage />} />
@@ -56,12 +64,13 @@ export default function App() {
         <Route path="focus"        element={<FocusPage />} />
         <Route path="analytics"    element={<AnalyticsPage />} />
         <Route path="projects"     element={<ProjectsPage />} />
-        <Route path="projects/:id" element={<ProjectsPage />} />
+        <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="messages"     element={<MessagesPage />} />
         <Route path="settings"     element={<SettingsPage />} />
       </Route>
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

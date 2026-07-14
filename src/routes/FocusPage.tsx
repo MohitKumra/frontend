@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { Timer, Play, Pause, RotateCcw, Maximize2, X, Flame, CheckCircle2, ChevronDown, Target } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw, Maximize2, X, Flame, CheckCircle2, ChevronDown, Target, Coffee } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
-import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
 import { PageHeader } from '../components/ui/PageHeader';
 import { TabBar } from '../components/ui/TabBar';
@@ -301,9 +300,19 @@ export function FocusPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedRef = useRef(0); // Ref to avoid stale closure issues
   const qc = useQueryClient();
   const { focusMode, setFocusMode } = useUIStore();
   const restoredRef = useRef(false);
+  const completionLoggedRef = useRef(false);
+  // Tracks how many seconds have already been logged to the backend via saveSession.
+  // This prevents double-counting when user pauses and resumes multiple times.
+  const lastLoggedElapsedRef = useRef(0);
+
+  // Keep elapsedRef in sync with elapsedSeconds
+  useEffect(() => {
+    elapsedRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
 
   // ── Restore timer state from localStorage ────────────────────────────────
   useEffect(() => {
@@ -396,54 +405,82 @@ export function FocusPage() {
     },
   });
 
-  const getElapsedMinutes = useCallback(() => Math.floor(elapsedSeconds / 60), [elapsedSeconds]);
-
   const isBreakMode = mode === 'short_break' || mode === 'long_break';
 
+  const isBreakModeRef = useRef(isBreakMode);
+  useEffect(() => { isBreakModeRef.current = isBreakMode; }, [isBreakMode]);
+
+  // Computes the number of unlogged seconds since the last save.
+  // Uses Math.round so e.g. 90 seconds of new work → 2 min not 1 min.
+  const getUnloggedMinutes = useCallback(() => Math.round((elapsedRef.current - lastLoggedElapsedRef.current) / 60), []);
+
+  // Logs only the unlogged delta to the backend. Called on pause and on completion.
+  // Uses lastLoggedElapsedRef to prevent double-counting across pause/resume cycles.
   const saveSession = useCallback((completed: boolean) => {
     if (!startedAt) return;
-    const elapsedMin = getElapsedMinutes();
+    const elapsedMin = getUnloggedMinutes();
     if (elapsedMin >= 1) {
       logSession.mutate({
         durationMin: elapsedMin,
         startedAt,
         completed,
         taskId: selectedTaskId,
-        isBreak: isBreakMode,
+        isBreak: isBreakModeRef.current,
       });
+      lastLoggedElapsedRef.current = elapsedRef.current;
     }
-  }, [startedAt, getElapsedMinutes, selectedTaskId, isBreakMode, logSession]);
+  }, [startedAt, getUnloggedMinutes, selectedTaskId, logSession]);
 
+  // Timer interval: decrement secondsLeft and increment elapsedSeconds each second.
+  // When secondsLeft reaches 0, the completion effect below handles stopping + logging.
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setSecondsLeft((s) => {
-          if (s <= 1) {
-            clearInterval(intervalRef.current!);
-            setRunning(false);
-            if (startedAt) {
-              const elapsedMin = getElapsedMinutes() + 1;
-              if (elapsedMin >= 1) {
-                logSession.mutate({
-                  durationMin: elapsedMin,
-                  startedAt,
-                  completed: true,
-                  taskId: selectedTaskId,
-                  isBreak: isBreakMode,
-                });
-              }
-            }
-            return 0;
-          }
-          setElapsedSeconds((prev) => prev + 1);
-          return s - 1;
-        });
-      }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+    if (!running) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running, startedAt, getElapsedMinutes, logSession, selectedTaskId, isBreakMode]);
+
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft((prev) => Math.max(0, prev - 1));
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [running]);
+
+  // Completion effect: detect when timer reaches 0 while running.
+  // Stops the timer and logs only the unlogged delta to the backend.
+  // Uses a ref to prevent double-logging on re-renders.
+  useEffect(() => {
+    if (running && secondsLeft === 0 && startedAt && !completionLoggedRef.current) {
+      // Timer just hit 0 — stop it and log the session
+      completionLoggedRef.current = true;
+      setRunning(false);
+
+      const elapsedMin = Math.round((elapsedRef.current - lastLoggedElapsedRef.current) / 60);
+      if (elapsedMin >= 1) {
+        logSession.mutate({
+          durationMin: elapsedMin,
+          startedAt,
+          completed: true,
+          taskId: selectedTaskId,
+          isBreak: isBreakModeRef.current,
+        });
+      }
+      lastLoggedElapsedRef.current = elapsedRef.current;
+    }
+    // Reset the guard whenever a new session starts (running becomes true with secondsLeft > 0)
+    if (running && secondsLeft > 0) {
+      completionLoggedRef.current = false;
+    }
+  }, [running, secondsLeft, startedAt, selectedTaskId, logSession]);
 
   useEffect(() => {
     const handler = () => {
@@ -458,7 +495,7 @@ export function FocusPage() {
       document.removeEventListener('fullscreenchange', handler);
       document.removeEventListener('webkitfullscreenchange', handler);
     };
-  }, [focusMode, setFocusMode, saveSession]);
+  }, [focusMode, setFocusMode]);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -494,6 +531,8 @@ export function FocusPage() {
     setRunning(false);
     setStartedAt(null);
     setElapsedSeconds(0);
+    elapsedRef.current = 0;
+    lastLoggedElapsedRef.current = 0;
   };
 
   const handleStartPause = () => {
@@ -512,6 +551,8 @@ export function FocusPage() {
     setSecondsLeft(DURATIONS[mode] * 60);
     setStartedAt(null);
     setElapsedSeconds(0);
+    elapsedRef.current = 0;
+    lastLoggedElapsedRef.current = 0;
     clearTimerState();
   };
 
@@ -520,9 +561,14 @@ export function FocusPage() {
   const progress = 1 - secondsLeft / (DURATIONS[mode] * 60);
   const colors = getModeColors(mode);
 
-  const focusOnlySessions = sessions?.data.filter((s) => !s.isBreak) ?? [];
+  // Stats: include ALL sessions (focus + break)
+  const allSessions = sessions?.data ?? [];
+  const focusOnlySessions = allSessions.filter((s) => !s.isBreak);
+  const breakOnlySessions = allSessions.filter((s) => s.isBreak);
   const totalFocusMin = focusOnlySessions.reduce((acc, s) => acc + s.durationMin, 0);
   const totalFocusCount = focusOnlySessions.length;
+  const totalBreakMin = breakOnlySessions.reduce((acc, s) => acc + s.durationMin, 0);
+  const totalBreakCount = breakOnlySessions.length;
 
   const weekBars = useMemo(() => {
     const dateKeys = Array.from({ length: 7 }, (_, i) => {
@@ -538,7 +584,8 @@ export function FocusPage() {
       return { date: d, label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), minutes: 0, key };
     });
 
-    (focusOnlySessions).forEach((s) => {
+    // Include both focus and break sessions in weekly view
+    allSessions.forEach((s) => {
       const sd = new Date(s.startedAt);
       sd.setHours(0, 0, 0, 0);
       const sessionKey = sd.toISOString().split('T')[0];
@@ -548,7 +595,7 @@ export function FocusPage() {
 
     const max = Math.max(...days.map((d) => d.minutes), 1);
     return days.map((d) => ({ ...d, pct: d.minutes > 0 ? Math.round((d.minutes / max) * 100) : 0 }));
-  }, [focusOnlySessions]);
+  }, [allSessions]);
 
   const modeTabs = [
     { id: 'focus', label: 'Focus' },
@@ -624,26 +671,49 @@ export function FocusPage() {
           </Button>
         </div>
 
-        <div className="w-full grid grid-cols-2 gap-4">
-          <Card variant="default" className="p-5 sm:p-6">
+        {/* Stats grid: Focus sessions + Focus minutes + Break sessions + Break minutes */}
+        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Card variant="default" className="p-4 sm:p-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)', color: 'var(--color-accent)' }}>
                 <CheckCircle2 size={18} />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Sessions</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus Sessions</p>
                 <p className="text-xl font-black text-text-primary leading-tight">{totalFocusCount}</p>
               </div>
             </div>
           </Card>
-          <Card variant="default" className="p-5 sm:p-6">
+          <Card variant="default" className="p-4 sm:p-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 14%, transparent)', color: 'var(--color-warning)' }}>
                 <Flame size={18} />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Minutes Logged</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus Minutes</p>
                 <p className="text-xl font-black text-text-primary leading-tight">{totalFocusMin}</p>
+              </div>
+            </div>
+          </Card>
+          <Card variant="default" className="p-4 sm:p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 14%, transparent)', color: 'var(--color-success)' }}>
+                <Coffee size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Breaks Taken</p>
+                <p className="text-xl font-black text-text-primary leading-tight">{totalBreakCount}</p>
+              </div>
+            </div>
+          </Card>
+          <Card variant="default" className="p-4 sm:p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-info) 14%, transparent)', color: 'var(--color-info)' }}>
+                <Timer size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Break Minutes</p>
+                <p className="text-xl font-black text-text-primary leading-tight">{totalBreakMin}</p>
               </div>
             </div>
           </Card>
@@ -658,8 +728,8 @@ export function FocusPage() {
         )}
 
         <Card variant="default" className="p-6 sm:p-8 w-full">
-          <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-5">This Week</p>
-          {totalFocusMin > 0 ? (
+          <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-5">This Week (Focus + Break)</p>
+          {allSessions.length > 0 ? (
             <div className="flex items-stretch justify-between gap-2 h-24">
               {weekBars.map((d, i) => (
                 <div key={i} className="flex-1 h-full flex flex-col items-center gap-2">
@@ -676,7 +746,7 @@ export function FocusPage() {
             </div>
           ) : (
             <div className="h-24 flex items-center justify-center">
-              <p className="text-xs text-text-muted">No focus sessions yet</p>
+              <p className="text-xs text-text-muted">No sessions yet</p>
             </div>
           )}
         </Card>

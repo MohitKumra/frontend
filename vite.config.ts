@@ -11,9 +11,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3001', 
         changeOrigin: true,
       },
     },
+    allowedHosts: ['localhost', '127.0.0.1' , 'undoing-fencing-unlighted.ngrok-free.dev' , 'simulations-retreat-eliminate-essential.trycloudflare.com'],
   },
 })

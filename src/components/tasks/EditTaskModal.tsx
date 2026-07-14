@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Flag, Plus, Trash2, Repeat, ListChecks, Paperclip } from 'lucide-react';
+import {
+  Calendar,
+  Flag,
+  Plus,
+  Trash2,
+  Repeat,
+  ListChecks,
+  Clock,
+  Paperclip,
+  AlignLeft,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUpdateTask } from '../../features/tasks/hooks/useTasks';
 import type { TaskDTO, UpdateTaskRequest, Priority, TaskStatus, SubTaskDTO } from '../../types';
@@ -13,19 +23,30 @@ interface EditTaskModalProps {
 
 type RecurrenceOption = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
 
-/** Maps recurrence to an auto-suggested due date offset from today. */
+const DURATION_OPTIONS = [
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '1 hour', value: 60 },
+  { label: '2 hours', value: 120 },
+  { label: '4 hours', value: 240 },
+];
+
+const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
+  { value: 'TODO',       label: 'To Do',      color: 'var(--color-info)' },
+  { value: 'IN_PROGRESS',label: 'In Progress',color: 'var(--color-warning)' },
+  { value: 'WAITING',    label: 'Waiting',    color: '#8b5cf6' },
+  { value: 'BLOCKED',    label: 'Blocked',    color: 'var(--color-danger)' },
+  { value: 'IN_REVIEW',  label: 'In Review',  color: '#0ea5e9' },
+  { value: 'DELEGATED',  label: 'Delegated',  color: '#f59e0b' },
+  { value: 'DONE',       label: 'Done',       color: 'var(--color-success)' },
+  { value: 'CANCELLED',  label: 'Cancelled',  color: 'var(--color-text-muted)' },
+];
+
 function suggestedDueDate(recurrence: RecurrenceOption): string {
   const today = new Date();
   switch (recurrence) {
-    case 'daily':
-      return today.toISOString().split('T')[0];
-    case 'weekly': {
-      const day = today.getDay();
-      const daysUntilMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
-      const next = new Date(today);
-      next.setDate(today.getDate() + daysUntilMonday);
-      return next.toISOString().split('T')[0];
-    }
+    case 'daily': return today.toISOString().split('T')[0];
+    case 'weekly':
     case 'biweekly': {
       const day = today.getDay();
       const daysUntilMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
@@ -43,414 +64,401 @@ function suggestedDueDate(recurrence: RecurrenceOption): string {
       next.setMonth(today.getMonth() + 3);
       return next.toISOString().split('T')[0];
     }
-    default:
-      return '';
+    default: return '';
   }
+}
+
+function parseRecurrenceOption(rule: string | null): RecurrenceOption {
+  if (!rule) return 'none';
+  if (rule.includes('DAILY;INTERVAL=1') || rule.includes('DAILY')) return 'daily';
+  if (rule.includes('WEEKLY;INTERVAL=2') || rule.includes('INTERVAL=2')) return 'biweekly';
+  if (rule.includes('WEEKLY;INTERVAL=1') || (rule.includes('WEEKLY') && !rule.includes('INTERVAL=2'))) return 'weekly';
+  if (rule.includes('MONTHLY;INTERVAL=3') || rule.includes('INTERVAL=3')) return 'quarterly';
+  if (rule.includes('MONTHLY')) return 'monthly';
+  return 'none';
+}
+
+// True if the task's existing duration matches one of the presets
+function matchesPreset(duration: number | null): boolean {
+  if (duration === null) return false;
+  return DURATION_OPTIONS.some((o) => o.value === duration);
 }
 
 export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
   const updateTask = useUpdateTask();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [formData, setFormData] = useState<UpdateTaskRequest>({
-    title: task.title,
-    description: task.description ?? '',
-    status: task.status,
-    priority: task.priority,
-    dueDate: task.dueDate?.split('T')[0] ?? '',
-    recurrenceEndDate: task.recurrenceEndDate?.split('T')[0] ?? '',
-    skipDates: task.skipDates ?? [],
-    attachmentUrl: task.attachmentUrl ?? '',
-  });
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<TaskStatus>('TODO');
+  const [priority, setPriority] = useState<Priority>('MEDIUM');
+  const [dueDate, setDueDate] = useState('');
   const [recurrence, setRecurrence] = useState<RecurrenceOption>('none');
-  const [subTasks, setSubTasks] = useState<(SubTaskDTO | { title: string; order: number })[]>(task.subTasks ?? []);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
+  const [customDuration, setCustomDuration] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [subTasks, setSubTasks] = useState<(SubTaskDTO | { title: string; order: number; completed?: boolean })[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
 
-  // Parse recurrence rule on task change
+  // Populate form from task on open
   useEffect(() => {
-    if (task.recurrenceRule) {
-      if (task.recurrenceRule.includes('DAILY;INTERVAL=1')) setRecurrence('daily');
-      else if (task.recurrenceRule.includes('WEEKLY;INTERVAL=1')) setRecurrence('weekly');
-      else if (task.recurrenceRule.includes('WEEKLY;INTERVAL=2')) setRecurrence('biweekly');
-      else if (task.recurrenceRule.includes('MONTHLY;INTERVAL=1')) setRecurrence('monthly');
-      else if (task.recurrenceRule.includes('MONTHLY;INTERVAL=3')) setRecurrence('quarterly');
-    } else {
-      setRecurrence('none');
-    }
+    setTitle(task.title);
+    setDescription(task.description ?? '');
+    setStatus(task.status);
+    setPriority(task.priority);
+    setDueDate(task.dueDate?.split('T')[0] ?? '');
+    setRecurrence(parseRecurrenceOption(task.recurrenceRule));
+    setRecurrenceEndDate(task.recurrenceEndDate?.split('T')[0] ?? '');
+    setAttachmentUrl(task.attachmentUrl ?? '');
     setSubTasks(task.subTasks ?? []);
+    setNewSubTaskTitle('');
+    setErrorMessage(null);
+
+    // Duration: if it matches a preset, set the preset; otherwise show in custom box
+    if (task.estimatedDuration) {
+      if (matchesPreset(task.estimatedDuration)) {
+        setEstimatedDuration(task.estimatedDuration);
+        setCustomDuration('');
+      } else {
+        setEstimatedDuration(null);
+        setCustomDuration(String(task.estimatedDuration));
+      }
+    } else {
+      setEstimatedDuration(null);
+      setCustomDuration('');
+    }
   }, [task]);
 
   const handleRecurrenceChange = (option: RecurrenceOption) => {
     setRecurrence(option);
-    if (option !== 'none' && !formData.dueDate) {
-      setFormData((prev) => ({ ...prev, dueDate: suggestedDueDate(option) }));
+    if (option !== 'none' && !dueDate) {
+      setDueDate(suggestedDueDate(option));
     }
   };
 
+  const addSubTask = () => {
+    if (newSubTaskTitle.trim()) {
+      const nextOrder = subTasks.length > 0 ? Math.max(...subTasks.map((s) => ('order' in s ? s.order : 0))) + 1 : 0;
+      setSubTasks([...subTasks, { title: newSubTaskTitle.trim(), order: nextOrder }]);
+      setNewSubTaskTitle('');
+    }
+  };
+
+  const removeSubTask = (index: number) => setSubTasks(subTasks.filter((_, i) => i !== index));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
 
     try {
-      setErrorMessage(null);
       let recurrenceRule: string | null | undefined;
       switch (recurrence) {
-        case 'daily':
-          recurrenceRule = 'FREQ=DAILY;INTERVAL=1';
-          break;
-        case 'weekly':
-          recurrenceRule = 'FREQ=WEEKLY;INTERVAL=1';
-          break;
-        case 'biweekly':
-          recurrenceRule = 'FREQ=WEEKLY;INTERVAL=2';
-          break;
-        case 'monthly':
-          recurrenceRule = 'FREQ=MONTHLY;INTERVAL=1';
-          break;
-        case 'quarterly':
-          recurrenceRule = 'FREQ=MONTHLY;INTERVAL=3';
-          break;
-        default:
-          recurrenceRule = null;
+        case 'daily':     recurrenceRule = 'FREQ=DAILY;INTERVAL=1'; break;
+        case 'weekly':    recurrenceRule = 'FREQ=WEEKLY;INTERVAL=1'; break;
+        case 'biweekly':  recurrenceRule = 'FREQ=WEEKLY;INTERVAL=2'; break;
+        case 'monthly':   recurrenceRule = 'FREQ=MONTHLY;INTERVAL=1'; break;
+        case 'quarterly': recurrenceRule = 'FREQ=MONTHLY;INTERVAL=3'; break;
+        default:          recurrenceRule = null;
       }
 
-      // Strip empty strings to avoid Zod validation failures
-      const cleanData = { ...formData };
-      if (cleanData.dueDate === '') delete cleanData.dueDate;
-      if (!cleanData.description) delete cleanData.description;
-      if (cleanData.attachmentUrl !== undefined) {
-        const attachmentUrl = typeof cleanData.attachmentUrl === 'string'
-          ? cleanData.attachmentUrl.trim()
-          : '';
-        cleanData.attachmentUrl = attachmentUrl ? attachmentUrl : null;
-      }
+      // Resolve effective duration
+      const resolvedDuration = estimatedDuration ?? (customDuration ? parseInt(customDuration, 10) : null);
 
-      await updateTask.mutateAsync({
-        id: task.id,
-        data: {
-          ...cleanData,
-          recurrenceRule,
-          subTasks: subTasks.map((st, index) => ({
-            id: 'id' in st ? st.id : undefined,
-            title: st.title,
-            completed: 'completed' in st ? st.completed : false,
-            order: 'order' in st ? (st as SubTaskDTO).order : index,
-          })),
-        },
-      });
+      const cleanAttachment = attachmentUrl.trim() || null;
+
+      const data: UpdateTaskRequest = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        status,
+        priority,
+        dueDate: dueDate || null,
+        recurrenceRule,
+        recurrenceEndDate: recurrenceEndDate || null,
+        attachmentUrl: cleanAttachment,
+        estimatedDuration: resolvedDuration && resolvedDuration > 0 ? resolvedDuration : null,
+        subTasks: subTasks.map((st, index) => ({
+          id: 'id' in st ? st.id : undefined,
+          title: st.title,
+          completed: 'completed' in st ? st.completed : false,
+          order: 'order' in st ? st.order : index,
+        })),
+      };
+
+      await updateTask.mutateAsync({ id: task.id, data });
       onClose();
-    } catch (error) {
-      const msg = (error as any)?.response?.data?.error?.message || (error as Error).message || 'Failed to update task';
+    } catch (error: any) {
+      const msg = error?.response?.data?.error?.message || (error as Error).message || 'Failed to update task';
       console.error('Failed to update task:', msg, error);
       setErrorMessage(msg);
       toast.error(msg);
     }
   };
 
-  const addSubTask = () => {
-    if (newSubTaskTitle.trim()) {
-      const nextOrder = subTasks.length > 0
-        ? Math.max(...subTasks.map((subTask) => ('order' in subTask ? subTask.order : 0))) + 1
-        : 0;
-      setSubTasks([...subTasks, { title: newSubTaskTitle.trim(), order: nextOrder }]);
-      setNewSubTaskTitle('');
-    }
-  };
-
-  const removeSubTask = (index: number) => {
-    setSubTasks(subTasks.filter((_, i) => i !== index));
+  const inputCls = 'w-full px-4 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all';
+  const inputStyle = {
+    background: 'var(--color-surface)',
+    borderColor: 'var(--color-border)',
+    color: 'var(--color-text-primary)',
   };
 
   return (
     <Modal open={isOpen} onClose={onClose} title="Edit Task">
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Task Title */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {errorMessage && (
+          <div className="px-4 py-3 rounded-xl text-xs font-semibold" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)', border: '1px solid var(--color-danger)' }}>
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Title */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            Task Title <span className="text-danger">*</span>
+          <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+            Task Title <span style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <input
             type="text"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter task title"
             required
-            className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            style={{
-              background: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
+            className={inputCls}
+            style={inputStyle}
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">Description</label>
+          <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+            <AlignLeft size={12} /> Description
+          </label>
           <textarea
-            value={formData.description ?? ''}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Enter task description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Add details, context, or notes..."
             rows={3}
-            className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none"
-            style={{
-              background: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
+            className="w-full px-4 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none"
+            style={inputStyle}
           />
         </div>
 
         {/* Status */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-            className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            style={{
-              background: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            <option value="TODO">To Do</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="DONE">Done</option>
-          </select>
-        </div>
-
-        {/* Priority */}
-        <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            <Flag size={14} className="inline mr-1" />
-            Priority
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['LOW', 'MEDIUM', 'HIGH'] as Priority[]).map((priority) => (
+          <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>Status</label>
+          <div className="grid grid-cols-4 gap-1.5">
+            {STATUS_OPTIONS.map(({ value, label, color }) => (
               <button
-                key={priority}
+                key={value}
                 type="button"
-                onClick={() => setFormData({ ...formData, priority })}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  formData.priority === priority
-                    ? 'text-white shadow-sm'
-                    : 'text-text-muted border hover:border-accent'
-                }`}
+                onClick={() => setStatus(value)}
+                className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
                 style={
-                  formData.priority === priority
-                    ? {
-                        background:
-                          priority === 'LOW'
-                            ? 'var(--color-info)'
-                            : priority === 'MEDIUM'
-                            ? 'var(--color-warning)'
-                            : 'var(--color-danger)',
-                      }
-                    : {
-                        background: 'var(--color-surface)',
-                        borderColor: 'var(--color-border)',
-                      }
+                  status === value
+                    ? { background: color, color: 'white' }
+                    : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
                 }
               >
-                {priority === 'LOW' ? '📋 Low' : priority === 'MEDIUM' ? '📌 Medium' : '🚩 High'}
+                {label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Schedule Section */}
-        <div
-          className="rounded-2xl p-4 border"
-          style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-        >
-          <label className="block text-xs font-bold text-text-primary mb-3">
-            <Calendar size={14} className="inline mr-1" />
-            Schedule
+        {/* Priority */}
+        <div>
+          <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+            <Flag size={12} /> Priority
           </label>
-
-          {/* Due Date */}
-          <div className="mb-3">
-            <label className="block text-[10px] font-semibold text-text-muted mb-1.5">Due Date</label>
-            <input
-              type="date"
-              value={formData.dueDate ?? ''}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              style={{
-                background: 'var(--color-surface)',
-                borderColor: 'var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-          </div>
-
-          {/* Recurrence */}
-          <div>
-            <label className="block text-[10px] font-semibold text-text-muted mb-1.5">
-              <Repeat size={12} className="inline mr-1" />
-              Repeat
-            </label>
-            <div className="grid grid-cols-3 gap-1.5 mb-3">
-              {(['none', 'daily', 'weekly', 'biweekly', 'monthly', 'quarterly'] as RecurrenceOption[]).map((option) => (
+          <div className="grid grid-cols-4 gap-1.5">
+            {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as Priority[]).map((p) => {
+              const colors: Record<Priority, string> = {
+                LOW: 'var(--color-info)',
+                MEDIUM: 'var(--color-warning)',
+                HIGH: 'var(--color-danger)',
+                CRITICAL: '#7c3aed',
+              };
+              const labels: Record<Priority, string> = { LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High', CRITICAL: 'Critical' };
+              return (
                 <button
-                  key={option}
+                  key={p}
                   type="button"
-                  onClick={() => handleRecurrenceChange(option)}
-                  className={`px-2 py-2 rounded-lg text-[10px] font-bold transition-all ${
-                    recurrence === option
-                      ? 'text-white shadow-sm'
-                      : 'text-text-muted border hover:border-accent'
-                  }`}
+                  onClick={() => setPriority(p)}
+                  className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
                   style={
-                    recurrence === option
-                      ? { background: 'var(--color-accent)' }
-                      : {
-                          background: 'var(--color-surface)',
-                          borderColor: 'var(--color-border)',
-                        }
+                    priority === p
+                      ? { background: colors[p], color: 'white' }
+                      : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
                   }
                 >
-                  {option === 'biweekly' ? 'Fortnightly' : option.charAt(0).toUpperCase() + option.slice(1)}
+                  {labels[p]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Schedule section */}
+        <div className="rounded-2xl border p-4 flex flex-col gap-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+          <label className="flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>
+            <Calendar size={12} /> Schedule
+          </label>
+
+          <div>
+            <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>Due Date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} style={inputStyle} />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-1 text-[10px] font-semibold mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
+              <Repeat size={11} /> Repeat
+            </label>
+            <div className="grid grid-cols-3 gap-1.5 mb-2">
+              {(['none', 'daily', 'weekly', 'biweekly', 'monthly', 'quarterly'] as RecurrenceOption[]).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => handleRecurrenceChange(opt)}
+                  className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+                  style={
+                    recurrence === opt
+                      ? { background: 'var(--color-accent)', color: 'white' }
+                      : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
+                  }
+                >
+                  {opt === 'biweekly' ? 'Fortnightly' : opt.charAt(0).toUpperCase() + opt.slice(1)}
                 </button>
               ))}
             </div>
             {recurrence !== 'none' && (
               <div>
-                <label className="block text-[10px] font-semibold text-text-muted mb-1.5">
+                <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>
                   End Date <span className="opacity-60">(optional)</span>
                 </label>
-                <input
-                  type="date"
-                  value={formData.recurrenceEndDate ?? ''}
-                  onChange={(e) => setFormData({ ...formData, recurrenceEndDate: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                  style={{
-                    background: 'var(--color-surface)',
-                    borderColor: 'var(--color-border)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                />
+                <input type="date" value={recurrenceEndDate} onChange={(e) => setRecurrenceEndDate(e.target.value)} className={inputCls} style={inputStyle} />
               </div>
             )}
           </div>
         </div>
 
+        {/* Estimated Duration */}
+        <div>
+          <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+            <Clock size={12} /> Estimated Duration
+          </label>
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
+            {DURATION_OPTIONS.map(({ label, value }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => { setEstimatedDuration(estimatedDuration === value ? null : value); setCustomDuration(''); }}
+                className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+                style={
+                  estimatedDuration === value
+                    ? { background: 'var(--color-accent)', color: 'white' }
+                    : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
+                }
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setEstimatedDuration(null)}
+              className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+            >
+              Custom
+            </button>
+          </div>
+          {estimatedDuration === null && (
+            <input
+              type="number"
+              min={1}
+              max={480}
+              value={customDuration}
+              onChange={(e) => setCustomDuration(e.target.value)}
+              placeholder="Enter minutes (e.g. 45)"
+              className={inputCls}
+              style={inputStyle}
+            />
+          )}
+        </div>
+
         {/* Attachment */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            <Paperclip size={14} className="inline mr-1" />
-            Attachment URL
+          <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+            <Paperclip size={12} /> Attachment URL
           </label>
           <input
             type="url"
-            value={formData.attachmentUrl ?? ''}
-            onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
+            value={attachmentUrl}
+            onChange={(e) => setAttachmentUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            style={{
-              background: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
+            className={inputCls}
+            style={inputStyle}
           />
-          <p className="text-[10px] font-medium mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-            Optional link to a file, document, or attachment.
-          </p>
         </div>
 
         {/* Subtasks */}
-        <div
-          className="rounded-2xl p-4 border"
-          style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-        >
-          <label className="block text-xs font-bold text-text-primary mb-3">
-            <ListChecks size={14} className="inline mr-1" />
-            Subtasks
+        <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+          <label className="flex items-center gap-1 text-xs font-bold mb-3" style={{ color: 'var(--color-text-primary)' }}>
+            <ListChecks size={12} /> Subtasks
           </label>
-          <div className="space-y-2">
+          <div className="space-y-1.5 mb-2">
             {subTasks.map((subTask, index) => (
               <div
                 key={index}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl border"
                 style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
               >
-                <span className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
-                  style={{ borderColor: 'var(--color-border)' }}>
-                  <span className="text-[8px] text-text-muted">{index + 1}</span>
+                <span className="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[8px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                  {index + 1}
                 </span>
-                <span className="text-sm font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
+                <span className="text-xs font-medium flex-1" style={{ color: 'var(--color-text-primary)' }}>
                   {subTask.title}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => removeSubTask(index)}
-                  className="p-1 rounded-lg hover:bg-danger/10 transition-colors"
-                  style={{ color: 'var(--color-danger)' }}
-                >
-                  <Trash2 size={14} />
+                <button type="button" onClick={() => removeSubTask(index)} className="p-1 rounded-lg hover:opacity-70 transition-opacity" style={{ color: 'var(--color-danger)' }}>
+                  <Trash2 size={12} />
                 </button>
               </div>
             ))}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSubTaskTitle}
-                onChange={(e) => setNewSubTaskTitle(e.target.value)}
-                placeholder="Add a subtask"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addSubTask();
-                  }
-                }}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                style={{
-                  background: 'var(--color-surface)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-primary)',
-                }}
-              />
-              <button
-                type="button"
-                onClick={addSubTask}
-                className="px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md"
-                style={{ background: 'var(--color-accent)' }}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newSubTaskTitle}
+              onChange={(e) => setNewSubTaskTitle(e.target.value)}
+              placeholder="Add a subtask"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSubTask(); } }}
+              className="flex-1 px-3 py-2 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+              style={inputStyle}
+            />
+            <button
+              type="button"
+              onClick={addSubTask}
+              disabled={!newSubTaskTitle.trim()}
+              className="px-3 py-2 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40"
+              style={{ background: 'var(--color-accent)' }}
+            >
+              <Plus size={14} />
+            </button>
           </div>
         </div>
 
-        {errorMessage && (
-          <div
-            className="p-3 rounded-xl text-xs font-bold border"
-            style={{
-              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-              borderColor: 'var(--color-danger)',
-              color: 'var(--color-danger)',
-            }}
-          >
-            {errorMessage}
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-4">
+        {/* Submit */}
+        <div className="flex gap-3 pt-1">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold border transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            style={{
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
+            className="flex-1 px-4 py-3 rounded-xl text-sm font-bold border transition-all"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={!formData.title || updateTask.isPending}
-            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!title.trim() || updateTask.isPending}
+            className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             style={{ background: 'var(--gradient-accent)' }}
           >
             {updateTask.isPending ? 'Saving...' : 'Save Changes'}

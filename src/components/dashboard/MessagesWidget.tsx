@@ -73,7 +73,7 @@ export function MessagesWidget({ messages }: MessagesWidgetProps) {
         </div>
         <button 
           className="text-xs font-bold text-accent hover:text-accent-hover transition-colors"
-          onClick={() => {/* TODO: Add messages page */}}
+          onClick={() => navigate('/messages')}
         >
           View All
         </button>

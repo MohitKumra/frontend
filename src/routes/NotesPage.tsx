@@ -387,10 +387,6 @@ export function NotesPage() {
           ref={filterContainerRef}
           className="relative flex items-center gap-2 overflow-x-auto no-scrollbar pb-1"
         >
-          {/* The traveling pill. It sits behind the buttons and animates its
-              left/top/width/height to match whichever tab is active, so it
-              visually "slides" from the old tab and becomes the new tab's
-              background. */}
           {pillRect && (
             <div
               className="absolute rounded-xl shadow-md pointer-events-none"

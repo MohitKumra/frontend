@@ -5,10 +5,10 @@ import type { CreateNoteRequest, UpdateNoteRequest } from '../../../types';
 
 const NOTES_KEY = ['notes'] as const;
 
-export function useNotes(isJournal?: boolean) {
+export function useNotes(filters?: { isJournal?: boolean; taskId?: string; projectId?: string }) {
   return useQuery({
-    queryKey: [...NOTES_KEY, { isJournal }],
-    queryFn: () => notesApi.list(isJournal),
+    queryKey: [...NOTES_KEY, filters],
+    queryFn: () => notesApi.list(filters),
   });
 }
 

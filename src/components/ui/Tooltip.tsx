@@ -12,6 +12,8 @@ interface TooltipProps {
  * Lightweight tooltip for hover labels (e.g., collapsed sidebar icons).
  * Uses CSS token-based styling for consistent theming.
  */
+
+
 export function Tooltip({ content, children, side = 'right', className = '' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

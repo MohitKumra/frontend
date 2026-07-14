@@ -14,7 +14,12 @@ interface AgendaTaskRowProps {
 const dotColor: Record<TaskDTO['status'], string> = {
   TODO: 'var(--color-info)',
   IN_PROGRESS: 'var(--color-warning)',
+  WAITING: '#8b5cf6',
+  BLOCKED: 'var(--color-danger)',
+  IN_REVIEW: '#0ea5e9',
+  DELEGATED: '#f59e0b',
   DONE: 'var(--color-success)',
+  CANCELLED: 'var(--color-text-muted)',
 };
 
 /**
@@ -25,7 +30,6 @@ const dotColor: Record<TaskDTO['status'], string> = {
  */
 export function AgendaTaskRow({ task, onToggle, isLast = false }: AgendaTaskRowProps) {
   const done = task.status === 'DONE';
-  console.log(task)
   return (
     <div className="flex gap-3 sm:gap-4">
       {/* Rail: time + dot + connecting line */}
@@ -84,8 +88,8 @@ export function AgendaTaskRow({ task, onToggle, isLast = false }: AgendaTaskRowP
               <PriorityBadge priority={task.priority} />
               <StatusBadge status={task.status} />
               {task.dueDate && (
-                <span className="flex items-center gap-1.5 text-[11px] text-text-muted font-bold">
-                  <Clock size={11} /> {formatTime(task.createdAt)}
+              <span className="flex items-center gap-1.5 text-[11px] text-text-muted font-bold">
+                  <Clock size={11} /> {task.dueDate ? formatTime(task.dueDate) : formatTime(task.createdAt)}
                 </span>
               )}
             </div>

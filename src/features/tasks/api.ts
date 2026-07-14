@@ -1,13 +1,28 @@
 // frontend/src/features/tasks/api.ts
 import apiClient from '../../lib/apiClient';
-import type { TaskDTO, CreateTaskRequest, UpdateTaskRequest, ListResponse, SubTaskDTO, CreateSubTaskRequest, UpdateSubTaskRequest } from '../../types';
+import type {
+  TaskDTO,
+  TaskDetailDTO,
+  CreateTaskRequest,
+  UpdateTaskRequest,
+  ListResponse,
+  SubTaskDTO,
+  CreateSubTaskRequest,
+  UpdateSubTaskRequest,
+  TaskDependencyDTO,
+  CreateTaskDependencyRequest,
+  TaskCommentDTO,
+  CreateTaskCommentRequest,
+  TaskTimeEntryDTO,
+  CreateTaskTimeEntryRequest,
+} from '../../types';
 
 export const tasksApi = {
   list: (params?: Record<string, string>) =>
     apiClient.get<ListResponse<TaskDTO>>('/tasks', { params }).then((r) => r.data),
 
   getOne: (id: string) =>
-    apiClient.get<TaskDTO>(`/tasks/${id}`).then((r) => r.data),
+    apiClient.get<TaskDetailDTO>(`/tasks/${id}`).then((r) => r.data),
 
   create: (data: CreateTaskRequest) =>
     apiClient.post<TaskDTO>('/tasks', data).then((r) => r.data),
@@ -30,4 +45,16 @@ export const tasksApi = {
 
   deleteSubTask: (taskId: string, subTaskId: string) =>
     apiClient.delete(`/tasks/${taskId}/subtasks/${subTaskId}`),
+
+  createDependency: (taskId: string, data: CreateTaskDependencyRequest) =>
+    apiClient.post<TaskDependencyDTO>(`/tasks/${taskId}/dependencies`, data).then((r) => r.data),
+
+  deleteDependency: (taskId: string, dependencyId: string) =>
+    apiClient.delete(`/tasks/${taskId}/dependencies/${dependencyId}`),
+
+  createComment: (taskId: string, data: CreateTaskCommentRequest) =>
+    apiClient.post<TaskCommentDTO>(`/tasks/${taskId}/comments`, data).then((r) => r.data),
+
+  createTimeEntry: (taskId: string, data: CreateTaskTimeEntryRequest) =>
+    apiClient.post<TaskTimeEntryDTO>(`/tasks/${taskId}/time-entries`, data).then((r) => r.data),
 };

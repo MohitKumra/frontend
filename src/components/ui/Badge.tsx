@@ -58,15 +58,33 @@ export function Badge({
 }
 
 /** Maps task priority to a badge variant. */
-export function PriorityBadge({ priority }: { priority: 'LOW' | 'MEDIUM' | 'HIGH' }) {
-  const map: Record<string, BadgeVariant> = { LOW: 'info', MEDIUM: 'warning', HIGH: 'danger' };
-  const labels: Record<string, string> = { LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High' };
+export function PriorityBadge({ priority }: { priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' }) {
+  const map: Record<string, BadgeVariant> = { LOW: 'info', MEDIUM: 'warning', HIGH: 'danger', CRITICAL: 'accent' };
+  const labels: Record<string, string> = { LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High', CRITICAL: 'Critical' };
   return <Badge variant={map[priority]} size="sm" dot>{labels[priority]}</Badge>;
 }
 
 /** Maps task status to a badge variant. */
-export function StatusBadge({ status }: { status: 'TODO' | 'IN_PROGRESS' | 'DONE' }) {
-  const map: Record<string, BadgeVariant> = { TODO: 'default', IN_PROGRESS: 'accent', DONE: 'success' };
-  const labels: Record<string, string> = { TODO: 'To Do', IN_PROGRESS: 'In Progress', DONE: 'Completed' };
+export function StatusBadge({ status }: { status: 'TODO' | 'IN_PROGRESS' | 'WAITING' | 'BLOCKED' | 'IN_REVIEW' | 'DELEGATED' | 'DONE' | 'CANCELLED' }) {
+  const map: Record<string, BadgeVariant> = {
+    TODO: 'default',
+    IN_PROGRESS: 'accent',
+    WAITING: 'warning',
+    BLOCKED: 'danger',
+    IN_REVIEW: 'info',
+    DELEGATED: 'accent',
+    DONE: 'success',
+    CANCELLED: 'default',
+  };
+  const labels: Record<string, string> = {
+    TODO: 'To Do',
+    IN_PROGRESS: 'In Progress',
+    WAITING: 'Waiting',
+    BLOCKED: 'Blocked',
+    IN_REVIEW: 'In Review',
+    DELEGATED: 'Delegated',
+    DONE: 'Completed',
+    CANCELLED: 'Cancelled',
+  };
   return <Badge variant={map[status]} size="sm">{labels[status]}</Badge>;
 }
