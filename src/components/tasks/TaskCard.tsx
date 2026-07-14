@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Calendar,
   CheckCircle2,
@@ -169,18 +170,57 @@ export function TaskCard({
     : done ? 100 : task.status === 'IN_PROGRESS' ? 50 : 0;
 
   const statusCfg = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.TODO;
+  
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuPosition, setMenuPosition] = React.useState<{ top: number; right: number } | null>(null);
+
+  // Update menu position when it opens
+  useEffect(() => {
+    if (isMenuOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    } else {
+      setMenuPosition(null);
+    }
+  }, [isMenuOpen]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        onToggleMenu(null);
+      }
+    };
+
+    // Add small delay to prevent immediate closing when opening
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen, onToggleMenu]);
 
   return (
     <div
       className="relative group/card"
       style={{
-        zIndex: isMenuOpen ? 50 : 1,
+        zIndex: isMenuOpen ? 9997 : 1,
         animation: 'fade-in 0.35s ease-out both',
         animationDelay: `${index * 30}ms`,
       }}
     >
       <div
-        className="relative rounded-[22px] border overflow-hidden transition-all duration-300 hover:-translate-y-1"
+        className="relative rounded-[22px] border transition-all duration-300 hover:-translate-y-1"
         style={{
           borderColor: isSelected ? 'var(--color-accent)' : overdue ? 'color-mix(in srgb, var(--color-danger) 40%, var(--color-border))' : 'var(--color-border)',
           background: 'var(--color-surface)',
@@ -198,11 +238,10 @@ export function TaskCard({
             ? '0 0 0 1px color-mix(in srgb, var(--color-danger) 15%, transparent)'
             : '0 1px 2px rgba(0,0,0,0.04)';
         }}
-        onDoubleClick={() => onOpen?.(task.id)}
       >
         {/* Header band */}
         <div
-          className="relative h-[72px] px-4 flex items-center justify-between overflow-hidden"
+          className="relative h-[72px] px-4 flex items-center justify-between overflow-hidden rounded-t-[22px]"
           style={{ background: priorityHeaderGradient(task.priority, done) }}
         >
           {/* decorative highlight */}
@@ -253,18 +292,49 @@ export function TaskCard({
             )}
             <div className="relative">
               <button
-                onClick={() => onToggleMenu(isMenuOpen ? null : task.id)}
+                ref={buttonRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleMenu(isMenuOpen ? null : task.id);
+                }}
                 className="p-1.5 rounded-lg text-white/90 hover:bg-white/20 transition-all"
                 aria-label="Task actions"
               >
                 <MoreVertical size={16} />
               </button>
 
-              {isMenuOpen && (
-                <div
-                  className="absolute right-0 top-9 w-48 rounded-xl shadow-xl z-[60] py-2 animate-scale-in"
-                  style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-                >
+              {isMenuOpen && menuPosition && createPortal(
+                <>
+                  {/* Backdrop overlay for better visibility */}
+                  <div
+                    className="fixed inset-0"
+                    style={{ zIndex: 9998 }}
+                    onClick={() => onToggleMenu(null)}
+                  />
+                  
+                  <div
+                    ref={menuRef}
+                    className="fixed w-48 rounded-xl py-2"
+                    style={{ 
+                      top: `${menuPosition.top}px`,
+                      right: `${menuPosition.right}px`,
+                      background: 'var(--color-surface-raised)', 
+                      border: '1px solid var(--color-border)',
+                      zIndex: 9999,
+                      boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                  {/* View Details */}
+                  <button
+                    onClick={() => { onOpen?.(task.id); onToggleMenu(null); }}
+                    className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    <Eye size={13} style={{ color: 'var(--color-accent)' }} /> View Details
+                  </button>
+                  <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
+                  
                   {task.status !== 'IN_PROGRESS' && !done && !cancelled && (
                     <button
                       onClick={() => { onChangeStatus(task, 'IN_PROGRESS'); onToggleMenu(null); }}
@@ -317,6 +387,8 @@ export function TaskCard({
                     <Trash2 size={13} /> Delete
                   </button>
                 </div>
+                </>,
+                document.body
               )}
             </div>
           </div>
