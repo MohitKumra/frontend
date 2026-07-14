@@ -14,10 +14,6 @@ interface AgendaTaskRowProps {
 const dotColor: Record<TaskDTO['status'], string> = {
   TODO: 'var(--color-info)',
   IN_PROGRESS: 'var(--color-warning)',
-  WAITING: '#8b5cf6',
-  BLOCKED: 'var(--color-danger)',
-  IN_REVIEW: '#0ea5e9',
-  DELEGATED: '#f59e0b',
   DONE: 'var(--color-success)',
   CANCELLED: 'var(--color-text-muted)',
 };

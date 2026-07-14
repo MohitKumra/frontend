@@ -103,6 +103,8 @@ export interface GoogleAuthStartResponse {
   url: string;
 }
 
+export type GoogleAuthPurpose = 'signin' | 'calendar-connect';
+
 export interface GoogleCalendarSyncResponse {
   synced: number;
   created: number;
@@ -116,15 +118,10 @@ export interface GoogleCalendarSyncResponse {
 export type TaskStatus =
   | 'TODO'
   | 'IN_PROGRESS'
-  | 'WAITING'
-  | 'BLOCKED'
-  | 'IN_REVIEW'
-  | 'DELEGATED'
   | 'DONE'
   | 'CANCELLED';
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type TaskDependencyType = 'FINISH_TO_START' | 'START_TO_START' | 'FINISH_TO_FINISH';
 
 // ─── SubTasks ──────────────────────────────────────────────────────────────────
 
@@ -211,34 +208,6 @@ export interface UpdateTaskRequest {
   subTasks?: TaskSubTaskInput[];
 }
 
-export interface TaskDependencyDTO {
-  id: string;
-  taskId: string;
-  dependsOnTaskId: string;
-  type: TaskDependencyType;
-  createdAt: string;
-  updatedAt: string;
-  dependsOnTask?: Pick<TaskDTO, 'id' | 'title' | 'status' | 'priority' | 'dueDate'>;
-}
-
-export interface CreateTaskDependencyRequest {
-  dependsOnTaskId: string;
-  type?: TaskDependencyType;
-}
-
-export interface TaskCommentDTO {
-  id: string;
-  taskId: string;
-  userId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateTaskCommentRequest {
-  content: string;
-}
-
 export interface TaskActivityDTO {
   id: string;
   taskId: string;
@@ -266,8 +235,6 @@ export interface TaskTimeEntryDTO {
 }
 
 export interface TaskDetailDTO extends TaskDTO {
-  dependencies: TaskDependencyDTO[];
-  comments: TaskCommentDTO[];
   activity: TaskActivityDTO[];
   timeEntries: TaskTimeEntryDTO[];
   linkedNotes: NoteDTO[];
@@ -503,27 +470,7 @@ export interface UpdateProjectRequest {
   progress?: number;
 }
 
-// ─── Messages (System Notifications) ──────────────────────────────────────────
-
-export type MessageType = 'SYSTEM' | 'PROJECT' | 'REMINDER' | 'ACHIEVEMENT';
-export type MessageStatus = 'SENT' | 'READ';
-
-export interface MessageDTO {
-  id: string;
-  type: MessageType;
-  content: string;
-  userId: string;
-  projectId: string | null;
-  status: MessageStatus;
-  readAt: string | null;
-  priority: string | null;
-  actionUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-  project?: ProjectDTO;
-}
-
-// ─── Enhanced Analytics ────────────────────────────────────────────────────────
+// ─── Enhanced Analytics (Individual Focus) ────────────────────────────────────
 
 export interface ProjectAnalyticsDTO {
   projectId: string;
@@ -542,7 +489,6 @@ export interface ProjectAnalyticsDTO {
 
 export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
   activeProjects: ProjectDTO[];
-  recentMessages: MessageDTO[];
   projectStats: {
     totalProjects: number;
     activeProjectsCount: number;
@@ -565,7 +511,7 @@ export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
 }
 
 export interface SearchResult {
-  type: 'task' | 'habit' | 'note' | 'project' | 'message';
+  type: 'task' | 'habit' | 'note' | 'project';
   id: string;
   title: string;
   description?: string | null;

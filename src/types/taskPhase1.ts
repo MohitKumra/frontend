@@ -30,24 +30,18 @@ export interface TaskDTOPhase1 extends TaskDTO {
   project: Pick<ProjectDTO, 'id' | 'name' | 'color'> | null;
   labels: LabelDTO[];
   estimatedDurationMin: number | null;
-  isBlocked: boolean;
-  blockedReason: string | null;
 }
 
 export interface CreateTaskRequestPhase1 extends CreateTaskRequest {
   projectId?: string | null;
   labelIds?: string[];
   estimatedDurationMin?: number | null;
-  isBlocked?: boolean;
-  blockedReason?: string | null;
 }
 
 export interface UpdateTaskRequestPhase1 extends UpdateTaskRequest {
   projectId?: string | null;
   labelIds?: string[];
   estimatedDurationMin?: number | null;
-  isBlocked?: boolean;
-  blockedReason?: string | null;
 }
 
 // ─── Mock data (delete alongside this file once real endpoints exist) ──────
@@ -79,8 +73,6 @@ export function withMockPhase1Fields(task: TaskDTO): TaskDTOPhase1 {
     ...task,
     project: seed % 3 === 0 ? null : MOCK_PROJECTS[seed % MOCK_PROJECTS.length],
     labels: seed % 4 === 0 ? [] : [MOCK_LABELS[seed % MOCK_LABELS.length]],
-    estimatedDurationMin: seed % 5 === 0 ? null : (seed % 6) * 30 + 30,
-    isBlocked: seed % 7 === 0,
-    blockedReason: seed % 7 === 0 ? 'Waiting on client feedback' : null,
+  estimatedDurationMin: seed % 5 === 0 ? null : (seed % 6) * 30 + 30,
   };
 }

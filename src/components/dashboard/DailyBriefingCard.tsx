@@ -14,9 +14,8 @@ function scoreTask(task: TaskDTO): number {
   const priorityScore = { CRITICAL: 100, HIGH: 75, MEDIUM: 45, LOW: 20 }[task.priority];
   const dueScore = task.dueDate ? Math.max(0, 40 - Math.floor((new Date(task.dueDate).getTime() - Date.now()) / 86400000) * 6) : 0;
   const overdueBoost = isOverdue(task.dueDate, task.status) ? 60 : 0;
-  const statusPenalty = task.status === 'WAITING' || task.status === 'BLOCKED' ? -25 : 0;
   const durationPenalty = task.estimatedDuration ? Math.min(20, Math.floor(task.estimatedDuration / 30)) : 0;
-  return priorityScore + dueScore + overdueBoost + statusPenalty - durationPenalty;
+  return priorityScore + dueScore + overdueBoost - durationPenalty;
 }
 
 export function DailyBriefingCard({ tasks, focusMinutes, pendingTasks }: DailyBriefingCardProps) {

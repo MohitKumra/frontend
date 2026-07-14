@@ -6,6 +6,7 @@ import {
   Circle,
   Clock,
   Edit3,
+  Eye,
   Flag,
   ListChecks,
   MoreVertical,
@@ -18,9 +19,6 @@ import {
   X,
   CheckSquare,
   Ban,
-  Eye,
-  UserCheck,
-  AlertOctagon,
   FolderKanban,
 } from 'lucide-react';
 import type { TaskDTO, TaskStatus } from '../../types';
@@ -81,10 +79,6 @@ interface StatusConfig {
 export const STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
   TODO:        { label: 'To Do',      color: 'var(--color-info)',         icon: <Circle size={12} /> },
   IN_PROGRESS: { label: 'In Progress',color: 'var(--color-warning)',      icon: <Play size={12} /> },
-  WAITING:     { label: 'Waiting',    color: '#8b5cf6',                   icon: <Clock size={12} /> },
-  BLOCKED:     { label: 'Blocked',    color: 'var(--color-danger)',        icon: <AlertOctagon size={12} /> },
-  IN_REVIEW:   { label: 'In Review',  color: '#0ea5e9',                   icon: <Eye size={12} /> },
-  DELEGATED:   { label: 'Delegated',  color: '#f59e0b',                   icon: <UserCheck size={12} /> },
   DONE:        { label: 'Done',       color: 'var(--color-success)',       icon: <CheckCircle2 size={12} /> },
   CANCELLED:   { label: 'Cancelled',  color: 'var(--color-text-muted)',    icon: <Ban size={12} /> },
 };
@@ -274,7 +268,7 @@ export function TaskCard({
 
             {/* Status icon */}
             <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-sm shrink-0">
-              {done ? <CheckCircle2 size={18} /> : task.status === 'IN_PROGRESS' ? <Play size={16} /> : task.status === 'BLOCKED' ? <AlertOctagon size={16} /> : task.status === 'WAITING' ? <Clock size={16} /> : task.status === 'CANCELLED' ? <Ban size={16} /> : <CheckSquare size={16} />}
+              {done ? <CheckCircle2 size={18} /> : task.status === 'IN_PROGRESS' ? <Play size={16} /> : task.status === 'CANCELLED' ? <Ban size={16} /> : <CheckSquare size={16} />}
             </div>
           </div>
 
@@ -353,24 +347,7 @@ export function TaskCard({
                       <Pause size={13} style={{ color: 'var(--color-text-muted)' }} /> Pause Progress
                     </button>
                   )}
-                  {task.status !== 'WAITING' && !done && !cancelled && (
-                    <button
-                      onClick={() => { onChangeStatus(task, 'WAITING'); onToggleMenu(null); }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      <Clock size={13} style={{ color: '#8b5cf6' }} /> Mark Waiting
-                    </button>
-                  )}
-                  {task.status !== 'BLOCKED' && !done && !cancelled && (
-                    <button
-                      onClick={() => { onChangeStatus(task, 'BLOCKED'); onToggleMenu(null); }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      <AlertOctagon size={13} style={{ color: 'var(--color-danger)' }} /> Mark Blocked
-                    </button>
-                  )}
+
                   <button
                     onClick={() => { onEdit(task); onToggleMenu(null); }}
                     className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"

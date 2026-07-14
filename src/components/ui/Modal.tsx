@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
 import { useModalRoot } from './ModalRoot';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface ModalProps {
   open: boolean;
@@ -12,6 +14,7 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }: ModalProps) {
+  const isMobile = useMediaQuery('(max-width: 640px)');
   const dialogRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
@@ -35,18 +38,23 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
 
     previouslyFocusedElement.current = document.activeElement as HTMLElement;
 
-    // Focus the first focusable element INSIDE THE CONTENT AREA, not the
-    // header. The header's close (X) button sits before the content in
-    // DOM order, so querying the whole dialog would focus the X button
-    // first instead of e.g. the form's first input.
-    const focusableInContent = contentRef.current?.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const firstFocusable = focusableInContent?.[0] ?? null;
-    if (firstFocusable) {
-      firstFocusable.focus();
-    } else {
-      dialogRef.current?.focus();
+    // On mobile the sheet slides up from the bottom; auto-focusing an input
+    // immediately triggers the virtual keyboard before the animation finishes,
+    // which causes a jarring layout jump. Skip auto-focus on mobile.
+    if (!isMobile) {
+      // Focus the first focusable element INSIDE THE CONTENT AREA, not the
+      // header. The header's close (X) button sits before the content in
+      // DOM order, so querying the whole dialog would focus the X button
+      // first instead of e.g. the form's first input.
+      const focusableInContent = contentRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstFocusable = focusableInContent?.[0] ?? null;
+      if (firstFocusable) {
+        firstFocusable.focus();
+      } else {
+        dialogRef.current?.focus();
+      }
     }
 
     // Focus trap cycles across the WHOLE dialog (header + content), so Tab
@@ -82,56 +90,148 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
       document.body.style.overflow = '';
       previouslyFocusedElement.current?.focus();
     };
-  }, [open]);
+  }, [open, isMobile]);
 
-  if (!open || !modalRoot) return null;
+  const handleDragEnd = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
+    if (info.offset.y > 120 || info.velocity.y > 500) {
+      onCloseRef.current();
+    }
+  };
+
+  if (!modalRoot) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 backdrop-blur-overlay animate-fade-in"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? 'modal-title' : undefined}
-        tabIndex={-1}
-        className={[
-          'relative z-[80] w-full shadow-2xl flex flex-col max-h-[90dvh] border rounded-2xl animate-scale-in',
-          maxWidth,
-        ].join(' ')}
-        style={{
-          background: 'var(--modal-bg)',
-          borderColor: 'var(--modal-border)',
-          boxShadow: 'var(--modal-shadow)',
-        }}
-      >
-        <div className="flex items-center justify-between px-6 pt-6 pb-3 shrink-0">
-          {title ? (
-            <h2 id="modal-title" className="text-lg font-bold text-text-primary">
-              {title}
-            </h2>
-          ) : (
-            <div />
-          )}
-          <button
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            className="fixed inset-0 z-50 backdrop-blur-overlay"
+            style={{ background: 'var(--overlay-bg, rgba(0,0,0,0.5))' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="tap-target w-9 h-9 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-muted hover:text-text-primary transition-colors"
-            aria-label="Close modal"
-          >
-            <X size={18} />
-          </button>
-        </div>
+            aria-hidden="true"
+          />
 
-        <div ref={contentRef} className="overflow-y-auto px-6 pb-6 pt-1 flex-1">
-          {children}
-        </div>
-      </div>
-    </div>,
+          {isMobile ? (
+            /* ── Mobile: draggable bottom sheet ── */
+            <motion.div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={title ? 'modal-title' : undefined}
+              tabIndex={-1}
+              className="fixed bottom-0 left-0 right-0 z-[51] rounded-t-3xl overflow-hidden shadow-2xl flex flex-col"
+              style={{
+                background: 'var(--modal-bg)',
+                borderTop: '1px solid var(--modal-border)',
+                touchAction: 'none',
+                maxHeight: '90dvh',
+              }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              drag="y"
+              dragDirectionLock
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.55 }}
+              onDragEnd={handleDragEnd}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing shrink-0">
+                <div
+                  className="w-10 h-1.5 rounded-full"
+                  style={{ background: 'var(--color-border-strong, var(--color-border))' }}
+                />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-1 pb-3 shrink-0">
+                {title ? (
+                  <h2 id="modal-title" className="text-base font-bold text-text-primary">
+                    {title}
+                  </h2>
+                ) : (
+                  <div />
+                )}
+                <button
+                  onClick={onClose}
+                  className="tap-target w-8 h-8 flex items-center justify-center rounded-full text-text-muted hover:text-text-primary transition-colors"
+                  style={{ background: 'var(--color-surface-raised)' }}
+                  aria-label="Close modal"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div
+                ref={contentRef}
+                className="overflow-y-auto overscroll-contain px-5 pb-8 flex-1"
+              >
+                {children}
+              </div>
+            </motion.div>
+          ) : (
+            /* ── Desktop: centered dialog ── */
+            <motion.div
+              className="fixed inset-0 z-[51] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+            >
+              <motion.div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={title ? 'modal-title' : undefined}
+                tabIndex={-1}
+                className={[
+                  'w-full shadow-2xl flex flex-col max-h-[90dvh] border rounded-2xl',
+                  maxWidth,
+                ].join(' ')}
+                style={{
+                  background: 'var(--modal-bg)',
+                  borderColor: 'var(--modal-border)',
+                  boxShadow: 'var(--modal-shadow)',
+                }}
+                initial={{ scale: 0.94, y: 12, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.96, y: 8, opacity: 0 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-6 pt-6 pb-3 shrink-0">
+                  {title ? (
+                    <h2 id="modal-title" className="text-lg font-bold text-text-primary">
+                      {title}
+                    </h2>
+                  ) : (
+                    <div />
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="tap-target w-9 h-9 flex items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-muted hover:text-text-primary transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div ref={contentRef} className="overflow-y-auto px-6 pb-6 pt-1 flex-1">
+                  {children}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </>
+      )}
+    </AnimatePresence>,
     modalRoot
   );
 }

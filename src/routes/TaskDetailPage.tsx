@@ -6,14 +6,10 @@ import {
   CheckCircle2,
   Clock,
   FolderKanban,
-  MessageSquare,
   Paperclip,
-  Plus,
   Repeat,
   Timer,
-  UserRoundPen,
   ListChecks,
-  Link2,
 } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -27,8 +23,7 @@ import { formatDuration, getRecurrenceLabel, isOverdue } from '../components/tas
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { tasksApi } from '../features/tasks/api';
 import { notesApi } from '../features/notes/api';
-import apiClient from '../lib/apiClient';
-import type { NoteDTO, TaskDetailDTO, TaskDTO, TaskDependencyType } from '../types';
+import type { NoteDTO, TaskDTO } from '../types';
 
 function statusLabel(status: string) {
   return status.replaceAll('_', ' ');
@@ -39,11 +34,8 @@ export function TaskDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [noteOpen, setNoteOpen] = useState<null | 'note' | 'journal'>(null);
-  const [comment, setComment] = useState('');
   const [timeMinutes, setTimeMinutes] = useState('');
   const [timeNote, setTimeNote] = useState('');
-  const [dependencyTaskId, setDependencyTaskId] = useState('');
-  const [dependencyType, setDependencyType] = useState<TaskDependencyType>('FINISH_TO_START');
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['tasks', id],
@@ -60,17 +52,6 @@ export function TaskDetailPage() {
 
   const updateTask = useUpdateTask();
 
-  const commentMutation = useMutation({
-    mutationFn: (content: string) => tasksApi.createComment(id, { content }),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['tasks', id] }),
-        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
-      ]);
-      setComment('');
-    },
-  });
-
   const timeMutation = useMutation({
     mutationFn: () => tasksApi.createTimeEntry(id, {
       minutes: Number(timeMinutes),
@@ -83,18 +64,6 @@ export function TaskDetailPage() {
     },
   });
 
-  const dependencyMutation = useMutation({
-    mutationFn: () => tasksApi.createDependency(id, {
-      dependsOnTaskId: dependencyTaskId,
-      type: dependencyType,
-    }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['tasks', id] });
-      setDependencyTaskId('');
-      setDependencyType('FINISH_TO_START');
-    },
-  });
-
   const subtaskMutation = useMutation({
     mutationFn: ({ subTaskId, completed }: { subTaskId: string; completed: boolean }) => {
       if (!task) throw new Error('Task not loaded');
@@ -104,8 +73,6 @@ export function TaskDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ['tasks', id] });
     },
   });
-
-  const taskList = useMemo(() => (allTasks?.data ?? []).filter((t) => t.id !== id), [allTasks, id]);
 
   if (isLoading) return <LoadingScreen />;
   if (!task) {
@@ -121,15 +88,11 @@ export function TaskDetailPage() {
 
   const statusBadgeVariant = task.status === 'DONE'
     ? 'success'
-    : task.status === 'BLOCKED'
-      ? 'danger'
-      : task.status === 'WAITING'
-        ? 'warning'
-        : task.status === 'IN_REVIEW'
-          ? 'info'
-          : task.status === 'DELEGATED'
-            ? 'accent'
-            : 'default';
+    : task.status === 'CANCELLED'
+      ? 'default'
+      : task.status === 'IN_PROGRESS'
+        ? 'accent'
+        : 'default';
   const recurrenceLabel = getRecurrenceLabel(task.recurrenceRule);
   const duration = formatDuration(task.estimatedDuration);
   const overdue = isOverdue(task.dueDate, task.status);
@@ -229,24 +192,6 @@ export function TaskDetailPage() {
                 <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
               </div>
             </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <UserRoundPen size={16} className="text-accent" />
-                <p className="text-sm font-bold">Add Comment</p>
-              </div>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Add context or an update..."
-                rows={4}
-                className="w-full rounded-xl border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-              />
-              <Button size="sm" className="mt-3" disabled={!comment.trim() || commentMutation.isPending} onClick={() => commentMutation.mutate(comment)}>
-                Add Comment
-              </Button>
-            </Card>
           </div>
         </div>
       </Card>
@@ -274,71 +219,7 @@ export function TaskDetailPage() {
             )) : <p className="text-sm text-text-muted">No subtasks yet</p>}
           </div>
         </Card>
-
-        <Card className="p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2">
-              <Link2 size={16} className="text-success" />
-              <p className="text-sm font-bold">Dependencies</p>
-            </div>
-            <p className="text-xs text-text-muted">{task.dependencies.length} linked</p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <select
-              value={dependencyTaskId}
-              onChange={(e) => setDependencyTaskId(e.target.value)}
-              className="rounded-xl border px-3 py-2 text-sm"
-              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-            >
-              <option value="">Select a task</option>
-              {taskList.map((t) => (
-                <option key={t.id} value={t.id}>{t.title}</option>
-              ))}
-            </select>
-            <select
-              value={dependencyType}
-              onChange={(e) => setDependencyType(e.target.value as TaskDependencyType)}
-              className="rounded-xl border px-3 py-2 text-sm"
-              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-            >
-              <option value="FINISH_TO_START">Finish to Start</option>
-              <option value="START_TO_START">Start to Start</option>
-              <option value="FINISH_TO_FINISH">Finish to Finish</option>
-            </select>
-            <Button size="sm" disabled={!dependencyTaskId || dependencyMutation.isPending} onClick={() => dependencyMutation.mutate()}>
-              Add dependency
-            </Button>
-          </div>
-          <div className="mt-4 space-y-2">
-            {task.dependencies.length ? task.dependencies.map((dependency) => (
-              <div key={dependency.id} className="flex items-center justify-between gap-3 rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">{dependency.dependsOnTask?.title ?? dependency.dependsOnTaskId}</p>
-                  <p className="text-xs text-text-muted">{dependency.type.replaceAll('_', ' ')}</p>
-                </div>
-                <button type="button" className="text-xs font-bold text-danger" onClick={() => tasksApi.deleteDependency(task.id, dependency.id).then(() => queryClient.invalidateQueries({ queryKey: ['tasks', id] }))}>
-                  Remove
-                </button>
-              </div>
-            )) : <p className="text-sm text-text-muted">No dependencies yet</p>}
-          </div>
-        </Card>
       </div>
-
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageSquare size={16} className="text-info" />
-          <p className="text-sm font-bold">Comments</p>
-        </div>
-        <div className="space-y-3">
-          {task.comments.length ? task.comments.map((item) => (
-            <div key={item.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-              <p className="text-sm text-text-primary whitespace-pre-wrap">{item.content}</p>
-              <p className="text-[10px] text-text-muted mt-2">{new Date(item.createdAt).toLocaleString()}</p>
-            </div>
-          )) : <p className="text-sm text-text-muted">No comments yet</p>}
-        </div>
-      </Card>
 
       <Card className="p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -422,3 +303,5 @@ export function TaskDetailPage() {
     </div>
   );
 }
+
+export default TaskDetailPage;

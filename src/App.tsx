@@ -24,7 +24,6 @@ import { ProjectsPage }   from './routes/ProjectsPage';
 import { SettingsPage }   from './routes/SettingsPage';
 import { TaskDetailPage } from './routes/TaskDetailPage';
 import { ProjectDetailPage } from './routes/ProjectDetailPage';
-import { MessagesPage } from './routes/MessagesPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 
 /** Redirects unauthenticated users to /login. */
@@ -65,7 +64,6 @@ export default function App() {
         <Route path="analytics"    element={<AnalyticsPage />} />
         <Route path="projects"     element={<ProjectsPage />} />
         <Route path="projects/:id" element={<ProjectDetailPage />} />
-        <Route path="messages"     element={<MessagesPage />} />
         <Route path="settings"     element={<SettingsPage />} />
       </Route>
 

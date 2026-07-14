@@ -34,10 +34,6 @@ const DURATION_OPTIONS = [
 const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
   { value: 'TODO',       label: 'To Do',      color: 'var(--color-info)' },
   { value: 'IN_PROGRESS',label: 'In Progress',color: 'var(--color-warning)' },
-  { value: 'WAITING',    label: 'Waiting',    color: '#8b5cf6' },
-  { value: 'BLOCKED',    label: 'Blocked',    color: 'var(--color-danger)' },
-  { value: 'IN_REVIEW',  label: 'In Review',  color: '#0ea5e9' },
-  { value: 'DELEGATED',  label: 'Delegated',  color: '#f59e0b' },
   { value: 'DONE',       label: 'Done',       color: 'var(--color-success)' },
   { value: 'CANCELLED',  label: 'Cancelled',  color: 'var(--color-text-muted)' },
 ];

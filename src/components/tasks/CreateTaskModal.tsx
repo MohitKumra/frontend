@@ -13,8 +13,10 @@ import {
   Layers,
 } from 'lucide-react';
 import { useCreateTask } from '../../features/tasks/hooks/useTasks';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { CreateTaskRequest, Priority, CreateSubTaskRequest, TaskStatus } from '../../types';
 import { Modal } from '../ui/Modal';
+import { DraggableModal } from '../ui/DraggableModal';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -34,10 +36,6 @@ const DURATION_OPTIONS = [
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'TODO', label: 'To Do' },
   { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'WAITING', label: 'Waiting' },
-  { value: 'BLOCKED', label: 'Blocked' },
-  { value: 'IN_REVIEW', label: 'In Review' },
-  { value: 'DELEGATED', label: 'Delegated' },
 ];
 
 function suggestedDueDate(recurrence: RecurrenceOption): string {
@@ -70,6 +68,7 @@ function suggestedDueDate(recurrence: RecurrenceOption): string {
 
 export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
   const createTask = useCreateTask();
+  const isMobile = useMediaQuery('(max-width: 640px)');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
 
@@ -98,13 +97,15 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
 
   const addSubTask = () => {
     if (newSubTaskTitle.trim()) {
-      const nextOrder = subTasks.length > 0 ? Math.max(...subTasks.map((s) => s.order ?? 0)) + 1 : 0;
+      const nextOrder =
+        subTasks.length > 0 ? Math.max(...subTasks.map((s) => s.order ?? 0)) + 1 : 0;
       setSubTasks([...subTasks, { title: newSubTaskTitle.trim(), order: nextOrder }]);
       setNewSubTaskTitle('');
     }
   };
 
-  const removeSubTask = (index: number) => setSubTasks(subTasks.filter((_, i) => i !== index));
+  const removeSubTask = (index: number) =>
+    setSubTasks(subTasks.filter((_, i) => i !== index));
 
   const resetForm = () => {
     setTitle('');
@@ -135,15 +136,15 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
     try {
       let recurrenceRule: string | undefined;
       switch (recurrence) {
-        case 'daily':      recurrenceRule = 'FREQ=DAILY;INTERVAL=1'; break;
-        case 'weekly':     recurrenceRule = 'FREQ=WEEKLY;INTERVAL=1'; break;
-        case 'biweekly':   recurrenceRule = 'FREQ=WEEKLY;INTERVAL=2'; break;
-        case 'monthly':    recurrenceRule = 'FREQ=MONTHLY;INTERVAL=1'; break;
-        case 'quarterly':  recurrenceRule = 'FREQ=MONTHLY;INTERVAL=3'; break;
+        case 'daily':     recurrenceRule = 'FREQ=DAILY;INTERVAL=1'; break;
+        case 'weekly':    recurrenceRule = 'FREQ=WEEKLY;INTERVAL=1'; break;
+        case 'biweekly':  recurrenceRule = 'FREQ=WEEKLY;INTERVAL=2'; break;
+        case 'monthly':   recurrenceRule = 'FREQ=MONTHLY;INTERVAL=1'; break;
+        case 'quarterly': recurrenceRule = 'FREQ=MONTHLY;INTERVAL=3'; break;
       }
 
-      // Resolve effective duration
-      const resolvedDuration = estimatedDuration ?? (customDuration ? parseInt(customDuration, 10) : null);
+      const resolvedDuration =
+        estimatedDuration ?? (customDuration ? parseInt(customDuration, 10) : null);
 
       const body: Record<string, any> = { title: title.trim(), status };
       if (description.trim()) body.description = description.trim();
@@ -153,327 +154,479 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
       if (recurrenceEndDate) body.recurrenceEndDate = recurrenceEndDate;
       if (resolvedDuration && resolvedDuration > 0) body.estimatedDuration = resolvedDuration;
       if (attachmentUrl.trim()) body.attachmentUrl = attachmentUrl.trim();
-      if (subTasks.length > 0) body.subTasks = subTasks.map((s, i) => ({ title: s.title, order: s.order ?? i }));
+      if (subTasks.length > 0)
+        body.subTasks = subTasks.map((s, i) => ({ title: s.title, order: s.order ?? i }));
 
       await createTask.mutateAsync(body as CreateTaskRequest);
       handleClose();
     } catch (error: any) {
-      const msg = error?.response?.data?.error?.message || error?.message || 'Unknown error';
+      const msg =
+        error?.response?.data?.error?.message || error?.message || 'Unknown error';
       console.error('[CreateTask] Error:', msg, error);
       setErrorMessage(msg);
     }
   };
 
-  const inputCls = 'w-full px-4 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all';
+  const inputCls =
+    'w-full px-4 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all';
   const inputStyle = {
     background: 'var(--color-surface)',
     borderColor: 'var(--color-border)',
     color: 'var(--color-text-primary)',
   };
 
-  return (
-    <Modal open={isOpen} onClose={handleClose} title="New Task">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {errorMessage && (
-          <div className="px-4 py-3 rounded-xl text-xs font-semibold" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)', border: '1px solid var(--color-danger)' }}>
-            {errorMessage}
-          </div>
-        )}
+  // ── Extended fields — shared between inline (desktop) and sheet (mobile) ──
+  const extendedFields = (
+    <div className="flex flex-col gap-4">
+      {/* Description */}
+      <div>
+        <label
+          className="flex items-center gap-1 text-xs font-bold mb-1.5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          <AlignLeft size={12} /> Description
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Add details, context, or notes..."
+          rows={3}
+          className="w-full px-4 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none"
+          style={inputStyle}
+        />
+      </div>
 
-        {/* ── Core fields ─────────────────────────────────────── */}
-        {/* Title */}
-        <div>
-          <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-            Task Title <span style={{ color: 'var(--color-danger)' }}>*</span>
-          </label>
+      {/* Status */}
+      <div>
+        <label
+          className="block text-xs font-bold mb-1.5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Status
+        </label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {STATUS_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setStatus(value)}
+              className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+              style={
+                status === value
+                  ? { background: 'var(--color-accent)', color: 'white' }
+                  : {
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-muted)',
+                    }
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Estimated Duration */}
+      <div>
+        <label
+          className="flex items-center gap-1 text-xs font-bold mb-1.5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          <Clock size={12} /> Estimated Duration
+        </label>
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          {DURATION_OPTIONS.map(({ label, value }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                setEstimatedDuration(estimatedDuration === value ? null : value);
+                setCustomDuration('');
+              }}
+              className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+              style={
+                estimatedDuration === value
+                  ? { background: 'var(--color-accent)', color: 'white' }
+                  : {
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-muted)',
+                    }
+              }
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setEstimatedDuration(null)}
+            className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+            style={{
+              background:
+                estimatedDuration === null && !customDuration
+                  ? 'var(--color-surface-raised)'
+                  : 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            Custom
+          </button>
+        </div>
+        {estimatedDuration === null && (
           <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="What needs to be done?"
-            required
-            autoFocus
+            type="number"
+            min={1}
+            max={480}
+            value={customDuration}
+            onChange={(e) => setCustomDuration(e.target.value)}
+            placeholder="Enter minutes (e.g. 45)"
             className={inputCls}
             style={inputStyle}
           />
-        </div>
+        )}
+      </div>
 
-        {/* Due Date + Priority side-by-side */}
-        <div className="grid grid-cols-2 gap-3">
+      {/* Recurrence */}
+      <div>
+        <label
+          className="flex items-center gap-1 text-xs font-bold mb-1.5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          <Repeat size={12} /> Repeat
+        </label>
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          {(
+            ['none', 'daily', 'weekly', 'biweekly', 'monthly', 'quarterly'] as RecurrenceOption[]
+          ).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => handleRecurrenceChange(opt)}
+              className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+              style={
+                recurrence === opt
+                  ? { background: 'var(--color-accent)', color: 'white' }
+                  : {
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-muted)',
+                    }
+              }
+            >
+              {opt === 'biweekly'
+                ? 'Fortnightly'
+                : opt.charAt(0).toUpperCase() + opt.slice(1)}
+            </button>
+          ))}
+        </div>
+        {recurrence !== 'none' && (
           <div>
-            <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-              <Calendar size={12} /> Due Date
+            <label
+              className="block text-[10px] font-semibold mb-1"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              End Date <span className="opacity-60">(optional)</span>
             </label>
             <input
               type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              value={recurrenceEndDate}
+              onChange={(e) => setRecurrenceEndDate(e.target.value)}
               className={inputCls}
               style={inputStyle}
             />
           </div>
-          <div>
-            <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-              <Flag size={12} /> Priority
-            </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as Priority[]).map((p) => {
-                const colors: Record<Priority, string> = {
-                  LOW: 'var(--color-info)',
-                  MEDIUM: 'var(--color-warning)',
-                  HIGH: 'var(--color-danger)',
-                  CRITICAL: '#7c3aed',
-                };
-                const labels: Record<Priority, string> = { LOW: 'Low', MEDIUM: 'Med', HIGH: 'High', CRITICAL: 'Crit' };
-                return (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPriority(p)}
-                    className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
-                    style={
-                      priority === p
-                        ? { background: colors[p], color: 'white' }
-                        : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {labels[p]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        )}
+      </div>
 
-        {/* ── More Options toggle ─────────────────────────────── */}
+      {/* Attachment URL */}
+      <div>
+        <label
+          className="flex items-center gap-1 text-xs font-bold mb-1.5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          <Paperclip size={12} /> Attachment URL
+        </label>
+        <input
+          type="url"
+          value={attachmentUrl}
+          onChange={(e) => setAttachmentUrl(e.target.value)}
+          placeholder="https://..."
+          className={inputCls}
+          style={inputStyle}
+        />
+      </div>
+
+      {/* Subtasks */}
+      <div>
+        <label
+          className="flex items-center gap-1 text-xs font-bold mb-1.5"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          <ListChecks size={12} /> Subtasks
+        </label>
+        <div className="space-y-1.5 mb-2">
+          {subTasks.map((subTask, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+              }}
+            >
+              <span
+                className="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[8px]"
+                style={{
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                {index + 1}
+              </span>
+              <span
+                className="text-xs font-medium flex-1"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {subTask.title}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeSubTask(index)}
+                className="p-1 rounded-lg hover:opacity-70 transition-opacity"
+                style={{ color: 'var(--color-danger)' }}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newSubTaskTitle}
+            onChange={(e) => setNewSubTaskTitle(e.target.value)}
+            placeholder="Add a subtask"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addSubTask();
+              }
+            }}
+            className="flex-1 px-3 py-2 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            style={inputStyle}
+          />
+          <button
+            type="button"
+            onClick={addSubTask}
+            disabled={!newSubTaskTitle.trim()}
+            className="px-3 py-2 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40"
+            style={{ background: 'var(--color-accent)' }}
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Done button — only shown inside the mobile sheet */}
+      {isMobile && (
         <button
           type="button"
-          onClick={() => setShowMore((v) => !v)}
-          className="flex items-center gap-2 text-xs font-bold py-2 px-3 rounded-xl border transition-all w-full"
-          style={{
-            background: showMore ? 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))' : 'var(--color-surface-raised)',
-            borderColor: showMore ? 'var(--color-accent-border)' : 'var(--color-border)',
-            color: showMore ? 'var(--color-accent)' : 'var(--color-text-muted)',
-          }}
+          onClick={() => setShowMore(false)}
+          className="w-full px-4 py-3 rounded-xl text-sm font-bold text-white mt-2"
+          style={{ background: 'var(--gradient-accent)' }}
         >
-          <Layers size={13} />
-          <span>More Options</span>
-          <ChevronDown
-            size={13}
-            className="ml-auto transition-transform duration-200"
-            style={{ transform: showMore ? 'rotate(180deg)' : 'rotate(0deg)' }}
-          />
+          Done
         </button>
+      )}
+    </div>
+  );
 
-        {/* ── Extended fields ─────────────────────────────────── */}
-        {showMore && (
-          <div className="flex flex-col gap-4 rounded-2xl border p-4" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-            {/* Description */}
-            <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-                <AlignLeft size={12} /> Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Add details, context, or notes..."
-                rows={3}
-                className="w-full px-4 py-2.5 rounded-xl text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none"
-                style={inputStyle}
-              />
+  return (
+    <>
+      <Modal open={isOpen} onClose={handleClose} title="New Task">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {errorMessage && (
+            <div
+              className="px-4 py-3 rounded-xl text-xs font-semibold"
+              style={{
+                background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                color: 'var(--color-danger)',
+                border: '1px solid var(--color-danger)',
+              }}
+            >
+              {errorMessage}
             </div>
+          )}
 
-            {/* Status */}
-            <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>Status</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {STATUS_OPTIONS.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setStatus(value)}
-                    className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
-                    style={
-                      status === value
-                        ? { background: 'var(--color-accent)', color: 'white' }
-                        : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* ── Core fields ─────────────────────────────────────── */}
+          {/* Title */}
+          <div>
+            <label
+              className="block text-xs font-bold mb-1.5"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Task Title <span style={{ color: 'var(--color-danger)' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What needs to be done?"
+              required
+              autoFocus
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
 
-            {/* Estimated Duration */}
+          {/* Due Date + Priority side-by-side */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-                <Clock size={12} /> Estimated Duration
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 mb-2">
-                {DURATION_OPTIONS.map(({ label, value }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => { setEstimatedDuration(estimatedDuration === value ? null : value); setCustomDuration(''); }}
-                    className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
-                    style={
-                      estimatedDuration === value
-                        ? { background: 'var(--color-accent)', color: 'white' }
-                        : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => { setEstimatedDuration(null); }}
-                  className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
-                  style={
-                    estimatedDuration === null && !customDuration
-                      ? { background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                      : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                  }
-                >
-                  Custom
-                </button>
-              </div>
-              {estimatedDuration === null && (
-                <input
-                  type="number"
-                  min={1}
-                  max={480}
-                  value={customDuration}
-                  onChange={(e) => setCustomDuration(e.target.value)}
-                  placeholder="Enter minutes (e.g. 45)"
-                  className={inputCls}
-                  style={inputStyle}
-                />
-              )}
-            </div>
-
-            {/* Recurrence */}
-            <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-                <Repeat size={12} /> Repeat
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 mb-2">
-                {(['none', 'daily', 'weekly', 'biweekly', 'monthly', 'quarterly'] as RecurrenceOption[]).map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => handleRecurrenceChange(opt)}
-                    className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
-                    style={
-                      recurrence === opt
-                        ? { background: 'var(--color-accent)', color: 'white' }
-                        : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {opt === 'biweekly' ? 'Fortnightly' : opt.charAt(0).toUpperCase() + opt.slice(1)}
-                  </button>
-                ))}
-              </div>
-              {recurrence !== 'none' && (
-                <div>
-                  <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                    End Date <span className="opacity-60">(optional)</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={recurrenceEndDate}
-                    onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                    className={inputCls}
-                    style={inputStyle}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Attachment URL */}
-            <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-                <Paperclip size={12} /> Attachment URL
+              <label
+                className="flex items-center gap-1 text-xs font-bold mb-1.5"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                <Calendar size={12} /> Due Date
               </label>
               <input
-                type="url"
-                value={attachmentUrl}
-                onChange={(e) => setAttachmentUrl(e.target.value)}
-                placeholder="https://..."
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
                 className={inputCls}
                 style={inputStyle}
               />
             </div>
-
-            {/* Subtasks */}
             <div>
-              <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-                <ListChecks size={12} /> Subtasks
+              <label
+                className="flex items-center gap-1 text-xs font-bold mb-1.5"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                <Flag size={12} /> Priority
               </label>
-              <div className="space-y-1.5 mb-2">
-                {subTasks.map((subTask, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl border"
-                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-                  >
-                    <span className="w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[8px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
-                      {index + 1}
-                    </span>
-                    <span className="text-xs font-medium flex-1" style={{ color: 'var(--color-text-primary)' }}>
-                      {subTask.title}
-                    </span>
-                    <button type="button" onClick={() => removeSubTask(index)} className="p-1 rounded-lg hover:opacity-70 transition-opacity" style={{ color: 'var(--color-danger)' }}>
-                      <Trash2 size={12} />
+              <div className="grid grid-cols-2 gap-1.5">
+                {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as Priority[]).map((p) => {
+                  const colors: Record<Priority, string> = {
+                    LOW: 'var(--color-info)',
+                    MEDIUM: 'var(--color-warning)',
+                    HIGH: 'var(--color-danger)',
+                    CRITICAL: '#7c3aed',
+                  };
+                  const labels: Record<Priority, string> = {
+                    LOW: 'Low',
+                    MEDIUM: 'Med',
+                    HIGH: 'High',
+                    CRITICAL: 'Crit',
+                  };
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPriority(p)}
+                      className="px-2 py-2 rounded-lg text-[10px] font-bold transition-all"
+                      style={
+                        priority === p
+                          ? { background: colors[p], color: 'white' }
+                          : {
+                              background: 'var(--color-surface)',
+                              border: '1px solid var(--color-border)',
+                              color: 'var(--color-text-muted)',
+                            }
+                      }
+                    >
+                      {labels[p]}
                     </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newSubTaskTitle}
-                  onChange={(e) => setNewSubTaskTitle(e.target.value)}
-                  placeholder="Add a subtask"
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSubTask(); } }}
-                  className="flex-1 px-3 py-2 rounded-xl text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                  style={inputStyle}
-                />
-                <button
-                  type="button"
-                  onClick={addSubTask}
-                  disabled={!newSubTaskTitle.trim()}
-                  className="px-3 py-2 rounded-xl text-white text-xs font-bold transition-all disabled:opacity-40"
-                  style={{ background: 'var(--color-accent)' }}
-                >
-                  <Plus size={14} />
-                </button>
+                  );
+                })}
               </div>
             </div>
           </div>
-        )}
 
-        {/* ── Submit ──────────────────────────────────────────── */}
-        <div className="flex gap-3 pt-1">
+          {/* ── More Options toggle ─────────────────────────────── */}
           <button
             type="button"
-            onClick={handleClose}
-            className="flex-1 px-4 py-3 rounded-xl text-sm font-bold border transition-all"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+            onClick={() => setShowMore((v) => !v)}
+            className="flex items-center gap-2 text-xs font-bold py-2 px-3 rounded-xl border transition-all w-full"
+            style={{
+              background: showMore
+                ? 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))'
+                : 'var(--color-surface-raised)',
+              borderColor: showMore ? 'var(--color-accent-border)' : 'var(--color-border)',
+              color: showMore ? 'var(--color-accent)' : 'var(--color-text-muted)',
+            }}
           >
-            Cancel
+            <Layers size={13} />
+            <span>More Options</span>
+            {/* On desktop show a chevron; on mobile a pill badge shows active fields count */}
+            {isMobile && (description || recurrence !== 'none' || estimatedDuration || attachmentUrl || subTasks.length > 0) ? (
+              <span
+                className="ml-auto text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+                style={{
+                  background: 'var(--color-accent)',
+                  color: 'white',
+                }}
+              >
+                {[description, recurrence !== 'none', estimatedDuration, attachmentUrl, subTasks.length > 0].filter(Boolean).length}
+              </span>
+            ) : (
+              <ChevronDown
+                size={13}
+                className="ml-auto transition-transform duration-200"
+                style={{ transform: showMore && !isMobile ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              />
+            )}
           </button>
-          <button
-            type="submit"
-            disabled={!title.trim() || createTask.isPending}
-            className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            style={{ background: 'var(--gradient-accent)' }}
-          >
-            {createTask.isPending ? 'Creating...' : 'Create Task'}
-          </button>
-        </div>
-      </form>
-    </Modal>
+
+          {/* ── Extended fields — desktop: inline; mobile: separate DraggableModal ── */}
+          {!isMobile && showMore && (
+            <div
+              className="flex flex-col gap-4 rounded-2xl border p-4"
+              style={{
+                background: 'var(--color-surface-raised)',
+                borderColor: 'var(--color-border)',
+              }}
+            >
+              {extendedFields}
+            </div>
+          )}
+
+          {/* ── Submit ──────────────────────────────────────────── */}
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex-1 px-4 py-3 rounded-xl text-sm font-bold border transition-all"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!title.trim() || createTask.isPending}
+              className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              style={{ background: 'var(--gradient-accent)' }}
+            >
+              {createTask.isPending ? 'Creating...' : 'Create Task'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Mobile: More Options opens as its own draggable bottom sheet */}
+      {isMobile && (
+        <DraggableModal
+          isOpen={showMore}
+          onClose={() => setShowMore(false)}
+          title="More Options"
+        >
+          {extendedFields}
+        </DraggableModal>
+      )}
+    </>
   );
 }

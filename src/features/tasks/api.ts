@@ -9,10 +9,6 @@ import type {
   SubTaskDTO,
   CreateSubTaskRequest,
   UpdateSubTaskRequest,
-  TaskDependencyDTO,
-  CreateTaskDependencyRequest,
-  TaskCommentDTO,
-  CreateTaskCommentRequest,
   TaskTimeEntryDTO,
   CreateTaskTimeEntryRequest,
 } from '../../types';
@@ -45,15 +41,6 @@ export const tasksApi = {
 
   deleteSubTask: (taskId: string, subTaskId: string) =>
     apiClient.delete(`/tasks/${taskId}/subtasks/${subTaskId}`),
-
-  createDependency: (taskId: string, data: CreateTaskDependencyRequest) =>
-    apiClient.post<TaskDependencyDTO>(`/tasks/${taskId}/dependencies`, data).then((r) => r.data),
-
-  deleteDependency: (taskId: string, dependencyId: string) =>
-    apiClient.delete(`/tasks/${taskId}/dependencies/${dependencyId}`),
-
-  createComment: (taskId: string, data: CreateTaskCommentRequest) =>
-    apiClient.post<TaskCommentDTO>(`/tasks/${taskId}/comments`, data).then((r) => r.data),
 
   createTimeEntry: (taskId: string, data: CreateTaskTimeEntryRequest) =>
     apiClient.post<TaskTimeEntryDTO>(`/tasks/${taskId}/time-entries`, data).then((r) => r.data),

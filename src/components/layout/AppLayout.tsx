@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, Calendar, CalendarDays, Target, FileText,
-  Timer, BarChart2, LogOut, X, Sparkles, Moon, Sun,
-  Search, MoreHorizontal, ChevronRight, User, Settings2, Mail
+  Timer, BarChart2, LogOut, X ,Sparkles, Moon, Sun,
+  Search, MoreHorizontal, ChevronRight, User, Settings2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -12,7 +12,7 @@ import { useSettings } from '../../features/settings/hooks/useSettings';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { SearchModal } from '../../features/search/components/SearchModal';
 import { Tooltip } from '../ui/Tooltip';
-import { BottomSheet } from '../ui/BottomSheet';
+import { DraggableModal } from '../ui/DraggableModal';
 import { Badge } from '../ui/Badge';
 import { useDashboardToday } from '../../features/dashboard/hooks/useDashboard';
 import { applyLayoutPreference } from '../../platform/layout';
@@ -24,7 +24,6 @@ const navItems = [
   { to: '/calendar',  icon: CalendarDays,    label: 'Calendar' },
   { to: '/habits',    icon: Target,          label: 'Habits',     badgeKey: 'habits' },
   { to: '/notes',     icon: FileText,        label: 'Notes' },
-  { to: '/messages',  icon: Mail,            label: 'Messages' },
   { to: '/focus',     icon: Timer,           label: 'Focus' },
   { to: '/analytics', icon: BarChart2,       label: 'Analytics' },
   { to: '/settings',  icon: Settings2,       label: 'Settings' },
@@ -367,96 +366,202 @@ export function AppLayout() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto pb-24 md:pb-0 relative min-w-0">
+        <div className="flex-1 overflow-y-auto pb-28 md:pb-0 relative min-w-0">
           <div className={`page-enter ${contentPaddingClass}`}>
             <Outlet />
           </div>
         </div>
       </main>
 
-      {/* ── Mobile Bottom Navigation (unchanged) ─────────────────────────── */}
+      {/* ── Mobile Bottom Navigation - Enhanced Design ─────────────────────────── */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 border-t z-40 px-3 pb-5 pt-2 flex items-center justify-around"
-        style={{ background: 'var(--bottomnav-bg)', borderColor: 'var(--bottomnav-border)', height: 'var(--bottomnav-height)' }}
+        className="md:hidden fixed bottom-0 inset-x-0 border-t z-40 safe-area-pb"
+        style={{ 
+          background: 'var(--bottomnav-bg)', 
+          borderColor: 'var(--bottomnav-border)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
       >
-        {mobilePrimaryItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} end={to === '/'} className={mobileNavClass}>
-            {({ isActive }) => (
-              <>
-                <div
-                  className="p-1 rounded-xl flex items-center justify-center transition-all duration-200"
-                  style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
-                >
-                  <Icon size={20} />
-                </div>
-                <span>{label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+        <div className="px-2 pb-safe pt-1.5 flex items-center justify-around relative">
+          {/* Animated indicator line */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-300"
+            style={{ background: 'var(--color-accent)' }}
+          />
+          
+          {mobilePrimaryItems.map(({ to, icon: Icon, label }) => (
+            <NavLink 
+              key={to} 
+              to={to} 
+              end={to === '/'} 
+              className={({ isActive }) => [
+                'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
+                isActive ? 'text-accent' : 'text-text-muted'
+              ].join(' ')}
+            >
+              {({ isActive }) => (
+                <>
+                  <div
+                    className={[
+                      'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
+                      isActive ? 'scale-110' : 'scale-100'
+                    ].join(' ')}
+                    style={{ 
+                      background: isActive ? 'var(--bottomnav-indicator)' : 'transparent'
+                    }}
+                  >
+                    <Icon size={isActive ? 22 : 20} className="transition-all duration-200" />
+                    
+                    {/* Glow effect for active item */}
+                    {isActive && (
+                      <div 
+                        className="absolute inset-0 rounded-2xl opacity-30 blur-md"
+                        style={{ background: 'var(--color-accent)' }}
+                      />
+                    )}
+                  </div>
+                  <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
 
-        <button
-          onClick={() => setMobileMoreOpen(true)}
-          className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] font-bold text-text-muted hover:text-text-secondary"
-        >
-          <div className="p-1 rounded-xl flex items-center justify-center">
-            <MoreHorizontal size={20} />
-          </div>
-          <span>More</span>
-        </button>
+          <button
+            onClick={() => setMobileMoreOpen(true)}
+            className="flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold text-text-muted hover:text-text-secondary transition-all duration-200 active:scale-95"
+          >
+            <div className="p-2 rounded-2xl flex items-center justify-center bg-gradient-to-br from-accent/10 to-info/10 border border-accent/20">
+              <MoreHorizontal size={20} />
+            </div>
+            <span>More</span>
+          </button>
+        </div>
       </nav>
 
-      {/* ── Mobile Bottom Sheet More Menu (unchanged) ────────────────────── */}
-      <BottomSheet isOpen={mobileMoreOpen} onClose={() => setMobileMoreOpen(false)} title="More Features">
-        <div className="flex flex-col gap-2 stagger">
-          {mobileOverflowItems.map(({ to, icon: Icon, label, badgeKey }) => {
-            const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setMobileMoreOpen(false)}
-                className="flex items-center gap-3.5 p-4 rounded-2xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all font-bold text-text-primary text-sm"
-                style={{ border: '1px solid var(--color-border-subtle)' }}
-              >
-                <div className="w-10 h-10 icon-container" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
-                  <Icon size={20} />
-                </div>
-                <span className="flex-1">{label}</span>
-                {badgeValue && badgeValue > 0 && <Badge variant="accent" size="sm">{badgeValue}</Badge>}
-                <ChevronRight size={16} className="text-text-muted" />
-              </NavLink>
-            );
-          })}
-
-          <div className="h-px bg-border my-2" />
-
+      {/* ── Mobile Bottom Sheet More Menu - Enhanced Design ────────────────────── */}
+      <DraggableModal isOpen={mobileMoreOpen} onClose={() => setMobileMoreOpen(false)} title="Quick Access">
+        <div className="flex flex-col gap-5">
+          {/* User Profile Card - Hero Style */}
           {user && (
-            <div className="flex items-center gap-3.5 p-4 rounded-2xl border" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-text-onaccent shadow-sm" style={{ background: 'var(--gradient-accent)' }}>
-                <User size={20} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-text-primary truncate">
-                  {user.name ?? user.email.split('@')[0]}
-                </p>
-                <p className="text-xs text-text-muted truncate mt-0.5">{user.email}</p>
+            <div 
+              className="relative overflow-hidden rounded-2xl p-5"
+              style={{ background: 'var(--gradient-accent)' }}
+            >
+              {/* Ambient glow effect */}
+              <div
+                className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
+                style={{ background: 'radial-gradient(circle, white, transparent 70%)' }}
+              />
+              
+              <div className="relative flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-extrabold text-xl text-white shadow-lg border-2 border-white/20" 
+                     style={{ background: 'rgba(255,255,255,0.15)' }}>
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.name ?? 'User'} className="w-full h-full object-cover rounded-2xl" />
+                  ) : (
+                    user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-extrabold text-white truncate">
+                    {user.name ?? user.email.split('@')[0]}
+                  </p>
+                  <p className="text-xs text-white/80 truncate mt-0.5">{user.email}</p>
+                </div>
+                <NavLink
+                  to="/settings"
+                  onClick={() => setMobileMoreOpen(false)}
+                  className="p-2.5 rounded-xl bg-white/15 active:bg-white/25 transition-colors"
+                >
+                  <Settings2 size={18} className="text-white" />
+                </NavLink>
               </div>
             </div>
           )}
 
+          {/* Grid Layout for Navigation Items */}
+          <div className="grid grid-cols-3 gap-4">
+            {mobileOverflowItems.filter(item => item.to !== '/settings').map(({ to, icon: Icon, label, badgeKey }) => {
+              const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
+              
+              // Assign gradient based on route
+              const gradientMap: Record<string, string> = {
+                '/notes': 'var(--gradient-info)',
+                '/focus': 'var(--gradient-success)',
+                '/analytics': 'var(--gradient-danger)',
+              };
+              const gradient = gradientMap[to] || 'var(--gradient-accent)';
+              
+              return (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={() => setMobileMoreOpen(false)}
+                  className="relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-transform active:scale-95"
+                  style={{ 
+                    background: 'var(--color-surface-raised)',
+                    border: '1px solid var(--color-border)'
+                  }}
+                >
+                  {/* Icon with gradient background */}
+                  <div className="relative">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                      style={{ background: gradient }}
+                    >
+                      <Icon size={20} className="text-white" />
+                    </div>
+                    {badgeValue && badgeValue > 0 && (
+                      <div 
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shadow-md"
+                        style={{ background: 'var(--color-danger)' }}
+                      >
+                        {badgeValue > 9 ? '9+' : badgeValue}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Label */}
+                  <span className="text-[11px] font-bold text-text-primary text-center leading-tight">
+                    {label}
+                  </span>
+                </NavLink>
+              );
+            })}
+          </div>
+
+          {/* Divider with style */}
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'var(--color-border)' }} />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 text-[10px] font-bold text-text-muted uppercase tracking-wider" 
+                    style={{ background: 'var(--color-bg)' }}>
+                Account
+              </span>
+            </div>
+          </div>
+
+          {/* Sign Out Button - Prominent */}
           <button
             onClick={() => { setMobileMoreOpen(false); logout.mutate(); }}
-            className="flex items-center gap-3.5 p-4 rounded-2xl hover:bg-red-500/10 text-red-500 font-bold text-sm text-left"
-            style={{ border: '1px solid var(--color-border-subtle)' }}
+            className="relative flex items-center justify-center gap-3 p-4 rounded-2xl font-bold text-sm transition-transform active:scale-98 overflow-hidden"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.2)'
+            }}
           >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-500/10 text-red-500">
-              <LogOut size={20} />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-500/10 text-red-500">
+                <LogOut size={20} />
+              </div>
+              <span className="text-red-600 dark:text-red-400">Sign out</span>
             </div>
-            <span className="flex-1">Sign out</span>
           </button>
         </div>
-      </BottomSheet>
+      </DraggableModal>
 
       {/* Search Modal */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

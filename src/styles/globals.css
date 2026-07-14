@@ -201,6 +201,19 @@
     justify-content: center;
   }
 
+  /* Safe area utilities for mobile */
+  .safe-area-pb {
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
   /* Backdrop blur overlay for modals */
   .backdrop-blur-overlay {
     backdrop-filter: blur(var(--overlay-blur));
@@ -223,6 +236,34 @@
     border-color: var(--card-hover-border);
     box-shadow: var(--card-hover-shadow);
     transform: translateY(-2px);
+  }
+
+  /* Premium card with enhanced hover effects */
+  .card-premium {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    transition: all var(--transition-normal) var(--ease-out-smooth);
+    position: relative;
+  }
+  .card-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, transparent, var(--color-accent-border), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity var(--transition-normal) var(--ease-out-smooth);
+  }
+  .card-premium:hover {
+    box-shadow: var(--card-hover-shadow);
+    transform: translateY(-3px);
+  }
+  .card-premium:hover::before {
+    opacity: 1;
   }
 
   /* Sidebar item using tokens */
@@ -330,6 +371,22 @@
   to   { transform: scaleX(1); }
 }
 
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.2); }
+  50%      { box-shadow: 0 0 30px rgba(79, 70, 229, 0.4); }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* ====== ANIMATION UTILITY CLASSES ====== */
 .animate-fade-in     { animation: fade-in var(--transition-normal) var(--ease-out-expo) both; }
 .animate-slide-up    { animation: slide-up 0.3s var(--ease-out-smooth) both; }
@@ -337,6 +394,12 @@
 .animate-slide-down  { animation: slide-down var(--transition-normal) var(--ease-out-expo) both; }
 .animate-scale-in    { animation: scale-in var(--transition-normal) var(--ease-out-expo) both; }
 .animate-tick        { animation: tick 0.2s ease-in-out; }
+.animate-count-up    { animation: count-up 0.4s var(--ease-out-expo) both; }
+.animate-glow        { animation: glow 2s ease-in-out infinite; }
+.animate-gradient    { 
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
 .animate-shimmer {
   background: linear-gradient(90deg, transparent 0%, var(--color-accent-subtle) 50%, transparent 100%);
   background-size: 200% 100%;

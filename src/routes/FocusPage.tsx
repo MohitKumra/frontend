@@ -60,17 +60,25 @@ function formatDuration(ms: number): string {
 }
 
 // ─── Progress Ring ───────────────────────────────────────────────────────────
+// Uses a fixed logical viewBox and renders at 100% of its parent's size, so the
+// parent controls actual pixel dimensions (often via a fluid clamp() width).
+// This keeps stroke width, tick marks, and proportions correct at any size
+// instead of baking a fixed pixel size into the SVG.
 
-function ProgressRing({ size, progress, colors, running }: { size: number; progress: number; colors: ReturnType<typeof getModeColors>; running: boolean }) {
-  const stroke = size > 200 ? 12 : 10;
-  const r = size / 2 - stroke;
+function ProgressRing({ logicalSize, progress, colors, running }: { logicalSize: number; progress: number; colors: ReturnType<typeof getModeColors>; running: boolean }) {
+  const stroke = logicalSize > 200 ? 12 : 10;
+  const r = logicalSize / 2 - stroke;
   const circumference = 2 * Math.PI * r;
   const tickCount = 24;
 
   return (
-    <svg width={size} height={size} className="-rotate-90" style={{ filter: running ? `drop-shadow(0 0 18px ${colors.glow})` : 'none', transition: 'filter 600ms ease' }}>
+    <svg
+      viewBox={`0 0 ${logicalSize} ${logicalSize}`}
+      className="-rotate-90 w-full h-full"
+      style={{ filter: running ? `drop-shadow(0 0 18px ${colors.glow})` : 'none', transition: 'filter 600ms ease' }}
+    >
       <defs>
-        <linearGradient id={`ring-gradient-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={`ring-gradient-${logicalSize}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor={colors.primary} stopOpacity="0.55" />
           <stop offset="100%" stopColor={colors.primary} stopOpacity="1" />
         </linearGradient>
@@ -80,7 +88,7 @@ function ProgressRing({ size, progress, colors, running }: { size: number; progr
         const angle = (i / tickCount) * 2 * Math.PI;
         const inner = r - stroke / 2 - 4;
         const outer = r - stroke / 2 - 9;
-        const cx = size / 2, cy = size / 2;
+        const cx = logicalSize / 2, cy = logicalSize / 2;
         return (
           <line
             key={i}
@@ -94,13 +102,13 @@ function ProgressRing({ size, progress, colors, running }: { size: number; progr
         );
       })}
 
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-border-subtle)" strokeWidth={stroke} />
+      <circle cx={logicalSize / 2} cy={logicalSize / 2} r={r} fill="none" stroke="var(--color-border-subtle)" strokeWidth={stroke} />
       <circle
-        cx={size / 2}
-        cy={size / 2}
+        cx={logicalSize / 2}
+        cy={logicalSize / 2}
         r={r}
         fill="none"
-        stroke={`url(#ring-gradient-${size})`}
+        stroke={`url(#ring-gradient-${logicalSize})`}
         strokeWidth={stroke}
         strokeLinecap="round"
         strokeDasharray={circumference}
@@ -124,7 +132,7 @@ function FocusModeFullScreen({
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 flex items-center justify-center overflow-hidden px-4"
       style={{ background: 'var(--color-bg)', zIndex: 9999 }}
     >
       <div
@@ -132,21 +140,21 @@ function FocusModeFullScreen({
         style={{ background: `radial-gradient(circle at 50% 40%, ${colors.glow} 0%, transparent 60%)`, opacity: running ? 0.5 : 0.25 }}
       />
 
-      <div className="relative flex flex-col items-center gap-10 p-8">
+      <div className="relative flex flex-col items-center gap-8 sm:gap-10 w-full max-w-md py-8">
         <button
           onClick={onExit}
-          className="absolute -top-2 right-0 sm:top-2 sm:right-2 p-3 rounded-xl text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
+          className="absolute top-0 right-0 sm:top-2 sm:right-2 p-3 rounded-xl text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
           aria-label="Exit focus mode"
         >
           <X size={22} />
         </button>
 
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 mt-8 sm:mt-0">
           <div className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: colors.subtle, color: colors.primary }}>
             {mode.replace('_', ' ')}
           </div>
           {selectedTaskTitle && (
-            <div className="px-4 py-1 rounded-full text-xs font-semibold text-text-secondary bg-surface border border-border max-w-[300px] truncate">
+            <div className="px-4 py-1 rounded-full text-xs font-semibold text-text-secondary bg-surface border border-border max-w-[min(300px,80vw)] truncate">
               🎯 {selectedTaskTitle}
             </div>
           )}
@@ -156,33 +164,35 @@ function FocusModeFullScreen({
           className="relative flex items-center justify-center"
           style={{ animation: running ? 'focus-breathe 4s ease-in-out infinite' : 'none' }}
         >
-          <ProgressRing size={340} progress={progress} colors={colors} running={running} />
+          <div className="w-[clamp(200px,65vw,340px)] h-[clamp(200px,65vw,340px)]">
+            <ProgressRing logicalSize={340} progress={progress} colors={colors} running={running} />
+          </div>
           <div className="absolute flex flex-col items-center select-none">
-            <span className="text-6xl sm:text-7xl font-black tabular-nums text-text-primary tracking-tight">
+            <span className="text-5xl sm:text-6xl md:text-7xl font-black tabular-nums text-text-primary tracking-tight">
               {minutes}:{seconds}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center justify-center flex-wrap gap-4 sm:gap-6">
           <button
             onClick={onReset}
-            className="w-16 h-16 flex items-center justify-center rounded-2xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary hover:text-text-primary transition-all border border-border"
+            className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary hover:text-text-primary transition-all border border-border shrink-0"
             aria-label="Reset timer"
           >
-            <RotateCcw size={24} />
+            <RotateCcw size={22} />
           </button>
           <Button
             onClick={onStartPause}
             size="lg"
-            className="w-52 h-16 text-lg font-bold shadow-xl"
-            leftIcon={running ? <Pause size={24} /> : <Play size={24} />}
+            className="w-40 sm:w-52 h-14 sm:h-16 text-base sm:text-lg font-bold shadow-xl shrink-0"
+            leftIcon={running ? <Pause size={22} /> : <Play size={22} />}
           >
             {running ? 'Pause' : 'Start'}
           </Button>
         </div>
 
-        <p className="text-xs font-semibold text-text-muted">Press Esc or the × to exit fullscreen</p>
+        <p className="text-xs font-semibold text-text-muted text-center px-4">Press Esc or the × to exit fullscreen</p>
       </div>
 
       <style>{`
@@ -620,11 +630,11 @@ export function FocusPage() {
       )}
 
       <div className="max-w-2xl mx-auto flex flex-col items-center gap-6 sm:gap-8">
-        <div className="w-full flex items-center justify-between">
+        <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <PageHeader icon={<Timer size={24} />} title="Focus Timer" subtitle="Stay productive using the Pomodoro technique" />
           <button
             onClick={enterFocusMode}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all border border-border"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all border border-border shrink-0"
             aria-label="Enter focus mode"
           >
             <Maximize2 size={16} />
@@ -642,31 +652,33 @@ export function FocusPage() {
         <TabBar tabs={modeTabs} activeTab={mode} onTabChange={(m) => changeMode(m as TimerMode)} variant="pill" className="w-full justify-center" />
 
         <div
-          className="relative flex items-center justify-center my-4 p-8 rounded-full transition-all duration-500"
+          className="relative flex items-center justify-center my-2 sm:my-4 p-6 sm:p-8 rounded-full transition-all duration-500"
           style={{
             boxShadow: running ? `0 0 40px ${colors.glow}, inset 0 0 24px ${colors.glow}` : '0 10px 30px -10px rgba(0,0,0,0.08), inset 0 0 10px rgba(0,0,0,0.02)',
             background: 'var(--color-surface-raised)',
             border: '1px solid var(--color-border)',
           }}
         >
-          <ProgressRing size={260} progress={progress} colors={colors} running={running} />
+          <div className="w-[clamp(180px,58vw,260px)] h-[clamp(180px,58vw,260px)]">
+            <ProgressRing logicalSize={260} progress={progress} colors={colors} running={running} />
+          </div>
           <div className="absolute flex flex-col items-center select-none">
-            <span className="text-5xl font-black tabular-nums text-text-primary tracking-tight">{minutes}:{seconds}</span>
+            <span className="text-4xl sm:text-5xl font-black tabular-nums text-text-primary tracking-tight">{minutes}:{seconds}</span>
             <span className="text-[10px] font-black uppercase tracking-widest mt-2 px-2.5 py-0.5 rounded-full" style={{ background: colors.subtle, color: colors.primary }}>
               {mode.replace('_', ' ')}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4.5">
+        <div className="flex items-center justify-center flex-wrap gap-4">
           <button
             onClick={handleReset}
-            className="w-14 h-14 flex items-center justify-center rounded-2xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary hover:text-text-primary transition-all border border-border tap-target"
+            className="w-14 h-14 flex items-center justify-center rounded-2xl hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary hover:text-text-primary transition-all border border-border tap-target shrink-0"
             aria-label="Reset timer"
           >
             <RotateCcw size={20} />
           </button>
-          <Button onClick={handleStartPause} size="lg" className="w-44 shadow-lg font-bold" leftIcon={running ? <Pause size={18} /> : <Play size={18} />}>
+          <Button onClick={handleStartPause} size="lg" className="w-40 sm:w-44 shadow-lg font-bold shrink-0" leftIcon={running ? <Pause size={18} /> : <Play size={18} />}>
             {running ? 'Pause' : 'Start'}
           </Button>
         </div>
@@ -678,7 +690,7 @@ export function FocusPage() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)', color: 'var(--color-accent)' }}>
                 <CheckCircle2 size={18} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus Sessions</p>
                 <p className="text-xl font-black text-text-primary leading-tight">{totalFocusCount}</p>
               </div>
@@ -689,7 +701,7 @@ export function FocusPage() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 14%, transparent)', color: 'var(--color-warning)' }}>
                 <Flame size={18} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus Minutes</p>
                 <p className="text-xl font-black text-text-primary leading-tight">{totalFocusMin}</p>
               </div>
@@ -700,7 +712,7 @@ export function FocusPage() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 14%, transparent)', color: 'var(--color-success)' }}>
                 <Coffee size={18} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Breaks Taken</p>
                 <p className="text-xl font-black text-text-primary leading-tight">{totalBreakCount}</p>
               </div>
@@ -711,7 +723,7 @@ export function FocusPage() {
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-info) 14%, transparent)', color: 'var(--color-info)' }}>
                 <Timer size={18} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Break Minutes</p>
                 <p className="text-xl font-black text-text-primary leading-tight">{totalBreakMin}</p>
               </div>
@@ -727,12 +739,12 @@ export function FocusPage() {
           />
         )}
 
-        <Card variant="default" className="p-6 sm:p-8 w-full">
+        <Card variant="default" className="p-5 sm:p-8 w-full">
           <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-5">This Week (Focus + Break)</p>
           {allSessions.length > 0 ? (
-            <div className="flex items-stretch justify-between gap-2 h-24">
+            <div className="flex items-stretch justify-between gap-1.5 sm:gap-2 h-24">
               {weekBars.map((d, i) => (
-                <div key={i} className="flex-1 h-full flex flex-col items-center gap-2">
+                <div key={i} className="flex-1 h-full flex flex-col items-center gap-2 min-w-0">
                   <div className="w-full flex-1 flex items-end rounded-md overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
                     <div
                       className="w-full rounded-md transition-all duration-500"

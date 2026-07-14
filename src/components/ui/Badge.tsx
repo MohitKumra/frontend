@@ -65,24 +65,16 @@ export function PriorityBadge({ priority }: { priority: 'LOW' | 'MEDIUM' | 'HIGH
 }
 
 /** Maps task status to a badge variant. */
-export function StatusBadge({ status }: { status: 'TODO' | 'IN_PROGRESS' | 'WAITING' | 'BLOCKED' | 'IN_REVIEW' | 'DELEGATED' | 'DONE' | 'CANCELLED' }) {
+export function StatusBadge({ status }: { status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED' }) {
   const map: Record<string, BadgeVariant> = {
     TODO: 'default',
     IN_PROGRESS: 'accent',
-    WAITING: 'warning',
-    BLOCKED: 'danger',
-    IN_REVIEW: 'info',
-    DELEGATED: 'accent',
     DONE: 'success',
     CANCELLED: 'default',
   };
   const labels: Record<string, string> = {
     TODO: 'To Do',
     IN_PROGRESS: 'In Progress',
-    WAITING: 'Waiting',
-    BLOCKED: 'Blocked',
-    IN_REVIEW: 'In Review',
-    DELEGATED: 'Delegated',
     DONE: 'Completed',
     CANCELLED: 'Cancelled',
   };
