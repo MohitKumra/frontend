@@ -8,6 +8,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
+import { MediaPreview } from '../components/media/MediaPreview';
 import { useProject } from '../features/projects/hooks/useProjects';
 import { notesApi } from '../features/notes/api';
 import apiClient from '../lib/apiClient';
@@ -90,6 +91,29 @@ export function ProjectDetailPage() {
           <div className="w-full md:w-72">
             <div className="h-2 rounded-full overflow-hidden bg-border">
               <div className="h-full rounded-full" style={{ width: `${project.progress}%`, background: 'var(--gradient-accent)' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachment</p>
+            <div className="mt-2">
+              {project.attachmentUrl ? (
+                <MediaPreview attachmentUrl={project.attachmentUrl} compact />
+              ) : (
+                <p className="text-sm font-bold text-text-primary">None</p>
+              )}
+            </div>
+          </div>
+          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
+            <div className="mt-2">
+              {project.voiceNoteUrl ? (
+                <MediaPreview voiceNoteUrl={project.voiceNoteUrl} compact />
+              ) : (
+                <p className="text-sm font-bold text-text-primary">None</p>
+              )}
             </div>
           </div>
         </div>

@@ -71,9 +71,9 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
 
   return (
     <Card variant="default">
-      <div className="p-6">
+      <div className="p-6 sm:p-7">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-7">
           <div 
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'var(--gradient-accent)' }}
@@ -104,7 +104,7 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
         </div>
 
         {/* Breakdown */}
-        <div className="space-y-3.5 mb-5">
+        <div className="space-y-4 mb-6">
           {categories.map(({ label, value, icon: Icon, color }) => (
             <div key={label}>
               <div className="flex items-center justify-between mb-1.5">
@@ -129,7 +129,7 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
 
         {/* Tip */}
         <div 
-          className="rounded-xl p-3 mt-4"
+          className="rounded-xl p-4 mt-5"
           style={{ 
             background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))', 
             border: '1px solid var(--color-accent-border)' 

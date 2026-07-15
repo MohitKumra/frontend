@@ -7,6 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { queryClient } from './lib/queryClient';
 import { initTheme } from './platform/theme';
+import { OnboardingRoot } from './features/onboarding/components/OnboardingProvider';
 import './index.css';
 
 // Import Inter font
@@ -21,7 +22,9 @@ initTheme().then(() => {
     <React.StrictMode>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <OnboardingRoot>
+            <App />
+          </OnboardingRoot>
           <Toaster
             position="bottom-center"
             toastOptions={{

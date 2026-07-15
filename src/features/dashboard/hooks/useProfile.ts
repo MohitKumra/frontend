@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../../lib/apiClient';
+import { prepareUploadFile } from '../../../lib/mediaUpload';
 import { useAuthStore } from '../../../store/authStore';
 
 /**
  * Uploads a new avatar image for the current user.
- * Expects the backend to accept multipart/form-data on POST /users/me/avatar
- * and to respond with { avatarUrl: string }.
+ * Sends the image as base64 JSON to POST /users/me/avatar and expects
+ * { avatarUrl: string } in return.
  */
 export function useUpdateAvatar() {
   const queryClient = useQueryClient();
@@ -14,11 +15,11 @@ export function useUpdateAvatar() {
 
   return useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      const { data } = await apiClient.post<{ avatarUrl: string }>('/users/me/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const { file: preparedFile, base64DataUrl } = await prepareUploadFile(file);
+      const { data } = await apiClient.post<{ avatarUrl: string }>('/users/me/avatar', {
+        fileName: preparedFile.name,
+        mimeType: preparedFile.type || file.type,
+        base64Data: base64DataUrl,
       });
       return data.avatarUrl;
     },

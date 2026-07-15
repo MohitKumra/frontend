@@ -3,6 +3,7 @@ import { Folder } from 'lucide-react';
 import { useCreateProject } from '../../features/projects/hooks/useProjects';
 import { DraggableModal } from '../ui/DraggableModal';
 import type { CreateProjectRequest, ProjectStatus } from '../../types';
+import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
     color: PROJECT_COLORS[0],
     startDate: '',
     dueDate: '',
+    attachmentUrl: '',
+    voiceNoteUrl: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,6 +48,8 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         color: PROJECT_COLORS[0],
         startDate: '',
         dueDate: '',
+        attachmentUrl: '',
+        voiceNoteUrl: '',
       });
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -168,6 +173,13 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
             />
           </div>
         </div>
+
+        <MediaAttachmentsField
+          attachmentUrl={formData.attachmentUrl ?? ''}
+          onAttachmentUrlChange={(value) => setFormData({ ...formData, attachmentUrl: value })}
+          voiceNoteUrl={formData.voiceNoteUrl ?? ''}
+          onVoiceNoteUrlChange={(value) => setFormData({ ...formData, voiceNoteUrl: value })}
+        />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

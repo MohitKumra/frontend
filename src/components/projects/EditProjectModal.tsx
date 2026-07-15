@@ -3,6 +3,7 @@ import { Folder } from 'lucide-react';
 import { useUpdateProject } from '../../features/projects/hooks/useProjects';
 import { DraggableModal } from '../ui/DraggableModal';
 import type { ProjectDTO, UpdateProjectRequest, ProjectStatus } from '../../types';
+import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export function EditProjectModal({ isOpen, project, onClose }: EditProjectModalP
     color: project.color,
     startDate: project.startDate?.split('T')[0] ?? '',
     dueDate: project.dueDate?.split('T')[0] ?? '',
+    attachmentUrl: project.attachmentUrl ?? '',
+    voiceNoteUrl: project.voiceNoteUrl ?? '',
     progress: project.progress,
   });
 
@@ -180,6 +183,13 @@ export function EditProjectModal({ isOpen, project, onClose }: EditProjectModalP
             />
           </div>
         </div>
+
+        <MediaAttachmentsField
+          attachmentUrl={formData.attachmentUrl ?? ''}
+          onAttachmentUrlChange={(value) => setFormData({ ...formData, attachmentUrl: value })}
+          voiceNoteUrl={formData.voiceNoteUrl ?? ''}
+          onVoiceNoteUrlChange={(value) => setFormData({ ...formData, voiceNoteUrl: value })}
+        />
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">

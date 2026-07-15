@@ -65,7 +65,7 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
       </div>
 
       {/* Project Cards Grid */}
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {projects.length === 0 ? (
           <div className="col-span-full text-center py-8">
             <p className="text-xs text-text-muted">No active projects yet</p>

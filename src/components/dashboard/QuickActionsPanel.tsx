@@ -67,9 +67,9 @@ export function QuickActionsPanel() {
 
   return (
     <Card variant="default">
-      <div className="p-6">
+      <div className="p-6 sm:p-7">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 sm:mb-7">
           <div 
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'var(--gradient-accent)' }}
@@ -83,7 +83,7 @@ export function QuickActionsPanel() {
         </div>
 
         {/* Action Grid - 2 columns */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3.5">
           {actions.map(({ id, label, description, icon: Icon, route, gradient }) => (
             <button
               key={id}

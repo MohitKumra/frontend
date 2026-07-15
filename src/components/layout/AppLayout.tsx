@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, CheckSquare, Calendar, CalendarDays, Target, FileText,
   Timer, BarChart2, LogOut, X ,Sparkles, Moon, Sun,
-  Search, MoreHorizontal, ChevronRight, User, Settings2
+  Search, MoreHorizontal, ChevronRight, User, Settings2, FolderKanban
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -18,15 +18,16 @@ import { useDashboardToday } from '../../features/dashboard/hooks/useDashboard';
 import { applyLayoutPreference } from '../../platform/layout';
 
 const navItems = [
-  { to: '/',          icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',      badgeKey: 'tasks' },
-  { to: '/planner',   icon: Calendar,        label: 'Planner' },
-  { to: '/calendar',  icon: CalendarDays,    label: 'Calendar' },
-  { to: '/habits',    icon: Target,          label: 'Habits',     badgeKey: 'habits' },
-  { to: '/notes',     icon: FileText,        label: 'Notes' },
-  { to: '/focus',     icon: Timer,           label: 'Focus' },
-  { to: '/analytics', icon: BarChart2,       label: 'Analytics' },
-  { to: '/settings',  icon: Settings2,       label: 'Settings' },
+  { to: '/',          icon: LayoutDashboard, label: 'Dashboard', onboarding: 'dashboard' },
+  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',     badgeKey: 'tasks', onboarding: 'tasks' },
+  { to: '/planner',   icon: Calendar,        label: 'Planner',   onboarding: 'planner' },
+  { to: '/calendar',  icon: CalendarDays,    label: 'Calendar',  onboarding: 'calendar' },
+  { to: '/habits',    icon: Target,          label: 'Habits',    badgeKey: 'habits', onboarding: 'habits' },
+  { to: '/notes',     icon: FileText,        label: 'Notes',     onboarding: 'notes' },
+  { to: '/focus',     icon: Timer,           label: 'Focus',     onboarding: 'focus' },
+  { to: '/analytics', icon: BarChart2,       label: 'Analytics', onboarding: 'analytics' },
+  { to: '/projects',  icon: FolderKanban,    label: 'Projects',  onboarding: 'projects' },
+  { to: '/settings',  icon: Settings2,       label: 'Settings',  onboarding: 'settings' },
 ];
 
 /** Active link styles for mobile bottom nav (unchanged) */
@@ -44,7 +45,7 @@ const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
     'sidebar-nav-link flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold select-none relative',
     isActive
       ? 'sidebar-nav-link-active text-accent'
-      : 'text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800/60',
+      : 'text-text-secondary hover:text-text-primary hover:bg-[var(--sidebar-item-hover)]',
   ].join(' ');
 
 export function AppLayout() {
@@ -203,7 +204,7 @@ export function AppLayout() {
           {sidebarOpen && (
             <button
               onClick={toggleSidebar}
-              className="p-1.5 rounded-lg text-text-muted hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1.5 rounded-lg text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
               aria-label="Collapse sidebar"
             >
               <X size={16} />
@@ -219,7 +220,7 @@ export function AppLayout() {
             </span>
           )}
 
-          {navItems.map(({ to, icon: Icon, label, badgeKey }) => {
+          {navItems.map(({ to, icon: Icon, label, badgeKey, onboarding }) => {
             const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
 
             const content = (
@@ -227,6 +228,7 @@ export function AppLayout() {
                 key={to}
                 to={to}
                 end={to === '/'}
+                data-onboarding={onboarding || undefined}
                 className={({ isActive }) =>
                   [sidebarLinkClass({ isActive }), !sidebarOpen && 'justify-center'].filter(Boolean).join(' ')
                 }
@@ -290,7 +292,7 @@ export function AppLayout() {
       {/* ── Main content area (unchanged) ──────────────────────────────── */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         <header
-          className={`flex items-center justify-between border-b bg-white dark:bg-slate-900 shrink-0 gap-4 ${headerPaddingClass}`}
+          className={`flex items-center justify-between border-b shrink-0 gap-4 ${headerPaddingClass}`}
           style={{ height: 'var(--topbar-height)', background: 'var(--topbar-bg)', borderColor: 'var(--topbar-border)' }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-initial">
@@ -329,7 +331,7 @@ export function AppLayout() {
           {/* Mobile search button */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="sm:hidden p-2.5 rounded-xl text-text-muted hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="sm:hidden p-2.5 rounded-xl text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
             aria-label="Search"
           >
             <Search size={18} />
@@ -338,7 +340,7 @@ export function AppLayout() {
           <div className="flex items-center gap-2.5 sm:gap-4">
             <button
               onClick={() => toggleTheme()}
-              className="p-2.5 rounded-xl text-text-muted hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-2.5 rounded-xl text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -390,11 +392,14 @@ export function AppLayout() {
             style={{ background: 'var(--color-accent)' }}
           />
           
-          {mobilePrimaryItems.map(({ to, icon: Icon, label }) => (
+          {mobilePrimaryItems.map(({ to, icon: Icon, label, onboarding }) => {
+            const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
+            return (
             <NavLink 
               key={to} 
               to={to} 
               end={to === '/'} 
+              {...mobileOnboardingAttr}
               className={({ isActive }) => [
                 'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
                 isActive ? 'text-accent' : 'text-text-muted'
@@ -425,7 +430,8 @@ export function AppLayout() {
                 </>
               )}
             </NavLink>
-          ))}
+          );
+          })}
 
           <button
             onClick={() => setMobileMoreOpen(true)}

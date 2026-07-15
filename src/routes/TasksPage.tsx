@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useLayoutEffect, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -27,11 +28,12 @@ import type { TaskDTO, TaskStatus } from '../types';
 type TaskFilter = 'all' | 'today' | 'upcoming' | 'completed' | 'overdue';
 type ViewMode = 'list' | 'board';
 
-interface PillRect {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
+interface TravelStyle extends React.CSSProperties {
+  '--start-x'?: string;
+  '--start-y'?: string;
+  '--end-x'?: string;
+  '--end-y'?: string;
+  '--end-scale'?: string;
 }
 
 const PRIORITY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
@@ -66,13 +68,14 @@ export function TasksPage() {
 
   const queryClient = useQueryClient();
 
-  // Sliding pill refs for filter tabs
+  // Traveling highlight refs for filter tabs
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const filterRefs = useRef<Record<TaskFilter, HTMLButtonElement | null>>({
     all: null, today: null, upcoming: null, completed: null, overdue: null,
   });
-  const [pillRect, setPillRect] = useState<PillRect | null>(null);
-  const [pillReady, setPillReady] = useState(false);
+  const prevActiveRect = useRef<DOMRect | null>(null);
+  const [travelStyle, setTravelStyle] = useState<TravelStyle | null>(null);
+  const [travelKey, setTravelKey] = useState(0);
 
   const { data: tasksData, isLoading } = useTasks();
   const updateTask = useUpdateTask();
@@ -234,21 +237,43 @@ export function TasksPage() {
     } finally { setBulkAction(null); }
   };
 
-  // ── sliding pill for filter tabs ─────────────────────────────────────────
+  // ── traveling highlight for filter tabs ──────────────────────────────────
 
-  const measurePill = useCallback((f: TaskFilter) => {
-    const btn = filterRefs.current[f];
-    if (!btn) return;
-    setPillRect({ left: btn.offsetLeft, top: btn.offsetTop, width: btn.offsetWidth, height: btn.offsetHeight });
-    setPillReady(true);
-  }, []);
+  const handleFilterClick = (f: TaskFilter) => {
+    if (f === filter) return;
+    const oldBtn = filterRefs.current[filter];
+    prevActiveRect.current = oldBtn ? oldBtn.getBoundingClientRect() : null;
+    setFilter(f);
+  };
 
-  useLayoutEffect(() => { measurePill(filter); }, [filter, measurePill]);
-  useLayoutEffect(() => {
-    const onResize = () => measurePill(filter);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [filter, measurePill]);
+  useEffect(() => {
+    const newBtn = filterRefs.current[filter];
+    const prevRect = prevActiveRect.current;
+    if (newBtn && prevRect) {
+      const newRect = newBtn.getBoundingClientRect();
+      const startX = prevRect.left + prevRect.width / 2;
+      const startY = prevRect.top + prevRect.height / 2;
+      const endX = newRect.left + newRect.width / 2;
+      const endY = newRect.top + newRect.height / 2;
+      const baseSize = 20;
+      setTravelStyle({
+        left: 0,
+        top: 0,
+        width: baseSize,
+        height: baseSize,
+        marginLeft: -baseSize / 2,
+        marginTop: -baseSize / 2,
+        background: 'var(--gradient-accent)',
+        '--start-x': `${startX}px`,
+        '--start-y': `${startY}px`,
+        '--end-x': `${endX}px`,
+        '--end-y': `${endY}px`,
+        '--end-scale': `${Math.max(newRect.width, newRect.height) / baseSize}`,
+      });
+      setTravelKey((k) => k + 1);
+      prevActiveRect.current = null;
+    }
+  }, [filter]);
 
   // ── keyboard shortcuts ───────────────────────────────────────────────────
 
@@ -271,7 +296,6 @@ export function TasksPage() {
 
   if (isLoading) return <LoadingScreen />;
 
-  const isPillDanger = filter === 'overdue';
   const hasSearch = searchQuery.trim().length > 0;
 
   return (
@@ -499,36 +523,20 @@ export function TasksPage() {
         </div>
       )}
 
-      {/* ── Filter tabs — sliding pill ────────────────────────────────── */}
+      {/* ── Filter tabs — traveling highlight ─────────────────────────── */}
       <div
         ref={filterContainerRef}
         className="relative flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1"
       >
-        {pillRect && (
-          <div
-            className="absolute rounded-xl shadow-md pointer-events-none"
-            style={{
-              left: pillRect.left,
-              top: pillRect.top,
-              width: pillRect.width,
-              height: pillRect.height,
-              background: isPillDanger ? 'var(--color-danger)' : 'var(--gradient-accent)',
-              opacity: pillReady ? 1 : 0,
-              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1), width 300ms cubic-bezier(0.16,1,0.3,1), opacity 150ms ease',
-              zIndex: 0,
-            }}
-          />
-        )}
-
         {(['all', 'today', 'upcoming', 'completed', 'overdue'] as TaskFilter[]).map((f) => (
           <button
             key={f}
             ref={(el) => { filterRefs.current[f] = el; }}
-            onClick={() => setFilter(f)}
+            onClick={() => handleFilterClick(f)}
             className={`relative z-10 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors duration-200 ${
               filter === f ? 'text-white' : 'text-text-muted hover:text-text-secondary'
             }`}
-            style={filter === f ? undefined : { background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
+            style={filter === f ? { background: 'var(--gradient-accent)' } : { background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
             {counts[f] > 0 && (
@@ -537,6 +545,18 @@ export function TasksPage() {
           </button>
         ))}
       </div>
+
+      {/* ── Traveling highlight portal ──────────────────────────────── */}
+      {travelStyle &&
+        createPortal(
+          <div
+            key={travelKey}
+            className="filter-highlight-travel"
+            style={travelStyle}
+            onAnimationEnd={() => setTravelStyle(null)}
+          />,
+          document.body
+        )}
 
       {/* ── Main content ──────────────────────────────────────────────── */}
       {view === 'board' ? (

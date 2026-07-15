@@ -69,10 +69,19 @@
 }
 
 @layer base {
+  :root {
+    --theme-transition: 0.3s ease;
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    transition: 
+      background-color var(--theme-transition),
+      border-color var(--theme-transition),
+      color var(--theme-transition),
+      box-shadow var(--theme-transition);
   }
 
   html, body {
@@ -377,8 +386,8 @@
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.2); }
-  50%      { box-shadow: 0 0 30px rgba(79, 70, 229, 0.4); }
+  0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--color-accent) 20%, transparent); }
+  50%      { box-shadow: 0 0 30px color-mix(in srgb, var(--color-accent) 40%, transparent); }
 }
 
 @keyframes gradient-shift {

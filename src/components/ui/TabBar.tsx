@@ -46,7 +46,7 @@ export function TabBar({
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={[
-                'relative px-5 py-3 text-sm font-bold transition-all duration-200 flex items-center gap-2 tap-target',
+                'relative px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 tap-target whitespace-nowrap',
                 isActive 
                   ? 'text-accent' 
                   : 'text-text-secondary hover:text-text-primary',

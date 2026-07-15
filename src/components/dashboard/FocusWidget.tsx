@@ -44,9 +44,9 @@ export function FocusWidget({
 
   return (
     <Card variant="default" className="overflow-hidden">
-      <div className="p-5 sm:p-6">
+      <div className="p-6 sm:p-7">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -82,7 +82,7 @@ export function FocusWidget({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-4 mb-5">
           {stats.map(({ label, value, icon: Icon, color }) => {
             const colors = colorMap[color as keyof typeof colorMap];
             return (
@@ -118,7 +118,7 @@ export function FocusWidget({
         </button>
 
         {/* Tip */}
-        <p className="text-xs text-center text-text-muted mt-3">
+        <p className="text-xs text-center text-text-muted mt-4">
           25-minute Pomodoro sessions recommended
         </p>
       </div>

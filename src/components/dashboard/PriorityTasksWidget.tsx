@@ -71,9 +71,9 @@ export function PriorityTasksWidget({ tasks, maxTasks = 5 }: PriorityTasksWidget
 
   return (
     <Card variant="default" className="overflow-hidden">
-      <div className="p-5 sm:p-6">
+      <div className="p-6 sm:p-7">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -98,7 +98,7 @@ export function PriorityTasksWidget({ tasks, maxTasks = 5 }: PriorityTasksWidget
 
         {/* Task Cards */}
         {priorityTasks.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {priorityTasks.map((task) => {
               const colors = priorityColors[task.priority];
               const overdue = isOverdue(task.dueDate, task.status);

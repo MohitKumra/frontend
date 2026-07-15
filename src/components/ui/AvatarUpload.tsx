@@ -12,7 +12,7 @@ interface AvatarUploadProps {
   onRemove?: () => Promise<void>;
 }
 
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 export function AvatarUpload({ isOpen, onClose, currentAvatarUrl, onUpload, onRemove }: AvatarUploadProps) {
@@ -42,7 +42,7 @@ export function AvatarUpload({ isOpen, onClose, currentAvatarUrl, onUpload, onRe
         return;
       }
       if (file.size > MAX_SIZE_BYTES) {
-        setError('Image must be smaller than 5MB.');
+        setError('Image must be smaller than 4MB.');
         return;
       }
 
@@ -87,13 +87,13 @@ export function AvatarUpload({ isOpen, onClose, currentAvatarUrl, onUpload, onRe
     <DraggableModal isOpen={isOpen} onClose={handleClose} title="Update profile photo">
       <div className="flex flex-col items-center gap-5">
         <div
-          className="w-28 h-28 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-md"
+          className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 shadow-md"
           style={{ background: 'var(--gradient-accent)' }}
         >
           {displaySrc ? (
             <img src={displaySrc} alt="Avatar preview" className="w-full h-full object-cover" />
           ) : (
-            <Camera size={28} className="text-white/70" />
+            <Camera size={20} className="text-white/70" />
           )}
         </div>
 
@@ -123,7 +123,7 @@ export function AvatarUpload({ isOpen, onClose, currentAvatarUrl, onUpload, onRe
           <p className="text-xs font-bold text-text-primary">
             {isUploading ? 'Uploading…' : 'Drop an image here, or click to browse'}
           </p>
-          <p className="text-[11px] text-text-muted">PNG, JPG, or WEBP — up to 5MB</p>
+          <p className="text-[11px] text-text-muted">PNG, JPG, or WEBP — up to 4MB</p>
         </div>
 
         {error && <p className="text-xs font-bold text-danger">{error}</p>}

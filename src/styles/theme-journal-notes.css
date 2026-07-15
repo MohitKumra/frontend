@@ -33,6 +33,23 @@
   --notes-shadow: rgba(0, 0, 0, 0.08);
 
   --ease-book: cubic-bezier(0.22, 1, 0.36, 1);
+  
+  /* Note Colors */
+  --note-yellow: #FEF3C7;
+  --note-blue: #DBEAFE;
+  --note-pink: #FCE7F3;
+  --note-green: #DCFCE7;
+}
+
+[data-theme='dark'] {
+  --journal-darker: #0A0E1A;
+  --journal-dark: #1A2335;
+  --journal-paper: #E8DCC8;
+  
+  --note-yellow: #4A3F1A;
+  --note-blue: #1E3A5F;
+  --note-pink: #4A2545;
+  --note-green: #1A4A2E;
 }
 
 /* ============================================================
@@ -158,7 +175,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, #2a1d14 0%, #150e09 100%);
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   opacity: 0;
   animation: journal-backdrop-in 0.4s var(--ease-book) forwards;
   overscroll-behavior: contain;
@@ -179,8 +198,9 @@
 }
 
 .journal-book-stage {
-  width: min(92vw, 900px);
-  height: min(86dvh, 720px);
+  width: min(94vw, 980px);
+  height: min(88dvh, 760px);
+  max-height: calc(100dvh - 40px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -462,8 +482,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 22, 26, 0.55);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   opacity: 0;
   animation: note-backdrop-in 0.28s ease-out forwards;
 }
@@ -481,8 +502,9 @@
 
 .note-sheet {
   position: relative;
-  width: min(94vw, 640px);
-  height: min(84dvh, 680px);
+  width: min(92vw, 680px);
+  height: min(86dvh, 720px);
+  max-height: calc(100dvh - 40px);
   display: flex;
   flex-direction: column;
   margin-top: 16px; /* room for the pin to poke above the sheet */
@@ -819,16 +841,14 @@
   --entry-toggle-active-text: #4a3c00;
 }
 
-@media (prefers-color-scheme: dark) {
-  .note-overlay {
-    --entry-close-bg: rgba(30, 30, 30, 0.9);
-    --entry-close-color: #e8e8e8;
-    --entry-close-border: #3c3c3c;
-    --entry-danger-bg: rgba(30, 30, 30, 0.9);
-    --entry-ghost-bg: rgba(30, 30, 30, 0.9);
-    --entry-ghost-color: #cbd5e1;
-    --entry-ghost-border: #3c3c3c;
-  }
+[data-theme='dark'] .note-overlay {
+  --entry-close-bg: rgba(30, 30, 30, 0.9);
+  --entry-close-color: #e8e8e8;
+  --entry-close-border: #3c3c3c;
+  --entry-danger-bg: rgba(30, 30, 30, 0.9);
+  --entry-ghost-bg: rgba(30, 30, 30, 0.9);
+  --entry-ghost-color: #cbd5e1;
+  --entry-ghost-border: #3c3c3c;
 }
 
 /* ============================================================
@@ -1177,4 +1197,168 @@
   background: var(--entry-toggle-active-bg);
   color: var(--entry-toggle-active-text);
   flex-shrink: 0;
+}
+
+/* ============================================================
+   MEDIA INSIDE NOTES — warm amber theme matching sticky note
+   ============================================================ */
+
+.note-media-field-wrap {
+  margin-top: 16px;
+}
+
+/* Override the generic surface/border tokens inside note sheets so
+   the media field matches the yellow sticky-note palette instead of
+   clashing with dark navy cards. */
+.note-sheet .note-media-field-wrap > div {
+  background: transparent !important;
+}
+
+.note-sheet .rounded-2xl[style*="surface-raised"] {
+  background: rgba(74, 60, 0, 0.08) !important;
+  border-color: rgba(74, 60, 0, 0.2) !important;
+}
+
+.note-sheet .note-media-field-wrap .rounded-xl,
+.note-sheet .note-media-field-wrap button[style*="surface"] {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border-color: rgba(74, 60, 0, 0.18) !important;
+  color: #4a3c00 !important;
+}
+
+.note-sheet .note-media-field-wrap label,
+.note-sheet .note-media-field-wrap .text-xs {
+  color: #7a6420 !important;
+}
+
+.note-sheet .note-media-field-wrap .space-y-3 {
+  background: rgba(74, 60, 0, 0.06) !important;
+  border-color: rgba(74, 60, 0, 0.15) !important;
+}
+
+/* View modal — media preview inside note-sheet */
+.note-sheet .mt-5 .rounded-2xl[style*="border"] {
+  border-color: rgba(74, 60, 0, 0.2) !important;
+}
+
+.note-sheet .mt-5 .text-xs[style*="text-muted"],
+.note-sheet .mt-5 p[style*="text-muted"] {
+  color: #7a6420 !important;
+}
+
+.note-sheet .mt-5 .rounded-2xl[style*="surface"] {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border-color: rgba(74, 60, 0, 0.18) !important;
+}
+
+/* ============================================================
+   MEDIA INSIDE JOURNAL — warm leather/paper tones
+   ============================================================ */
+
+.journal-media-field-wrap {
+  margin-top: 16px;
+}
+
+.journal-edit-page .journal-media-field-wrap > div {
+  background: rgba(139, 111, 71, 0.1) !important;
+  border-color: rgba(92, 64, 51, 0.25) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap .rounded-xl,
+.journal-edit-page .journal-media-field-wrap button[style*="surface"] {
+  background: rgba(244, 232, 216, 0.6) !important;
+  border-color: rgba(92, 64, 51, 0.2) !important;
+  color: var(--journal-text) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap label,
+.journal-edit-page .journal-media-field-wrap .text-xs {
+  color: var(--journal-accent) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap .space-y-3 {
+  background: rgba(139, 111, 71, 0.06) !important;
+  border-color: rgba(92, 64, 51, 0.18) !important;
+}
+
+/* Make the journal textarea-wrap scrollable so the media field
+   doesn't push content off-screen */
+.journal-edit-textarea-wrap {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.journal-edit-textarea-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   DEEP OVERRIDES — target inline-styled media containers
+   These components set background/border via style={} so we
+   need high-specificity + !important to override them.
+   ============================================================ */
+
+/* Note sheet — all media containers */
+.note-sheet .note-media-field-wrap .rounded-2xl {
+  background: rgba(74, 60, 0, 0.08) !important;
+  border-color: rgba(74, 60, 0, 0.2) !important;
+}
+
+.note-sheet .note-media-field-wrap button {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border-color: rgba(74, 60, 0, 0.18) !important;
+  color: #4a3c00 !important;
+}
+
+.note-sheet .note-media-field-wrap .space-y-2 .rounded-2xl {
+  background: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(74, 60, 0, 0.15) !important;
+}
+
+/* Image preview inside note */
+.note-sheet .note-media-field-wrap .rounded-2xl.border {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(74, 60, 0, 0.18) !important;
+}
+
+/* Attachment label text */
+.note-sheet .note-media-field-wrap p {
+  color: #7a6420 !important;
+}
+
+.note-sheet .note-media-field-wrap span[style*="text-muted"] {
+  color: #7a6420 !important;
+}
+
+.note-sheet .note-media-field-wrap span[style*="text-primary"] {
+  color: #4a3c00 !important;
+}
+
+/* Journal page — all media containers */
+.journal-edit-page .journal-media-field-wrap .rounded-2xl {
+  background: rgba(139, 111, 71, 0.1) !important;
+  border-color: rgba(92, 64, 51, 0.25) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap button {
+  background: rgba(244, 232, 216, 0.6) !important;
+  border-color: rgba(92, 64, 51, 0.2) !important;
+  color: var(--journal-text) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap .space-y-2 .rounded-2xl {
+  background: rgba(244, 232, 216, 0.4) !important;
+  border-color: rgba(92, 64, 51, 0.18) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap p {
+  color: var(--journal-accent) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap span[style*="text-muted"] {
+  color: var(--journal-accent) !important;
+}
+
+.journal-edit-page .journal-media-field-wrap span[style*="text-primary"] {
+  color: var(--journal-text) !important;
 }

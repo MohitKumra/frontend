@@ -77,9 +77,9 @@ const defaultInsights: Insight[] = [
 export function ProductivityInsights({ insights = defaultInsights }: ProductivityInsightsProps) {
   return (
     <Card variant="default" className="overflow-hidden">
-      <div className="p-5 sm:p-6">
+      <div className="p-6 sm:p-7">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-6">
           <div 
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'var(--gradient-accent)' }}
@@ -93,7 +93,7 @@ export function ProductivityInsights({ insights = defaultInsights }: Productivit
         </div>
 
         {/* Insights List */}
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           {insights.map((insight) => {
             const style = getInsightStyle(insight.type);
             const Icon = getIconComponent(insight.icon);
@@ -124,7 +124,7 @@ export function ProductivityInsights({ insights = defaultInsights }: Productivit
         </div>
 
         {/* Powered by AI Badge */}
-        <div className="mt-4 text-center">
+        <div className="mt-5 text-center">
           <span 
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
             style={{ 

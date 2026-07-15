@@ -3,6 +3,7 @@ import HTMLFlipBook from 'react-pageflip';
 import { Edit3, Trash2, X, Calendar } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { NoteDTO } from '../../types';
+import { MediaPreview } from '../media/MediaPreview';
 
 interface JournalBookModalProps {
   note: NoteDTO;
@@ -76,7 +77,7 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
 
   // One unique chunk per physical page — no pairing, no duplication
   const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
-  const totalPages = contentPages.length + 2; // fake cover + content + fake back cover
+  const hasMediaPage = Boolean(note.attachmentUrl || note.voiceNoteUrl);
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -227,12 +228,28 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
                     </span>
                   )}
                   <span className="journal-page-number">
-                    Page {i + 1} of {totalPages - 2}
+                    Page {i + 1} of {contentPages.length}
                   </span>
                 </div>
               </div>
             </Page>
           ))}
+
+          {(note.attachmentUrl || note.voiceNoteUrl) && (
+            <Page className="rpf-page rpf-content" key="media">
+              <div className="journal-paper-face">
+                <span className="journal-header-date">Attachments</span>
+                <h2 className="journal-header-title">Linked media</h2>
+                <div className="journal-paper-scroll space-y-4">
+                  <MediaPreview
+                    attachmentUrl={note.attachmentUrl}
+                    voiceNoteUrl={note.voiceNoteUrl}
+                    compact
+                  />
+                </div>
+              </div>
+            </Page>
+          )}
 
           {/* Fake back cover */}
           <Page className="rpf-page rpf-cover rpf-cover-back">

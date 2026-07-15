@@ -1,8 +1,10 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { AppErrorBoundary } from './components/layout/AppErrorBoundary';
 import { useAuthStore } from './store/authStore';
+import { useOnboarding } from './features/onboarding/hooks/useOnboarding';
+import { hasCompletedOnboarding } from './features/onboarding/utils/storage';
 
 // Auth pages (public)
 import { LoginPage }          from './routes/LoginPage';
@@ -33,42 +35,75 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Listens for first-time authentication and triggers the onboarding tour.
+ * Must be placed inside the OnboardingRoot context (inside App).
+ */
+function OnboardingTrigger() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { isActive, actions } = useOnboarding();
+  const hasTriggered = useRef(false);
+
+  useEffect(() => {
+    // Trigger onboarding only once: when user is authenticated,
+    // hasn't completed onboarding before, and tour isn't already active.
+    if (
+      isAuthenticated &&
+      !hasCompletedOnboarding() &&
+      !hasTriggered.current &&
+      !isActive
+    ) {
+      hasTriggered.current = true;
+      // Slight delay so the dashboard renders before the welcome modal
+      setTimeout(() => {
+        actions.start();
+      }, 600);
+    }
+  }, [isAuthenticated, isActive, actions]);
+
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login"           element={<LoginPage />} />
-      <Route path="/signup"          element={<SignupPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password"  element={<ResetPasswordPage />} />
-      <Route path="/google/callback" element={<GoogleAuthCallbackPage />} />
+    <>
+      <OnboardingTrigger />
 
-      {/* Protected routes — inside AppLayout */}
-      <Route
-        element={
-        <RequireAuth>
-            <AppErrorBoundary>
-              <AppLayout />
-            </AppErrorBoundary>
-          </RequireAuth>
-        }
-      >
-        <Route index               element={<DashboardPage />} />
-        <Route path="tasks"        element={<TasksPage />} />
-        <Route path="tasks/:id"    element={<TaskDetailPage />} />
-        <Route path="planner"      element={<PlannerPage />} />
-        <Route path="calendar"     element={<CalendarPage />} />
-        <Route path="habits"       element={<HabitsPage />} />
-        <Route path="notes"        element={<NotesPage />} />
-        <Route path="focus"        element={<FocusPage />} />
-        <Route path="analytics"    element={<AnalyticsPage />} />
-        <Route path="projects"     element={<ProjectsPage />} />
-        <Route path="projects/:id" element={<ProjectDetailPage />} />
-        <Route path="settings"     element={<SettingsPage />} />
-      </Route>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login"           element={<LoginPage />} />
+        <Route path="/signup"          element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password"  element={<ResetPasswordPage />} />
+        <Route path="/google/callback" element={<GoogleAuthCallbackPage />} />
 
-      {/* Fallback */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* Protected routes — inside AppLayout */}
+        <Route
+          element={
+          <RequireAuth>
+              <AppErrorBoundary>
+                <AppLayout />
+              </AppErrorBoundary>
+            </RequireAuth>
+          }
+        >
+          <Route index               element={<DashboardPage />} />
+          <Route path="tasks"        element={<TasksPage />} />
+          <Route path="tasks/:id"    element={<TaskDetailPage />} />
+          <Route path="planner"      element={<PlannerPage />} />
+          <Route path="calendar"     element={<CalendarPage />} />
+          <Route path="habits"       element={<HabitsPage />} />
+          <Route path="notes"        element={<NotesPage />} />
+          <Route path="focus"        element={<FocusPage />} />
+          <Route path="analytics"    element={<AnalyticsPage />} />
+          <Route path="projects"     element={<ProjectsPage />} />
+          <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="settings"     element={<SettingsPage />} />
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
   );
 }

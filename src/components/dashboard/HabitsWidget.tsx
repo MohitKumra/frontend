@@ -26,9 +26,9 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
 
   return (
     <Card variant="default" className="overflow-hidden">
-      <div className="p-5 sm:p-6">
+      <div className="p-6 sm:p-7">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -88,7 +88,7 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
 
         {/* Habit Chips */}
         {displayHabits.length > 0 ? (
-          <div className="space-y-2.5 mb-4">
+          <div className="space-y-3 mb-5">
             {displayHabits.map((habit) => {
               const progress = habit.weeklyProgress ?? (habit.completedToday ? 100 : 0);
               
@@ -162,10 +162,10 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
         )}
 
         {/* View All Button */}
-        <button
+          <button
           type="button"
           onClick={() => navigate('/habits')}
-          className="w-full rounded-xl p-3 font-bold transition-all hover:shadow-sm text-center"
+          className="w-full rounded-xl p-3.5 font-bold transition-all hover:shadow-sm text-center"
           style={{ 
             background: 'var(--color-surface-raised)', 
             border: '1px solid var(--color-border)',

@@ -8,7 +8,6 @@ import {
   ListChecks,
   ChevronDown,
   Clock,
-  Paperclip,
   AlignLeft,
   Layers,
 } from 'lucide-react';
@@ -17,6 +16,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { CreateTaskRequest, Priority, CreateSubTaskRequest, TaskStatus } from '../../types';
 import { Modal } from '../ui/Modal';
 import { DraggableModal } from '../ui/DraggableModal';
+import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -85,6 +85,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
   const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
   const [customDuration, setCustomDuration] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState('');
   const [subTasks, setSubTasks] = useState<CreateSubTaskRequest[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
 
@@ -118,6 +119,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
     setEstimatedDuration(null);
     setCustomDuration('');
     setAttachmentUrl('');
+    setVoiceNoteUrl('');
     setSubTasks([]);
     setNewSubTaskTitle('');
     setShowMore(false);
@@ -154,6 +156,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
       if (recurrenceEndDate) body.recurrenceEndDate = recurrenceEndDate;
       if (resolvedDuration && resolvedDuration > 0) body.estimatedDuration = resolvedDuration;
       if (attachmentUrl.trim()) body.attachmentUrl = attachmentUrl.trim();
+      if (voiceNoteUrl.trim()) body.voiceNoteUrl = voiceNoteUrl.trim();
       if (subTasks.length > 0)
         body.subTasks = subTasks.map((s, i) => ({ title: s.title, order: s.order ?? i }));
 
@@ -340,23 +343,12 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
         )}
       </div>
 
-      {/* Attachment URL */}
-      <div>
-        <label
-          className="flex items-center gap-1 text-xs font-bold mb-1.5"
-          style={{ color: 'var(--color-text-primary)' }}
-        >
-          <Paperclip size={12} /> Attachment URL
-        </label>
-        <input
-          type="url"
-          value={attachmentUrl}
-          onChange={(e) => setAttachmentUrl(e.target.value)}
-          placeholder="https://..."
-          className={inputCls}
-          style={inputStyle}
-        />
-      </div>
+      <MediaAttachmentsField
+        attachmentUrl={attachmentUrl}
+        onAttachmentUrlChange={setAttachmentUrl}
+        voiceNoteUrl={voiceNoteUrl}
+        onVoiceNoteUrlChange={setVoiceNoteUrl}
+      />
 
       {/* Subtasks */}
       <div>
@@ -559,7 +551,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
             <Layers size={13} />
             <span>More Options</span>
             {/* On desktop show a chevron; on mobile a pill badge shows active fields count */}
-            {isMobile && (description || recurrence !== 'none' || estimatedDuration || attachmentUrl || subTasks.length > 0) ? (
+            {isMobile && (description || recurrence !== 'none' || estimatedDuration || attachmentUrl || voiceNoteUrl || subTasks.length > 0) ? (
               <span
                 className="ml-auto text-[10px] font-extrabold px-2 py-0.5 rounded-full"
                 style={{
@@ -567,7 +559,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
                   color: 'white',
                 }}
               >
-                {[description, recurrence !== 'none', estimatedDuration, attachmentUrl, subTasks.length > 0].filter(Boolean).length}
+                {[description, recurrence !== 'none', estimatedDuration, attachmentUrl, voiceNoteUrl, subTasks.length > 0].filter(Boolean).length}
               </span>
             ) : (
               <ChevronDown

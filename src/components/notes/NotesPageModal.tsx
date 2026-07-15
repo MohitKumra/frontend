@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Edit3, Trash2, X, Calendar, StickyNote } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { NoteDTO } from '../../types';
+import { MediaPreview } from '../media/MediaPreview';
 
 interface NotePageModalProps {
   note: NoteDTO;
@@ -65,6 +66,15 @@ export function NotePageModal({ note, onClose, onEdit, onDelete }: NotePageModal
 
         <div className="note-sheet-scroll">
           <p className="note-text">{note.content}</p>
+          {(note.attachmentUrl || note.voiceNoteUrl) && (
+            <div className="note-media-field-wrap" style={{ marginTop: '20px' }}>
+              <MediaPreview
+                attachmentUrl={note.attachmentUrl}
+                voiceNoteUrl={note.voiceNoteUrl}
+                compact
+              />
+            </div>
+          )}
         </div>
 
         <div className="note-sheet-footer">

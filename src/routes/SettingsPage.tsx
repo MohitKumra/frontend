@@ -91,7 +91,7 @@ function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void 
     <button
       type="button"
       onClick={onToggle}
-      className="relative inline-flex h-7 w-12 items-center rounded-full border transition-colors"
+      className="relative inline-flex h-6 w-11 sm:h-7 sm:w-12 items-center rounded-full border transition-colors"
       style={{
         background: checked ? 'var(--gradient-accent)' : 'var(--color-border-subtle)',
         borderColor: checked ? 'transparent' : 'var(--color-border)',
@@ -99,7 +99,7 @@ function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void 
       aria-pressed={checked}
     >
       <span
-        className="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform"
+        className="inline-block h-4 w-4 sm:h-5 sm:w-5 transform rounded-full bg-white shadow-sm transition-transform"
         style={{ transform: checked ? 'translateX(22px)' : 'translateX(3px)' }}
       />
     </button>
@@ -131,15 +131,15 @@ function SectionHeader({
   subtitle: string;
 }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-2.5 sm:gap-3">
       <div
-        className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+        className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0"
         style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
       >
         {icon}
       </div>
-      <div className="min-w-0">
-        <h2 className="text-base font-extrabold text-text-primary">{title}</h2>
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm sm:text-base font-extrabold text-text-primary">{title}</h2>
         <p className="text-xs text-text-muted mt-1 leading-snug">{subtitle}</p>
       </div>
     </div>
@@ -163,7 +163,7 @@ function ChoiceChip({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5"
+      className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 text-left transition-all hover:-translate-y-0.5 active:scale-[0.98]"
       style={{
         borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
         background: active
@@ -172,18 +172,18 @@ function ChoiceChip({
       }}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {icon && (
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0"
               style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
             >
               {icon}
             </div>
           )}
-          <div className="min-w-0">
-            <div className="text-sm font-bold text-text-primary">{title}</div>
-            <div className="text-xs text-text-muted mt-1 leading-snug">{description}</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs sm:text-sm font-bold text-text-primary">{title}</div>
+            <div className="text-[11px] sm:text-xs text-text-muted mt-0.5 sm:mt-1 leading-snug">{description}</div>
           </div>
         </div>
         {active && <CheckCircle2 size={16} className="text-accent shrink-0" />}
@@ -281,18 +281,28 @@ export function SettingsPage() {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) return;
-    if (security?.hasPassword) {
-      await changePassword.mutateAsync({
-        currentPassword,
-        newPassword,
-      });
-    } else {
-      await setPassword.mutateAsync({ newPassword });
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
     }
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    
+    try {
+      if (security?.hasPassword) {
+        await changePassword.mutateAsync({
+          currentPassword,
+          newPassword,
+        });
+        toast.success('Password changed successfully!');
+      } else {
+        await setPassword.mutateAsync({ newPassword });
+        toast.success('Password set successfully!');
+      }
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast.error((error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Failed to update password');
+    }
   };
 
   if (isLoading) {
@@ -304,14 +314,14 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0">
       <PageHeader
         icon={<ShieldCheck size={20} />}
         title="Settings"
         subtitle="Appearance, notifications, integrations, and account security"
       />
 
-      <Card className="p-5 sm:p-6" variant="default">
+      <Card className="p-4 sm:p-5 lg:p-6" variant="default">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="text-sm font-bold text-text-primary">Smart settings layout</div>
@@ -320,7 +330,7 @@ export function SettingsPage() {
               so you can link the account first and connect the calendar later.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-text-muted">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-text-muted">
             <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1" style={{ borderColor: 'var(--color-border)' }}>
               <CheckCircle2 size={12} className="text-success" />
               Auto-save where it fits
@@ -333,30 +343,47 @@ export function SettingsPage() {
         </div>
       </Card>
 
-      <TabBar
-        tabs={SETTINGS_TABS}
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab as SettingsTab)}
-        variant="underline"
-        className="w-full"
-      />
+      <div 
+        className="overflow-x-auto -mx-4 sm:mx-0"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+        <div className="px-4 sm:px-0 hide-scrollbar">
+          <TabBar
+            tabs={SETTINGS_TABS}
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab as SettingsTab)}
+            variant="underline"
+            className="min-w-max"
+          />
+        </div>
+      </div>
 
       {activeTab === 'appearance' && (
-        <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-5">
-          <Card className="p-5 sm:p-6" variant="default">
-            <SectionHeader
-              icon={<Palette size={20} />}
-              title="Appearance"
-              subtitle="Theme, density, and calendar view all save as soon as you choose them."
-            />
+        <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-4 sm:gap-5">
+          <div id="settings-appearance-panel" data-onboarding="settings-appearance">
+            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
+              <SectionHeader
+                icon={<Palette size={20} />}
+                title="Appearance"
+                subtitle="Theme, density, and calendar view all save as soon as you choose them."
+              />
 
-            <div className="mt-5 space-y-6">
-              <div>
+              <div className="mt-4 sm:mt-5 space-y-5 sm:space-y-6">
+                <div id="settings-theme-options" data-onboarding="settings-theme">
                 <div className="flex items-center gap-2 mb-3">
                   <SunMedium size={16} className="text-accent" />
                   <h3 className="text-sm font-bold text-text-primary">Theme</h3>
                 </div>
-                <div className="grid md:grid-cols-3 gap-3">
+                <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-3">
                   {APPEARANCE_OPTIONS.map((option) => {
                     const active = appearance.themePreference === option.id;
                     return (
@@ -371,14 +398,14 @@ export function SettingsPage() {
                     );
                   })}
                 </div>
-              </div>
+                </div>
 
-              <div>
+                <div id="settings-layout-options" data-onboarding="settings-layout">
                 <div className="flex items-center gap-2 mb-3">
                   <LayoutGrid size={16} className="text-accent" />
                   <h3 className="text-sm font-bold text-text-primary">Layout density</h3>
                 </div>
-                <div className="grid md:grid-cols-3 gap-3">
+                <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-3">
                   {LAYOUT_OPTIONS.map((option) => {
                     const active = appearance.layoutPreference === option.id;
                     return (
@@ -392,14 +419,14 @@ export function SettingsPage() {
                     );
                   })}
                 </div>
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <div className="flex items-center gap-2 mb-3">
                   <CalendarClock size={16} className="text-accent" />
                   <h3 className="text-sm font-bold text-text-primary">Calendar view</h3>
                 </div>
-                <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {CALENDAR_VIEW_OPTIONS.map((option) => {
                     const active = appearance.calendarView === option.id;
                     return (
@@ -415,9 +442,10 @@ export function SettingsPage() {
                 </div>
               </div>
             </div>
-          </Card>
+            </Card>
+          </div>
 
-          <Card className="p-5 sm:p-6" variant="default">
+          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
               icon={<Cloud size={20} />}
               title="Workspace preview"
@@ -425,40 +453,40 @@ export function SettingsPage() {
             />
 
             <div
-              className="mt-5 rounded-[1.5rem] border p-5 sm:p-6"
+              className="mt-4 sm:mt-5 rounded-2xl sm:rounded-[1.5rem] border p-4 sm:p-5 lg:p-6"
               style={{
                 borderColor: 'var(--color-border)',
                 background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 7%, var(--color-surface)), var(--color-surface))',
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ background: 'var(--gradient-accent)' }}>
-                  <span className="text-lg font-black">P</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ background: 'var(--gradient-accent)' }}>
+                  <span className="text-base sm:text-lg font-black">P</span>
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-black text-text-primary">FlowSpace workspace</div>
-                  <div className="text-xs text-text-muted mt-1">
+                  <div className="text-xs text-text-muted mt-1 break-words">
                     Theme: {appearance.themePreference.toLowerCase()} - Layout: {appearance.layoutPreference.toLowerCase()} - View: {appearance.calendarView}
                   </div>
                 </div>
               </div>
 
-              <div className="mt-5 grid md:grid-cols-3 gap-3" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                <div className="rounded-2xl border p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="h-2 w-16 rounded-full bg-accent/25" />
-                  <div className="mt-4 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+              <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
+                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="h-1.5 sm:h-2 w-12 sm:w-16 rounded-full bg-accent/25" />
+                  <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
                 </div>
-                <div className="rounded-2xl border p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="h-2 w-20 rounded-full bg-success/25" />
-                  <div className="mt-4 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="h-1.5 sm:h-2 w-14 sm:w-20 rounded-full bg-success/25" />
+                  <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
                 </div>
-                <div className="rounded-2xl border p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="h-2 w-14 rounded-full bg-warning/25" />
-                  <div className="mt-4 h-20 rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="h-1.5 sm:h-2 w-10 sm:w-14 rounded-full bg-warning/25" />
+                  <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
                 </div>
               </div>
 
-              <div className="mt-5 text-xs text-text-muted">
+              <div className="mt-4 sm:mt-5 text-xs text-text-muted break-words">
                 {user?.email ? `Signed in as ${user.email}` : 'Signed in user'}
               </div>
             </div>
@@ -467,14 +495,15 @@ export function SettingsPage() {
       )}
 
       {activeTab === 'notifications' && (
-        <Card className="p-5 sm:p-6" variant="default">
+        <div id="settings-notifications-panel" data-onboarding="settings-notifications">
+          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
           <SectionHeader
             icon={<BellRing size={20} />}
             title="Notifications"
             subtitle="Each toggle saves immediately, so you can keep moving without a separate apply button."
           />
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
             {[
               ['taskDue', 'Task due reminders', 'Notify before a task deadline.'],
               ['habitReminder', 'Habit reminders', 'Ping when a habit is due.'],
@@ -484,51 +513,55 @@ export function SettingsPage() {
             ].map(([key, title, description]) => (
               <div
                 key={key}
-                className="flex items-center justify-between gap-4 rounded-2xl border p-4"
+                className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4"
                 style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
               >
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="text-sm font-bold text-text-primary">{title}</div>
-                  <div className="text-xs text-text-muted mt-1">{description}</div>
+                  <div className="text-xs text-text-muted mt-1 leading-snug">{description}</div>
                 </div>
-                <Toggle
-                  checked={notifications[key as keyof typeof notifications]}
-                  onToggle={() => {
-                    const next = { ...notifications, [key]: !notifications[key as keyof typeof notifications] };
-                    saveNotifications(next);
-                  }}
-                />
+                <div className="shrink-0">
+                  <Toggle
+                    checked={notifications[key as keyof typeof notifications]}
+                    onToggle={() => {
+                      const next = { ...notifications, [key]: !notifications[key as keyof typeof notifications] };
+                      saveNotifications(next);
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </div>
-        </Card>
+          </Card>
+        </div>
       )}
 
       {activeTab === 'integrations' && (
-        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-5">
-          <Card className="p-5 sm:p-6" variant="default">
+        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-4 sm:gap-5">
+          <div id="settings-integrations-panel" data-onboarding="settings-integrations">
+            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
               icon={<Cloud size={20} />}
               title="Integrations"
               subtitle="Google Calendar is linked separately from Google sign-in, so the account connection stays clean."
             />
 
-            <div className="mt-5 rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
+            <div className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-text-primary">Google Calendar</p>
-                  <p className="text-xs text-text-muted mt-1 leading-snug">
+                  <p className="text-xs text-text-muted mt-1 leading-snug break-words">
                     {googleCalendar?.connected
                       ? `Connected as ${googleCalendar.googleEmail ?? 'your Google account'}`
                       : 'Connect to push planner due dates into Google Calendar.'}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0">
                   <StatusPill label={googleCalendar?.connected ? 'Connected' : 'Not connected'} active={Boolean(googleCalendar?.connected)} />
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
                 <Button
                   size="sm"
                   leftIcon={<PlugZap size={14} />}
@@ -566,17 +599,18 @@ export function SettingsPage() {
                 </p>
               )}
             </div>
-          </Card>
+            </Card>
+          </div>
 
-          <Card className="p-5 sm:p-6" variant="default">
+          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
               icon={<ShieldCheck size={20} />}
               title="Google sign-in"
               subtitle="Signing in with Google automatically links the account; you only need the calendar connector if you want sync."
             />
 
-            <div className="mt-5 grid gap-3">
-              <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="mt-4 sm:mt-5 grid gap-2.5 sm:gap-3">
+              <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Account link</div>
                 <div className="mt-2 text-sm font-bold text-text-primary">
                   {security?.hasGoogle ? 'Linked to Google' : 'Not linked to Google'}
@@ -586,9 +620,9 @@ export function SettingsPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Recovery email</div>
-                <div className="mt-2 text-sm font-bold text-text-primary">
+                <div className="mt-2 text-sm font-bold text-text-primary break-words">
                   {recoveryEmail.trim() ? recoveryEmail : 'No recovery email saved'}
                 </div>
                 <p className="mt-1 text-xs text-text-muted leading-snug">
@@ -601,22 +635,23 @@ export function SettingsPage() {
       )}
 
       {activeTab === 'security' && (
-        <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-5">
-          <Card className="p-5 sm:p-6" variant="default">
+        <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-4 sm:gap-5">
+          <div id="settings-security-panel" data-onboarding="settings-security">
+            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
               icon={<Lock size={20} />}
               title="Security"
               subtitle="Manage your password and recovery path from one place."
             />
 
-            <div className="mt-5 grid md:grid-cols-2 gap-3 mb-5">
-              <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
+              <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Password status</div>
                 <div className="mt-2 text-sm font-bold text-text-primary">
                   {security?.hasPassword ? 'Password set' : 'No password yet'}
                 </div>
               </div>
-              <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Google sign-in</div>
                 <div className="mt-2 text-sm font-bold text-text-primary">
                   {security?.hasGoogle ? 'Linked' : 'Not linked'}
@@ -624,23 +659,23 @@ export function SettingsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-              <div className="flex items-center gap-3">
+            <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="flex items-start gap-3">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{ background: 'var(--icon-bg-info)', color: 'var(--icon-text-info)' }}
                 >
-                  <Mail size={18} />
+                  <Mail size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-text-primary">Recovery email</p>
-                  <p className="text-xs text-text-muted mt-0.5">
+                  <p className="text-xs text-text-muted mt-0.5 leading-snug">
                     Keep a backup email on file so resets still work if Google access changes.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3">
+              <div className="mt-4 grid gap-2.5 sm:gap-3">
                 <Input
                   id="recovery-email"
                   label="Recovery email"
@@ -656,14 +691,16 @@ export function SettingsPage() {
                   leftIcon={<Mail size={14} />}
                   loading={recoveryMutation.isPending}
                   onClick={() => recoveryMutation.mutate(recoveryEmail.trim() ? recoveryEmail : null)}
+                  fullWidth
                 >
                   Save recovery email
                 </Button>
               </div>
             </div>
-          </Card>
+            </Card>
+          </div>
 
-          <Card className="p-5 sm:p-6" variant="default">
+          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
               icon={<KeyRound size={20} />}
               title={security?.hasPassword ? 'Change password' : 'Create password'}
@@ -674,7 +711,7 @@ export function SettingsPage() {
               }
             />
 
-            <form className="space-y-3 mt-5" onSubmit={handlePasswordSubmit}>
+            <form className="space-y-2.5 sm:space-y-3 mt-4 sm:mt-5" onSubmit={handlePasswordSubmit}>
               {security?.hasPassword && (
                 <Input
                   id="current-password"
@@ -710,7 +747,9 @@ export function SettingsPage() {
                 required
               />
               {confirmPassword && newPassword !== confirmPassword && (
-                <p className="text-xs font-semibold text-danger">Passwords do not match.</p>
+                <p className="text-xs font-semibold text-danger flex items-center gap-1.5 px-1">
+                  Passwords do not match.
+                </p>
               )}
 
               <Button

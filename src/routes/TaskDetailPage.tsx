@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock,
   FolderKanban,
-  Paperclip,
   Repeat,
   Timer,
   ListChecks,
@@ -19,6 +18,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { TaskTimeAnalysis } from '../components/tasks/TaskTimeAnalysis';
+import { MediaPreview } from '../components/media/MediaPreview';
 import { formatDuration, getRecurrenceLabel, isOverdue } from '../components/tasks/TaskCard';
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { tasksApi } from '../features/tasks/api';
@@ -158,7 +158,7 @@ export function TaskDetailPage() {
 
             {task.description && <p className="text-sm leading-relaxed text-text-secondary">{task.description}</p>}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
               <Card className="p-4">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Due Date</p>
                 <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Calendar size={14} />{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</p>
@@ -168,8 +168,24 @@ export function TaskDetailPage() {
                 <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Clock size={14} />{duration ?? 'Unestimated'}</p>
               </Card>
               <Card className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachments</p>
-                <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Paperclip size={14} />{task.attachmentUrl ? 'Linked' : 'None'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachments</p>
+                <div className="mt-2">
+                  {task.attachmentUrl ? (
+                    <MediaPreview attachmentUrl={task.attachmentUrl} compact />
+                  ) : (
+                    <p className="text-sm font-bold text-text-primary">None</p>
+                  )}
+                </div>
+              </Card>
+              <Card className="p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
+                <div className="space-y-2 mt-1">
+                  {task.voiceNoteUrl ? (
+                    <MediaPreview voiceNoteUrl={task.voiceNoteUrl} compact />
+                  ) : (
+                    <p className="text-sm font-bold text-text-primary">None</p>
+                  )}
+                </div>
               </Card>
               <Card className="p-4">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus</p>

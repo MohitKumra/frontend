@@ -7,13 +7,13 @@ import {
   Repeat,
   ListChecks,
   Clock,
-  Paperclip,
   AlignLeft,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useUpdateTask } from '../../features/tasks/hooks/useTasks';
 import type { TaskDTO, UpdateTaskRequest, Priority, TaskStatus, SubTaskDTO } from '../../types';
 import { Modal } from '../ui/Modal';
+import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -94,6 +94,7 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
   const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
   const [customDuration, setCustomDuration] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState('');
   const [subTasks, setSubTasks] = useState<(SubTaskDTO | { title: string; order: number; completed?: boolean })[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
 
@@ -107,6 +108,7 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
     setRecurrence(parseRecurrenceOption(task.recurrenceRule));
     setRecurrenceEndDate(task.recurrenceEndDate?.split('T')[0] ?? '');
     setAttachmentUrl(task.attachmentUrl ?? '');
+    setVoiceNoteUrl(task.voiceNoteUrl ?? '');
     setSubTasks(task.subTasks ?? []);
     setNewSubTaskTitle('');
     setErrorMessage(null);
@@ -172,6 +174,7 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
         recurrenceRule,
         recurrenceEndDate: recurrenceEndDate || null,
         attachmentUrl: cleanAttachment,
+        voiceNoteUrl: voiceNoteUrl.trim() || null,
         estimatedDuration: resolvedDuration && resolvedDuration > 0 ? resolvedDuration : null,
         subTasks: subTasks.map((st, index) => ({
           id: 'id' in st ? st.id : undefined,
@@ -380,20 +383,12 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
           )}
         </div>
 
-        {/* Attachment */}
-        <div>
-          <label className="flex items-center gap-1 text-xs font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-            <Paperclip size={12} /> Attachment URL
-          </label>
-          <input
-            type="url"
-            value={attachmentUrl}
-            onChange={(e) => setAttachmentUrl(e.target.value)}
-            placeholder="https://..."
-            className={inputCls}
-            style={inputStyle}
-          />
-        </div>
+        <MediaAttachmentsField
+          attachmentUrl={attachmentUrl}
+          onAttachmentUrlChange={setAttachmentUrl}
+          voiceNoteUrl={voiceNoteUrl}
+          onVoiceNoteUrlChange={setVoiceNoteUrl}
+        />
 
         {/* Subtasks */}
         <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>

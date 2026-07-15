@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BookOpen, StickyNote, Check, X } from 'lucide-react';
 import type { NoteDTO } from '../../types';
 import type { EntryFormState } from './EnteryFormModal';
+import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 
 interface JournalEntryShellProps {
   mode: 'create' | 'edit';
@@ -115,6 +116,17 @@ export function JournalEntryShell({
               onChange={(e) => setFormData((f) => ({ ...f, content: e.target.value }))}
               placeholder="Dear journal, today I..."
               className="journal-edit-textarea"
+              style={{ minHeight: '120px' }}
+            />
+          </div>
+
+          {/* Media attachment icons — always visible at bottom */}
+          <div className="journal-media-field-wrap" style={{ flexShrink: 0, marginTop: 0 }}>
+            <MediaAttachmentsField
+              attachmentUrl={formData.attachmentUrl}
+              onAttachmentUrlChange={(value) => setFormData((f) => ({ ...f, attachmentUrl: value }))}
+              voiceNoteUrl={formData.voiceNoteUrl}
+              onVoiceNoteUrlChange={(value) => setFormData((f) => ({ ...f, voiceNoteUrl: value }))}
             />
           </div>
         </div>
