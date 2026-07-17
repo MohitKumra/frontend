@@ -68,11 +68,11 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
       {isOpen && (
         <>
           <motion.div
-            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-black/50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             onClick={onClose}
           />
 
@@ -80,10 +80,10 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
             <motion.div
               className="fixed bottom-0 left-0 right-0 z-[101] rounded-t-3xl shadow-2xl flex flex-col"
               style={{ background: 'var(--color-surface)', touchAction: 'none' }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              initial={{ y: '100%', opacity: 0.98 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               drag="y"
               dragControls={dragControls}
               dragListener={false}
@@ -137,10 +137,10 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
               <motion.div
                 className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
                 style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-                initial={{ scale: 0.94, y: 12, opacity: 0 }}
+                initial={{ scale: 0.94, y: 16, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.96, y: 8, opacity: 0 }}
-                transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+                exit={{ scale: 0.98, y: 8, opacity: 0 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {title && (

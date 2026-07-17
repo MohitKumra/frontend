@@ -1,6 +1,6 @@
 import React from 'react';
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'accent';
+export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'accent';
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'bg-neutral-100 dark:bg-neutral-800 text-text-secondary border border-neutral-200 dark:border-neutral-700',

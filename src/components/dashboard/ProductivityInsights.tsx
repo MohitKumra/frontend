@@ -9,7 +9,7 @@ interface Insight {
 }
 
 interface ProductivityInsightsProps {
-  insights?: Insight[];
+  insights: Insight[];
 }
 
 function getIconComponent(icon: Insight['icon']) {
@@ -46,35 +46,7 @@ function getInsightStyle(type: Insight['type']) {
   return styles[type];
 }
 
-// Default insights if none provided
-const defaultInsights: Insight[] = [
-  {
-    id: '1',
-    type: 'positive',
-    icon: 'trend',
-    text: 'You finish 38% more work before noon.',
-  },
-  {
-    id: '2',
-    type: 'warning',
-    icon: 'clock',
-    text: 'Your focus drops after 4 PM.',
-  },
-  {
-    id: '3',
-    type: 'neutral',
-    icon: 'calendar',
-    text: 'Thursday is your most productive day.',
-  },
-  {
-    id: '4',
-    type: 'neutral',
-    icon: 'trend',
-    text: 'Average task completion: 1.8 hours.',
-  },
-];
-
-export function ProductivityInsights({ insights = defaultInsights }: ProductivityInsightsProps) {
+export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
   return (
     <Card variant="default" className="overflow-hidden">
       <div className="p-6 sm:p-7">
@@ -93,35 +65,45 @@ export function ProductivityInsights({ insights = defaultInsights }: Productivit
         </div>
 
         {/* Insights List */}
-        <div className="space-y-3.5">
-          {insights.map((insight) => {
-            const style = getInsightStyle(insight.type);
-            const Icon = getIconComponent(insight.icon);
+        {insights.length > 0 ? (
+          <div className="space-y-3.5">
+            {insights.map((insight) => {
+              const style = getInsightStyle(insight.type);
+              const Icon = getIconComponent(insight.icon);
 
-            return (
-              <div
-                key={insight.id}
-                className="rounded-xl p-3.5 transition-all hover:shadow-sm hover:-translate-y-0.5"
-                style={{ 
-                  background: style.bg, 
-                  border: `1px solid ${style.border}` 
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: style.icon, color: style.iconText }}
-                  >
-                    <Icon size={14} />
+              return (
+                <div
+                  key={insight.id}
+                  className="rounded-xl p-3.5 transition-all hover:shadow-sm hover:-translate-y-0.5"
+                  style={{
+                    background: style.bg,
+                    border: `1px solid ${style.border}`,
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: style.icon, color: style.iconText }}
+                    >
+                      <Icon size={14} />
+                    </div>
+                    <p className="text-sm font-medium text-text-primary leading-relaxed flex-1">
+                      {insight.text}
+                    </p>
                   </div>
-                  <p className="text-sm font-medium text-text-primary leading-relaxed flex-1">
-                    {insight.text}
-                  </p>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="rounded-xl border p-6 text-center"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
+            <p className="text-sm font-bold text-text-primary mb-1">No insights yet</p>
+            <p className="text-xs text-text-secondary">Keep using tasks, habits, and focus sessions to unlock patterns.</p>
+          </div>
+        )}
 
         {/* Powered by AI Badge */}
         <div className="mt-5 text-center">

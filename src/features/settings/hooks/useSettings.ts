@@ -28,7 +28,10 @@ export function useUpdateAppearance() {
   return useMutation({
     mutationFn: (data: UpdateAppearanceRequest) => settingsApi.updateAppearance(data),
     onSuccess: async (data) => {
-      await setTheme(data.themePreference === 'SYSTEM' ? 'system' : data.themePreference === 'DARK' ? 'dark' : 'light');
+      await setTheme(
+        data.themePreference === 'SYSTEM' ? 'system' : data.themePreference === 'DARK' ? 'dark' : 'light',
+        { animate: true },
+      );
       if (data.layoutPreference) {
         setLayoutPreference(data.layoutPreference);
       }

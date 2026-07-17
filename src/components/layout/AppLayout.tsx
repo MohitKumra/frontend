@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
-  LayoutDashboard, CheckSquare, Calendar, CalendarDays, Target, FileText,
+  LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
   Timer, BarChart2, LogOut, X ,Sparkles, Moon, Sun,
-  Search, MoreHorizontal, ChevronRight, User, Settings2, FolderKanban
+  Search, MoreHorizontal, Settings2, FolderKanban
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -14,13 +16,29 @@ import { SearchModal } from '../../features/search/components/SearchModal';
 import { Tooltip } from '../ui/Tooltip';
 import { DraggableModal } from '../ui/DraggableModal';
 import { Badge } from '../ui/Badge';
+import { PageTransition } from './PageTransition';
 import { useDashboardToday } from '../../features/dashboard/hooks/useDashboard';
 import { applyLayoutPreference } from '../../platform/layout';
+import { queryClient } from '../../lib/queryClient';
+import { dashboardApi } from '../../features/dashboard/api';
+import { tasksApi } from '../../features/tasks/api';
+import { notesApi } from '../../features/notes/api';
+import { habitsApi } from '../../features/habits/api';
+import { calendarApi } from '../../features/calendar/api';
+import { settingsApi } from '../../features/settings/api';
+import apiClient from '../../lib/apiClient';
+
+type TaskListPage = Awaited<ReturnType<typeof tasksApi.list>>;
+
+function fetchTasksPage(pageParam?: string): Promise<TaskListPage> {
+  const params: Record<string, string> = { take: '20' };
+  if (pageParam) params.cursor = pageParam;
+  return tasksApi.list(params);
+}
 
 const navItems = [
   { to: '/',          icon: LayoutDashboard, label: 'Dashboard', onboarding: 'dashboard' },
   { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',     badgeKey: 'tasks', onboarding: 'tasks' },
-  { to: '/planner',   icon: Calendar,        label: 'Planner',   onboarding: 'planner' },
   { to: '/calendar',  icon: CalendarDays,    label: 'Calendar',  onboarding: 'calendar' },
   { to: '/habits',    icon: Target,          label: 'Habits',    badgeKey: 'habits', onboarding: 'habits' },
   { to: '/notes',     icon: FileText,        label: 'Notes',     onboarding: 'notes' },
@@ -30,14 +48,71 @@ const navItems = [
   { to: '/settings',  icon: Settings2,       label: 'Settings',  onboarding: 'settings' },
 ];
 
-/** Active link styles for mobile bottom nav (unchanged) */
-const mobileNavClass = ({ isActive }: { isActive: boolean }) =>
-  [
-    'flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] font-bold transition-all duration-200 select-none',
-    isActive
-      ? 'text-accent'
-      : 'text-text-muted hover:text-text-secondary',
-  ].join(' ');
+function warmRouteData(route: string): void {
+  switch (route) {
+    case '/':
+      void queryClient.prefetchQuery({ queryKey: ['dashboard', 'enhanced'], queryFn: dashboardApi.getEnhanced });
+      void queryClient.prefetchQuery({ queryKey: ['dashboard', 'today'], queryFn: dashboardApi.getToday });
+      break;
+    case '/tasks':
+      void queryClient.prefetchInfiniteQuery({
+        queryKey: ['tasks', undefined],
+        queryFn: ({ pageParam }: { pageParam?: string }) => fetchTasksPage(pageParam),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage: TaskListPage) => lastPage.meta.nextCursor ?? undefined,
+      });
+      break;
+    case '/projects':
+      void queryClient.prefetchQuery({
+        queryKey: ['projects'],
+        queryFn: () => apiClient.get('/projects').then((r) => r.data),
+      });
+      break;
+    case '/calendar': {
+      const now = new Date();
+      const from = format(startOfMonth(now), 'yyyy-MM-dd');
+      const to = format(endOfMonth(now), 'yyyy-MM-dd');
+      void queryClient.prefetchQuery({
+        queryKey: ['calendar', { from, to }],
+        queryFn: () => calendarApi.getOverview({ from, to }),
+      });
+      void queryClient.prefetchInfiniteQuery({
+        queryKey: ['tasks', undefined],
+        queryFn: ({ pageParam }: { pageParam?: string }) => fetchTasksPage(pageParam),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage: TaskListPage) => lastPage.meta.nextCursor ?? undefined,
+      });
+      break;
+    }
+    case '/habits':
+      void queryClient.prefetchQuery({ queryKey: ['habits'], queryFn: habitsApi.list });
+      break;
+    case '/notes':
+      void queryClient.prefetchQuery({ queryKey: ['notes', undefined], queryFn: () => notesApi.list() });
+      break;
+    case '/focus':
+      void queryClient.prefetchQuery({
+        queryKey: ['focus'],
+        queryFn: () => apiClient.get('/focus').then((r) => r.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['tasks', 'focus-active'],
+        queryFn: () => tasksApi.list(),
+      });
+      break;
+    case '/analytics':
+      void queryClient.prefetchQuery({ queryKey: ['analytics', 'summary'], queryFn: () => apiClient.get('/analytics/summary').then((r) => r.data) });
+      void queryClient.prefetchQuery({ queryKey: ['analytics', 'daily'], queryFn: () => apiClient.get('/analytics/daily').then((r) => r.data) });
+      void queryClient.prefetchQuery({ queryKey: ['analytics', 'projects'], queryFn: () => apiClient.get('/analytics/projects').then((r) => r.data) });
+      void queryClient.prefetchQuery({ queryKey: ['analytics', 'weekly'], queryFn: () => apiClient.get('/analytics/weekly').then((r) => r.data) });
+      break;
+    case '/settings':
+      void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
+      break;
+    default:
+      break;
+  }
+}
 
 /** Active link styles for desktop sidebar — plain CSS, no JS measurement */
 const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -51,6 +126,7 @@ const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
 export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const location = useLocation();
   const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme, layoutPreference, setTheme, setLayoutPreference, setCalendarViewPreference } = useUIStore();
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
@@ -76,13 +152,22 @@ export function AppLayout() {
   }, [layoutPreference]);
 
   useEffect(() => {
+    const routesToWarm = ['/', '/tasks', '/projects', '/calendar', '/habits', '/notes', '/focus', '/analytics', '/settings'];
+    const timer = window.setTimeout(() => {
+      routesToWarm.forEach((route) => warmRouteData(route));
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     if (!settings) return;
 
     void setTheme(settings.appearance.themePreference === 'SYSTEM'
       ? 'system'
       : settings.appearance.themePreference === 'DARK'
         ? 'dark'
-        : 'light');
+        : 'light', { animate: false });
     setLayoutPreference(settings.appearance.layoutPreference);
     setCalendarViewPreference(settings.appearance.calendarView);
 
@@ -138,9 +223,6 @@ export function AppLayout() {
           gap: 0.5rem;
           padding-top: 0.55rem;
           padding-bottom: 0.55rem;
-        }
-        [data-layout='compact'] .page-enter > * {
-          max-width: 100%;
         }
         .sidebar-nav-link-active {
           background: color-mix(in srgb, var(--color-accent) 8%, transparent);
@@ -229,6 +311,9 @@ export function AppLayout() {
                 to={to}
                 end={to === '/'}
                 data-onboarding={onboarding || undefined}
+                onPointerEnter={() => warmRouteData(to)}
+                onFocus={() => warmRouteData(to)}
+                onPointerDown={() => warmRouteData(to)}
                 className={({ isActive }) =>
                   [sidebarLinkClass({ isActive }), !sidebarOpen && 'justify-center'].filter(Boolean).join(' ')
                 }
@@ -338,8 +423,8 @@ export function AppLayout() {
           </button>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
-            <button
-              onClick={() => toggleTheme()}
+          <button
+              onClick={() => toggleTheme({ animate: true })}
               className="p-2.5 rounded-xl text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
               aria-label="Toggle theme"
             >
@@ -369,9 +454,14 @@ export function AppLayout() {
         </header>
 
         <div className="flex-1 overflow-y-auto pb-28 md:pb-0 relative min-w-0">
-          <div className={`page-enter ${contentPaddingClass}`}>
-            <Outlet />
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <PageTransition
+              key={location.pathname}
+              className={contentPaddingClass}
+            >
+              <Outlet />
+            </PageTransition>
+          </AnimatePresence>
         </div>
       </main>
 
@@ -399,6 +489,9 @@ export function AppLayout() {
               key={to} 
               to={to} 
               end={to === '/'} 
+              onPointerEnter={() => warmRouteData(to)}
+              onFocus={() => warmRouteData(to)}
+              onPointerDown={() => warmRouteData(to)}
               {...mobileOnboardingAttr}
               className={({ isActive }) => [
                 'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
@@ -416,7 +509,13 @@ export function AppLayout() {
                       background: isActive ? 'var(--bottomnav-indicator)' : 'transparent'
                     }}
                   >
-                    <Icon size={isActive ? 22 : 20} className="transition-all duration-200" />
+                    {/* Icon size kept constant — the wrapping div's scale-110/
+                        scale-100 (a GPU transform) already produces the grow
+                        effect. Previously the size prop ALSO changed 20->22,
+                        which mutates the SVG's width/height attributes and
+                        forces a layout reflow of this whole flex row on every
+                        tab switch — redundant with the transform above. */}
+                    <Icon size={20} className="transition-all duration-200" />
                     
                     {/* Glow effect for active item */}
                     {isActive && (
@@ -503,6 +602,9 @@ export function AppLayout() {
                 <NavLink
                   key={to}
                   to={to}
+                  onPointerEnter={() => warmRouteData(to)}
+                  onFocus={() => warmRouteData(to)}
+                  onPointerDown={() => warmRouteData(to)}
                   onClick={() => setMobileMoreOpen(false)}
                   className="relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-transform active:scale-95"
                   style={{ 

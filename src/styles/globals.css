@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./premium-motion.css";
 
 /*
  * Dark mode: activate when data-theme="dark" is set on <html>.
@@ -70,18 +71,33 @@
 
 @layer base {
   :root {
-    --theme-transition: 0.3s ease;
+    /* Optimized transition timings */
+    --transition-instant: 100ms;
+    --transition-fast: 150ms;
+    --transition-normal: 280ms;
+    --transition-slow: 350ms;
+    --transition-page: 350ms;
+    --transition-theme: 550ms;
+    
+    /* Premium easing functions */
+    --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+  }
+  
+  /* Only animate color properties globally, not transforms */
+  *:not(.theme-transition-lock *) {
     transition: 
-      background-color var(--theme-transition),
-      border-color var(--theme-transition),
-      color var(--theme-transition),
-      box-shadow var(--theme-transition);
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
   }
 
   html, body {
@@ -89,9 +105,24 @@
   }
 
   html {
-    font-size: 16px;
+    /* Base font size - 14px for better balance on small displays */
+    font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Slightly larger on bigger screens */
+  @media (min-width: 1920px) {
+    html {
+      font-size: 15px;
+    }
+  }
+  
+  /* Mobile adjustments only */
+  @media (max-width: 768px) {
+    html {
+      font-size: 13px;
+    }
   }
 
   body {
@@ -102,6 +133,13 @@
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    line-height: 1.5;
+    letter-spacing: -0.01em; /* Slightly tighter tracking for cleaner look */
+  }
+  
+  /* Tighter letter spacing on headings for better density */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
   }
 
   /* Safe area support for Capacitor / notch devices */
@@ -142,6 +180,15 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
   }
+
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @layer utilities {
@@ -149,6 +196,36 @@
   .transform-gpu {
     transform: translateZ(0);
     will-change: transform;
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* Optimized will-change for different use cases */
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  .will-change-opacity {
+    will-change: opacity;
+  }
+  
+  .will-change-auto {
+    will-change: auto;
+  }
+  
+  /* Compact text utilities */
+  .text-compact {
+    font-size: 0.9em;
+    line-height: 1.4;
+    letter-spacing: -0.015em;
+  }
+  
+  .text-tight {
+    letter-spacing: -0.02em;
+  }
+  
+  .leading-compact {
+    line-height: 1.4;
   }
 
   /* Filter tab traveling highlight */
@@ -235,15 +312,51 @@
     animation: page-enter var(--transition-normal) var(--ease-out-expo) both;
   }
 
-  /* Card interactive states using tokens */
+  /* Ensure page content starts truly hidden */
+  .page-transition-container {
+    position: relative;
+    isolation: isolate;
+  }
+  
+  .page-transition-container > * {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Theme transition - locks during theme switch */
+  html.theme-transition-lock,
+  html.theme-transition-lock body {
+    overflow: hidden !important;
+  }
+
+  html.theme-transition-lock *,
+  html.theme-transition-lock *::before,
+  html.theme-transition-lock *::after {
+    transition: none !important;
+    animation-play-state: paused !important;
+  }
+
+  .theme-transition-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    will-change: clip-path, opacity;
+  }
+
+  /* Card interactive states using tokens - Premium Motion */
   .card-interactive {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    transition: all var(--transition-normal) var(--ease-out-smooth);
+    transition: all var(--transition-fast) var(--ease-out-smooth);
+    will-change: transform;
   }
   .card-interactive:hover {
     border-color: var(--card-hover-border);
     box-shadow: var(--card-hover-shadow);
+    transform: translateY(-4px);
+  }
+  .card-interactive:active {
     transform: translateY(-2px);
   }
 
@@ -251,8 +364,9 @@
   .card-premium {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    transition: all var(--transition-normal) var(--ease-out-smooth);
+    transition: all var(--transition-fast) var(--ease-out-smooth);
     position: relative;
+    will-change: transform;
   }
   .card-premium::before {
     content: '';
@@ -265,14 +379,26 @@
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     opacity: 0;
-    transition: opacity var(--transition-normal) var(--ease-out-smooth);
+    transition: opacity var(--transition-fast) var(--ease-out-smooth);
   }
   .card-premium:hover {
     box-shadow: var(--card-hover-shadow);
-    transform: translateY(-3px);
+    transform: translateY(-4px);
   }
   .card-premium:hover::before {
     opacity: 1;
+  }
+  .card-premium:active {
+    transform: translateY(-2px) scale(0.99);
+  }
+
+  /* Button states - Premium Motion */
+  button:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+  button:not(:disabled):active {
+    transform: scale(0.97);
+    transition-duration: 50ms;
   }
 
   /* Sidebar item using tokens */
@@ -317,7 +443,33 @@
   }
 }
 
-/* ====== KEYFRAME ANIMATIONS ====== */
+/* ====== PREMIUM KEYFRAME ANIMATIONS ====== */
+
+/* Modal/Popup entrance - macOS style */
+@keyframes modal-enter {
+  from { 
+    opacity: 0; 
+    transform: translateY(16px) scale(0.94); 
+    filter: blur(4px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+    filter: blur(0px);
+  }
+}
+
+/* Dropdown menu - Premium */
+@keyframes dropdown-enter {
+  from { 
+    opacity: 0; 
+    transform: translateY(8px) scale(0.98); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
 
 /* Core entrance animations */
 @keyframes fade-in {
@@ -341,13 +493,13 @@
 }
 
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes scale-out {
   from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 0; transform: scale(0.96); }
 }
 
 @keyframes tick {
@@ -396,14 +548,39 @@
   100% { background-position: 0% 50%; }
 }
 
+@keyframes toast-enter {
+  from { opacity: 0; transform: translate3d(12px, -10px, 0) scale(0.95); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* Input focus ring */
+@keyframes input-focus {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Staggered list items */
+@keyframes list-item-enter {
+  from { 
+    opacity: 0; 
+    transform: translateY(8px) scale(0.98); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
 /* ====== ANIMATION UTILITY CLASSES ====== */
-.animate-fade-in     { animation: fade-in var(--transition-normal) var(--ease-out-expo) both; }
-.animate-slide-up    { animation: slide-up 0.3s var(--ease-out-smooth) both; }
-.animate-slide-in    { animation: slide-in var(--transition-normal) var(--ease-out-expo) both; }
-.animate-slide-down  { animation: slide-down var(--transition-normal) var(--ease-out-expo) both; }
-.animate-scale-in    { animation: scale-in var(--transition-normal) var(--ease-out-expo) both; }
-.animate-tick        { animation: tick 0.2s ease-in-out; }
-.animate-count-up    { animation: count-up 0.4s var(--ease-out-expo) both; }
+.animate-modal-enter  { animation: modal-enter 280ms var(--ease-out-smooth) both; }
+.animate-dropdown-enter { animation: dropdown-enter 180ms var(--ease-out-smooth) both; }
+.animate-fade-in     { animation: fade-in 200ms var(--ease-out-expo) both; }
+.animate-slide-up    { animation: slide-up 300ms var(--ease-out-smooth) both; }
+.animate-slide-in    { animation: slide-in 200ms var(--ease-out-expo) both; }
+.animate-slide-down  { animation: slide-down 200ms var(--ease-out-expo) both; }
+.animate-scale-in    { animation: scale-in 200ms var(--ease-out-expo) both; }
+.animate-tick        { animation: tick 150ms ease-in-out; }
+.animate-count-up    { animation: count-up 400ms var(--ease-out-expo) both; }
 .animate-glow        { animation: glow 2s ease-in-out infinite; }
 .animate-gradient    { 
   background-size: 200% 200%;
@@ -415,16 +592,20 @@
   animation: shimmer 2s infinite;
 }
 
-/* ====== STAGGER DELAYS (up to 12 children) ====== */
-.stagger > *:nth-child(1)  { animation-delay: 0ms; }
-.stagger > *:nth-child(2)  { animation-delay: 50ms; }
-.stagger > *:nth-child(3)  { animation-delay: 100ms; }
-.stagger > *:nth-child(4)  { animation-delay: 150ms; }
-.stagger > *:nth-child(5)  { animation-delay: 200ms; }
-.stagger > *:nth-child(6)  { animation-delay: 250ms; }
-.stagger > *:nth-child(7)  { animation-delay: 300ms; }
-.stagger > *:nth-child(8)  { animation-delay: 350ms; }
-.stagger > *:nth-child(9)  { animation-delay: 400ms; }
-.stagger > *:nth-child(10) { animation-delay: 450ms; }
-.stagger > *:nth-child(11) { animation-delay: 500ms; }
-.stagger > *:nth-child(12) { animation-delay: 550ms; }
+.toast-enter {
+  animation: toast-enter 180ms var(--ease-out-expo) both;
+}
+
+/* ====== STAGGER DELAYS - List items (up to 12 children) ====== */
+.stagger > *:nth-child(1)  { animation-delay: 0ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(2)  { animation-delay: 20ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(3)  { animation-delay: 40ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(4)  { animation-delay: 60ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(5)  { animation-delay: 80ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(6)  { animation-delay: 100ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(7)  { animation-delay: 120ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(8)  { animation-delay: 140ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(9)  { animation-delay: 160ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(10) { animation-delay: 180ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(11) { animation-delay: 200ms; animation-name: list-item-enter; }
+.stagger > *:nth-child(12) { animation-delay: 220ms; animation-name: list-item-enter; }

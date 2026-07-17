@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import toast from 'react-hot-toast';
 import {
+  Bell,
   BellRing,
   CalendarClock,
   CheckCircle2,
@@ -16,6 +19,8 @@ import {
   Palette,
   PlugZap,
   RefreshCw,
+  Shield,
+  ShieldAlert,
   ShieldCheck,
   SunMedium,
   Unplug,
@@ -37,6 +42,7 @@ import {
   useUpdateRecoveryEmail,
 } from '../features/settings/hooks/useSettings';
 import { useChangePassword, useSetPassword } from '../features/auth/hooks/useAuth';
+import { usePushNotifications } from '../features/notifications/hooks/usePushNotifications';
 import type { LayoutPreference, ThemePreference } from '../types';
 
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security';
@@ -206,6 +212,31 @@ function StatusPill({ label, active }: { label: string; active: boolean }) {
   );
 }
 
+function TabPanel({
+  panelKey,
+  className = '',
+  children,
+}: {
+  panelKey: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      key={panelKey}
+      className={className}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+      animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const uiTheme = useUIStore((s) => s.themePreference);
@@ -213,6 +244,10 @@ export function SettingsPage() {
   const [searchParams] = useSearchParams();
   const searchParamsString = searchParams.toString();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => getInitialTab(searchParams));
+  
+  const handleTabChange = (newTab: SettingsTab) => {
+    setActiveTab(newTab);
+  };
   const { data, isLoading } = useSettings();
   const appearanceMutation = useUpdateAppearance();
   const notificationsMutation = useUpdateNotifications();
@@ -222,6 +257,14 @@ export function SettingsPage() {
   const disconnectGoogleCalendar = useDisconnectGoogleCalendar();
   const changePassword = useChangePassword();
   const setPassword = useSetPassword();
+  const {
+    isSubscribed,
+    permission,
+    loading: pushLoading,
+    subscribe: subscribePush,
+    unsubscribe: unsubscribePush,
+    sendTest: sendTestPush,
+  } = usePushNotifications();
 
   const [appearance, setAppearance] = useState({
     themePreference: toThemePreference(uiTheme),
@@ -305,6 +348,14 @@ export function SettingsPage() {
     }
   };
 
+  const handleTogglePushSubscription = async () => {
+    if (isSubscribed) {
+      await unsubscribePush();
+    } else {
+      await subscribePush();
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full max-w-6xl mx-auto flex items-center justify-center py-16">
@@ -315,13 +366,22 @@ export function SettingsPage() {
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0">
-      <PageHeader
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col gap-4 sm:gap-5 lg:gap-6"
+      >
+        <motion.div variants={itemVariants}>
+          <PageHeader
         icon={<ShieldCheck size={20} />}
         title="Settings"
         subtitle="Appearance, notifications, integrations, and account security"
-      />
+        />
+        </motion.div>
 
-      <Card className="p-4 sm:p-5 lg:p-6" variant="default">
+        <motion.div variants={itemVariants}>
+          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="text-sm font-bold text-text-primary">Smart settings layout</div>
@@ -341,10 +401,12 @@ export function SettingsPage() {
             </span>
           </div>
         </div>
-      </Card>
+          </Card>
+        </motion.div>
 
-      <div 
-        className="overflow-x-auto -mx-4 sm:mx-0"
+        <motion.div variants={itemVariants}>
+          <div 
+            className="overflow-x-auto -mx-4 sm:mx-0"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
@@ -360,15 +422,18 @@ export function SettingsPage() {
           <TabBar
             tabs={SETTINGS_TABS}
             activeTab={activeTab}
-            onTabChange={(tab) => setActiveTab(tab as SettingsTab)}
+            onTabChange={handleTabChange}
             variant="underline"
             className="min-w-max"
           />
         </div>
-      </div>
+          </div>
+        </motion.div>
 
-      {activeTab === 'appearance' && (
-        <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-4 sm:gap-5">
+        <motion.div variants={itemVariants}>
+          <AnimatePresence mode="wait" initial={false}>
+            {activeTab === 'appearance' && (
+              <TabPanel key="appearance" panelKey="appearance" className="grid xl:grid-cols-[1.1fr_0.9fr] gap-4 sm:gap-5">
           <div id="settings-appearance-panel" data-onboarding="settings-appearance">
             <Card className="p-4 sm:p-5 lg:p-6" variant="default">
               <SectionHeader
@@ -443,162 +508,220 @@ export function SettingsPage() {
               </div>
             </div>
             </Card>
-          </div>
 
+            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
+              <SectionHeader
+                icon={<Cloud size={20} />}
+                title="Workspace preview"
+                subtitle="A quick snapshot of how the current layout feels."
+              />
+
+              <div
+                className="mt-4 sm:mt-5 rounded-2xl sm:rounded-[1.5rem] border p-4 sm:p-5 lg:p-6"
+                style={{
+                  borderColor: 'var(--color-border)',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 7%, var(--color-surface)), var(--color-surface))',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ background: 'var(--gradient-accent)' }}>
+                    <span className="text-base sm:text-lg font-black">P</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-black text-text-primary">FlowSpace workspace</div>
+                    <div className="text-xs text-text-muted mt-1 break-words">
+                      Theme: {appearance.themePreference.toLowerCase()} - Layout: {appearance.layoutPreference.toLowerCase()} - View: {appearance.calendarView}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
+                  <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
+                    <div className="h-1.5 sm:h-2 w-12 sm:w-16 rounded-full bg-accent/25" />
+                    <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+                  </div>
+                  <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
+                    <div className="h-1.5 sm:h-2 w-14 sm:w-20 rounded-full bg-success/25" />
+                    <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+                  </div>
+                  <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
+                    <div className="h-1.5 sm:h-2 w-10 sm:w-14 rounded-full bg-warning/25" />
+                    <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
+                  </div>
+                </div>
+
+                <div className="mt-4 sm:mt-5 text-xs text-text-muted break-words">
+                  {user?.email ? `Signed in as ${user.email}` : 'Signed in user'}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </TabPanel>
+            )}
+
+            {activeTab === 'notifications' && (
+              <TabPanel key="notifications" panelKey="notifications" className="w-full">
           <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
-              icon={<Cloud size={20} />}
-              title="Workspace preview"
-              subtitle="A quick snapshot of how the current layout feels."
+              icon={<BellRing size={20} />}
+              title="Notifications"
+              subtitle="Each toggle saves immediately, so you can keep moving without a separate apply button."
             />
 
-            <div
-              className="mt-4 sm:mt-5 rounded-2xl sm:rounded-[1.5rem] border p-4 sm:p-5 lg:p-6"
-              style={{
-                borderColor: 'var(--color-border)',
-                background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 7%, var(--color-surface)), var(--color-surface))',
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ background: 'var(--gradient-accent)' }}>
-                  <span className="text-base sm:text-lg font-black">P</span>
+            <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
+              {[
+                ['taskDue', 'Task due reminders', 'Notify before a task deadline.'],
+                ['habitReminder', 'Habit reminders', 'Ping when a habit is due.'],
+                ['projectDeadline', 'Project deadlines', 'Alert before major project dates.'],
+                ['focusSessionComplete', 'Focus completions', 'Celebrate finished focus blocks.'],
+                ['calendarSync', 'Calendar sync alerts', 'Track sync failures or status updates.'],
+              ].map(([key, title, description]) => (
+                <div
+                  key={key}
+                  className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4"
+                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-text-primary">{title}</div>
+                    <div className="text-xs text-text-muted mt-1 leading-snug">{description}</div>
+                  </div>
+                  <div className="shrink-0">
+                    <Toggle
+                      checked={notifications[key as keyof typeof notifications]}
+                      onToggle={() => {
+                        const next = { ...notifications, [key]: !notifications[key as keyof typeof notifications] };
+                        saveNotifications(next);
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-black text-text-primary">FlowSpace workspace</div>
-                  <div className="text-xs text-text-muted mt-1 break-words">
-                    Theme: {appearance.themePreference.toLowerCase()} - Layout: {appearance.layoutPreference.toLowerCase()} - View: {appearance.calendarView}
+              ))}
+            </div>
+          </Card>
+        </TabPanel>
+            )}
+
+            {activeTab === 'integrations' && (
+              <TabPanel key="integrations" panelKey="integrations" className="grid lg:grid-cols-[1.05fr_0.95fr] gap-4 sm:gap-5">
+          <div id="settings-integrations-panel" data-onboarding="settings-integrations">
+            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
+              <SectionHeader
+                icon={<Cloud size={20} />}
+                title="Integrations"
+                subtitle="Google Calendar is linked separately from Google sign-in, so the account connection stays clean."
+              />
+
+              <div className="mt-4 sm:mt-5 space-y-4 sm:space-y-5">
+                <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-text-primary">Google Calendar</p>
+                      <p className="text-xs text-text-muted mt-1 leading-snug break-words">
+                        {googleCalendar?.connected
+                          ? `Connected as ${googleCalendar.googleEmail ?? 'your Google account'}`
+                          : 'Connect to push planner due dates into Google Calendar.'}
+                      </p>
+                    </div>
+                    <div className="shrink-0">
+                      <StatusPill label={googleCalendar?.connected ? 'Connected' : 'Not connected'} active={Boolean(googleCalendar?.connected)} />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      leftIcon={<PlugZap size={14} />}
+                      loading={googleStart.isPending}
+                      onClick={handleConnectGoogle}
+                    >
+                      {googleCalendar?.connected ? 'Reconnect' : 'Connect Google'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      leftIcon={<RefreshCw size={14} />}
+                      loading={syncGoogleCalendar.isPending}
+                      onClick={() => syncGoogleCalendar.mutate()}
+                      disabled={!googleCalendar?.connected}
+                    >
+                      Sync Now
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      leftIcon={<Unplug size={14} />}
+                      loading={disconnectGoogleCalendar.isPending}
+                      onClick={() => disconnectGoogleCalendar.mutate()}
+                      disabled={!googleCalendar?.connected}
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+
+                  {googleCalendar?.lastSyncedAt && (
+                    <p className="mt-3 text-[11px] text-text-muted flex items-center gap-1.5">
+                      <CalendarClock size={12} />
+                      Last synced {new Date(googleCalendar.lastSyncedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Push Notifications Section */}
+                <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-text-primary">Browser Push Notifications</p>
+                      <p className="text-xs text-text-muted mt-1 leading-snug">
+                        {isSubscribed 
+                          ? 'Subscribed to browser alerts for tasks, habits, and reminders.' 
+                          : 'Get reminded of tasks and habits in real time through browser notifications.'}
+                      </p>
+                      {permission === 'denied' && (
+                        <p className="text-xs font-semibold text-warning mt-2 leading-snug">
+                          Browser notifications are blocked. Please enable them in your browser settings.
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      <StatusPill label={isSubscribed ? 'Subscribed' : 'Not subscribed'} active={isSubscribed} />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={isSubscribed ? 'danger' : 'primary'}
+                      leftIcon={isSubscribed ? <ShieldAlert size={14} /> : <Shield size={14} />}
+                      loading={pushLoading}
+                      onClick={handleTogglePushSubscription}
+                      disabled={permission === 'denied'}
+                    >
+                      {isSubscribed ? 'Disable Push Alerts' : 'Enable Push Alerts'}
+                    </Button>
+                    {isSubscribed && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          leftIcon={<Bell size={14} />}
+                          onClick={() => sendTestPush(['BROWSER_PUSH'])}
+                          disabled={!isSubscribed}
+                        >
+                          Test Push
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          leftIcon={<Mail size={14} />}
+                          onClick={() => sendTestPush(['EMAIL'])}
+                        >
+                          Test Email
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
-
-              <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="h-1.5 sm:h-2 w-12 sm:w-16 rounded-full bg-accent/25" />
-                  <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-                </div>
-                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="h-1.5 sm:h-2 w-14 sm:w-20 rounded-full bg-success/25" />
-                  <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-                </div>
-                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="h-1.5 sm:h-2 w-10 sm:w-14 rounded-full bg-warning/25" />
-                  <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-                </div>
-              </div>
-
-              <div className="mt-4 sm:mt-5 text-xs text-text-muted break-words">
-                {user?.email ? `Signed in as ${user.email}` : 'Signed in user'}
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {activeTab === 'notifications' && (
-        <div id="settings-notifications-panel" data-onboarding="settings-notifications">
-          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
-          <SectionHeader
-            icon={<BellRing size={20} />}
-            title="Notifications"
-            subtitle="Each toggle saves immediately, so you can keep moving without a separate apply button."
-          />
-
-          <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
-            {[
-              ['taskDue', 'Task due reminders', 'Notify before a task deadline.'],
-              ['habitReminder', 'Habit reminders', 'Ping when a habit is due.'],
-              ['projectDeadline', 'Project deadlines', 'Alert before major project dates.'],
-              ['focusSessionComplete', 'Focus completions', 'Celebrate finished focus blocks.'],
-              ['calendarSync', 'Calendar sync alerts', 'Track sync failures or status updates.'],
-            ].map(([key, title, description]) => (
-              <div
-                key={key}
-                className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-bold text-text-primary">{title}</div>
-                  <div className="text-xs text-text-muted mt-1 leading-snug">{description}</div>
-                </div>
-                <div className="shrink-0">
-                  <Toggle
-                    checked={notifications[key as keyof typeof notifications]}
-                    onToggle={() => {
-                      const next = { ...notifications, [key]: !notifications[key as keyof typeof notifications] };
-                      saveNotifications(next);
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          </Card>
-        </div>
-      )}
-
-      {activeTab === 'integrations' && (
-        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-4 sm:gap-5">
-          <div id="settings-integrations-panel" data-onboarding="settings-integrations">
-            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
-            <SectionHeader
-              icon={<Cloud size={20} />}
-              title="Integrations"
-              subtitle="Google Calendar is linked separately from Google sign-in, so the account connection stays clean."
-            />
-
-            <div className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-text-primary">Google Calendar</p>
-                  <p className="text-xs text-text-muted mt-1 leading-snug break-words">
-                    {googleCalendar?.connected
-                      ? `Connected as ${googleCalendar.googleEmail ?? 'your Google account'}`
-                      : 'Connect to push planner due dates into Google Calendar.'}
-                  </p>
-                </div>
-                <div className="shrink-0">
-                  <StatusPill label={googleCalendar?.connected ? 'Connected' : 'Not connected'} active={Boolean(googleCalendar?.connected)} />
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  leftIcon={<PlugZap size={14} />}
-                  loading={googleStart.isPending}
-                  onClick={handleConnectGoogle}
-                >
-                  {googleCalendar?.connected ? 'Reconnect' : 'Connect Google'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  leftIcon={<RefreshCw size={14} />}
-                  loading={syncGoogleCalendar.isPending}
-                  onClick={() => syncGoogleCalendar.mutate()}
-                  disabled={!googleCalendar?.connected}
-                >
-                  Sync Now
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  leftIcon={<Unplug size={14} />}
-                  loading={disconnectGoogleCalendar.isPending}
-                  onClick={() => disconnectGoogleCalendar.mutate()}
-                  disabled={!googleCalendar?.connected}
-                >
-                  Disconnect
-                </Button>
-              </div>
-
-              {googleCalendar?.lastSyncedAt && (
-                <p className="mt-3 text-[11px] text-text-muted flex items-center gap-1.5">
-                  <CalendarClock size={12} />
-                  Last synced {new Date(googleCalendar.lastSyncedAt).toLocaleString()}
-                </p>
-              )}
-            </div>
             </Card>
           </div>
 
@@ -631,72 +754,72 @@ export function SettingsPage() {
               </div>
             </div>
           </Card>
-        </div>
-      )}
+        </TabPanel>
+            )}
 
-      {activeTab === 'security' && (
-        <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-4 sm:gap-5">
+            {activeTab === 'security' && (
+              <TabPanel key="security" panelKey="security" className="grid lg:grid-cols-[0.95fr_1.05fr] gap-4 sm:gap-5">
           <div id="settings-security-panel" data-onboarding="settings-security">
             <Card className="p-4 sm:p-5 lg:p-6" variant="default">
-            <SectionHeader
-              icon={<Lock size={20} />}
-              title="Security"
-              subtitle="Manage your password and recovery path from one place."
-            />
+              <SectionHeader
+                icon={<Lock size={20} />}
+                title="Security"
+                subtitle="Manage your password and recovery path from one place."
+              />
 
-            <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
-              <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Password status</div>
-                <div className="mt-2 text-sm font-bold text-text-primary">
-                  {security?.hasPassword ? 'Password set' : 'No password yet'}
+              <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
+                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Password status</div>
+                  <div className="mt-2 text-sm font-bold text-text-primary">
+                    {security?.hasPassword ? 'Password set' : 'No password yet'}
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Google sign-in</div>
-                <div className="mt-2 text-sm font-bold text-text-primary">
-                  {security?.hasGoogle ? 'Linked' : 'Not linked'}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: 'var(--icon-bg-info)', color: 'var(--icon-text-info)' }}
-                >
-                  <Mail size={16} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-text-primary">Recovery email</p>
-                  <p className="text-xs text-text-muted mt-0.5 leading-snug">
-                    Keep a backup email on file so resets still work if Google access changes.
-                  </p>
+                <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Google sign-in</div>
+                  <div className="mt-2 text-sm font-bold text-text-primary">
+                    {security?.hasGoogle ? 'Linked' : 'Not linked'}
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-2.5 sm:gap-3">
-                <Input
-                  id="recovery-email"
-                  label="Recovery email"
-                  type="email"
-                  value={recoveryEmail}
-                  onChange={(e) => setRecoveryEmail(e.target.value)}
-                  leftIcon={<Mail size={16} />}
-                  placeholder="backup@example.com"
-                />
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  leftIcon={<Mail size={14} />}
-                  loading={recoveryMutation.isPending}
-                  onClick={() => recoveryMutation.mutate(recoveryEmail.trim() ? recoveryEmail : null)}
-                  fullWidth
-                >
-                  Save recovery email
-                </Button>
+              <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--icon-bg-info)', color: 'var(--icon-text-info)' }}
+                  >
+                    <Mail size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-text-primary">Recovery email</p>
+                    <p className="text-xs text-text-muted mt-0.5 leading-snug">
+                      Keep a backup email on file so resets still work if Google access changes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-2.5 sm:gap-3">
+                  <Input
+                    id="recovery-email"
+                    label="Recovery email"
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    leftIcon={<Mail size={16} />}
+                    placeholder="backup@example.com"
+                  />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    leftIcon={<Mail size={14} />}
+                    loading={recoveryMutation.isPending}
+                    onClick={() => recoveryMutation.mutate(recoveryEmail.trim() ? recoveryEmail : null)}
+                    fullWidth
+                  >
+                    Save recovery email
+                  </Button>
+                </div>
               </div>
-            </div>
             </Card>
           </div>
 
@@ -762,8 +885,11 @@ export function SettingsPage() {
               </Button>
             </form>
           </Card>
-        </div>
-      )}
+        </TabPanel>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

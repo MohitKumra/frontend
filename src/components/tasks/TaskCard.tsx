@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import {
   Calendar,
@@ -205,12 +206,10 @@ export function TaskCard({
   }, [isMenuOpen, onToggleMenu]);
 
   return (
-    <div
+    <motion.div
       className="relative group/card"
       style={{
         zIndex: isMenuOpen ? 9997 : 1,
-        animation: 'fade-in 0.35s ease-out both',
-        animationDelay: `${index * 30}ms`,
       }}
     >
       <div
@@ -604,6 +603,6 @@ export function TaskCard({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,6 +1,11 @@
 // frontend/src/features/notifications/api.ts
 import apiClient from '../../lib/apiClient';
-import type { ListResponse, NotificationLogDTO, PushSubscriptionRequest } from '../../types';
+import type { 
+  ListResponse, 
+  NotificationLogDTO, 
+  PushSubscriptionRequest,
+  ActivityFeedResponse 
+} from '../../types';
 
 export const notificationsApi = {
   getVapidKey: () =>
@@ -20,4 +25,9 @@ export const notificationsApi = {
 
   sendTestNotification: (channels?: ('BROWSER_PUSH' | 'EMAIL' | 'NATIVE_LOCAL')[]) =>
     apiClient.post<{ success: boolean }>('/notifications/test', { channels }).then((r) => r.data),
+
+  getActivityFeed: (page: number = 1, pageSize: number = 20) =>
+    apiClient
+      .get<ActivityFeedResponse>(`/notifications/activity-feed?page=${page}&pageSize=${pageSize}`)
+      .then((r) => r.data),
 };

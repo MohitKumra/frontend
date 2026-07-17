@@ -106,12 +106,12 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-50 backdrop-blur-overlay"
+            className="fixed inset-0 z-50"
             style={{ background: 'var(--overlay-bg, rgba(0,0,0,0.5))' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             onClick={onClose}
             aria-hidden="true"
           />
@@ -131,10 +131,10 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
                 touchAction: 'none',
                 maxHeight: '90dvh',
               }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+              initial={{ y: '100%', opacity: 0.98 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               drag="y"
               dragDirectionLock
               dragConstraints={{ top: 0, bottom: 0 }}
@@ -200,10 +200,10 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
                   borderColor: 'var(--modal-border)',
                   boxShadow: 'var(--modal-shadow)',
                 }}
-                initial={{ scale: 0.94, y: 12, opacity: 0 }}
+                initial={{ scale: 0.94, y: 16, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.96, y: 8, opacity: 0 }}
-                transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+                exit={{ scale: 0.98, y: 8, opacity: 0 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between px-6 pt-6 pb-3 shrink-0">

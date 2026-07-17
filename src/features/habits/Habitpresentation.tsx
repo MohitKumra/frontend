@@ -18,15 +18,16 @@ export interface CategoryMeta {
   icon: LucideIcon;
   color: string;
   bg: string;
+  description: string;
 }
 
 const CATEGORIES: Record<string, CategoryMeta> = {
-  health: { key: 'health', name: 'Health', icon: Droplet, color: 'var(--color-info)', bg: 'var(--icon-bg-info)' },
-  fitness: { key: 'fitness', name: 'Fitness', icon: Dumbbell, color: 'var(--color-danger)', bg: 'var(--icon-bg-danger)' },
-  learning: { key: 'learning', name: 'Learning', icon: BookOpen, color: 'var(--color-accent)', bg: 'var(--icon-bg-accent)' },
-  mindfulness: { key: 'mindfulness', name: 'Mindfulness', icon: Brain, color: 'var(--color-success)', bg: 'var(--icon-bg-success, var(--icon-bg-info))' },
-  rest: { key: 'rest', name: 'Rest', icon: Moon, color: 'var(--color-info)', bg: 'var(--icon-bg-info)' },
-  productivity: { key: 'productivity', name: 'Productivity', icon: Target, color: 'var(--color-warning)', bg: 'var(--icon-bg-warning, var(--icon-bg-danger))' },
+  health: { key: 'health', name: 'Health', icon: Droplet, color: 'var(--color-info)', bg: 'var(--icon-bg-info)', description: 'Stay hydrated and healthy' },
+  fitness: { key: 'fitness', name: 'Fitness', icon: Dumbbell, color: 'var(--color-danger)', bg: 'var(--icon-bg-danger)', description: 'Build strength and consistency' },
+  learning: { key: 'learning', name: 'Learning', icon: BookOpen, color: 'var(--color-accent)', bg: 'var(--icon-bg-accent)', description: 'Expand your mind' },
+  mindfulness: { key: 'mindfulness', name: 'Mindfulness', icon: Brain, color: 'var(--color-success)', bg: 'var(--icon-bg-success, var(--icon-bg-info))', description: 'Find your center' },
+  rest: { key: 'rest', name: 'Rest', icon: Moon, color: 'var(--color-info)', bg: 'var(--icon-bg-info)', description: 'Recharge and recover' },
+  productivity: { key: 'productivity', name: 'Productivity', icon: Target, color: 'var(--color-warning)', bg: 'var(--icon-bg-warning, var(--icon-bg-danger))', description: 'Build strength and consistency' },
 };
 
 const KEYWORD_MAP: [RegExp, string][] = [
@@ -46,7 +47,7 @@ export function getCategory(title: string): CategoryMeta {
 
 export const CATEGORY_LIST: CategoryMeta[] = Object.values(CATEGORIES);
 
-const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export interface WeekPatternDay {
   label: string;

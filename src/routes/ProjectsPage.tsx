@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   Folder,
   Plus,
@@ -84,8 +86,14 @@ export function ProjectsPage() {
 
   return (
     <div className="flex flex-col gap-5 sm:gap-6 max-w-[1400px] mx-auto">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col gap-5 sm:gap-6"
+      >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeader
           icon={<Folder size={24} />}
           title="Projects"
@@ -121,10 +129,9 @@ export function ProjectsPage() {
             New Project
           </button>
         </div>
-      </div>
-
+      </motion.div>
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+      <motion.div variants={itemVariants} className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
         {(['ALL', 'PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as FilterStatus[]).map((status) => {
           const count = status === 'ALL' ? projects.length : projects.filter(p => p.status === status).length;
           return (
@@ -143,9 +150,9 @@ export function ProjectsPage() {
             </button>
           );
         })}
-      </div>
-
+      </motion.div>
       {/* Projects Grid/List */}
+      <motion.div variants={itemVariants}>
       {filteredProjects.length === 0 ? (
         <Card variant="default" className="p-12 text-center">
           <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
@@ -372,7 +379,8 @@ export function ProjectsPage() {
           </div>
         </Card>
       )}
-
+      </motion.div>
+      </motion.div>
       {/* Modals */}
       {createModalOpen && (
         <CreateProjectModal

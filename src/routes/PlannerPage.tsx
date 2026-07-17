@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { getWeekDays, getMonthDays, addDays, subDays, isSameDay, isToday, format, isSameMonth } from '../lib/dateUtils';
@@ -25,7 +27,7 @@ export function PlannerPage() {
   const { data, isLoading } = useTasks();
   const updateTask = useUpdateTask();
 
-  const tasks = (data?.data ?? []).filter((t) => t.dueDate);
+  const tasks = (data?.pages.flatMap((p) => p.data) ?? []).filter((t: TaskDTO) => t.dueDate);
 
   const navigate = (dir: 1 | -1) => {
     setReference((d) => {
@@ -36,8 +38,8 @@ export function PlannerPage() {
 
   const tasksForDay = (date: Date): TaskDTO[] =>
     tasks
-      .filter((t) => t.dueDate && isSameDay(new Date(t.dueDate), date))
-      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+      .filter((t: TaskDTO) => t.dueDate && isSameDay(new Date(t.dueDate), date))
+      .sort((a: TaskDTO, b: TaskDTO) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
   if (isLoading) return <LoadingScreen />;
 
@@ -59,8 +61,15 @@ export function PlannerPage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-4 sm:gap-6 md:gap-8 px-3 sm:px-4" aria-hidden={!!selectedDate}>
-      {/* Header */}
-      <PageHeader
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col gap-4 sm:gap-6 md:gap-8"
+      >
+        {/* Header */}
+        <motion.div variants={itemVariants}>
+          <PageHeader
         icon={<Calendar size={20} />}
         title="Planner"
         subtitle="Manage your schedule"
@@ -72,11 +81,13 @@ export function PlannerPage() {
             variant="pill"
           />
         }
-      />
+          />
+        </motion.div>
 
-      {/* Navigation Row */}
-      <div 
-        className="flex items-center justify-between p-2 sm:p-3 rounded-xl sm:rounded-2xl border"
+        {/* Navigation Row */}
+        <motion.div variants={itemVariants}>
+          <div 
+            className="flex items-center justify-between p-2 sm:p-3 rounded-xl sm:rounded-2xl border"
         style={{
           background: 'var(--color-surface-raised)',
           borderColor: 'var(--color-border)',
@@ -99,10 +110,13 @@ export function PlannerPage() {
         >
           <ChevronRight size={18} />
         </button>
-      </div>
+          </div>
+        </motion.div>
 
-      {/* Day View */}
-      {view === 'day' && (
+        {/* Day/Week/Month Views */}
+        <motion.div variants={itemVariants}>
+          {/* Day View */}
+          {view === 'day' && (
         <DayColumn date={reference} tasks={tasksForDay(reference)} updateTask={updateTask} />
       )}
 
@@ -220,8 +234,9 @@ export function PlannerPage() {
             })}
           </div>
         </div>
-      )}
-
+          )}
+        </motion.div>
+      </motion.div>
       {/* Day Detail Modal — a calendar app's day-agenda view, not a form list */}
       <Modal 
         open={!!selectedDate} 

@@ -26,14 +26,17 @@ initTheme().then(() => {
             <App />
           </OnboardingRoot>
           <Toaster
-            position="bottom-center"
+            position="top-right"
             toastOptions={{
+              duration: 3200,
+              className: 'toast-enter',
               style: {
                 background: 'var(--color-surface-raised)',
                 color: 'var(--color-text-primary)',
                 border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 fontSize: '14px',
+                boxShadow: 'var(--shadow-lg)',
               },
             }}
           />

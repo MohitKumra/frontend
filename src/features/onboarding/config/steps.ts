@@ -36,22 +36,12 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     route: '/tasks',
   },
   {
-    id: 'planner',
-    target: '[data-onboarding="planner"]',
-    mobileTarget: '[data-onboarding-mobile="planner"]',
-    title: 'Planner',
-    description:
-      'Plan your week ahead with the smart planner. Drag and drop tasks onto your schedule for optimal time blocking.',
-    position: 'right',
-    route: '/planner',
-  },
-  {
     id: 'calendar',
     target: '[data-onboarding="calendar"]',
     mobileTarget: '[data-onboarding-mobile="calendar"]',
     title: 'Calendar',
     description:
-      'Keep your work and schedule perfectly aligned. View tasks, focus sessions, and Google Calendar events in one unified view.',
+      'Keep your work and schedule perfectly aligned. View tasks, focus sessions, planning blocks, and Google Calendar events in one unified view.',
     position: 'right',
     route: '/calendar',
   },

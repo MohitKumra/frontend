@@ -1,0 +1,297 @@
+/*
+ * Premium Motion Design CSS
+ * Apple HIG / Linear.app / Arc Browser inspired animations
+ * 60 FPS GPU-accelerated animations only
+ */
+
+/* ====== Sidebar Navigation ====== */
+.sidebar-rail {
+  transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: width;
+}
+
+.sidebar-nav-link {
+  transition: 
+    background-color 150ms ease, 
+    color 150ms ease, 
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.sidebar-nav-link:hover {
+  transform: translateX(2px);
+}
+
+.sidebar-nav-link-active::before {
+  animation: slide-in-indicator 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes slide-in-indicator {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ====== Bottom Navigation (Mobile) ====== */
+.bottom-nav-item {
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.95);
+}
+
+.bottom-nav-indicator {
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ====== Buttons ====== */
+button:not(:disabled) {
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+button:not(:disabled):active {
+  transform: scale(0.97);
+  transition-duration: 50ms;
+}
+
+/* ====== Cards ====== */
+.card-hover {
+  transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+}
+
+.card-hover:active {
+  transform: translateY(-2px) scale(0.99);
+  transition-duration: 100ms;
+}
+
+/* ====== Modals & Popups ====== */
+.modal-backdrop-enter {
+  animation: backdrop-fade-in 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.modal-backdrop-exit {
+  animation: backdrop-fade-out 150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdrop-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.modal-content-enter {
+  animation: modal-slide-up 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.modal-content-exit {
+  animation: modal-slide-down 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes modal-slide-down {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+    filter: blur(4px);
+  }
+}
+
+/* ====== Dropdowns ====== */
+.dropdown-enter {
+  animation: dropdown-appear 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.dropdown-exit {
+  animation: dropdown-disappear 150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdown-disappear {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+/* ====== Input Fields ====== */
+input:focus,
+textarea:focus,
+select:focus {
+  transition: 
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.input-focus-ring {
+  animation: focus-ring-appear 150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes focus-ring-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ====== Toasts / Notifications ====== */
+.toast-slide-in {
+  animation: toast-slide-in 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.toast-slide-out {
+  animation: toast-slide-out 150ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, -10px, 0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(12px, -10px, 0) scale(0.95);
+  }
+}
+
+/* ====== Lists with Stagger ====== */
+.list-item-stagger {
+  animation: list-item-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes list-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Stagger delays (15-20ms per item) */
+.list-item-stagger:nth-child(1) { animation-delay: 0ms; }
+.list-item-stagger:nth-child(2) { animation-delay: 15ms; }
+.list-item-stagger:nth-child(3) { animation-delay: 30ms; }
+.list-item-stagger:nth-child(4) { animation-delay: 45ms; }
+.list-item-stagger:nth-child(5) { animation-delay: 60ms; }
+.list-item-stagger:nth-child(6) { animation-delay: 75ms; }
+.list-item-stagger:nth-child(7) { animation-delay: 90ms; }
+.list-item-stagger:nth-child(8) { animation-delay: 105ms; }
+.list-item-stagger:nth-child(9) { animation-delay: 120ms; }
+.list-item-stagger:nth-child(10) { animation-delay: 135ms; }
+
+/* ====== Page Transitions ====== */
+.page-transition-wrapper {
+  position: relative;
+  will-change: transform, opacity, filter;
+}
+
+/* ====== Reduced Motion Support ====== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .sidebar-rail,
+  .sidebar-nav-link,
+  .sidebar-nav-link::before,
+  .bottom-nav-item,
+  .modal-content-enter,
+  .modal-content-exit,
+  .dropdown-enter,
+  .dropdown-exit,
+  .toast-slide-in,
+  .toast-slide-out,
+  .list-item-stagger {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ====== Performance: Remove will-change after animation ====== */
+@supports (animation-timeline: scroll()) {
+  * {
+    will-change: auto;
+  }
+}

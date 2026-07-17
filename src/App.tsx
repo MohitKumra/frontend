@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { AppErrorBoundary } from './components/layout/AppErrorBoundary';
+import { PageTransition } from './components/layout/PageTransition';
 import { useAuthStore } from './store/authStore';
 import { useOnboarding } from './features/onboarding/hooks/useOnboarding';
 import { hasCompletedOnboarding } from './features/onboarding/utils/storage';
@@ -16,7 +17,6 @@ import { GoogleAuthCallbackPage } from './routes/GoogleAuthCallbackPage';
 // Protected pages
 import { DashboardPage }  from './routes/DashboardPage';
 import { TasksPage }      from './routes/TasksPage';
-import { PlannerPage }    from './routes/PlannerPage';
 import { CalendarPage }   from './routes/CalendarPage';
 import { HabitsPage }     from './routes/HabitsPage';
 import { NotesPage }      from './routes/NotesPage';
@@ -71,11 +71,11 @@ export default function App() {
 
       <Routes>
         {/* Public routes */}
-        <Route path="/login"           element={<LoginPage />} />
-        <Route path="/signup"          element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password"  element={<ResetPasswordPage />} />
-        <Route path="/google/callback" element={<GoogleAuthCallbackPage />} />
+        <Route path="/login"           element={<PageTransition className="min-h-dvh"><LoginPage /></PageTransition>} />
+        <Route path="/signup"          element={<PageTransition className="min-h-dvh"><SignupPage /></PageTransition>} />
+        <Route path="/forgot-password" element={<PageTransition className="min-h-dvh"><ForgotPasswordPage /></PageTransition>} />
+        <Route path="/reset-password"  element={<PageTransition className="min-h-dvh"><ResetPasswordPage /></PageTransition>} />
+        <Route path="/google/callback" element={<PageTransition className="min-h-dvh"><GoogleAuthCallbackPage /></PageTransition>} />
 
         {/* Protected routes — inside AppLayout */}
         <Route
@@ -90,7 +90,7 @@ export default function App() {
           <Route index               element={<DashboardPage />} />
           <Route path="tasks"        element={<TasksPage />} />
           <Route path="tasks/:id"    element={<TaskDetailPage />} />
-          <Route path="planner"      element={<PlannerPage />} />
+          <Route path="planner"      element={<Navigate to="/calendar" replace />} />
           <Route path="calendar"     element={<CalendarPage />} />
           <Route path="habits"       element={<HabitsPage />} />
           <Route path="notes"        element={<NotesPage />} />
@@ -102,7 +102,7 @@ export default function App() {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<PageTransition className="min-h-dvh"><NotFoundPage /></PageTransition>} />
       </Routes>
     </>
   );

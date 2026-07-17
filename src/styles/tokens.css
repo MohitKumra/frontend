@@ -1,13 +1,13 @@
 /* Enterprise SaaS Design Tokens — Premium, Professional Look */
 :root {
-  /* ====== SPACING SCALE (8px grid) ====== */
-  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
-  --space-5: 1.25rem; --space-6: 1.5rem; --space-7: 1.75rem; --space-8: 2rem;
-  --space-9: 2.25rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+  /* ====== SPACING SCALE (balanced for small displays) ====== */
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 0.875rem;
+  --space-5: 1.125rem; --space-6: 1.375rem; --space-7: 1.625rem; --space-8: 1.875rem;
+  --space-9: 2.125rem; --space-10: 2.375rem; --space-12: 2.75rem; --space-16: 3.75rem;
 
-  /* ====== RADIUS SCALE ====== */
-  --radius-sm: 0.5rem; --radius-md: 0.75rem; --radius-lg: 1rem;
-  --radius-xl: 1.25rem; --radius-2xl: 1.5rem; --radius-full: 9999px;
+  /* ====== RADIUS SCALE (slightly reduced) ====== */
+  --radius-sm: 0.45rem; --radius-md: 0.675rem; --radius-lg: 0.9rem;
+  --radius-xl: 1.125rem; --radius-2xl: 1.375rem; --radius-full: 9999px;
 
   /* ====== SHADOWS ====== */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
@@ -55,8 +55,8 @@
   --color-scheme: light;
 
   /* ====== SIDEBAR TOKENS ====== */
-  --sidebar-width: 272px;
-  --sidebar-width-collapsed: 80px;
+  --sidebar-width: 250px;
+  --sidebar-width-collapsed: 70px;
   --sidebar-bg: #FFFFFF;
   --sidebar-border: #E2E8F0;
   --sidebar-text: #94A3B8;
@@ -67,7 +67,7 @@
   --sidebar-section-label: #94A3B8;
 
   /* ====== TOPBAR TOKENS ====== */
-  --topbar-height: 64px;
+  --topbar-height: 58px;
   --topbar-bg: #FFFFFF;
   --topbar-border: #E2E8F0;
   --topbar-search-bg: #F6F8FC;
@@ -75,14 +75,14 @@
   --topbar-search-text: #94A3B8;
 
   /* ====== BOTTOM NAV TOKENS ====== */
-  --bottomnav-height: 72px;
+  --bottomnav-height: 66px;
   --bottomnav-bg: #FFFFFF;
   --bottomnav-border: #E2E8F0;
   --bottomnav-text: #94A3B8;
   --bottomnav-text-active: #6C63FF;
   --bottomnav-indicator: #EEF2FF;
-  --layout-page-padding-x: 1rem;
-  --layout-page-padding-y: 1rem;
+  --layout-page-padding-x: 0.9rem;
+  --layout-page-padding-y: 0.9rem;
 
   /* ====== MODAL / OVERLAY TOKENS ====== */
   --overlay-bg: rgba(30, 41, 59, 0.6);
@@ -254,21 +254,32 @@
 }
 
 [data-layout='compact'] {
-  --sidebar-width: 240px;
-  --sidebar-width-collapsed: 72px;
-  --topbar-height: 56px;
-  --bottomnav-height: 64px;
+  --sidebar-width: 230px;
+  --sidebar-width-collapsed: 66px;
+  --topbar-height: 54px;
+  --bottomnav-height: 62px;
   --layout-page-padding-x: 0.75rem;
   --layout-page-padding-y: 0.75rem;
 }
 
 [data-layout='expanded'] {
-  --sidebar-width: 300px;
-  --sidebar-width-collapsed: 88px;
-  --topbar-height: 68px;
-  --bottomnav-height: 76px;
-  --layout-page-padding-x: 1.25rem;
-  --layout-page-padding-y: 1.25rem;
+  --sidebar-width: 280px;
+  --sidebar-width-collapsed: 80px;
+  --topbar-height: 64px;
+  --bottomnav-height: 72px;
+  --layout-page-padding-x: 1.125rem;
+  --layout-page-padding-y: 1.125rem;
+}
+
+/* ====== MOBILE RESPONSIVE ONLY ====== */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 200px;
+    --topbar-height: 52px;
+    --bottomnav-height: 58px;
+    --layout-page-padding-x: 0.75rem;
+    --layout-page-padding-y: 0.75rem;
+  }
 }
 
 /* ====== GLOBAL BASE STYLES ====== */
@@ -286,4 +297,36 @@ html {
 body {
   margin: 0;
   padding: 0;
+}
+
+
+/* ====== THEME TRANSITION LOCK ====== */
+/* Previously referenced by theme.ts but never defined — every element's
+   own color transition kept animating independently underneath the
+   overlay during the 550ms theme switch, competing for frame budget. */
+.theme-transition-lock,
+.theme-transition-lock * {
+  transition: none !important;
+}
+
+/* ====== UTILITY CLASSES ====== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tap-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (max-width: 768px) {
+  .tap-target {
+    min-width: 48px;
+    min-height: 48px;
+  }
 }

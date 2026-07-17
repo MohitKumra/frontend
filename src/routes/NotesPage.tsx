@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   FileText,
   Plus,
@@ -337,8 +339,14 @@ export function NotesPage() {
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-6 sm:gap-8">
-
-      {/* ── Header ─────────────────────────────────── */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col gap-6 sm:gap-8"
+      >
+        {/* ── Header ─────────────────────────────────── */}
+        <motion.div variants={itemVariants}>
       <div
         className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b pb-6"
         style={{ borderColor: 'var(--color-border)' }}
@@ -388,8 +396,10 @@ export function NotesPage() {
           </button>
         </div>
       </div>
+      </motion.div>
 
-      {/* Search & Filter Bar */}
+        {/* Search & Filter Bar */}
+        <motion.div variants={itemVariants}>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -441,8 +451,9 @@ export function NotesPage() {
           })}
         </div>
       </div>
+      </motion.div>
 
-      {/* ── Traveling highlight portal ──────────────────────────────── */}
+        {/* ── Traveling highlight portal ──────────────────────────────── */}
       {travelStyle &&
         createPortal(
           <div
@@ -454,8 +465,9 @@ export function NotesPage() {
           document.body
         )}
 
-      {/* Notes Grid/List */}
-      {filteredNotes.length === 0 ? (
+        {/* Notes Grid/List */}
+        <motion.div variants={itemVariants}>
+          {filteredNotes.length === 0 ? (
         <Card variant="default" className="p-12 text-center">
           <div
             className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
@@ -581,7 +593,9 @@ export function NotesPage() {
             note.isJournal ? renderJournalCard(note) : renderStickyNote(note)
           )}
         </div>
-      )}
+          )}
+        </motion.div>
+      </motion.div>
 
       {/* ── Modals ─────────────────────────────────── */}
       <EntryFormModal

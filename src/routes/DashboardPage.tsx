@@ -1,5 +1,8 @@
 import { useMemo, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   ArrowRight,
   CheckSquare,
@@ -11,6 +14,7 @@ import {
 import { LoadingScreen } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import apiClient from '../lib/apiClient';
 import { useEnhancedDashboard } from '../features/dashboard/hooks/useDashboard';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useHabits } from '../features/habits/hooks/useHabits';
@@ -25,6 +29,7 @@ import { HabitsWidget } from '../components/dashboard/HabitsWidget';
 import { ProductivityInsights } from '../components/dashboard/ProductivityInsights';
 import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { QuickActionsPanel } from '../components/dashboard/QuickActionsPanel';
+import type { FocusSessionDTO, ListResponse, TaskDTO } from '../types';
 
 /**
  * StatTile
@@ -81,6 +86,10 @@ function StatTile({
       {detail && <p className="mt-1.5 text-xs text-text-secondary leading-snug">{detail}</p>}
     </div>
   );
+}
+
+function toUtcDateKey(value: string | Date): string {
+  return new Date(value).toISOString().split('T')[0];
 }
 
 function RightRailProfileCard({
@@ -198,6 +207,10 @@ function RightRailProfileCard({
   );
 }
 
+function scoreWeek(week: { tasksCompleted: number; focusMinutes: number; habitsCompleted: number; projectsCompleted: number }) {
+  return week.tasksCompleted * 3 + week.focusMinutes + week.habitsCompleted * 2 + week.projectsCompleted * 4;
+}
+
 /**
  * PremiumHero
  * ---------------------------------------------------------------------
@@ -246,18 +259,25 @@ function PremiumHero({
         style={{ background: 'radial-gradient(circle, var(--color-accent), transparent 68%)' }}
       />
 
-      <div className="relative grid gap-8 p-6 sm:p-10 xl:grid-cols-[1.4fr_0.9fr] xl:gap-10">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative grid gap-8 p-6 sm:p-10 xl:grid-cols-[1.4fr_0.9fr] xl:gap-10"
+      >
         {/* Left: greeting + primary actions + the ONE stat grid */}
-        <div className="min-w-0">
-          <h1 className="max-w-2xl text-3xl sm:text-4xl lg:text-[42px] font-black tracking-tight text-text-primary leading-[1.08]">
-            Welcome back, {name}
-          </h1>
-          <p className="mt-4 max-w-xl text-sm sm:text-base leading-7 text-text-secondary">
-            Your workspace is organized for today. Review what matters, jump into focus,
-            and keep the week moving.
-          </p>
+        <div className="min-w-0 flex flex-col gap-7">
+          <motion.div variants={itemVariants}>
+            <h1 className="max-w-2xl text-3xl sm:text-4xl lg:text-[42px] font-black tracking-tight text-text-primary leading-[1.08]">
+              Welcome back, {name}
+            </h1>
+            <p className="mt-4 max-w-xl text-sm sm:text-base leading-7 text-text-secondary">
+              Your workspace is organized for today. Review what matters, jump into focus,
+              and keep the week moving.
+            </p>
+          </motion.div>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => navigate('/focus')}
@@ -280,9 +300,9 @@ function PremiumHero({
               Open projects
               <FolderKanban size={16} />
             </button>
-          </div>
+          </motion.div>
 
-          <div className="mt-9 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatTile
               label="Task completion"
               value={`${completion}%`}
@@ -311,11 +331,11 @@ function PremiumHero({
               icon={TrendingUp}
               tone="warning"
             />
-          </div>
+          </motion.div>
         </div>
 
         {/* Right: a single quiet "today" panel, not a repeat of the stats above */}
-        <div className="min-w-0">
+        <motion.div variants={itemVariants} className="min-w-0">
           <div
             className="rounded-[28px] border p-6 sm:p-8 h-full flex flex-col"
             style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
@@ -380,8 +400,8 @@ function PremiumHero({
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </Card>
   );
 }
@@ -391,9 +411,28 @@ export function DashboardPage() {
   const { data: dashboard, isLoading } = useEnhancedDashboard();
   const { data: tasksData } = useTasks();
   const { data: habitsData } = useHabits();
+  const { data: focusSessionsData } = useQuery({
+    queryKey: ['focus', 'dashboard'],
+    queryFn: () => apiClient.get<ListResponse<FocusSessionDTO>>('/focus').then((r) => r.data),
+  });
   const user = useAuthStore((s) => s.user);
-  const tasks = tasksData?.data ?? [];
+  const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const habits = habitsData?.data ?? [];
+  const focusSessions = focusSessionsData?.data ?? [];
+  const focusMinutesTotal = dashboard?.focusMinutesTotal ?? 0;
+  const taskTotals = dashboard?.tasksTotal ?? 0;
+  const taskCompletedTotal = dashboard?.tasksCompleted ?? 0;
+  const habitTotal = dashboard?.habitsTotal ?? 0;
+  const habitCompletedToday = dashboard?.habitsCompletedToday ?? 0;
+  const currentHabitStreak = dashboard?.currentHabitStreak ?? 0;
+  const longestHabitStreak = dashboard?.longestHabitStreak ?? 0;
+  const weeklyProgress = dashboard?.weeklyProgress ?? [];
+  const upcomingDeadlines = dashboard?.upcomingDeadlines ?? [];
+  const projectStats = dashboard?.projectStats ?? {
+    totalProjects: 0,
+    activeProjectsCount: 0,
+    completedProjectsCount: 0,
+  };
   const habitsForWidget = useMemo(
     () =>
       habits.slice(0, 6).map((habit) => ({
@@ -405,6 +444,24 @@ export function DashboardPage() {
       })),
     [habits]
   );
+  const completedFocusSessions = useMemo(
+    () => focusSessions.filter((session) => session.completed && !session.isBreak),
+    [focusSessions]
+  );
+  const todayFocusMinutes = useMemo(() => {
+    const todayKey = toUtcDateKey(new Date());
+    return completedFocusSessions
+      .filter((session) => toUtcDateKey(session.startedAt) === todayKey)
+      .reduce((sum, session) => sum + session.durationMin, 0);
+  }, [completedFocusSessions]);
+  const longestSession = useMemo(
+    () => completedFocusSessions.reduce((max, session) => Math.max(max, session.durationMin), 0),
+    [completedFocusSessions]
+  );
+  const averageSession = useMemo(() => {
+    if (completedFocusSessions.length === 0) return 0;
+    return Math.round(focusMinutesTotal / completedFocusSessions.length);
+  }, [completedFocusSessions.length, focusMinutesTotal]);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -425,29 +482,99 @@ export function DashboardPage() {
   });
 
   const recentActivities = [
-    {
-      id: '1',
-      type: 'task_completed' as const,
-      title: 'Completed dashboard refinement',
-      timestamp: new Date(Date.now() - 2 * 60000),
-    },
-    {
-      id: '2',
-      type: 'focus_session' as const,
-      title: 'Started a deep work session',
-      description: 'Forty five minutes of quiet focus',
-      timestamp: new Date(Date.now() - 45 * 60000),
-      metadata: { duration: 45 },
-    },
-  ];
+    ...tasks
+      .filter((task: TaskDTO) => task.status === 'DONE' && task.completedAt)
+      .map((task: TaskDTO) => ({
+        id: `task-${task.id}`,
+        type: 'task_completed' as const,
+        title: `Completed ${task.title}`,
+        description: task.project?.name ?? task.description ?? 'Task finished',
+        timestamp: new Date(task.completedAt ?? task.updatedAt),
+        metadata: task.project?.name ? { projectName: task.project.name } : undefined,
+      })),
+    ...completedFocusSessions.map((session) => {
+      const linkedTask = tasks.find((task: TaskDTO) => task.id === session.taskId);
+      const completedAt = new Date(new Date(session.startedAt).getTime() + session.durationMin * 60000);
+
+      return {
+        id: `focus-${session.id}`,
+        type: 'focus_session' as const,
+        title: linkedTask
+          ? `Completed a ${session.durationMin}-minute focus session on ${linkedTask.title}`
+          : `Completed a ${session.durationMin}-minute focus session`,
+        description: linkedTask?.project?.name
+          ? `Project: ${linkedTask.project.name}`
+          : session.taskId
+            ? 'Linked to a task'
+            : 'No task linked',
+        timestamp: completedAt,
+        metadata: {
+          duration: session.durationMin,
+          projectName: linkedTask?.project?.name ?? undefined,
+        },
+      };
+    }),
+  ]
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, 4);
 
   const topProjects = dashboard.activeProjects.slice(0, 3);
   const taskCompletion =
-    dashboard.tasksTotal > 0 ? Math.round((dashboard.tasksCompleted / dashboard.tasksTotal) * 100) : 0;
+    taskTotals > 0 ? Math.round((taskCompletedTotal / taskTotals) * 100) : 0;
   const habitCompletion =
-    dashboard.habitsTotal > 0
-      ? Math.round((dashboard.habitsCompletedToday / dashboard.habitsTotal) * 100)
+    habitTotal > 0
+      ? Math.round((habitCompletedToday / habitTotal) * 100)
       : 0;
+  const plannerScore =
+    projectStats.totalProjects > 0
+      ? Math.round((projectStats.completedProjectsCount / projectStats.totalProjects) * 100)
+      : 0;
+  const busiestWeek =
+    weeklyProgress.length > 0
+      ? weeklyProgress.reduce((best, week) => (scoreWeek(week) > scoreWeek(best) ? week : best))
+      : null;
+  const productivityInsights: Array<{
+    id: string;
+    type: 'positive' | 'neutral' | 'warning';
+    icon: 'trend' | 'clock' | 'calendar' | 'alert';
+    text: string;
+  }> = [
+    {
+      id: 'task-completion',
+      type: (taskCompletion >= 75 ? 'positive' : 'neutral') as 'positive' | 'neutral',
+      icon: 'trend' as const,
+      text:
+        taskTotals > 0
+          ? `You have completed ${taskCompletion}% of your tasks.`
+          : 'No tasks are completed yet, so your dashboard will update as you finish work.',
+    },
+    {
+      id: 'focus-average',
+      type: (averageSession >= 25 ? 'positive' : 'warning') as 'positive' | 'warning',
+      icon: 'clock' as const,
+      text:
+        completedFocusSessions.length > 0
+          ? `Your average focus session is ${averageSession} minutes across ${completedFocusSessions.length} sessions.`
+          : 'Start a focus session to build a real focus history.',
+    },
+    {
+      id: 'best-week',
+      type: (busiestWeek && scoreWeek(busiestWeek) > 0 ? 'positive' : 'neutral') as 'positive' | 'neutral',
+      icon: 'calendar' as const,
+      text: busiestWeek
+        ? `Your strongest week was ${busiestWeek.week} with ${busiestWeek.tasksCompleted} tasks, ${busiestWeek.focusMinutes} focus minutes, and ${busiestWeek.habitsCompleted} habits.`
+        : 'No weekly progress data is available yet.',
+    },
+    {
+      id: 'deadlines',
+      type: (upcomingDeadlines.length > 0 ? 'warning' : 'neutral') as 'warning' | 'neutral',
+      icon: 'alert' as const,
+      text:
+        upcomingDeadlines.length > 0
+          ? `${upcomingDeadlines.length} deadline${upcomingDeadlines.length === 1 ? '' : 's'} are due in the next 7 days.`
+          : 'No deadlines are due in the next 7 days.',
+    },
+  ];
 
   return (
     <div className="relative mx-auto flex w-full max-w-[1920px] flex-col gap-8 sm:gap-10 lg:gap-12">
@@ -459,20 +586,27 @@ export function DashboardPage() {
         }}
       />
 
-      <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1.5fr)_420px] gap-8 sm:gap-10 lg:gap-12">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1.5fr)_420px] gap-8 sm:gap-10 lg:gap-12"
+      >
         <div className="flex flex-col gap-8 sm:gap-10">
-          <PremiumHero
-            name={user.name ?? user.email.split('@')[0]}
-            today={todayLabel}
-            productivityScore={dashboard.productivityScore ?? 0}
-            tasksCompleted={dashboard.tasksCompleted}
-            tasksTotal={dashboard.tasksTotal}
-            habitsCompleted={dashboard.habitsCompletedToday}
-            habitsTotal={dashboard.habitsTotal}
-            focusMinutes={dashboard.focusMinutesTotal}
-          />
+          <motion.div variants={itemVariants}>
+            <PremiumHero
+              name={user.name ?? user.email.split('@')[0]}
+              today={todayLabel}
+              productivityScore={dashboard.productivityScore ?? 0}
+              tasksCompleted={dashboard.tasksCompleted}
+              tasksTotal={dashboard.tasksTotal}
+              habitsCompleted={dashboard.habitsCompletedToday}
+              habitsTotal={dashboard.habitsTotal}
+              focusMinutes={dashboard.focusMinutesTotal}
+            />
+          </motion.div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10">
             <div className="xl:col-span-8 min-w-0">
               <WeeklyProgressChart data={dashboard.weeklyProgress} />
             </div>
@@ -481,119 +615,127 @@ export function DashboardPage() {
                 overallScore={dashboard.productivityScore ?? 0}
                 breakdown={{
                   taskCompletion,
-                  focus: Math.min(100, Math.floor((dashboard.focusMinutesTotal / 120) * 100)),
+                  focus: Math.min(100, Math.floor((focusMinutesTotal / 120) * 100)),
                   habits: habitCompletion,
-                  planner: 82,
+                  planner: plannerScore,
                   consistency:
-                    dashboard.currentHabitStreak > 0
-                      ? Math.min(100, dashboard.currentHabitStreak * 10)
+                    currentHabitStreak > 0
+                      ? Math.min(100, currentHabitStreak * 10)
                       : 0,
                 }}
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
             <PriorityTasksWidget tasks={tasks} maxTasks={5} />
             <ProjectsWidget projects={dashboard.activeProjects} />
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
             <FocusWidget
-              todayMinutes={dashboard.focusMinutesTotal}
-              totalMinutes={dashboard.focusMinutesTotal}
-              currentStreak={dashboard.currentHabitStreak}
-              bestStreak={dashboard.longestHabitStreak}
-              longestSession={90}
-              averageSession={45}
+              todayMinutes={todayFocusMinutes}
+              totalMinutes={focusMinutesTotal}
+              currentStreak={currentHabitStreak}
+              bestStreak={longestHabitStreak}
+              longestSession={longestSession}
+              averageSession={averageSession}
             />
-            <UpcomingDeadlines deadlines={dashboard.upcomingDeadlines} />
-          </div>
+            <UpcomingDeadlines deadlines={upcomingDeadlines} />
+          </motion.div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-8 sm:gap-10">
             <HabitsWidget
               habits={habitsForWidget}
-              totalHabits={dashboard.habitsTotal}
-              completedToday={dashboard.habitsCompletedToday}
+              totalHabits={habitTotal}
+              completedToday={habitCompletedToday}
             />
-            <ProductivityInsights />
-          </div>
+            <ProductivityInsights insights={productivityInsights} />
+          </motion.div>
         </div>
 
         <div className="flex flex-col gap-8 sm:gap-10 2xl:sticky 2xl:top-8 self-start">
-          <RightRailProfileCard
-            name={user.name ?? user.email.split('@')[0]}
-            productivityScore={dashboard.productivityScore ?? 0}
-            tasksCompleted={dashboard.tasksCompleted}
-            tasksTotal={dashboard.tasksTotal}
-            focusMinutes={dashboard.focusMinutesTotal}
-            currentHabitStreak={dashboard.currentHabitStreak}
-          />
+          <motion.div variants={itemVariants}>
+            <RightRailProfileCard
+              name={user.name ?? user.email.split('@')[0]}
+              productivityScore={dashboard.productivityScore ?? 0}
+              tasksCompleted={taskCompletedTotal}
+              tasksTotal={taskTotals}
+              focusMinutes={focusMinutesTotal}
+              currentHabitStreak={currentHabitStreak}
+            />
+          </motion.div>
 
-          <Card variant="elevated" className="overflow-hidden">
-            <div className="p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-3 mb-5">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
-                    Current projects
-                  </p>
-                  <h3 className="mt-1 text-lg font-black text-text-primary">Active work</h3>
+          <motion.div variants={itemVariants}>
+            <Card variant="elevated" className="overflow-hidden">
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
+                      Current projects
+                    </p>
+                    <h3 className="mt-1 text-lg font-black text-text-primary">Active work</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/projects')}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-accent hover:text-accent-hover transition-colors"
+                  >
+                    View all
+                    <ArrowRight size={14} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/projects')}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-accent hover:text-accent-hover transition-colors"
-                >
-                  View all
-                  <ArrowRight size={14} />
-                </button>
-              </div>
 
-              <div className="space-y-3">
-                {topProjects.map((project) => {
-                  const progress = Math.max(0, Math.min(100, project.progress));
-                  return (
-                    <button
-                      key={project.id}
-                      type="button"
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                      className="w-full rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-black text-text-primary truncate">
-                            {project.name}
-                          </p>
-                          <p className="mt-1 text-xs text-text-secondary line-clamp-2">
-                            {project.description ?? 'No project description yet.'}
-                          </p>
+                <div className="space-y-3">
+                  {topProjects.map((project) => {
+                    const progress = Math.max(0, Math.min(100, project.progress));
+                    return (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                        className="w-full rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                        style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-black text-text-primary truncate">
+                              {project.name}
+                            </p>
+                            <p className="mt-1 text-xs text-text-secondary line-clamp-2">
+                              {project.description ?? 'No project description yet.'}
+                            </p>
+                          </div>
+                          <Badge variant="accent" size="sm">
+                            {progress}%
+                          </Badge>
                         </div>
-                        <Badge variant="accent" size="sm">
-                          {progress}%
-                        </Badge>
-                      </div>
-                      <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${progress}%`, background: project.color || 'var(--gradient-accent)' }}
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
-                {topProjects.length === 0 && (
-                  <p className="text-sm text-text-muted">No active projects yet.</p>
-                )}
+                        <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${progress}%`, background: project.color || 'var(--gradient-accent)' }}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {topProjects.length === 0 && (
+                    <p className="text-sm text-text-muted">No active projects yet.</p>
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
 
-          <QuickActionsPanel />
+          <motion.div variants={itemVariants}>
+            <QuickActionsPanel />
+          </motion.div>
 
-          <ActivityFeed activities={recentActivities} maxItems={4} />
+          <motion.div variants={itemVariants}>
+            <ActivityFeed activities={recentActivities} maxItems={4} />
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

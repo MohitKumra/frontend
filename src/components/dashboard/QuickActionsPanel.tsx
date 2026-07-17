@@ -52,7 +52,7 @@ export function QuickActionsPanel() {
       label: 'Plan Day',
       description: 'Block time',
       icon: Calendar,
-      route: '/planner',
+      route: '/calendar',
       gradient: 'var(--gradient-danger)',
     },
     {

@@ -8,10 +8,8 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { setTheme as applyTheme, type Theme } from '../platform/theme';
+import { setTheme as applyTheme, type Theme, type ThemePreference } from '../platform/theme';
 import { applyLayoutPreference as applyShellLayout, type LayoutPreference as ShellLayoutPreference } from '../platform/layout';
-
-type ThemePreference = Theme | 'system';
 
 interface UIState {
   theme: Theme;
@@ -20,10 +18,10 @@ interface UIState {
   calendarViewPreference: 'day' | 'week' | 'month' | 'agenda';
   sidebarOpen: boolean;
   focusMode: boolean;
-  setTheme: (theme: ThemePreference) => Promise<Theme>;
+  setTheme: (theme: ThemePreference, options?: { animate?: boolean }) => Promise<Theme>;
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
   setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
-  toggleTheme: () => Promise<Theme>;
+  toggleTheme: (options?: { animate?: boolean }) => Promise<Theme>;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setFocusMode: (open: boolean) => void;
@@ -40,8 +38,8 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: true,
       focusMode: false,
 
-      setTheme: async (theme) => {
-        const resolved = await applyTheme(theme);
+      setTheme: async (theme, options) => {
+        const resolved = await applyTheme(theme, options);
         set({ theme: resolved, themePreference: theme });
         return resolved;
       },
@@ -50,10 +48,10 @@ export const useUIStore = create<UIState>()(
         set({ layoutPreference: layout });
       },
       setCalendarViewPreference: (view) => set({ calendarViewPreference: view }),
-      toggleTheme: async () => {
+      toggleTheme: async (options) => {
         const current = document.documentElement.getAttribute('data-theme') as Theme | null;
         const next = current === 'dark' ? 'light' : 'dark';
-        const resolved = await applyTheme(next);
+        const resolved = await applyTheme(next, options);
         set({ theme: resolved, themePreference: next });
         return resolved;
       },

@@ -270,6 +270,21 @@ export interface HabitsListResponse {
   };
 }
 
+// ─── Week Overview ────────────────────────────────────────────────────────────
+
+export interface WeekDayDTO {
+  date: string;   // "YYYY-MM-DD"
+  score: number;  // 0-100
+  completed: number;
+  total: number;
+  isFuture: boolean;
+  isToday: boolean;
+}
+
+export interface WeekOverviewDTO {
+  days: WeekDayDTO[];
+}
+
 export interface CreateHabitRequest {
   title: string;
   targetPerWeek?: number;
@@ -425,12 +440,44 @@ export interface PushSubscriptionRequest {
   };
 }
 
+// ─── In-App Activity Feed ─────────────────────────────────────────────────────
+
+export type InAppNotificationType =
+  | 'TASK_CREATED' | 'TASK_COMPLETED' | 'TASK_STATUS_CHANGED'
+  | 'HABIT_COMPLETED' | 'HABIT_STREAK'
+  | 'FOCUS_SESSION_COMPLETED'
+  | 'PROJECT_CREATED' | 'PROJECT_COMPLETED' | 'PROJECT_STATUS_CHANGED'
+  | 'TASK_OVERDUE' | 'TASK_DUE_SOON' | 'HABIT_PENDING';
+
+export interface InAppNotificationDTO {
+  id: string;
+  type: InAppNotificationType;
+  title: string;
+  description?: string;
+  timestamp: string;
+  entityType: 'task' | 'habit' | 'project' | 'focus';
+  entityId: string;
+  metadata?: Record<string, any>;
+  isActionable: boolean; // true for overdue/pending items
+}
+
+export interface ActivityFeedResponse {
+  data: InAppNotificationDTO[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+    nextCursor?: string;
+  };
+}
+
 // ─── API Envelope ─────────────────────────────────────────────────────────────
 
 /** Standard list response envelope. */
 export interface ListResponse<T> {
   data: T[];
-  meta: { total: number };
+  meta: { total: number; nextCursor?: string | null };
 }
 
 /** Standard error envelope. */
