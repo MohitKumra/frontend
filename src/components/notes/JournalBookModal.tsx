@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { Component, forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import { Edit3, Trash2, X, Calendar } from 'lucide-react';
 import { Badge } from '../ui/Badge';
@@ -13,16 +13,7 @@ interface JournalBookModalProps {
   onDelete: () => void;
 }
 
-const Page = forwardRef<HTMLDivElement, { className?: string; children: React.ReactNode }>(
-  ({ className, children }, ref) => (
-    <div className={className} ref={ref} style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
-      {children}
-    </div>
-  )
-);
-Page.displayName = 'Page';
-
-function paginateContent(content: string, maxCharsPerPage = 420): string[] {
+function paginateContent(content: string, maxCharsPerPage = 220): string[] {
   if (!content) return [''];
 
   const paragraphs = content.split(/\n{2,}/).filter(Boolean);
@@ -44,8 +35,8 @@ function paginateContent(content: string, maxCharsPerPage = 420): string[] {
     for (const word of words) {
       const candidate = current ? `${current} ${word}` : word;
       if (candidate.length > maxCharsPerPage) {
-        pushCurrent();       // push exactly once
-        current = word;      // start the new page with this word
+        pushCurrent();
+        current = word;
       } else {
         current = candidate;
       }
@@ -56,12 +47,357 @@ function paginateContent(content: string, maxCharsPerPage = 420): string[] {
   return pages.length ? pages : [''];
 }
 
-export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }: JournalBookModalProps) {
+/** Simple paper-style journal rendering - no flipbook library needed */
+function JournalPaperView({ note, journalDate, lastUpdated }: {
+  note: NoteDTO;
+  journalDate: string;
+  lastUpdated: string;
+}) {
+  const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      background: 'var(--journal-paper)',
+      backgroundImage: `
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139,111,71,0.03) 2px, rgba(139,111,71,0.03) 4px),
+        radial-gradient(circle at 15% 15%, rgba(212,175,55,0.06), transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(92,64,51,0.05), transparent 45%)
+      `,
+      boxShadow: 'inset 0 0 40px rgba(92,64,51,0.12), 0 30px 60px rgba(0,0,0,0.55)',
+      maxWidth: '560px',
+      margin: '0 auto',
+      position: 'relative',
+    }}>
+      {/* Spine effect */}
+      <div style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: '14px',
+        background: 'linear-gradient(90deg, var(--journal-darker), var(--journal-dark))',
+        boxShadow: 'inset -2px 0 4px rgba(0,0,0,0.5), 2px 0 8px rgba(0,0,0,0.25)',
+        zIndex: 1,
+      }} />
+
+      {/* Cover header */}
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '32px 10% 24px',
+        background: 'var(--journal-darker)',
+        backgroundImage: 'var(--leather-texture)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}>
+        <span style={{
+          color: 'var(--journal-gold)',
+          fontFamily: 'Georgia, serif',
+          fontSize: '11px',
+          letterSpacing: '4px',
+          textTransform: 'uppercase',
+          opacity: 0.85,
+        }}>Journal</span>
+        <div style={{
+          width: '48px',
+          height: '2px',
+          margin: '12px 0 16px',
+          background: 'linear-gradient(90deg, transparent, var(--journal-gold), transparent)',
+          opacity: 0.8,
+        }} />
+        <h2 style={{
+          color: 'var(--journal-gold)',
+          fontFamily: 'Georgia, serif',
+          fontWeight: 700,
+          fontSize: 'clamp(18px, 3vw, 24px)',
+          lineHeight: 1.3,
+          textShadow: '2px 2px 6px rgba(0,0,0,0.5)',
+          margin: 0,
+        }}>{note.title || 'Untitled Entry'}</h2>
+        <span style={{
+          color: 'var(--journal-light)',
+          fontFamily: 'Georgia, serif',
+          fontSize: '10px',
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
+          marginTop: '12px',
+          opacity: 0.75,
+        }}>{journalDate}</span>
+      </div>
+
+      {/* Content area */}
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        flex: 1,
+        overflowY: 'auto',
+        padding: '20px 10%',
+      }}>
+        {contentPages.map((chunk, i) => (
+          <div key={i} style={{ marginBottom: i < contentPages.length - 1 ? '24px' : 0 }}>
+            {i === 0 && (
+              <div style={{ marginBottom: '14px' }}>
+                <span style={{
+                  color: 'var(--journal-accent)',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                }}>{journalDate}</span>
+                {note.title && (
+                  <h2 style={{
+                    color: 'var(--journal-dark)',
+                    fontFamily: 'Georgia, serif',
+                    fontWeight: 700,
+                    fontSize: 'clamp(16px, 2.5vw, 20px)',
+                    margin: '8px 0 0',
+                  }}>{note.title}</h2>
+                )}
+              </div>
+            )}
+            <p style={{
+              fontFamily: 'Georgia, serif',
+              fontStyle: 'italic',
+              color: 'var(--journal-text)',
+              fontSize: 'clamp(13px, 1.6vw, 15px)',
+              lineHeight: 1.8,
+              letterSpacing: '0.3px',
+              whiteSpace: 'pre-wrap',
+              margin: 0,
+            }}>{chunk}</p>
+          </div>
+        ))}
+
+        {(note.attachmentUrl || note.voiceNoteUrl) && (
+          <div style={{ marginTop: '20px' }}>
+            <span style={{
+              color: 'var(--journal-accent)',
+              fontFamily: 'Georgia, serif',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+              display: 'block',
+              marginBottom: '10px',
+            }}>Attachments</span>
+            <MediaPreview attachmentUrl={note.attachmentUrl} voiceNoteUrl={note.voiceNoteUrl} compact />
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 10%',
+        borderTop: '1px solid rgba(92,64,51,0.2)',
+      }}>
+        <Badge variant="accent" size="sm">Journal Entry</Badge>
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          fontSize: '10px',
+          fontWeight: 700,
+          color: 'var(--journal-text)',
+          opacity: 0.65,
+        }}>
+          <Calendar size={11} />
+          Updated {lastUpdated}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const Page = forwardRef<HTMLDivElement, { className?: string; children: React.ReactNode }>(
+  ({ className, children }, ref) => (
+    <div className={className} ref={ref} style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+      {children}
+    </div>
+  )
+);
+Page.displayName = 'Page';
+
+// ── Error Boundary ──────────────────────────────────────────────
+
+interface FlipBookBoundaryState {
+  hasError: boolean;
+}
+
+class FlipBookBoundary extends Component<
+  { children: React.ReactNode; onFallback: () => void },
+  FlipBookBoundaryState
+> {
+  constructor(props: { children: React.ReactNode; onFallback: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): FlipBookBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("FlipBookBoundary caught an error:", error, errorInfo);
+    this.props.onFallback();
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
+function FlipBookContent({ note, journalDate, lastUpdated }: {
+  note: NoteDTO;
+  journalDate: string;
+  lastUpdated: string;
+}) {
   const bookRef = useRef<any>(null);
+  const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
+  const hasMediaPage = Boolean(note.attachmentUrl || note.voiceNoteUrl);
+
+  // Wait 2 frames then auto-flip to reveal content
+  useEffect(() => {
+    const flipTimer = setTimeout(() => {
+      try {
+        console.log("bookRef.current:", bookRef.current);
+        console.log("bookRef.current.pageFlip():", bookRef.current?.pageFlip?.());
+        bookRef.current?.pageFlip()?.flipNext();
+      } catch (err) {
+        console.error("Error flipping page:", err);
+      }
+    }, 700);
+    return () => clearTimeout(flipTimer);
+  }, []);
+
+  const FlipBook = HTMLFlipBook as any;
+
+  console.log("Rendering FlipBook with", contentPages.length, "content pages");
+
+  // Build all children in an array first, then filter out any falsy values
+  const bookChildren = React.useMemo(() => {
+    const children = [
+      // Front Cover
+      <div className="rpf-page rpf-cover rpf-cover-front" key="cover-front" style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+        <div className="journal-cover-face">
+          <span className="journal-cover-kicker">Journal</span>
+          <div className="journal-cover-rule" />
+          <h2 className="journal-cover-title">{note.title || 'Untitled Entry'}</h2>
+          <span className="journal-cover-date">{journalDate}</span>
+          <div className="journal-cover-corner journal-cover-corner-tl" />
+          <div className="journal-cover-corner journal-cover-corner-tr" />
+          <div className="journal-cover-corner journal-cover-corner-bl" />
+          <div className="journal-cover-corner journal-cover-corner-br" />
+        </div>
+      </div>,
+      // Content Pages
+      ...contentPages.map((chunk, i) => (
+        <div className="rpf-page rpf-content" key={`content-${i}`} style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+          <div className="journal-paper-face">
+            {i === 0 && (
+              <>
+                <span className="journal-header-date">{journalDate}</span>
+                {note.title && <h2 className="journal-header-title">{note.title}</h2>}
+              </>
+            )}
+            <div className="journal-paper-scroll">
+              <p className="journal-text">{chunk}</p>
+            </div>
+            <div className="journal-paper-footer">
+              {i === 0 ? (
+                <Badge variant="accent" size="sm">Journal Entry</Badge>
+              ) : (
+                <span className="journal-footer-date">
+                  <Calendar size={11} />
+                  Updated {lastUpdated}
+                </span>
+              )}
+              <span className="journal-page-number">
+                Page {i + 1} of {contentPages.length}
+              </span>
+            </div>
+          </div>
+        </div>
+      )),
+      // Media Page (conditional)
+      (note.attachmentUrl || note.voiceNoteUrl) ? (
+        <div className="rpf-page rpf-content" key="media" style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+          <div className="journal-paper-face">
+            <span className="journal-header-date">Attachments</span>
+            <h2 className="journal-header-title">Linked media</h2>
+            <div className="journal-paper-scroll" style={{ padding: '0 8%' }}>
+              <MediaPreview attachmentUrl={note.attachmentUrl} voiceNoteUrl={note.voiceNoteUrl} compact />
+            </div>
+          </div>
+        </div>
+      ) : null,
+      // Back Cover
+      <div className="rpf-page rpf-cover rpf-cover-back" key="cover-back" style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+        <div className="journal-cover-face journal-cover-face-back">
+          <div className="journal-cover-rule" />
+          <span className="journal-cover-endnote">— end of entry —</span>
+        </div>
+      </div>,
+    ];
+    // Filter out null, undefined, false, etc.
+    return children.filter(Boolean);
+  }, [note, journalDate, lastUpdated, contentPages]);
+
+  console.log("Book children count:", bookChildren.length);
+
+  return (
+    <FlipBook
+      width={320}
+      height={400}
+      size="stretch"
+      minWidth={200}
+      maxWidth={420}
+      minHeight={260}
+      maxHeight={500}
+      showCover={true}
+      usePortrait
+      mobileScrollSupport
+      drawShadow
+      maxShadowOpacity={0.6}
+      flippingTime={650}
+      startPage={0}
+      startZIndex={0}
+      autoSize={true}
+      clickEventForward={true}
+      useMouseEvents={true}
+      className="journal-flipbook"
+      ref={bookRef}
+    >
+      {bookChildren}
+    </FlipBook>
+  );
+}
+
+// ── Main Component ──────────────────────────────────────────────
+
+export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }: JournalBookModalProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [closing, setClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const FlipBook = HTMLFlipBook as any;
+  const [useFallback, setUseFallback] = useState(false);
+  console.log("JournalBookModal: useFallback =", useFallback);
 
   const journalDate = new Date(note.updatedAt).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -74,10 +410,6 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
     day: 'numeric',
     year: 'numeric',
   });
-
-  // One unique chunk per physical page — no pairing, no duplication
-  const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
-  const hasMediaPage = Boolean(note.attachmentUrl || note.voiceNoteUrl);
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -106,28 +438,19 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
   }, []);
 
   useEffect(() => {
+    // Reset fallback state when modal opens
+    setUseFallback(false);
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-
     const growTimer = requestAnimationFrame(() => setMounted(true));
-    const flipTimer = setTimeout(() => {
-      try {
-        bookRef.current?.pageFlip()?.flipNext();
-      } catch {
-        /* library not ready yet */
-      }
-    }, 650);
-
     return () => {
       cancelAnimationFrame(growTimer);
-      clearTimeout(flipTimer);
       document.body.style.overflow = originalOverflow;
     };
   }, []);
 
   const handleClose = () => {
     setClosing(true);
-
     const stage = stageRef.current;
     if (stage && originRect) {
       const finalRect = stage.getBoundingClientRect();
@@ -140,7 +463,6 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
       stage.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
       stage.style.opacity = '0.3';
     }
-
     setTimeout(onClose, 320);
   };
 
@@ -165,100 +487,7 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
         className={`journal-book-stage ${originRect ? 'journal-book-stage--flip' : ''}`}
         ref={stageRef}
       >
-        <FlipBook
-            width={420}
-            height={580}
-            size="stretch"
-            minWidth={260}
-            maxWidth={560}
-            minHeight={360}
-            maxHeight={720}
-            showCover={true}
-            usePortrait
-            mobileScrollSupport
-            drawShadow
-            maxShadowOpacity={0.6}
-            flippingTime={650}
-            startPage={0}
-            startZIndex={0}
-            autoSize={true}
-            clickEventForward={true}
-            useMouseEvents={true}
-            className="journal-flipbook"
-            ref={bookRef}
-            style={{}}
->
-
-          {/* Fake front cover using CSS class (not library cover) */}
-          <Page className="rpf-page rpf-cover rpf-cover-front">
-            <div className="journal-cover-face">
-              <span className="journal-cover-kicker">Journal</span>
-              <div className="journal-cover-rule" />
-              <h2 className="journal-cover-title">{note.title || 'Untitled Entry'}</h2>
-              <span className="journal-cover-date">{journalDate}</span>
-              <div className="journal-cover-corner journal-cover-corner-tl" />
-              <div className="journal-cover-corner journal-cover-corner-tr" />
-              <div className="journal-cover-corner journal-cover-corner-bl" />
-              <div className="journal-cover-corner journal-cover-corner-br" />
-            </div>
-          </Page>
-
-          {/* One unique chunk per page — no left/right columns */}
-          {contentPages.map((chunk, i) => (
-            <Page className="rpf-page rpf-content" key={`content-${i}`}>
-              <div className="journal-paper-face">
-                {i === 0 && (
-                  <>
-                    <span className="journal-header-date">{journalDate}</span>
-                    {note.title && <h2 className="journal-header-title">{note.title}</h2>}
-                  </>
-                )}
-                <div className="journal-paper-scroll">
-                  <p className="journal-text">{chunk}</p>
-                </div>
-                <div className="journal-paper-footer">
-                  {i === 0 ? (
-                    <Badge variant="accent" size="sm">
-                      Journal Entry
-                    </Badge>
-                  ) : (
-                    <span className="journal-footer-date">
-                      <Calendar size={11} />
-                      Updated {lastUpdated}
-                    </span>
-                  )}
-                  <span className="journal-page-number">
-                    Page {i + 1} of {contentPages.length}
-                  </span>
-                </div>
-              </div>
-            </Page>
-          ))}
-
-          {(note.attachmentUrl || note.voiceNoteUrl) && (
-            <Page className="rpf-page rpf-content" key="media">
-              <div className="journal-paper-face">
-                <span className="journal-header-date">Attachments</span>
-                <h2 className="journal-header-title">Linked media</h2>
-                <div className="journal-paper-scroll space-y-4">
-                  <MediaPreview
-                    attachmentUrl={note.attachmentUrl}
-                    voiceNoteUrl={note.voiceNoteUrl}
-                    compact
-                  />
-                </div>
-              </div>
-            </Page>
-          )}
-
-          {/* Fake back cover */}
-          <Page className="rpf-page rpf-cover rpf-cover-back">
-            <div className="journal-cover-face journal-cover-face-back">
-              <div className="journal-cover-rule" />
-              <span className="journal-cover-endnote">— end of entry —</span>
-            </div>
-          </Page>
-        </FlipBook>
+        <FlipBookContent note={note} journalDate={journalDate} lastUpdated={lastUpdated} />
       </div>
 
       <div className="entry-action-bar">

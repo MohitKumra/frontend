@@ -537,14 +537,8 @@
 .journal-paper-scroll {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   padding-right: 4px;
-  scrollbar-width: none;      /* Firefox: hide scrollbar track */
-  -ms-overflow-style: none;   /* old Edge/IE */
-}
-
-.journal-paper-scroll::-webkit-scrollbar {
-  display: none;               /* Chrome/Safari: hide scrollbar track */
 }
 
 .journal-text {
@@ -996,6 +990,8 @@
 
 /* ============================================================
    NOTES GRID CARD — yellow sticky note with a pin
+   (legacy — kept for other surfaces/back-compat; the page grid
+   now renders .np-card instead, see the v8 section below)
    ============================================================ */
 
 .sticky-note {
@@ -1477,4 +1473,300 @@
 
 .journal-edit-page .journal-media-field-wrap span[style*="text-primary"] {
   color: var(--journal-text) !important;
+}
+
+/* ============================================================================
+   v8 — NOTES & JOURNAL PAGE CHROME REDESIGN
+   Everything below is NEW and only affects the grid/list page itself:
+   header, search bar, filter pills, note cards, and the featured
+   journal panel. It does NOT touch anything above this line — the
+   view/edit modal chrome (.journal-overlay, .note-overlay, .entry-*,
+   .rpf-*, .journal-edit-*, .note-edit-*) is completely untouched.
+   ============================================================================ */
+
+/* ---- eyebrow section labels ("PINNED" / "OTHERS") ---- */
+.np-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+/* ---- filter pills ---- */
+.np-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+.np-pill:hover {
+  color: var(--color-text-primary);
+}
+.np-pill.is-active {
+  background: var(--gradient-accent);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(79, 70, 229, 0.5);
+}
+.np-pill-count {
+  opacity: 0.85;
+  font-weight: 700;
+}
+
+/* ---- note card v2 (pastel, premium grid card) ---- */
+.np-card {
+  position: relative;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 176px;
+  cursor: pointer;
+  transition: transform 0.22s var(--ease-book), box-shadow 0.22s ease;
+  box-shadow: 0 1px 2px rgba(20, 20, 43, 0.05);
+}
+.np-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 30px -16px rgba(20, 20, 43, 0.28);
+}
+
+.np-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.np-card-star {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+.np-card-star:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.np-card-star.is-starred {
+  color: #f5b301;
+}
+
+.np-card-title {
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.3;
+  margin-top: 14px;
+  color: var(--color-text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.np-card-meta {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-top: 3px;
+}
+.np-card-preview {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.np-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.np-card-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.np-card-menu-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.np-card:hover .np-card-menu-btn {
+  opacity: 1;
+}
+.np-card-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+/* pastel theme variants — light mode */
+.np-theme-violet { background: linear-gradient(150deg, #eef0ff 0%, #e3e6ff 100%); border-color: #dcdfff; }
+.np-theme-violet .np-card-icon { background: #dfe2ff; color: #5b57f0; }
+.np-theme-violet .np-card-badge { background: #dfe2ff; color: #4b47d6; }
+
+.np-theme-amber { background: linear-gradient(150deg, #fff8e6 0%, #ffefc4 100%); border-color: #f6e2a0; }
+.np-theme-amber .np-card-icon { background: #ffe9ad; color: #b9780a; }
+.np-theme-amber .np-card-badge { background: #ffe9ad; color: #92600a; }
+
+.np-theme-green { background: linear-gradient(150deg, #eafbf1 0%, #d9f5e4 100%); border-color: #bfe9d2; }
+.np-theme-green .np-card-icon { background: #cdf0dc; color: #16875e; }
+.np-theme-green .np-card-badge { background: #cdf0dc; color: #0f6b48; }
+
+.np-theme-blue { background: linear-gradient(150deg, #eaf3ff 0%, #dcecff 100%); border-color: #c3ddff; }
+.np-theme-blue .np-card-icon { background: #d6e8ff; color: #1c6fd6; }
+.np-theme-blue .np-card-badge { background: #d6e8ff; color: #14539f; }
+
+.np-theme-pink { background: linear-gradient(150deg, #fdeef6 0%, #fbe1ee 100%); border-color: #f6cbe2; }
+.np-theme-pink .np-card-icon { background: #f9d7e9; color: #c23b81; }
+.np-theme-pink .np-card-badge { background: #f9d7e9; color: #9c2d67; }
+
+/* pastel theme variants — dark mode */
+[data-theme='dark'] .np-theme-violet { background: linear-gradient(150deg, #22234a 0%, #1b1c3d 100%); border-color: #33356b; }
+[data-theme='dark'] .np-theme-violet .np-card-icon { background: #2d2f66; color: #b3b0ff; }
+[data-theme='dark'] .np-theme-violet .np-card-badge { background: #2d2f66; color: #b3b0ff; }
+
+[data-theme='dark'] .np-theme-amber { background: linear-gradient(150deg, #3a2f13 0%, #2e2510 100%); border-color: #55461c; }
+[data-theme='dark'] .np-theme-amber .np-card-icon { background: #4a3b16; color: #f2c869; }
+[data-theme='dark'] .np-theme-amber .np-card-badge { background: #4a3b16; color: #f2c869; }
+
+[data-theme='dark'] .np-theme-green { background: linear-gradient(150deg, #123626 0%, #0e2c1e 100%); border-color: #1d5138; }
+[data-theme='dark'] .np-theme-green .np-card-icon { background: #164630; color: #6fe0ab; }
+[data-theme='dark'] .np-theme-green .np-card-badge { background: #164630; color: #6fe0ab; }
+
+[data-theme='dark'] .np-theme-blue { background: linear-gradient(150deg, #142c47 0%, #102338 100%); border-color: #1f4570; }
+[data-theme='dark'] .np-theme-blue .np-card-icon { background: #18365a; color: #7fb4f5; }
+[data-theme='dark'] .np-theme-blue .np-card-badge { background: #18365a; color: #7fb4f5; }
+
+[data-theme='dark'] .np-theme-pink { background: linear-gradient(150deg, #3a1a2c 0%, #2e1523 100%); border-color: #602a49; }
+[data-theme='dark'] .np-theme-pink .np-card-icon { background: #4a2038; color: #f0a0cc; }
+[data-theme='dark'] .np-theme-pink .np-card-badge { background: #4a2038; color: #f0a0cc; }
+
+/* ---- featured journal entry panel ---- */
+.np-featured {
+  position: relative;
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20, 20, 43, 0.04);
+}
+.np-featured-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.np-featured-date-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+}
+.np-featured-date-btn:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.np-featured-body {
+  position: relative;
+  padding: 24px 28px 28px;
+  min-height: 220px;
+}
+.np-featured-illustration {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: min(46%, 380px);
+  pointer-events: none;
+  opacity: 0.95;
+}
+.np-featured-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+  position: relative;
+  z-index: 1;
+}
+.np-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.np-stat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--icon-bg-accent);
+  color: var(--icon-text-accent);
+  flex-shrink: 0;
+}
+.np-stat-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.np-stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-top: 1px;
+}
+
+@media (max-width: 640px) {
+  .np-featured-illustration {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-card,
+  .np-pill {
+    transition: none !important;
+  }
 }

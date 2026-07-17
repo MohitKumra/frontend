@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useSearchParams } from 'react-router-dom';
 import {
   Timer, Play, Pause, RotateCcw, Maximize2, Minimize2, X, Flame, CheckCircle2, Circle,
   ChevronDown, ChevronRight, Target, Coffee, Settings, Moon, TrendingUp, SkipBack,
-  SkipForward, MoreHorizontal, Music, CalendarDays, Plus, Clock, AudioLines,
+  SkipForward, MoreHorizontal, Music, CalendarDays, Clock, AudioLines,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
@@ -16,11 +16,16 @@ import { TabBar } from '../components/ui/TabBar';
 import { Card } from '../components/ui/Card';
 import { useUIStore } from '../store/uiStore';
 import { TaskTimeAnalysis } from '../components/tasks/TaskTimeAnalysis';
+import { JournalAmbientScene } from '../components/focus/JournalAmbientScene';
+import { QuoteCard } from '../components/habits/QuoteCard';
+import { getDailyQuotes } from '../data/quotes';
 import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
 import { isSameDay } from '../lib/dateUtils';
 import type { FocusSessionDTO, CreateFocusSessionRequest, ListResponse, TaskDTO } from '../types';
+import type { Quote as QuoteType } from '../data/quotes';
 
-type TimerMode = 'focus' | 'short_break' | 'long_break';
+export type TimerMode = 'focus' | 'short_break' | 'long_break';
+const MODE_ORDER: TimerMode[] = ['focus', 'short_break', 'long_break'];
 const DURATIONS: Record<TimerMode, number> = {
   focus: 25, short_break: 5, long_break: 15,
 };
@@ -29,21 +34,35 @@ const QUICK_DURATIONS = [25, 50, 75, 90];
 // until goal-setting is wired up to a real preference.
 const DEFAULT_GOAL_MIN = 240;
 const AMBIENT_SOUNDS = ['Forest', 'Rain', 'Cafe', 'Silence'];
-const QUOTES = [
-  { text: 'Discipline is choosing between what you want now and what you want most.', author: 'Abraham Lincoln' },
-  { text: 'Focus on being productive instead of busy.', author: 'Tim Ferriss' },
-  { text: 'The successful warrior is the average man, with laser-like focus.', author: 'Bruce Lee' },
-];
 
 const getModeColors = (mode: TimerMode) => {
   switch (mode) {
     case 'focus':
-      return { primary: 'var(--color-accent)', subtle: 'var(--color-accent-subtle)', glow: 'color-mix(in srgb, var(--color-accent) 25%, transparent)' };
+      return { primary: '#6366F1', subtle: 'color-mix(in srgb, #6366F1 15%, transparent)', glow: 'color-mix(in srgb, #6366F1 25%, transparent)' };
     case 'short_break':
-      return { primary: 'var(--color-success)', subtle: 'color-mix(in srgb, var(--color-success) 15%, transparent)', glow: 'color-mix(in srgb, var(--color-success) 25%, transparent)' };
+      return { primary: '#38BDF8', subtle: 'color-mix(in srgb, #38BDF8 15%, transparent)', glow: 'color-mix(in srgb, #38BDF8 25%, transparent)' };
     case 'long_break':
-      return { primary: 'var(--color-info)', subtle: 'color-mix(in srgb, var(--color-info) 15%, transparent)', glow: 'color-mix(in srgb, var(--color-info) 25%, transparent)' };
+      return { primary: '#A78BFA', subtle: 'color-mix(in srgb, #A78BFA 15%, transparent)', glow: 'color-mix(in srgb, #A78BFA 25%, transparent)' };
   }
+};
+
+// All three fullscreen backgrounds (focus / short break / long break) are pale
+// pastel gradients — none of them are ever truly dark — so foreground chrome
+// (labels, icons, timer digits) must always be a *darkened* version of the
+// mode's accent color, never white, or it disappears against the light sky.
+// Lighter accents (sky blue, lavender) need more black mixed in than indigo
+// to hit the same visual contrast.
+const TEXT_DARKEN: Record<TimerMode, number> = { focus: 15, short_break: 45, long_break: 50 };
+
+const getStrongColor = (mode: TimerMode) => {
+  const colors = getModeColors(mode);
+  return `color-mix(in srgb, ${colors.primary} ${100 - TEXT_DARKEN[mode]}%, #000)`;
+};
+
+  const MODE_SKY: Record<TimerMode, [string, string, string, string]> = {
+  focus: ['#eef2ff', '#e0e7ff', '#c7d2fe', '#f5f3ff'],
+  short_break: ['#e0f2fe', '#bae6fd', '#7dd3fc', '#f0f9ff'],
+  long_break: ['#ede9fe', '#ddd6fe', '#c4b5fd', '#f5f3ff'],
 };
 
 const MODE_COPY: Record<TimerMode, string> = {
@@ -83,9 +102,9 @@ function formatDuration(ms: number): string {
 /* ───────────────────────── Progress Ring ───────────────────────── */
 
 function ProgressRing({
-  logicalSize, progress, colors, running, showKnob = true,
+  logicalSize, progress, colors, running, showKnob = true, isNight = false,
 }: {
-  logicalSize: number; progress: number; colors: ReturnType<typeof getModeColors>; running: boolean; showKnob?: boolean;
+  logicalSize: number; progress: number; colors: ReturnType<typeof getModeColors>; running: boolean; showKnob?: boolean; isNight?: boolean;
 }) {
   const stroke = logicalSize > 200 ? 12 : 10;
   const r = logicalSize / 2 - stroke;
@@ -122,13 +141,13 @@ function ProgressRing({
             y1={cy + inner * Math.sin(angle)}
             x2={cx + outer * Math.cos(angle)}
             y2={cy + outer * Math.sin(angle)}
-            stroke="var(--color-border-subtle)"
+            stroke={isNight ? 'rgba(255,255,255,0.3)' : 'var(--color-border-subtle)'}
             strokeWidth={1.5}
           />
         );
       })}
 
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--color-border-subtle)" strokeWidth={stroke} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={isNight ? 'rgba(255,255,255,0.2)' : 'var(--color-border-subtle)'} strokeWidth={stroke} />
       <circle
         cx={cx}
         cy={cy}
@@ -142,7 +161,7 @@ function ProgressRing({
         style={{ transition: 'stroke-dashoffset 1s linear' }}
       />
       {showKnob && clamped > 0.01 && (
-        <circle cx={knobX} cy={knobY} r={stroke / 2 + 2} fill="var(--color-surface)" stroke={colors.primary} strokeWidth={3} />
+        <circle cx={knobX} cy={knobY} r={stroke / 2 + 2} fill={isNight ? 'rgba(255,255,255,0.9)' : 'var(--color-surface)'} stroke={colors.primary} strokeWidth={3} />
       )}
     </svg>
   );
@@ -163,286 +182,44 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   MODE-AWARE AMBIENT LANDSCAPE
-   Three soothing, low-saturation scenes — one per timer mode — sharing one
-   rounded, sharp-edge-free silhouette (bezier hills, soft "pom-pom" tree
-   canopies). Only light/color differs between them, which is what lets the
-   crossfade on mode-change read as a mood shift rather than a scene cut.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-type SceneTheme = {
-  label: string;
-  copy: string;
-  sky: [string, string, string, string];
-  orb: { core: string; mid: string; edge: string };
-  hills: { back: string; mid: string; front: string };
-  water: [string, string];
-  canopy: string;
-  canopyMid: string;
-  particle: 'bird' | 'petal' | 'star';
-};
-
-const SCENE_THEME: Record<TimerMode, SceneTheme> = {
-  focus: {
-    label: 'Focus',
-    copy: 'Stay with it — the work is working on you too.',
-    sky: ['#eae3ff', '#ddc9fb', '#ffceb3', '#ffe3c9'], // lavender evening
-    orb: { core: '#fff6e3', mid: '#ffd9a8', edge: '#ffbe86' }, // low sun
-    hills: { back: '#cabce3', mid: '#a793cf', front: '#7c67b8' },
-    water: ['#f3ddc7', '#8a76bd'],
-    canopy: '#6c58a8',
-    canopyMid: '#8a76c4',
-    particle: 'bird',
-  },
-  short_break: {
-    label: 'Short Break',
-    copy: 'Small pause. Let your shoulders drop.',
-    sky: ['#e9fbf1', '#d3f3df', '#bfe9d6', '#fff3d9'], // soft mint morning
-    orb: { core: '#fffdf2', mid: '#ffe9a8', edge: '#ffd580' }, // climbing sun
-    hills: { back: '#c3e9d3', mid: '#9bd6b6', front: '#6bb98f' },
-    water: ['#eaf7ec', '#79b99a'],
-    canopy: '#4f9c74',
-    canopyMid: '#7fc39e',
-    particle: 'petal',
-  },
-  long_break: {
-    label: 'Long Break',
-    copy: 'No timer chasing you. Just rest.',
-    sky: ['#101a33', '#1c2c4d', '#2f4370', '#4a5f8f'], // deep indigo night
-    orb: { core: '#f4f7ff', mid: '#cfe0ff', edge: '#a9c3f2' }, // moon
-    hills: { back: '#33447a', mid: '#293766', front: '#1e2a52' },
-    water: ['#2a3a63', '#141d38'],
-    canopy: '#232f5c',
-    canopyMid: '#2f3e70',
-    particle: 'star',
-  },
-};
-
-const SCENE_MODES: TimerMode[] = ['focus', 'short_break', 'long_break'];
-
-function HillLayer({ uid, d, fill, blur }: { uid: string; d: string; fill: string; blur?: boolean }) {
-  return <path d={d} fill={fill} filter={blur ? `url(#soft-blur-${uid})` : undefined} />;
-}
-
-function Canopy({ cx, cy, s, color, opacity = 1 }: { cx: number; cy: number; s: number; color: string; opacity?: number }) {
-  // A cluster of overlapping soft circles reads as a rounded treetop —
-  // deliberately avoids pointed pine silhouettes to keep the scene soothing.
-  return (
-    <g opacity={opacity}>
-      <circle cx={cx - s * 0.55} cy={cy + s * 0.18} r={s * 0.62} fill={color} />
-      <circle cx={cx + s * 0.55} cy={cy + s * 0.18} r={s * 0.62} fill={color} />
-      <circle cx={cx} cy={cy - s * 0.15} r={s * 0.78} fill={color} />
-      <rect x={cx - s * 0.06} y={cy + s * 0.35} width={s * 0.12} height={s * 0.5} rx={s * 0.06} fill={color} opacity={0.9} />
-    </g>
-  );
-}
-
-function LandscapeScene({ mode, active, reduceMotion }: { mode: TimerMode; active: boolean; reduceMotion: boolean }) {
-  const t = SCENE_THEME[mode];
-  const uid = mode;
-
-  // shared silhouette geometry — identical bezier paths across all three
-  // modes, so only fill/gradient changes when the mode switches.
-  const backHills =
-    'M760,900 C820,650 880,560 950,560 C1010,560 1050,640 1110,640 C1170,640 1200,540 1270,540 C1340,540 1380,610 1450,610 C1510,610 1560,560 1600,560 L1600,900 Z';
-  const midHills =
-    'M800,900 C860,700 930,610 1010,610 C1080,610 1110,690 1180,690 C1250,690 1280,600 1360,600 C1430,600 1470,670 1550,670 C1580,670 1600,660 1600,660 L1600,900 Z';
-  const frontHills =
-    'M850,900 C920,760 990,700 1070,700 C1140,700 1170,770 1250,770 C1320,770 1360,700 1440,700 C1500,700 1540,740 1600,740 L1600,900 Z';
-
-  const treesMid = Array.from({ length: 8 }).map((_, i) => ({ cx: 960 + i * 78, cy: 655 - (i % 3) * 8, s: 20 + (i % 3) * 4 }));
-  const treesFront = Array.from({ length: 9 }).map((_, i) => ({ cx: 930 + i * 76, cy: 780 - (i % 3) * 7, s: 26 + (i % 3) * 5 }));
-  const stars = Array.from({ length: 42 }).map((_, i) => ({
-    x: 800 + ((i * 61) % 800), y: (i * 23) % 260, r: 0.5 + (i % 5) * 0.28, d: 2.4 + (i % 5) * 0.5, delay: (i % 7) * 0.5,
-  }));
-
-  return (
-    <g
-      style={{
-        opacity: active ? 1 : 0,
-        transform: active ? 'scale(1)' : 'scale(1.015)',
-        transformOrigin: '50% 50%',
-        transition: reduceMotion
-          ? 'opacity 400ms linear'
-          : 'opacity 1900ms cubic-bezier(0.22,0.7,0.2,1), transform 2200ms cubic-bezier(0.22,0.7,0.2,1)',
-        pointerEvents: active ? 'auto' : 'none',
-      }}
-    >
-      <defs>
-        <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={t.sky[0]} />
-          <stop offset="38%" stopColor={t.sky[1]} />
-          <stop offset="72%" stopColor={t.sky[2]} />
-          <stop offset="100%" stopColor={t.sky[3]} />
-        </linearGradient>
-        <radialGradient id={`orb-glow-${uid}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={t.orb.core} stopOpacity="1" />
-          <stop offset="28%" stopColor={t.orb.mid} stopOpacity="0.8" />
-          <stop offset="60%" stopColor={t.orb.edge} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={t.orb.edge} stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={`orb-core-${uid}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={t.orb.core} />
-          <stop offset="100%" stopColor={t.orb.mid} />
-        </radialGradient>
-        <linearGradient id={`water-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={t.water[0]} stopOpacity="0.65" />
-          <stop offset="100%" stopColor={t.water[1]} stopOpacity="0.55" />
-        </linearGradient>
-        <filter id={`soft-blur-${uid}`} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="5" />
-        </filter>
-        <linearGradient id={`fade-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0" />
-          <stop offset="26%" stopColor="#fff" stopOpacity="0" />
-          <stop offset="52%" stopColor="#fff" stopOpacity="1" />
-          <stop offset="100%" stopColor="#fff" stopOpacity="1" />
-        </linearGradient>
-        <mask id={`fade-mask-${uid}`}>
-          <rect x="0" y="0" width="1600" height="900" fill={`url(#fade-${uid})`} />
-        </mask>
-      </defs>
-
-      <g mask={`url(#fade-mask-${uid})`}>
-        <rect x="0" y="0" width="1600" height="900" fill={`url(#sky-${uid})`} />
-
-        {/* stars — only meaningfully visible at night; kept present at
-            near-zero opacity elsewhere so nothing pops in on crossfade */}
-        {stars.map((s, i) => (
-          <circle
-            key={i}
-            cx={s.x}
-            cy={s.y}
-            r={s.r}
-            fill="#ffffff"
-            opacity={mode === 'long_break' ? 0.15 + (i % 5) * 0.11 : 0}
-            style={
-              !reduceMotion && mode === 'long_break'
-                ? { animation: `twinkle-${uid} ${s.d}s ease-in-out ${s.delay}s infinite` }
-                : undefined
-            }
-          />
-        ))}
-
-        {t.particle === 'bird' &&
-          [0, 1, 2].map((i) => (
-            <path
-              key={i}
-              d={`M${1030 + i * 95},${168 + i * 24} q13,-12 26,0 q13,-12 26,0`}
-              stroke={t.hills.front}
-              strokeWidth="2"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.45"
-              style={!reduceMotion ? { animation: `drift-${uid} ${9 + i}s ease-in-out ${i * 0.6}s infinite` } : undefined}
-            />
-          ))}
-        {t.particle === 'petal' &&
-          [0, 1, 2, 3].map((i) => (
-            <circle
-              key={i}
-              cx={880 + i * 170}
-              cy={220 + (i % 2) * 60}
-              r="4.5"
-              fill="#ffe3ef"
-              opacity="0.7"
-              style={!reduceMotion ? { animation: `float-${uid} ${7 + i}s ease-in-out ${i * 0.8}s infinite` } : undefined}
-            />
-          ))}
-        {t.particle === 'star' &&
-          [0, 1].map((i) => (
-            <circle
-              key={i}
-              cx={1000 + i * 260}
-              cy={120 + i * 40}
-              r="1.4"
-              fill="#ffffff"
-              opacity="0.9"
-              style={!reduceMotion ? { animation: `shoot-${uid} ${10 + i * 4}s linear ${2 + i * 3}s infinite` } : undefined}
-            />
-          ))}
-
-        <g style={!reduceMotion ? { animation: `orb-breathe-${uid} 6s ease-in-out infinite` } : undefined}>
-          <circle cx="1290" cy="330" r="230" fill={`url(#orb-glow-${uid})`} />
-          <circle cx="1290" cy="330" r="58" fill={`url(#orb-core-${uid})`} />
-        </g>
-
-        <HillLayer uid={uid} d={backHills} fill={t.hills.back} blur />
-        <HillLayer uid={uid} d={midHills} fill={t.hills.mid} />
-        {treesMid.map((tr, i) => (
-          <Canopy key={i} cx={tr.cx} cy={tr.cy} s={tr.s} color={t.canopyMid} opacity={0.55} />
-        ))}
-        <HillLayer uid={uid} d={frontHills} fill={t.hills.front} />
-        {treesFront.map((tr, i) => (
-          <Canopy key={i} cx={tr.cx} cy={tr.cy} s={tr.s} color={t.canopy} />
-        ))}
-
-        <rect x="850" y="838" width="750" height="62" fill={`url(#water-${uid})`} />
-        <ellipse cx="1290" cy="872" rx="52" ry="18" fill={t.orb.mid} opacity="0.35" />
-
-        <rect x="800" y="712" width="800" height="46" fill="#ffffff" opacity="0.16" filter={`url(#soft-blur-${uid})`} />
-      </g>
-
-      <style>{`
-        @keyframes orb-breathe-${uid} { 0%,100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-4px); opacity: 0.92; } }
-        @keyframes twinkle-${uid} { 0%,100% { opacity: 0.15; } 50% { opacity: 0.75; } }
-        @keyframes drift-${uid} { 0% { transform: translate(0,0); } 50% { transform: translate(24px,-10px); } 100% { transform: translate(0,0); } }
-        @keyframes float-${uid} { 0% { transform: translate(0,0); opacity: 0.7; } 50% { transform: translate(-14px,18px); opacity: 0.4; } 100% { transform: translate(0,0); opacity: 0.7; } }
-        @keyframes shoot-${uid} { 0% { transform: translate(0,0); opacity: 0; } 3% { opacity: 1; } 8% { transform: translate(-140px,90px); opacity: 0; } 100% { transform: translate(-140px,90px); opacity: 0; } }
-        @media (prefers-reduced-motion: reduce) {
-          g[style*="animation"] { animation: none !important; }
-        }
-      `}</style>
-    </g>
-  );
-}
-
-/* Mode-aware replacement for the original single-scene AmbientLandscape.
-   Renders all three scenes stacked and crossfades between them purely via
-   opacity/scale transitions driven by `mode` — no remount, no pop. */
-function AmbientLandscape({ mode }: { mode: TimerMode }) {
-  const [reduceMotion, setReduceMotion] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduceMotion(mq.matches);
-    const handler = () => setReduceMotion(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  return (
-    <svg
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      viewBox="0 0 1600 900"
-      preserveAspectRatio="xMidYMid slice"
-      role="img"
-      aria-hidden="true"
-    >
-      {SCENE_MODES.map((m) => (
-        <LandscapeScene key={m} mode={m} active={m === mode} reduceMotion={reduceMotion} />
-      ))}
-    </svg>
-  );
-}
-
 /* ───────────────────────── Fullscreen stat card ───────────────────────── */
 
-function FocusModeStatCard({ icon, iconBg, iconColor, label, value, sub }: {
-  icon: React.ReactNode; iconBg: string; iconColor: string; label: string; value: React.ReactNode; sub: string;
+function FocusModeStatCard({ icon, label, value, sub, isNight = false, mode }: {
+  icon: React.ReactNode; iconBg?: string; iconColor?: string; label: string; value: React.ReactNode; sub: string; isNight?: boolean; mode: TimerMode;
 }) {
+  const colors = getModeColors(mode);
+  const modeBoost = mode === 'short_break' ? 2.2 : mode === 'long_break' ? 1.8 : 1;
+  const modeBorderBoost = mode === 'short_break' ? 1.7 : mode === 'long_break' ? 1.5 : 1;
+  const nightAlpha = 0.40;
+  const mixBg = (pct: number) =>
+    isNight ? `rgba(255,255,255,${nightAlpha})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+  const mixBorder = (pct: number) =>
+    isNight ? `rgba(255,255,255,${nightAlpha + 0.1})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBorderBoost)}%, transparent)`;
+  const mixIconBg = (pct: number) =>
+    isNight ? `rgba(255,255,255,${nightAlpha + 0.05})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+  // Text is always a darkened accent color — never white — so it stays
+  // legible against every mode's pale background gradient.
+  const textCap = 100 - TEXT_DARKEN[mode];
+  const subCap = 100 - Math.max(0, TEXT_DARKEN[mode] - 15);
+  const mixText = (pct: number) => `color-mix(in srgb, ${colors.primary} ${Math.min(textCap, pct)}%, #000)`;
+  const mixSub = (pct: number) => `color-mix(in srgb, ${colors.primary} ${Math.min(subCap, pct)}%, #000)`;
+  const strong = getStrongColor(mode);
   return (
     <div
       className="flex items-center gap-3 p-3.5 rounded-2xl border shadow-sm"
-      style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)' }}
+      style={{
+        background: mixBg(22),
+        borderColor: mixBorder(35),
+        backdropFilter: 'blur(4px)',
+      }}
     >
-      <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg, color: iconColor }}>
+      <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: mixIconBg(30), color: strong }}>
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted truncate">{label}</p>
-        <p className="text-lg font-black text-text-primary leading-tight">{value}</p>
-        <p className="text-[10px] font-semibold text-text-muted">{sub}</p>
+        <p className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: mixText(85) }}>{label}</p>
+        <p className="text-lg font-black leading-tight" style={{ color: strong }}>{value}</p>
+        <p className="text-[10px] font-semibold" style={{ color: mixSub(70) }}>{sub}</p>
       </div>
     </div>
   );
@@ -451,13 +228,13 @@ function FocusModeStatCard({ icon, iconBg, iconColor, label, value, sub }: {
 /* ───────────────────────── Fullscreen Focus Mode ───────────────────────── */
 
 function FocusModeFullScreen({
-  mode, minutes, seconds, progress, running, selectedTaskTitle, quote,
+  mode, minutes, seconds, progress, running, selectedTaskTitle, quotes,
   ambientPlaying, ambientSound, onToggleAmbient,
   todayFocusCount, todayFocusTimeLabel, todayBreakCount, longestStreakDays,
   onExit, onReset, onStartPause, onSkipBack, onSkipForward,
 }: {
   mode: TimerMode; minutes: string; seconds: string; progress: number; running: boolean;
-  selectedTaskTitle: string | null; quote: { text: string; author: string };
+  selectedTaskTitle: string | null; quotes: QuoteType[];
   ambientPlaying: boolean; ambientSound: string; onToggleAmbient: () => void;
   todayFocusCount: number; todayFocusTimeLabel: string; todayBreakCount: number; longestStreakDays: number;
   onExit: () => void; onReset: () => void; onStartPause: () => void;
@@ -465,46 +242,109 @@ function FocusModeFullScreen({
 }) {
   const colors = getModeColors(mode);
   const [statsVisible, setStatsVisible] = useState(true);
+  // isNight is kept only for background tinting (translucent card fills use
+  // a different alpha strategy for long_break) — it must NEVER drive text or
+  // icon color, since none of the three fullscreen skies are ever dark
+  // enough for white text to read.
+  const isNight = mode === 'long_break';
+
+  // Mode-specific opacity boost: lighter primary colors (sky blue, lavender)
+  // need higher mix percentages to produce equally readable cards & borders.
+  const modeBoost = mode === 'short_break' ? 2.2 : mode === 'long_break' ? 1.8 : 1;
+  const modeBorderBoost = mode === 'short_break' ? 1.7 : mode === 'long_break' ? 1.5 : 1;
+  // For isNight (long_break) the rgba alpha is boosted instead.
+  const nightAlpha = 0.40; // was 0.18 — improves readability on light gradients
+
+  const mixBg = (pct: number) =>
+    isNight
+      ? `rgba(255,255,255,${nightAlpha})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+  const mixBorder = (pct: number) =>
+    isNight
+      ? `rgba(255,255,255,${nightAlpha + 0.1})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBorderBoost)}%, transparent)`;
+  const mixIcon = (pct: number) =>
+    isNight
+      ? `rgba(255,255,255,${nightAlpha + 0.05})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+  // Foreground text/icon color — always a darkened accent, capped per-mode
+  // so short_break and long_break (lighter accent colors) darken further
+  // than focus (indigo, already dark enough).
+  const textCap = 100 - TEXT_DARKEN[mode];
+  const subCap = 100 - Math.max(0, TEXT_DARKEN[mode] - 15);
+  const mixText = (pct: number) => `color-mix(in srgb, ${colors.primary} ${Math.min(textCap, pct)}%, #000)`;
+  const mixSub = (pct: number) => `color-mix(in srgb, ${colors.primary} ${Math.min(subCap, pct)}%, #000)`;
+  const strong = getStrongColor(mode);
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  useEffect(() => {
+    if (quotes.length <= 1) return;
+    const delay = Math.floor(Math.random() * 5000) + 5000; // 5-10 seconds
+    const timer = setTimeout(() => {
+      setQuoteIndex((prev) => (prev + 1) % quotes.length);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [quoteIndex, quotes.length]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.code === 'Space') { e.preventDefault(); onStartPause(); }
       if (e.key === 'r' || e.key === 'R') onReset();
+      if (e.key === 'ArrowLeft') onSkipBack();
+      if (e.key === 'ArrowRight') onSkipForward();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onStartPause, onReset]);
+  }, [onStartPause, onReset, onSkipBack, onSkipForward]);
 
   return createPortal(
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--color-bg)', zIndex: 9999 }}>
-      {/* soft, light ambience — a faint accent-tinted glow near the controls,
-          nothing dark enough to fight with the pastel landscape or the text */}
-      <div
-        className="absolute inset-0 transition-opacity duration-700"
-        style={{
-          background: `radial-gradient(circle at 12% 10%, color-mix(in srgb, ${colors.primary} 12%, transparent) 0%, transparent 45%)`,
-          opacity: running ? 1 : 0.7,
-        }}
-      />
+      {/* soft, light ambience — a faint accent-tinted glow spread evenly */}
+     <div
+  className="absolute inset-0 transition-all duration-700"
+  style={{
+    background: `linear-gradient(180deg, ${MODE_SKY[mode][0]} 0%, ${MODE_SKY[mode][1]} 38%, ${MODE_SKY[mode][2]} 72%, ${MODE_SKY[mode][3]} 100%)`,
+  }}
+/>
+<div
+  className="absolute inset-0 transition-opacity duration-700"
+  style={{
+    background: `radial-gradient(circle at 50% 30%, color-mix(in srgb, ${colors.primary} 12%, transparent) 0%, transparent 70%)`,
+    opacity: running ? 1 : 0.7,
+  }}
+/>
 
-      <AmbientLandscape mode={mode} />
+      <JournalAmbientScene mode={mode} />
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 sm:p-6 z-10">
         <button
           onClick={onExit}
           className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold border shadow-sm"
-          style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)', color: 'var(--color-text-primary)' }}
+          style={{
+            background: mixBg(22),
+            borderColor: mixBorder(35),
+            color: mixText(90),
+            backdropFilter: 'blur(4px)',
+          }}
         >
           <Minimize2 size={16} /> Focus Mode
         </button>
 
         <div
           className="hidden sm:flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold border shadow-sm"
-          style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)', color: 'var(--color-text-primary)' }}
+          style={{
+            background: mixBg(18),
+            borderColor: mixBorder(30),
+            color: mixText(85),
+            backdropFilter: 'blur(4px)',
+          }}
         >
           Press Esc to exit full screen
-          <span className="px-2 py-1 rounded-md text-[10px] font-black text-white" style={{ background: 'var(--color-text-primary)' }}>Esc</span>
+          <span className="px-2 py-1 rounded-md text-[10px] font-black" style={{
+            background: colors.primary,
+            color: '#fff'
+          }}>Esc</span>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -513,9 +353,10 @@ function FocusModeFullScreen({
             aria-label="Toggle ambient sound"
             className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
             style={{
-              background: ambientPlaying ? colors.subtle : 'rgba(255,255,255,0.85)',
-              borderColor: 'rgba(0,0,0,0.06)',
-              color: ambientPlaying ? colors.primary : 'var(--color-text-secondary)',
+              background: ambientPlaying ? mixIcon(35) : mixBg(18),
+              borderColor: mixBorder(30),
+              color: ambientPlaying ? '#fff' : mixText(85),
+              backdropFilter: 'blur(4px)',
             }}
           >
             <Music size={16} />
@@ -525,23 +366,33 @@ function FocusModeFullScreen({
             aria-label="Toggle stats panel"
             className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
             style={{
-              background: statsVisible ? colors.subtle : 'rgba(255,255,255,0.85)',
-              borderColor: 'rgba(0,0,0,0.06)',
-              color: statsVisible ? colors.primary : 'var(--color-text-secondary)',
+              background: statsVisible ? mixIcon(35) : mixBg(18),
+              borderColor: mixBorder(30),
+              color: statsVisible ? '#fff' : mixText(85),
+              backdropFilter: 'blur(4px)',
             }}
           >
             <AudioLines size={16} />
           </button>
-          <button className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm" style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)', color: 'var(--color-text-secondary)' }}>
+          <button
+            className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
+            style={{
+              background: mixBg(18),
+              borderColor: mixBorder(30),
+              color: mixText(85),
+              backdropFilter: 'blur(4px)',
+            }}
+          >
             <MoreHorizontal size={16} />
           </button>
+          {/* bare icon — no circle bg/border, matches reference exactly */}
           <button
             onClick={onExit}
             aria-label="Exit focus mode"
-            className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
-            style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)', color: 'var(--color-text-secondary)' }}
+            className="w-10 h-10 flex items-center justify-center ml-1"
+            style={{ color: strong }}
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
       </div>
@@ -551,47 +402,47 @@ function FocusModeFullScreen({
         <div className="hidden md:flex flex-col gap-3 absolute left-6 sm:left-8 top-1/2 -translate-y-1/2 w-60 z-10">
           <FocusModeStatCard
             icon={<Target size={18} />}
-            iconBg="color-mix(in srgb, var(--color-accent) 18%, transparent)"
-            iconColor="var(--color-accent)"
             label="Focus Sessions"
             value={todayFocusCount}
             sub="Today"
+            isNight={isNight}
+            mode={mode}
           />
           <FocusModeStatCard
             icon={<Flame size={18} />}
-            iconBg="color-mix(in srgb, var(--color-warning) 18%, transparent)"
-            iconColor="var(--color-warning)"
             label="Focus Time"
             value={todayFocusTimeLabel}
             sub="Today"
+            isNight={isNight}
+            mode={mode}
           />
           <FocusModeStatCard
             icon={<Coffee size={18} />}
-            iconBg="color-mix(in srgb, var(--color-success) 18%, transparent)"
-            iconColor="var(--color-success)"
             label="Breaks Taken"
             value={todayBreakCount}
             sub="Today"
+            isNight={isNight}
+            mode={mode}
           />
           <FocusModeStatCard
             icon={<Clock size={18} />}
-            iconBg="color-mix(in srgb, var(--color-info) 18%, transparent)"
-            iconColor="var(--color-info)"
             label="Longest Streak"
             value={longestStreakDays}
             sub="Days"
+            isNight={isNight}
+            mode={mode}
           />
         </div>
       )}
 
       {/* Center */}
       <div className="relative h-full flex items-center justify-center px-4 z-10">
-        <div className="flex flex-col items-center gap-6 sm:gap-8 w-full max-w-lg p-8 rounded-3xl border shadow-2xl" style={{ background: 'rgba(255,255,255,0.35)', borderColor: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }}>
+        <div className="flex flex-col items-center gap-6 sm:gap-8 w-full max-w-lg p-8">
           <div className="flex flex-col items-center gap-3">
-            <p className="text-xs sm:text-sm font-black uppercase tracking-[0.35em]" style={{ color: colors.primary }}>
+            <p className="text-xs sm:text-sm font-black uppercase tracking-[0.35em]" style={{ color: strong }}>
               {mode === 'focus' ? 'FOCUS' : mode === 'short_break' ? 'SHORT BREAK' : 'LONG BREAK'}
             </p>
-            <p className="text-sm font-semibold text-text-secondary text-center">{MODE_COPY[mode]}</p>
+            <p className="text-sm font-semibold text-center" style={{ color: 'var(--color-text-secondary)' }}>{MODE_COPY[mode]}</p>
             {selectedTaskTitle && mode === 'focus' && (
               <div className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
                 🎯 {selectedTaskTitle}
@@ -601,79 +452,177 @@ function FocusModeFullScreen({
 
           <div className="relative flex items-center justify-center" style={{ animation: running ? 'focus-breathe 4s ease-in-out infinite' : 'none' }}>
             <div className="w-[clamp(240px,62vw,380px)] h-[clamp(240px,62vw,380px)]">
-              <ProgressRing logicalSize={380} progress={progress} colors={colors} running={running} />
+              <ProgressRing
+                logicalSize={380}
+                progress={progress}
+                colors={colors}
+                running={running}
+                isNight={false}
+              />
             </div>
             <div className="absolute flex flex-col items-center gap-3 select-none">
-              <span className="text-6xl sm:text-7xl md:text-8xl font-black tabular-nums text-text-primary tracking-tight">
+              <span className="text-6xl sm:text-7xl md:text-8xl font-black tabular-nums tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
                 {minutes}:{seconds}
               </span>
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{ background: colors.subtle, color: colors.primary }}>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{
+                background: colors.subtle,
+                color: strong
+              }}>
                 <Target size={12} /> {mode === 'focus' ? 'Focus Session' : mode === 'short_break' ? 'Short Break' : 'Long Break'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-3.5 sm:gap-4.5">
-            <button onClick={onSkipBack} className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white/50 text-text-secondary hover:text-text-primary transition-all border border-white/40 shrink-0 bg-white/60" aria-label="Restart session">
-              <SkipBack size={18} />
+          {/* Action row — Reset (labeled) + Start Focus, flanked by small ghost
+              prev/next buttons so mode switching stays available without
+              disturbing the reference's two-button visual center. */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={onSkipBack}
+              aria-label="Previous mode"
+              className="w-11 h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
+              style={{
+                background: mixBg(20),
+                borderColor: mixBorder(35),
+                color: strong,
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              <SkipBack size={16} />
             </button>
+
             <button
               onClick={onReset}
-              className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl hover:bg-white/50 text-text-secondary hover:text-text-primary transition-all border border-white/40 shrink-0 bg-white/60"
-              aria-label="Reset timer"
+              className="flex items-center gap-2 px-6 py-4 rounded-full text-sm font-bold border shadow-sm shrink-0"
+              style={{
+                background: mixBg(22),
+                borderColor: mixBorder(35),
+                color: mixText(90),
+                backdropFilter: 'blur(4px)',
+              }}
             >
-              <RotateCcw size={24} />
+              <RotateCcw size={16} /> Reset
             </button>
-            <Button onClick={onStartPause} size="lg" className="w-52 sm:w-60 h-14 sm:h-16 text-base sm:text-lg font-bold shadow-xl shrink-0" leftIcon={running ? <Pause size={24} /> : <Play size={24} />}>
-              {running ? 'Pause' : mode === 'focus' ? 'Start Focus' : 'Start'}
-            </Button>
-            <button onClick={onSkipForward} className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white/50 text-text-secondary hover:text-text-primary transition-all border border-white/40 shrink-0 bg-white/60" aria-label="Skip to next session">
-              <SkipForward size={18} />
+
+            <button
+              onClick={onStartPause}
+              className="flex items-center justify-center gap-2.5 px-10 h-14 sm:h-16 text-base sm:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
+              style={{
+                background: mixBg(30),
+                borderColor: mixBorder(45),
+                color: mixText(100),
+              }}
+            >
+              {running ? <><Pause size={20} /> Pause</> : mode === 'focus' ? <><Play size={20} /> Start Focus</> : <><Play size={20} /> Start</>}
+            </button>
+
+            <button
+              onClick={onSkipForward}
+              aria-label="Next mode"
+              className="w-11 h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
+              style={{
+                background: mixBg(20),
+                borderColor: mixBorder(35),
+                color: strong,
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              <SkipForward size={16} />
             </button>
           </div>
 
-
+          <p className="text-xs font-semibold text-center" style={{ color: 'var(--color-text-muted)' }}>
+            💡 Tip: Take short breaks to recharge. You'll come back stronger!
+          </p>
         </div>
 
-        {/* Quote card */}
-        <div
-          className="hidden lg:block absolute bottom-28 right-8 max-w-[320px] p-6 rounded-2xl border shadow-lg"
-          style={{ background: 'rgba(255,255,255,0.82)', borderColor: 'rgba(0,0,0,0.06)' }}
-        >
-          <p className="text-3xl leading-none mb-2" style={{ color: colors.primary }}>“</p>
-          <p className="text-sm font-semibold text-text-primary leading-snug">{quote.text}</p>
-          <p className="text-xs font-bold text-text-muted mt-3">— {quote.author}</p>
-        </div>
+        {/* Rotating quote card */}
+        {quotes.length > 0 && (
+          <div
+            className="hidden lg:block absolute bottom-[15%] right-10 max-w-[320px] p-6 rounded-2xl border shadow-lg"
+            style={{
+              background: mixBg(18),
+              borderColor: mixBorder(30),
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <div className="relative overflow-hidden" style={{ minHeight: 100 }}>
+              <AnimatePresence mode="popLayout">
+                <motion.div
+                  key={quoteIndex}
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -40, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                >
+                  <p className="text-3xl leading-none mb-2" style={{ color: strong }}>“</p>
+                  <p className="text-sm font-semibold leading-snug" style={{ color: mixText(90) }}>{quotes[quoteIndex].quote}</p>
+                  <p className="text-xs font-bold mt-3" style={{ color: mixSub(70) }}>— {quotes[quoteIndex].author}</p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom-left ambient player */}
       <div className="absolute bottom-6 left-6 z-10">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-sm" style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)' }}>
-          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: colors.subtle, color: colors.primary }}>
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-sm" style={{
+          background: mixBg(20),
+          borderColor: mixBorder(30),
+          backdropFilter: 'blur(4px)',
+        }}>
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{
+            background: mixIcon(30),
+            color: strong
+          }}>
             <Music size={15} />
           </span>
           <div>
-            <p className="text-xs font-bold text-text-primary">{ambientSound}</p>
-            <p className="text-[10px] text-text-muted font-semibold">Concentration</p>
+            <p className="text-xs font-bold" style={{ color: mixText(90) }}>{ambientSound}</p>
+            <p className="text-[10px] font-semibold" style={{ color: mixSub(70) }}>Concentration</p>
           </div>
-          <button onClick={onToggleAmbient} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: colors.primary, color: '#fff' }}>
-            {ambientPlaying ? <Pause size={14} /> : <Play size={14} />}
+          {/* ghost equalizer-style toggle — matches reference (no solid button) */}
+          <button
+            onClick={onToggleAmbient}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ color: strong }}
+            aria-label={ambientPlaying ? 'Pause ambient sound' : 'Play ambient sound'}
+          >
+            <AudioLines size={18} />
           </button>
         </div>
       </div>
 
       {/* Bottom-right shortcuts */}
       <div className="hidden sm:block absolute bottom-6 right-6 z-10">
-        <div className="px-5 py-3.5 rounded-2xl border shadow-sm" style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(0,0,0,0.06)' }}>
-          <p className="text-[10px] font-bold text-text-muted uppercase tracking-wide mb-3">Shortcuts</p>
+        <div className="px-5 py-3.5 rounded-2xl border shadow-sm" style={{
+          background: mixBg(18),
+          borderColor: mixBorder(30),
+          backdropFilter: 'blur(4px)',
+        }}>
+          <p className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: mixText(85) }}>Shortcuts</p>
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-2">
-              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--color-text-primary)' }}>Space</kbd>
-              <span className="text-[11px] font-semibold text-text-secondary">Start / Pause</span>
+              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{
+                background: mixIcon(30),
+                color: strong
+              }}>Space</kbd>
+              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>Start / Pause</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--color-text-primary)' }}>R</kbd>
-              <span className="text-[11px] font-semibold text-text-secondary">Reset</span>
+              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{
+                background: mixIcon(30),
+                color: strong
+              }}>R</kbd>
+              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>Reset</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{
+                background: mixIcon(30),
+                color: strong
+              }}>←→</kbd>
+              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>Switch Mode</span>
             </div>
           </div>
         </div>
@@ -811,9 +760,6 @@ function TodaysPlanCard({ items, onPick }: { items: { id: string; title: string;
           ))}
         </div>
       )}
-      <button className="mt-2.5 w-full py-2 rounded-xl border border-dashed text-xs font-bold text-accent flex items-center justify-center gap-1.5" style={{ borderColor: 'var(--color-accent-border)' }}>
-        <Plus size={13} /> Add session
-      </button>
     </Card>
   );
 }
@@ -863,18 +809,6 @@ function AmbientSoundCard({ sound, setSound, playing, onToggle }: { sound: strin
   );
 }
 
-function DailyQuoteCard({ quote }: { quote: { text: string; author: string } }) {
-  return (
-    <Card variant="default" className="p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg leading-none" style={{ color: 'var(--color-accent)' }}>“</span>
-        <h4 className="text-xs font-bold text-text-primary">Daily Quote</h4>
-      </div>
-      <p className="text-xs font-semibold text-text-primary leading-snug">{quote.text}</p>
-      <p className="text-[11px] font-bold text-text-muted mt-2">— {quote.author}</p>
-    </Card>
-  );
-}
 
 function RecentSessionsCard({ sessions, tasksById }: { sessions: FocusSessionDTO[]; tasksById: Map<string, string> }) {
   const recent = sessions.slice(0, 5);
@@ -934,7 +868,6 @@ export function FocusPage() {
   const restoredRef = useRef(false);
   const completionLoggedRef = useRef(false);
   const lastLoggedElapsedRef = useRef(0);
-  const quote = useMemo(() => QUOTES[Math.floor(Math.random() * QUOTES.length)], []);
 
   useEffect(() => { elapsedRef.current = elapsedSeconds; }, [elapsedSeconds]);
 
@@ -1124,10 +1057,16 @@ export function FocusPage() {
     clearTimerState();
   };
 
+  // Mode navigation — cycles forward/backward through focus → short break →
+  // long break → focus… so users can switch modes mid-flow from either the
+  // compact timer or the fullscreen Focus Mode view.
   const handleSkipForward = () => {
-    const order: TimerMode[] = ['focus', 'short_break', 'long_break'];
-    const next = order[(order.indexOf(mode) + 1) % order.length];
+    const next = MODE_ORDER[(MODE_ORDER.indexOf(mode) + 1) % MODE_ORDER.length];
     changeMode(next);
+  };
+  const handleSkipBack = () => {
+    const prev = MODE_ORDER[(MODE_ORDER.indexOf(mode) - 1 + MODE_ORDER.length) % MODE_ORDER.length];
+    changeMode(prev);
   };
 
   const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
@@ -1222,7 +1161,7 @@ export function FocusPage() {
           progress={progress}
           running={running}
           selectedTaskTitle={selectedTask?.title ?? null}
-          quote={quote}
+          quotes={getDailyQuotes()}
           ambientPlaying={ambientPlaying}
           ambientSound={ambientSound}
           onToggleAmbient={() => setAmbientPlaying((p) => !p)}
@@ -1233,7 +1172,7 @@ export function FocusPage() {
           onExit={exitFocusMode}
           onReset={handleReset}
           onStartPause={handleStartPause}
-          onSkipBack={handleReset}
+          onSkipBack={handleSkipBack}
           onSkipForward={handleSkipForward}
         />
       )}
@@ -1313,7 +1252,7 @@ export function FocusPage() {
             <motion.div variants={itemVariants} className="order-2 lg:order-1 flex flex-col gap-4">
               <TodaysPlanCard items={todaysPlanItems} onPick={setSelectedTaskId} />
               <AmbientSoundCard sound={ambientSound} setSound={setAmbientSound} playing={ambientPlaying} onToggle={() => setAmbientPlaying((p) => !p)} />
-              <DailyQuoteCard quote={quote} />
+              <QuoteCard quotes={getDailyQuotes()} />
             </motion.div>
 
             {/* Center column — timer */}
@@ -1329,10 +1268,10 @@ export function FocusPage() {
                 }}
               >
                 <button
-                  onClick={handleReset}
+                  onClick={handleSkipBack}
                   className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center border shadow-sm z-10"
                   style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                  aria-label="Restart session"
+                  aria-label="Previous mode"
                 >
                   <SkipBack size={15} />
                 </button>
@@ -1349,7 +1288,7 @@ export function FocusPage() {
                   onClick={handleSkipForward}
                   className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center border shadow-sm z-10"
                   style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                  aria-label="Skip to next session"
+                  aria-label="Next mode"
                 >
                   <SkipForward size={15} />
                 </button>
@@ -1357,9 +1296,19 @@ export function FocusPage() {
 
               <p className="text-xs font-semibold text-text-secondary text-center -mt-2">{MODE_COPY[mode]}</p>
 
-              <Button onClick={handleStartPause} size="lg" className="w-48 shadow-lg font-bold" leftIcon={running ? <Pause size={18} /> : <Play size={18} />}>
-                {running ? 'Pause' : mode === 'focus' ? 'Start Focus' : 'Start'}
-              </Button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleReset}
+                  className="w-11 h-11 flex items-center justify-center rounded-full border shadow-sm"
+                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  aria-label="Reset timer"
+                >
+                  <RotateCcw size={16} />
+                </button>
+                <Button onClick={handleStartPause} size="lg" className="w-48 shadow-lg font-bold" leftIcon={running ? <Pause size={18} /> : <Play size={18} />}>
+                  {running ? 'Pause' : mode === 'focus' ? 'Start Focus' : 'Start'}
+                </Button>
+              </div>
 
               {/* Quick Start */}
               {mode === 'focus' && (
