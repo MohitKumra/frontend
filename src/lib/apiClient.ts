@@ -9,7 +9,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_BACKEND_URL,
   withCredentials: true,  // send httpOnly refresh cookie on refresh calls
   headers: { 'Content-Type': 'application/json' },
 });
