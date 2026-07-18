@@ -1,10 +1,24 @@
-import { useState } from 'react';
-import { Calendar, RefreshCw, MoreVertical, Edit3, Trash2, Paperclip, Circle, Clock3, CheckCircle2, Inbox } from 'lucide-react';
-import { SubtaskBadge } from './SubtaskBadge';
+import { useMemo, useState } from 'react';
+import {
+  Calendar,
+  CheckCircle2,
+  Circle,
+  Clock3,
+  Edit3,
+  Flag,
+  Inbox,
+  ListChecks,
+  MoreVertical,
+  Paperclip,
+  Play,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import type { TaskDTO, TaskStatus } from '../../types';
 
-const priorityDot: Record<TaskDTO['priority'], string> = {
-  LOW: 'var(--color-info)',
+const priorityColor: Record<TaskDTO['priority'], string> = {
+  LOW: 'var(--color-success)',
   MEDIUM: 'var(--color-warning)',
   HIGH: 'var(--color-danger)',
   CRITICAL: '#7c3aed',
@@ -17,10 +31,38 @@ const priorityLabel: Record<TaskDTO['priority'], string> = {
   CRITICAL: 'Critical',
 };
 
-const columns: { status: TaskStatus; label: string; accent: string; icon: typeof Circle }[] = [
-  { status: 'TODO', label: 'To Do', accent: 'var(--color-info)', icon: Circle },
-  { status: 'IN_PROGRESS', label: 'In Progress', accent: 'var(--color-warning)', icon: Clock3 },
-  { status: 'DONE', label: 'Done', accent: 'var(--color-success)', icon: CheckCircle2 },
+const columns: {
+  status: TaskStatus;
+  label: string;
+  helper: string;
+  accent: string;
+  icon: typeof Circle;
+  empty: string;
+}[] = [
+  {
+    status: 'TODO',
+    label: 'To Do',
+    helper: 'Tasks to be started',
+    accent: 'var(--color-info)',
+    icon: Circle,
+    empty: 'Nothing waiting here',
+  },
+  {
+    status: 'IN_PROGRESS',
+    label: 'In Progress',
+    helper: "Tasks you're working on",
+    accent: 'var(--color-warning)',
+    icon: Clock3,
+    empty: 'No active task',
+  },
+  {
+    status: 'DONE',
+    label: 'Done',
+    helper: 'Completed tasks',
+    accent: 'var(--color-success)',
+    icon: CheckCircle2,
+    empty: 'No wins logged yet',
+  },
 ];
 
 interface TaskBoardViewProps {
@@ -28,9 +70,282 @@ interface TaskBoardViewProps {
   onStatusChange: (task: TaskDTO, status: TaskStatus) => void;
   onEdit: (task: TaskDTO) => void;
   onDelete: (id: string) => void;
+  onAddTask?: (status: TaskStatus) => void;
   formatDueDate: (dateStr: string | null) => string | null;
   isOverdue: (date: string | null, status: string) => boolean;
   getRecurrenceLabel: (rule: string | null) => string | null;
+}
+
+function progressFor(task: TaskDTO) {
+  const total = task.subTasks?.length ?? 0;
+  if (total > 0) {
+    const done = task.subTasks?.filter((subtask) => subtask.completed).length ?? 0;
+    return Math.round((done / total) * 100);
+  }
+  if (task.status === 'DONE') return 100;
+  if (task.status === 'IN_PROGRESS') return 40;
+  return 0;
+}
+
+function formatDuration(minutes: number | null) {
+  if (!minutes) return null;
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function TaskBoardCard({
+  task,
+  accent,
+  dragging,
+  menuOpen,
+  onMenuToggle,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  formatDueDate,
+  isOverdue,
+  getRecurrenceLabel,
+}: {
+  task: TaskDTO;
+  accent: string;
+  dragging: boolean;
+  menuOpen: boolean;
+  onMenuToggle: (id: string | null) => void;
+  onEdit: (task: TaskDTO) => void;
+  onDelete: (id: string) => void;
+  onStatusChange: (task: TaskDTO, status: TaskStatus) => void;
+  formatDueDate: (dateStr: string | null) => string | null;
+  isOverdue: (date: string | null, status: string) => boolean;
+  getRecurrenceLabel: (rule: string | null) => string | null;
+}) {
+  const isDone = task.status === 'DONE';
+  const dueDate = formatDueDate(task.dueDate);
+  const overdue = isOverdue(task.dueDate, task.status);
+  const recurrenceLabel = getRecurrenceLabel(task.recurrenceRule);
+  const totalSubtasks = task.subTasks?.length ?? 0;
+  const completedSubtasks = task.subTasks?.filter((subtask) => subtask.completed).length ?? 0;
+  const progress = progressFor(task);
+  const duration = formatDuration(task.estimatedDuration);
+
+  return (
+    <div
+      className="group relative overflow-hidden rounded-2xl border bg-[var(--color-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-24px_rgba(15,23,42,0.42)]"
+      style={{
+        borderColor: isDone
+          ? 'color-mix(in srgb, var(--color-success) 24%, var(--color-border))'
+          : overdue
+          ? 'color-mix(in srgb, var(--color-danger) 32%, var(--color-border))'
+          : 'var(--color-border)',
+        boxShadow: '0 10px 24px -22px rgba(15, 23, 42, 0.38)',
+        opacity: dragging ? 0.45 : 1,
+      }}
+    >
+      <div
+        className="absolute bottom-0 left-0 top-0 w-1"
+        style={{ background: isDone ? 'var(--color-success)' : overdue ? 'var(--color-danger)' : accent }}
+      />
+
+      <div className="relative p-3.5 sm:p-4">
+        <div className="flex items-start gap-3">
+          <div
+            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+            style={{
+              background: isDone
+                ? 'color-mix(in srgb, var(--color-success) 12%, transparent)'
+                : `color-mix(in srgb, ${priorityColor[task.priority]} 12%, transparent)`,
+              color: isDone ? 'var(--color-success)' : priorityColor[task.priority],
+            }}
+          >
+            {isDone ? <CheckCircle2 size={22} /> : <ListChecks size={21} />}
+            {isDone && (
+              <span
+                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2"
+                style={{ background: 'var(--color-success)', borderColor: 'var(--color-surface)' }}
+              >
+                <CheckCircle2 size={12} className="text-white" />
+              </span>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <button type="button" onClick={() => onEdit(task)} className="min-w-0 text-left">
+                <h4
+                  className="truncate text-sm font-black leading-snug text-text-primary"
+                  style={{
+                    textDecorationLine: isDone ? 'line-through' : 'none',
+                    color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                  }}
+                >
+                  {task.title}
+                </h4>
+              </button>
+
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onMenuToggle(menuOpen ? null : task.id)}
+                  className="rounded-lg p-1 text-text-muted opacity-60 transition-opacity hover:bg-black/[0.04] hover:opacity-100 dark:hover:bg-white/[0.05]"
+                  aria-label="Task actions"
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {menuOpen && (
+                  <>
+                    <button className="fixed inset-0 z-20 cursor-default" onClick={() => onMenuToggle(null)} aria-label="Close task menu" />
+                    <div
+                      className="absolute right-0 top-8 z-30 w-40 overflow-hidden rounded-xl border py-1.5 shadow-xl"
+                      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onEdit(task);
+                          onMenuToggle(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <Edit3 size={13} />
+                        Edit task
+                      </button>
+                      {task.status !== 'IN_PROGRESS' && !isDone && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onStatusChange(task, 'IN_PROGRESS');
+                            onMenuToggle(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                        >
+                          <Play size={13} />
+                          Start
+                        </button>
+                      )}
+                      {!isDone && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onStatusChange(task, 'DONE');
+                            onMenuToggle(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                        >
+                          <CheckCircle2 size={13} />
+                          Mark done
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDelete(task.id);
+                          onMenuToggle(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-danger hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <Trash2 size={13} />
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black"
+                style={{
+                  background: `color-mix(in srgb, ${priorityColor[task.priority]} 12%, transparent)`,
+                  color: priorityColor[task.priority],
+                }}
+              >
+                <Flag size={11} fill="currentColor" />
+                {priorityLabel[task.priority]}
+              </span>
+
+              {dueDate && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold"
+                  style={{
+                    background: overdue
+                      ? 'color-mix(in srgb, var(--color-danger) 10%, transparent)'
+                      : 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+                    color: overdue ? 'var(--color-danger)' : 'var(--color-text-muted)',
+                  }}
+                >
+                  <Calendar size={11} />
+                  {dueDate}
+                </span>
+              )}
+
+              {recurrenceLabel && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent-subtle px-2 py-1 text-[10px] font-bold text-accent">
+                  <RefreshCw size={10} />
+                  {recurrenceLabel}
+                </span>
+              )}
+
+              {task.attachmentUrl && (
+                <a
+                  href={task.attachmentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold text-text-muted"
+                  style={{ background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' }}
+                >
+                  <Paperclip size={10} />
+                  File
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-text-muted">Progress</span>
+            <span className="text-xs font-black" style={{ color: isDone ? 'var(--color-success)' : 'var(--color-text-primary)' }}>
+              {progress}%
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${progress}%`,
+                background: isDone ? 'var(--color-success)' : accent,
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t pt-3" style={{ borderColor: 'var(--color-border)' }}>
+          <MetaItem icon={<ListChecks size={13} />} label="Subtasks" value={`${completedSubtasks}/${totalSubtasks}`} />
+          <MetaItem icon={<Clock3 size={13} />} label="Est. time" value={duration ?? '-'} />
+          <MetaItem icon={<Calendar size={13} />} label="Due" value={dueDate ?? '-'} />
+        </div>
+
+        {isDone && (
+          <div className="mt-3 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-black text-success" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }}>
+            <CheckCircle2 size={14} />
+            Great job. Task completed.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MetaItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-1 text-text-muted">{icon}<span className="truncate text-[9px] font-bold uppercase tracking-wider">{label}</span></div>
+      <p className="mt-1 truncate text-xs font-black text-text-primary">{value}</p>
+    </div>
+  );
 }
 
 export function TaskBoardView({
@@ -38,6 +353,7 @@ export function TaskBoardView({
   onStatusChange,
   onEdit,
   onDelete,
+  onAddTask,
   formatDueDate,
   isOverdue,
   getRecurrenceLabel,
@@ -46,226 +362,125 @@ export function TaskBoardView({
   const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
-  const grouped = columns.map((col) => ({ ...col, tasks: tasks.filter((t) => t.status === col.status) }));
+  const grouped = useMemo(
+    () => columns.map((col) => ({ ...col, tasks: tasks.filter((task) => task.status === col.status) })),
+    [tasks],
+  );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 items-start">
-      {grouped.map((col) => {
-        const ColumnIcon = col.icon;
-        const isDragTarget = dragOverCol === col.status;
+    <div className="-mx-3 overflow-x-auto px-3 pb-2 sm:mx-0 sm:px-0" style={{ scrollbarWidth: 'thin' }}>
+      <div className="grid min-w-[980px] grid-cols-3 gap-4 xl:min-w-0 xl:gap-5">
+        {grouped.map((col) => {
+          const ColumnIcon = col.icon;
+          const isDragTarget = dragOverCol === col.status;
 
-        return (
-          <div
-            key={col.status}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOverCol(col.status);
-            }}
-            onDragLeave={() => setDragOverCol((c) => (c === col.status ? null : c))}
-            onDrop={(e) => {
-              e.preventDefault();
-              const id = e.dataTransfer.getData('text/task-id');
-              const task = tasks.find((t) => t.id === id);
-              if (task && task.status !== col.status) onStatusChange(task, col.status);
-              setDraggingId(null);
-              setDragOverCol(null);
-            }}
-            className="rounded-2xl transition-all duration-150 flex flex-col"
-            style={{
-              background: 'var(--color-surface-raised)',
-              border: `1.5px solid ${isDragTarget ? col.accent : 'var(--color-border)'}`,
-              boxShadow: isDragTarget
-                ? `0 0 0 3px color-mix(in srgb, ${col.accent} 14%, transparent)`
-                : '0 1px 2px rgba(0,0,0,0.03)',
-            }}
-          >
-            {/* Column header */}
-            <div
-              className="flex items-center justify-between px-4 py-3.5 rounded-t-2xl"
+          return (
+            <section
+              key={col.status}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragOverCol(col.status);
+              }}
+              onDragLeave={() => setDragOverCol((current) => (current === col.status ? null : current))}
+              onDrop={(event) => {
+                event.preventDefault();
+                const id = event.dataTransfer.getData('text/task-id');
+                const task = tasks.find((item) => item.id === id);
+                if (task && task.status !== col.status) onStatusChange(task, col.status);
+                setDraggingId(null);
+                setDragOverCol(null);
+              }}
+              className="flex min-h-[540px] flex-col rounded-3xl border p-3 transition-all duration-200"
               style={{
-                background: `color-mix(in srgb, ${col.accent} 7%, var(--color-surface-raised))`,
-                borderBottom: '1px solid var(--color-border)',
+                background: `linear-gradient(180deg, color-mix(in srgb, ${col.accent} 4%, var(--color-surface-raised)) 0%, var(--color-surface-raised) 100%)`,
+                borderColor: isDragTarget ? col.accent : 'var(--color-border)',
+                boxShadow: isDragTarget
+                  ? `0 0 0 4px color-mix(in srgb, ${col.accent} 14%, transparent)`
+                  : '0 18px 38px -34px rgba(15, 23, 42, 0.34)',
               }}
             >
-              <div className="flex items-center gap-2">
-                <ColumnIcon size={15} style={{ color: col.accent }} />
-                <h3 className="text-xs font-bold tracking-wide" style={{ color: 'var(--color-text-primary)' }}>
-                  {col.label}
-                </h3>
-              </div>
-              <span
-                className="text-[11px] font-bold min-w-[22px] text-center px-2 py-0.5 rounded-full"
-                style={{
-                  background: `color-mix(in srgb, ${col.accent} 16%, transparent)`,
-                  color: col.accent,
-                }}
-              >
-                {col.tasks.length}
-              </span>
-            </div>
-
-            {/* Cards */}
-            <div className="flex flex-col gap-2.5 p-2.5 min-h-[100px] flex-1">
-              {col.tasks.length === 0 && (
-                <div
-                  className="flex flex-col items-center justify-center gap-2 text-center py-9 rounded-xl border-2 border-dashed"
-                  style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
-                >
-                  <Inbox size={18} style={{ opacity: 0.5 }} />
-                  <span className="text-[11px] font-semibold">
-                    {isDragTarget ? 'Drop to move here' : 'No tasks'}
+              <header className="px-2 pb-4 pt-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
+                      style={{ color: col.accent, background: `color-mix(in srgb, ${col.accent} 12%, transparent)` }}
+                    >
+                      <ColumnIcon size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-black text-text-primary">{col.label}</h3>
+                      <p className="mt-0.5 truncate text-xs font-medium text-text-muted">{col.helper}</p>
+                    </div>
+                  </div>
+                  <span
+                    className="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-black"
+                    style={{ color: col.accent, background: `color-mix(in srgb, ${col.accent} 12%, transparent)` }}
+                  >
+                    {col.tasks.length}
                   </span>
                 </div>
-              )}
+                <div className="mt-4 h-1 overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
+                  <div className="h-full w-1/4 rounded-full" style={{ background: col.accent }} />
+                </div>
+              </header>
 
-              {col.tasks.map((task) => {
-                const dueDate = formatDueDate(task.dueDate);
-                const overdue = isOverdue(task.dueDate, task.status);
-                const recurrenceLabel = getRecurrenceLabel(task.recurrenceRule);
-                const subTotal = task.subTasks?.length ?? 0;
-                const subDone = task.subTasks?.filter((s) => s.completed).length ?? 0;
-                const isDone = task.status === 'DONE';
+              <div className="flex flex-1 flex-col gap-3">
+                {col.tasks.length === 0 && (
+                  <div
+                    className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                  >
+                    <Inbox size={22} className="opacity-45" />
+                    <p className="mt-2 text-xs font-black">{isDragTarget ? 'Drop task here' : col.empty}</p>
+                  </div>
+                )}
 
-                return (
+                {col.tasks.map((task) => (
                   <div
                     key={task.id}
                     draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/task-id', task.id);
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData('text/task-id', task.id);
                       setDraggingId(task.id);
                     }}
                     onDragEnd={() => setDraggingId(null)}
-                    className="group relative rounded-xl p-3.5 pt-4 cursor-grab active:cursor-grabbing transition-all duration-150 hover:shadow-md hover:-translate-y-0.5"
-                    style={{
-                      background: 'var(--color-surface)',
-                      border: '1px solid var(--color-border)',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                      opacity: draggingId === task.id ? 0.4 : 1,
-                    }}
+                    className="cursor-grab active:cursor-grabbing"
                   >
-                    {/* Priority strip */}
-                    <div
-                      className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl"
-                      style={{ background: priorityDot[task.priority] }}
+                    <TaskBoardCard
+                      task={task}
+                      accent={col.accent}
+                      dragging={draggingId === task.id}
+                      menuOpen={menuOpenId === task.id}
+                      onMenuToggle={setMenuOpenId}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                      onStatusChange={onStatusChange}
+                      formatDueDate={formatDueDate}
+                      isOverdue={isOverdue}
+                      getRecurrenceLabel={getRecurrenceLabel}
                     />
-
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <p
-                        className="text-xs font-bold leading-snug flex-1"
-                        style={{
-                          color: isDone ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
-                          textDecorationLine: isDone ? 'line-through' : 'none',
-                        }}
-                      >
-                        {task.title}
-                      </p>
-                      <div className="relative shrink-0">
-                        <button
-                          onClick={() => setMenuOpenId(menuOpenId === task.id ? null : task.id)}
-                          className="p-1 rounded-md opacity-40 group-hover:opacity-100 transition-opacity"
-                          style={{ color: 'var(--color-text-muted)' }}
-                          aria-label="Task actions"
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-
-                        {menuOpenId === task.id && (
-                          <div
-                            className="absolute right-0 top-7 w-36 rounded-lg shadow-lg z-10 py-1.5 animate-scale-in"
-                            style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-                          >
-                            <button
-                              onClick={() => {
-                                onEdit(task);
-                                setMenuOpenId(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-[11px] font-semibold flex items-center gap-2"
-                              style={{ color: 'var(--color-text-primary)' }}
-                            >
-                              <Edit3 size={12} /> Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                onDelete(task.id);
-                                setMenuOpenId(null);
-                              }}
-                              className="w-full px-3 py-2 text-left text-[11px] font-semibold flex items-center gap-2"
-                              style={{ color: 'var(--color-danger)' }}
-                            >
-                              <Trash2 size={12} /> Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {task.description && (
-                      <p
-                        className="text-[11px] mb-2.5 leading-snug line-clamp-1"
-                        style={{ color: 'var(--color-text-muted)' }}
-                      >
-                        {task.description}
-                      </p>
-                    )}
-
-                    <div className="flex items-center flex-wrap gap-1.5">
-                      <span
-                        className="text-[10px] font-bold px-2 py-1 rounded-md"
-                        style={{
-                          color: priorityDot[task.priority],
-                          background: `color-mix(in srgb, ${priorityDot[task.priority]} 12%, transparent)`,
-                        }}
-                      >
-                        {priorityLabel[task.priority]}
-                      </span>
-
-                      {dueDate && (
-                        <div
-                          className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md"
-                          style={{
-                            color: overdue ? 'var(--color-danger)' : 'var(--color-text-muted)',
-                            background: overdue
-                              ? 'color-mix(in srgb, var(--color-danger) 10%, transparent)'
-                              : 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
-                          }}
-                        >
-                          <Calendar size={10} />
-                          {dueDate}
-                        </div>
-                      )}
-
-                      {recurrenceLabel && (
-                        <div
-                          className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md"
-                          style={{ color: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)' }}
-                        >
-                          <RefreshCw size={10} />
-                          {recurrenceLabel}
-                        </div>
-                      )}
-
-                      {task.attachmentUrl && (
-                        <a
-                          href={task.attachmentUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md hover:shadow-sm transition-shadow"
-                          style={{ color: 'var(--color-text-secondary)', background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' }}
-                        >
-                          <Paperclip size={10} />
-                          File
-                        </a>
-                      )}
-
-                      {subTotal > 0 && <SubtaskBadge completed={subDone} total={subTotal} />}
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onAddTask?.(col.status)}
+                className="mt-3 inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition-all hover:-translate-y-0.5"
+                style={{
+                  background: 'var(--color-surface)',
+                  borderColor: 'var(--color-border)',
+                  color: col.accent,
+                }}
+              >
+                <Plus size={16} />
+                Add Task
+              </button>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

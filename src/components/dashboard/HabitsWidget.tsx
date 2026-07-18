@@ -7,7 +7,6 @@ interface Habit {
   name: string;
   completedToday: boolean;
   currentStreak: number;
-  weeklyProgress?: number; // 0-100
 }
 
 interface HabitsWidgetProps {
@@ -20,6 +19,7 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
   const navigate = useNavigate();
   
   const completionRate = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+  const allDone = totalHabits > 0 && completedToday === totalHabits;
   
   // Show top 6 habits
   const displayHabits = habits.slice(0, 6);
@@ -47,10 +47,10 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
         <div 
           className="rounded-xl p-4 mb-4"
           style={{ 
-            background: completionRate === 100 
+            background: allDone 
               ? 'color-mix(in srgb, var(--color-success) 10%, var(--color-surface-raised))' 
               : 'var(--color-surface-raised)', 
-            border: `1px solid ${completionRate === 100 ? 'var(--color-success)' : 'var(--color-border)'}` 
+            border: `1px solid ${allDone ? 'var(--color-success)' : 'var(--color-border)'}` 
           }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -63,12 +63,12 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
             <div 
               className="w-14 h-14 rounded-full flex items-center justify-center"
               style={{ 
-                background: completionRate === 100 
+                background: allDone 
                   ? 'var(--gradient-success)' 
                   : 'color-mix(in srgb, var(--color-accent) 15%, transparent)' 
               }}
             >
-              <span className="text-lg font-black" style={{ color: completionRate === 100 ? 'white' : 'var(--color-accent)' }}>
+              <span className="text-lg font-black" style={{ color: allDone ? 'white' : 'var(--color-accent)' }}>
                 {completionRate}%
               </span>
             </div>
@@ -80,70 +80,82 @@ export function HabitsWidget({ habits, totalHabits, completedToday }: HabitsWidg
               className="h-full rounded-full transition-all duration-500"
               style={{ 
                 width: `${completionRate}%`, 
-                background: completionRate === 100 ? 'var(--gradient-success)' : 'var(--gradient-accent)' 
+                background: allDone ? 'var(--gradient-success)' : 'var(--gradient-accent)' 
               }}
             />
           </div>
         </div>
 
-        {/* Habit Chips */}
+        {/* Habit Chips — simplified design without progress bars */}
         {displayHabits.length > 0 ? (
-          <div className="space-y-3 mb-5">
-            {displayHabits.map((habit) => {
-              const progress = habit.weeklyProgress ?? (habit.completedToday ? 100 : 0);
-              
-              return (
+          <div className="space-y-2 mb-5">
+            {displayHabits.map((habit) => (
+              <div
+                key={habit.id}
+                className="flex items-center gap-3 rounded-xl px-3.5 py-3 transition-all"
+                style={{ 
+                  background: habit.completedToday 
+                    ? 'color-mix(in srgb, var(--color-success) 6%, var(--color-surface-raised))' 
+                    : 'var(--color-surface-raised)', 
+                  border: `1px solid ${habit.completedToday ? 'color-mix(in srgb, var(--color-success) 25%, transparent)' : 'var(--color-border)'}` 
+                }}
+              >
+                {/* Status icon */}
                 <div
-                  key={habit.id}
-                  className="rounded-xl p-3 transition-all hover:shadow-sm"
-                  style={{ 
-                    background: 'var(--color-surface-raised)', 
-                    border: `1px solid ${habit.completedToday ? 'var(--color-success)' : 'var(--color-border)'}` 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    background: habit.completedToday
+                      ? 'var(--gradient-success)'
+                      : 'var(--color-border)',
                   }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {habit.completedToday ? (
-                        <CheckCircle2 size={16} className="text-success shrink-0" />
-                      ) : (
-                        <Circle size={16} className="text-text-muted shrink-0" />
-                      )}
-                      <span className="text-sm font-bold text-text-primary truncate">
-                        {habit.name}
-                      </span>
-                    </div>
-                    {habit.currentStreak > 0 && (
-                      <div 
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full shrink-0"
-                        style={{ 
-                          background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', 
-                          color: 'var(--color-warning)' 
-                        }}
-                      >
-                        <TrendingUp size={10} />
-                        <span className="text-[10px] font-bold">{habit.currentStreak}d</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Weekly Progress Bar */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                      <div 
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ 
-                          width: `${progress}%`, 
-                          background: habit.completedToday ? 'var(--gradient-success)' : 'var(--gradient-accent)' 
-                        }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold text-text-muted shrink-0">
-                      {Math.round(progress)}%
-                    </span>
-                  </div>
+                  {habit.completedToday ? (
+                    <CheckCircle2 size={16} className="text-white" />
+                  ) : (
+                    <Circle size={14} className="text-white" />
+                  )}
                 </div>
-              );
-            })}
+
+                {/* Habit name */}
+                <span 
+                  className={`text-sm font-bold flex-1 min-w-0 truncate ${
+                    habit.completedToday ? 'text-text-primary' : 'text-text-secondary'
+                  }`}
+                >
+                  {habit.name}
+                </span>
+
+                {/* Streak badge */}
+                {habit.currentStreak > 0 && (
+                  <div 
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full shrink-0"
+                    style={{ 
+                      background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', 
+                      color: 'var(--color-warning)' 
+                    }}
+                  >
+                    <TrendingUp size={10} />
+                    <span className="text-[10px] font-bold">{habit.currentStreak}d</span>
+                  </div>
+                )}
+
+                {/* Status label */}
+                <span 
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                    habit.completedToday 
+                      ? 'text-success' 
+                      : 'text-text-muted'
+                  }`}
+                  style={{
+                    background: habit.completedToday
+                      ? 'color-mix(in srgb, var(--color-success) 10%, transparent)'
+                      : 'var(--color-border)',
+                  }}
+                >
+                  {habit.completedToday ? 'Done' : 'Pending'}
+                </span>
+              </div>
+            ))}
           </div>
         ) : (
           <div 

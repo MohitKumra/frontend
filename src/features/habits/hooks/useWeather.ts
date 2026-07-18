@@ -27,6 +27,9 @@ interface WeatherData {
   temp: number;
   high: number;
   low: number;
+  feelsLike: number;
+  humidity: number;
+  windSpeed: number;
   condition: 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'windy';
   location: string;
 }
@@ -171,7 +174,9 @@ async function resolveGeo(): Promise<GeoResult> {
 /** Fetch weather from Open-Meteo using lat/lon. */
 async function fetchWeatherFromOpenMeteo(lat: number, lon: number) {
   const res = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature,weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=auto`,
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&current=temperature_2m,weathercode,apparent_temperature,relative_humidity_2m,wind_speed_10m` +
+      `&daily=temperature_2m_max,temperature_2m_min&timezone=auto`,
     { signal: AbortSignal.timeout(5000) }
   );
   if (!res.ok) throw new Error('Weather API failed');
@@ -211,9 +216,12 @@ export function useWeather() {
 
         const locationParts = [geo.city, geo.country].filter(Boolean);
         const data: WeatherData = {
-          temp: Math.round(current.temperature),
+          temp: Math.round(current.temperature_2m),
           high: Math.round(daily.temperature_2m_max[0]),
           low: Math.round(daily.temperature_2m_min[0]),
+          feelsLike: Math.round(current.apparent_temperature ?? current.temperature_2m),
+          humidity: Math.round(current.relative_humidity_2m ?? 0),
+          windSpeed: Math.round(current.wind_speed_10m ?? 0),
           condition: getWeatherCondition(current.weathercode ?? 0),
           location: locationParts.join(', ') || 'Your Location',
         };

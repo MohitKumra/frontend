@@ -15,7 +15,7 @@ import { LoadingScreen } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import apiClient from '../lib/apiClient';
-import { useEnhancedDashboard } from '../features/dashboard/hooks/useDashboard';
+import { useEnhancedDashboard, useActivityFeed } from '../features/dashboard/hooks/useDashboard';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useHabits } from '../features/habits/hooks/useHabits';
 import { useAuthStore } from '../store/authStore';
@@ -28,8 +28,9 @@ import { FocusWidget } from '../components/dashboard/FocusWidget';
 import { HabitsWidget } from '../components/dashboard/HabitsWidget';
 import { ProductivityInsights } from '../components/dashboard/ProductivityInsights';
 import { ActivityFeed } from '../components/dashboard/ActivityFeed';
+import { AchievementsWidget } from '../components/dashboard/AchievementsWidget';
 import { QuickActionsPanel } from '../components/dashboard/QuickActionsPanel';
-import type { FocusSessionDTO, ListResponse, TaskDTO } from '../types';
+import type { FocusSessionDTO, ListResponse } from '../types';
 
 /**
  * StatTile
@@ -356,7 +357,7 @@ function PremiumHero({
               >
                 Priority board
               </div>
-            </div>
+g            </div>
 
             <div className="mt-8 flex-1 flex flex-col justify-center gap-7">
               <div>
@@ -409,6 +410,7 @@ function PremiumHero({
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: dashboard, isLoading } = useEnhancedDashboard();
+  const { data: activityFeed, isLoading: isActivityFeedLoading } = useActivityFeed(1, 10);
   const { data: tasksData } = useTasks();
   const { data: habitsData } = useHabits();
   const { data: focusSessionsData } = useQuery({
@@ -440,7 +442,6 @@ export function DashboardPage() {
         name: habit.title,
         completedToday: habit.completedToday ?? false,
         currentStreak: habit.currentStreak ?? 0,
-        weeklyProgress: 70,
       })),
     [habits]
   );
@@ -481,42 +482,7 @@ export function DashboardPage() {
     day: 'numeric',
   });
 
-  const recentActivities = [
-    ...tasks
-      .filter((task: TaskDTO) => task.status === 'DONE' && task.completedAt)
-      .map((task: TaskDTO) => ({
-        id: `task-${task.id}`,
-        type: 'task_completed' as const,
-        title: `Completed ${task.title}`,
-        description: task.project?.name ?? task.description ?? 'Task finished',
-        timestamp: new Date(task.completedAt ?? task.updatedAt),
-        metadata: task.project?.name ? { projectName: task.project.name } : undefined,
-      })),
-    ...completedFocusSessions.map((session) => {
-      const linkedTask = tasks.find((task: TaskDTO) => task.id === session.taskId);
-      const completedAt = new Date(new Date(session.startedAt).getTime() + session.durationMin * 60000);
-
-      return {
-        id: `focus-${session.id}`,
-        type: 'focus_session' as const,
-        title: linkedTask
-          ? `Completed a ${session.durationMin}-minute focus session on ${linkedTask.title}`
-          : `Completed a ${session.durationMin}-minute focus session`,
-        description: linkedTask?.project?.name
-          ? `Project: ${linkedTask.project.name}`
-          : session.taskId
-            ? 'Linked to a task'
-            : 'No task linked',
-        timestamp: completedAt,
-        metadata: {
-          duration: session.durationMin,
-          projectName: linkedTask?.project?.name ?? undefined,
-        },
-      };
-    }),
-  ]
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, 4);
+  const recentActivities = activityFeed?.data ?? [];
 
   const topProjects = dashboard.activeProjects.slice(0, 3);
   const taskCompletion =
@@ -667,12 +633,16 @@ export function DashboardPage() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
+            <AchievementsWidget profile={dashboard.gamification} />
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
             <Card variant="elevated" className="overflow-hidden">
               <div className="p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3 mb-5">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
-                      Current projects
+                      Quick projects
                     </p>
                     <h3 className="mt-1 text-lg font-black text-text-primary">Active work</h3>
                   </div>
@@ -686,41 +656,51 @@ export function DashboardPage() {
                   </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="flex flex-col gap-2">
                   {topProjects.map((project) => {
                     const progress = Math.max(0, Math.min(100, project.progress));
+                    const isComplete = progress >= 100;
+                    const color = project.color || '#6366f1';
                     return (
                       <button
                         key={project.id}
                         type="button"
                         onClick={() => navigate(`/projects/${project.id}`)}
-                        className="w-full rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                        style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+                        className="w-full rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                        style={{
+                          background: isComplete
+                            ? 'color-mix(in srgb, var(--color-success) 6%, var(--color-surface-raised))'
+                            : 'var(--color-surface-raised)',
+                          borderColor: isComplete
+                            ? 'var(--color-success)'
+                            : `${color}30`,
+                        }}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-black text-text-primary truncate">
-                              {project.name}
-                            </p>
-                            <p className="mt-1 text-xs text-text-secondary line-clamp-2">
-                              {project.description ?? 'No project description yet.'}
-                            </p>
-                          </div>
-                          <Badge variant="accent" size="sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                          <p className="text-xs font-black text-text-primary truncate flex-1">
+                            {project.name}
+                          </p>
+                          <span className="text-[10px] font-black tabular-nums" style={{ color }}>
                             {progress}%
-                          </Badge>
+                          </span>
                         </div>
-                        <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
                           <div
-                            className="h-full rounded-full"
-                            style={{ width: `${progress}%`, background: project.color || 'var(--gradient-accent)' }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${progress}%`,
+                              background: isComplete
+                                ? 'var(--gradient-success)'
+                                : `linear-gradient(90deg, ${color}, ${color}dd)`,
+                            }}
                           />
                         </div>
                       </button>
                     );
                   })}
                   {topProjects.length === 0 && (
-                    <p className="text-sm text-text-muted">No active projects yet.</p>
+                    <p className="text-sm text-text-muted text-center py-4">No active projects yet.</p>
                   )}
                 </div>
               </div>
@@ -732,7 +712,7 @@ export function DashboardPage() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <ActivityFeed activities={recentActivities} maxItems={4} />
+            <ActivityFeed activities={recentActivities} maxItems={4} isLoading={isActivityFeedLoading} />
           </motion.div>
         </div>
       </motion.div>

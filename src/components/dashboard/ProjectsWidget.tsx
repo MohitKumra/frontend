@@ -1,40 +1,18 @@
 import React from 'react';
-import { Folder, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
+import { Folder, ArrowRight, Circle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
-import { ProgressBar } from '../ui/ProgressBar';
 import type { ProjectDTO } from '../../types';
 
 interface ProjectsWidgetProps {
   projects: ProjectDTO[];
 }
 
-const statusColors = {
-  PLANNING: 'info',
-  ACTIVE: 'accent',
-  ON_HOLD: 'warning',
-  COMPLETED: 'success',
-  CANCELLED: 'danger',
-} as const;
-
 export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
   const navigate = useNavigate();
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'No deadline';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const getDaysRemaining = (dueDate: string | null) => {
-    if (!dueDate) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDate);
-    due.setHours(0, 0, 0, 0);
-    const days = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return days;
-  };
+  const planning = projects.filter(p => p.status === 'PLANNING');
+  const active = projects.filter(p => p.status === 'ACTIVE');
 
   return (
     <Card variant="default" className="overflow-hidden">
@@ -53,7 +31,10 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
           >
             <Folder size={16} />
           </div>
-          <h3 className="text-sm font-bold text-text-primary">Current Projects</h3>
+          <div>
+            <h3 className="text-sm font-bold text-text-primary">Projects</h3>
+            <p className="text-[10px] text-text-muted font-medium">{projects.length} active</p>
+          </div>
         </div>
         <button 
           onClick={() => navigate('/projects')}
@@ -64,87 +45,135 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
         </button>
       </div>
 
-      {/* Project Cards Grid */}
-      <div className="p-5 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Two-column kanban: Planning | Active */}
+      <div className="p-4 sm:p-5">
         {projects.length === 0 ? (
-          <div className="col-span-full text-center py-8">
-            <p className="text-xs text-text-muted">No active projects yet</p>
+          <div className="text-center py-10">
+            <div 
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
+            >
+              <Folder size={24} />
+            </div>
+            <p className="text-sm font-bold text-text-primary mb-1">No projects yet</p>
+            <p className="text-xs text-text-muted mb-5 max-w-[200px] mx-auto leading-snug">
+              Create a project to organize tasks and track progress.
+            </p>
             <button
               onClick={() => navigate('/projects')}
-              className="mt-3 px-4 py-2 rounded-lg text-xs font-bold text-text-onaccent transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-transform hover:-translate-y-0.5"
               style={{ background: 'var(--gradient-accent)' }}
             >
+              <Folder size={14} />
               Create Project
             </button>
           </div>
         ) : (
-          projects.map((project) => {
-            const daysRemaining = getDaysRemaining(project.dueDate);
-            const isOverdue = daysRemaining !== null && daysRemaining < 0;
-            const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 3;
-
-            return (
-              <div
-                key={project.id}
-                onClick={() => navigate(`/projects/${project.id}`)}
-                className="border rounded-xl p-4 hover:shadow-md transition-all cursor-pointer group"
-                style={{
-                  borderColor: 'var(--color-border)',
-                  background: 'var(--color-surface-raised)',
-                }}
-              >
-                {/* Project Color Bar */}
-                <div 
-                  className="w-full h-1 rounded-full mb-3"
-                  style={{ background: project.color }}
-                />
-
-                {/* Project Name */}
-                <h4 className="text-sm font-bold text-text-primary mb-2 truncate group-hover:text-accent transition-colors">
-                  {project.name}
-                </h4>
-
-                {/* Progress Bar */}
-                <div className="mb-3">
-                  <ProgressBar 
-                    value={project.progress} 
-                    color={statusColors[project.status]} 
-                    size="sm" 
-                    showLabel
-                    label={`${project.progress}% Complete`}
-                  />
+          <div className="grid grid-cols-2 gap-4">
+            {/* Planning column */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between px-1 mb-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ background: 'var(--icon-text-info)' }} />
+                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--icon-text-info)' }}>
+                    Planning
+                  </span>
                 </div>
-
-                {/* Stats Row */}
-                <div className="flex items-center justify-between text-[10px]">
-                  <div className="flex items-center gap-1 text-text-muted">
-                    <TrendingUp size={12} />
-                    <span className="font-bold">
-                      {project.completedTaskCount ?? 0}/{project.taskCount ?? 0} tasks
-                    </span>
-                  </div>
-
-                  {project.dueDate && (
-                    <div className={`flex items-center gap-1 font-bold ${
-                      isOverdue ? 'text-danger' : isUrgent ? 'text-warning' : 'text-text-muted'
-                    }`}>
-                      <Calendar size={12} />
-                      <span>
-                        {isOverdue 
-                          ? `${Math.abs(daysRemaining!)}d overdue` 
-                          : daysRemaining === 0
-                          ? 'Due today'
-                          : daysRemaining === 1
-                          ? '1 day left'
-                          : `${daysRemaining}d left`
-                        }
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <span className="text-[9px] font-bold text-text-muted tabular-nums">{planning.length}</span>
               </div>
-            );
-          })
+              <div className="flex flex-col gap-1.5 min-h-[60px] rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--icon-bg-info) 15%, var(--color-surface))' }}>
+                {planning.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-3 text-center" style={{ borderColor: 'var(--color-border)' }}>
+                    <p className="text-[9px] text-text-muted">No projects</p>
+                  </div>
+                ) : (
+                  planning.map((project) => {
+                    const color = project.color || '#6366f1';
+                    return (
+                      <div
+                        key={project.id}
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                        className="rounded-lg border p-2.5 transition-all cursor-pointer group hover:-translate-y-0.5 hover:shadow-sm"
+                        style={{
+                          borderColor: 'var(--color-border)',
+                          background: 'var(--color-surface-raised)',
+                          borderLeft: `3px solid ${color}`,
+                        }}
+                      >
+                        <p className="text-[11px] font-bold text-text-primary truncate leading-tight group-hover:text-accent transition-colors">
+                          {project.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${project.progress}%`,
+                                background: `linear-gradient(90deg, ${color}, ${color}dd)`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[8px] font-bold text-text-muted tabular-nums">{project.progress}%</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Active column */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between px-1 mb-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ background: 'var(--icon-text-accent)' }} />
+                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--icon-text-accent)' }}>
+                    Active
+                  </span>
+                </div>
+                <span className="text-[9px] font-bold text-text-muted tabular-nums">{active.length}</span>
+              </div>
+              <div className="flex flex-col gap-1.5 min-h-[60px] rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--icon-bg-accent) 15%, var(--color-surface))' }}>
+                {active.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-3 text-center" style={{ borderColor: 'var(--color-border)' }}>
+                    <p className="text-[9px] text-text-muted">No projects</p>
+                  </div>
+                ) : (
+                  active.map((project) => {
+                    const color = project.color || '#6366f1';
+                    return (
+                      <div
+                        key={project.id}
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                        className="rounded-lg border p-2.5 transition-all cursor-pointer group hover:-translate-y-0.5 hover:shadow-sm"
+                        style={{
+                          borderColor: 'var(--color-border)',
+                          background: 'var(--color-surface-raised)',
+                          borderLeft: `3px solid ${color}`,
+                        }}
+                      >
+                        <p className="text-[11px] font-bold text-text-primary truncate leading-tight group-hover:text-accent transition-colors">
+                          {project.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${project.progress}%`,
+                                background: `linear-gradient(90deg, ${color}, ${color}dd)`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[8px] font-bold text-text-muted tabular-nums">{project.progress}%</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </Card>

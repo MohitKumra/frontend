@@ -72,7 +72,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
           <h3 className="text-sm font-bold text-text-primary">Upcoming deadlines</h3>
         </div>
         <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-          Next 7 days
+          Overdue & upcoming
         </span>
       </div>
 
@@ -254,9 +254,9 @@ function EmptyState() {
         </div>
       </div>
 
-      <p className="text-xs font-bold text-text-primary mb-1">Nothing due this week</p>
+      <p className="text-xs font-bold text-text-primary mb-1">All caught up</p>
       <p className="text-[11px] text-text-muted max-w-[220px]">
-        Tasks and projects with a due date in the next 7 days will show up here.
+        No overdue or upcoming deadlines to worry about.
       </p>
     </div>
   );

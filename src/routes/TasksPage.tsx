@@ -110,7 +110,7 @@ export function TasksPage() {
 
   const [filter, setFilter] = useState<TaskFilter>('all');
   const [sortBy, setSortBy] = useState<SortKey>('priority');
-  const [view, setView] = useState<ViewMode>('list');
+  const [view, setView] = useState<ViewMode>('board');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskDTO | null>(null);
   const [taskMenuOpen, setTaskMenuOpen] = useState<string | null>(null);
@@ -409,164 +409,132 @@ export function TasksPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col h-full"
+      className="flex min-h-full flex-col"
       style={{ background: 'var(--color-bg)' }}
     >
       {/* Header */}
       <motion.div
         variants={itemVariants}
-        className="flex items-center justify-between px-6 py-5 border-b shrink-0 gap-4 flex-wrap"
+        className="flex flex-col gap-5 border-b px-4 py-5 sm:px-6 xl:px-8"
         style={{ borderColor: 'var(--color-border)' }}
       >
-        <div>
-          <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-text-primary)' }}>Tasks</h1>
-          <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            {filteredTasks.length} visible task{filteredTasks.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowShortcuts(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-          >
-            <Keyboard size={14} />
-            <span>Shortcuts</span>
-          </button>
-
-          <div className="flex items-center gap-0.5 p-1 rounded-lg border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-            <button
-              onClick={() => setView('list')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all"
-              style={view === 'list' ? { background: 'var(--gradient-accent)', color: 'white' } : { color: 'var(--color-text-muted)' }}
-            >
-              <ListChecks size={13} />
-              List
-            </button>
-            <button
-              onClick={() => setView('board')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all"
-              style={view === 'board' ? { background: 'var(--gradient-accent)', color: 'white' } : { color: 'var(--color-text-muted)' }}
-            >
-              <Columns3 size={13} />
-              Board
-            </button>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black tracking-tight text-text-primary">Tasks</h1>
+            <p className="mt-2 text-sm font-semibold text-text-secondary">
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0] ?? 'there'}
+            </p>
+            <p className="mt-0.5 text-xs text-text-muted">
+              {filteredTasks.length} visible task{filteredTasks.length !== 1 ? 's' : ''}. Keep the board moving.
+            </p>
           </div>
 
-          <div className="flex items-stretch rounded-lg overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(99,102,241,0.25)' }}>
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="flex items-center gap-2 pl-4 pr-3 py-2 text-xs font-bold text-white transition-all"
-              style={{ background: 'var(--gradient-accent)' }}
-            >
-              <Plus size={16} />
-              New Task
-            </button>
-            <button
-              type="button"
-              aria-label="New task options"
-              className="flex items-center px-2 border-l border-white/20 text-white transition-all"
-              style={{ background: 'var(--gradient-accent)' }}
-            >
-              <ChevronDown size={14} />
-            </button>
-          </div>
-
-          <button
-            type="button"
-            title="Preferences"
-            className="flex items-center justify-center w-9 h-9 rounded-lg border transition-all"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-            onClick={() => navigate('/settings')}
-          >
-            <Settings2 size={15} />
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Main content area */}
-      <motion.div variants={itemVariants} className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-5">
-
-          {/* Search + Select all */}
-          <motion.div variants={itemVariants} className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="relative max-w-sm w-full">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--color-text-muted)' }} />
+          <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative w-full lg:w-[360px]">
+              <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
               <input
                 ref={searchRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search tasks... ( / )"
-                className="w-full rounded-lg border pl-9 pr-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full rounded-2xl border py-3 pl-11 pr-4 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
                 style={{
-                  background: 'var(--color-surface)',
+                  background: 'var(--color-surface-raised)',
                   borderColor: 'var(--color-border)',
                   color: 'var(--color-text-primary)',
                 }}
               />
             </div>
 
-            {view === 'list' && filteredTasks.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 rounded-2xl border p-1 shadow-sm" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+                <button
+                  onClick={() => setView('list')}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition-all"
+                  style={view === 'list' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}
+                >
+                  <ListChecks size={14} />
+                  List
+                </button>
+                <button
+                  onClick={() => setView('board')}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition-all"
+                  style={view === 'board' ? { background: 'var(--gradient-accent)', color: 'white' } : { color: 'var(--color-text-muted)' }}
+                >
+                  <Columns3 size={14} />
+                  Board
+                </button>
+              </div>
+
+              <button
+                onClick={() => setCreateModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                style={{ background: 'var(--gradient-accent)' }}
+              >
+                <Plus size={18} />
+                New Task
+              </button>
+
               <button
                 type="button"
-                onClick={toggleVisibleSelection}
-                className="flex items-center gap-2 text-xs font-bold shrink-0"
-                style={{ color: 'var(--color-text-secondary)' }}
+                title="Preferences"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border shadow-sm transition-all"
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                onClick={() => navigate('/settings')}
               >
-                <span
-                  className="w-4 h-4 rounded flex items-center justify-center border"
+                <Settings2 size={17} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {(['all', 'today', 'upcoming', 'completed', 'overdue'] as TaskFilter[]).map((f) => {
+              const icons = {
+                all: <CheckSquare size={14} />,
+                today: <Zap size={14} />,
+                upcoming: <Calendar size={14} />,
+                completed: <CheckCircle2 size={14} />,
+                overdue: <TrendingUp size={14} />,
+              };
+              return (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className="flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black transition-all"
                   style={
-                    allVisibleSelected
-                      ? { background: 'var(--gradient-accent)', borderColor: 'transparent' }
-                      : { borderColor: 'var(--color-border)' }
+                    filter === f
+                      ? { background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised))', color: 'var(--color-accent)', boxShadow: '0 10px 22px -18px var(--color-accent)' }
+                      : { background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
                   }
                 >
-                  {allVisibleSelected && <CheckSquare size={11} className="text-white" />}
-                </span>
-                Select All
-              </button>
-            )}
-          </motion.div>
+                  {icons[f]}
+                  <span>{f.charAt(0).toUpperCase() + f.slice(1)}</span>
+                  <span className="font-black">{counts[f]}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Filter tabs + Sort */}
-          <motion.div variants={itemVariants} className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-              {(['all', 'today', 'upcoming', 'completed', 'overdue'] as TaskFilter[]).map((f) => {
-                const icons = {
-                  all: <CheckSquare size={14} />,
-                  today: <Zap size={14} />,
-                  upcoming: <Calendar size={14} />,
-                  completed: <CheckCircle2 size={14} />,
-                  overdue: <TrendingUp size={14} />,
-                };
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
-                    style={
-                      filter === f
-                        ? { background: 'var(--gradient-accent)', color: 'white', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }
-                        : { background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                    }
-                  >
-                    {icons[f]}
-                    <span>{f.charAt(0).toUpperCase() + f.slice(1)}</span>
-                    <span className="font-extrabold">{counts[f]}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowShortcuts(true)}
+              className="hidden items-center gap-1.5 rounded-2xl border px-3 py-2.5 text-xs font-black sm:flex"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+            >
+              <Keyboard size={14} />
+              Shortcuts
+            </button>
 
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setSortMenuOpen((v) => !v)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-bold whitespace-nowrap"
-                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                className="flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black whitespace-nowrap"
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
               >
                 Sort by: {sortLabel[sortBy]}
                 <ChevronDown size={13} />
@@ -575,7 +543,7 @@ export function TasksPage() {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(false)} />
                   <div
-                    className="absolute right-0 mt-2 w-40 rounded-xl border shadow-lg overflow-hidden z-20"
+                    className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
                     style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
                   >
                     {(Object.keys(sortLabel) as SortKey[]).map((key) => (
@@ -595,7 +563,37 @@ export function TasksPage() {
                 </>
               )}
             </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Main content area */}
+      <motion.div variants={itemVariants} className="flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-5 px-4 py-5 sm:px-6 xl:px-8">
+
+          {/* Select all */}
+          {view === 'list' && filteredTasks.length > 0 && (
+          <motion.div variants={itemVariants} className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={toggleVisibleSelection}
+                className="flex items-center gap-2 text-xs font-bold shrink-0"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                <span
+                  className="w-4 h-4 rounded flex items-center justify-center border"
+                  style={
+                    allVisibleSelected
+                      ? { background: 'var(--gradient-accent)', borderColor: 'transparent' }
+                      : { borderColor: 'var(--color-border)' }
+                  }
+                >
+                  {allVisibleSelected && <CheckSquare size={11} className="text-white" />}
+                </span>
+                Select All
+              </button>
           </motion.div>
+          )}
 
           {/* Bulk action bar */}
           {view === 'list' && visibleSelectedTasks.length > 0 && (
@@ -664,6 +662,7 @@ export function TasksPage() {
                 onStatusChange={changeTaskStatus}
                 onEdit={setEditingTask}
                 onDelete={handleDeleteTask}
+                onAddTask={() => setCreateModalOpen(true)}
                 formatDueDate={(d) => {
                   if (!d) return null;
                   const date = new Date(d);

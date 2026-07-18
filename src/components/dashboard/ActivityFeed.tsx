@@ -1,46 +1,53 @@
-import { CheckSquare, Timer, Target, FolderKanban, Calendar, Clock } from 'lucide-react';
+import { CheckSquare, Timer, Target, FolderKanban, Calendar, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Card } from '../ui/Card';
-
-interface Activity {
-  id: string;
-  type: 'task_completed' | 'focus_session' | 'habit_completed' | 'project_created' | 'calendar_sync';
-  title: string;
-  description?: string;
-  timestamp: Date;
-  metadata?: {
-    duration?: number;
-    projectName?: string;
-  };
-}
+import type { InAppNotificationDTO } from '../../types';
 
 interface ActivityFeedProps {
-  activities: Activity[];
+  activities: InAppNotificationDTO[];
   maxItems?: number;
+  isLoading?: boolean;
 }
 
-function getActivityIcon(type: Activity['type']) {
-  const icons = {
-    task_completed: CheckSquare,
-    focus_session: Timer,
-    habit_completed: Target,
-    project_created: FolderKanban,
-    calendar_sync: Calendar,
+type FeedType = InAppNotificationDTO['type'];
+
+function getActivityIcon(type: FeedType) {
+  const icons: Record<FeedType, typeof CheckSquare> = {
+    TASK_CREATED: CheckSquare,
+    TASK_COMPLETED: CheckSquare,
+    TASK_STATUS_CHANGED: CheckSquare,
+    HABIT_COMPLETED: Target,
+    HABIT_STREAK: TrendingUp,
+    FOCUS_SESSION_COMPLETED: Timer,
+    PROJECT_CREATED: FolderKanban,
+    PROJECT_COMPLETED: FolderKanban,
+    PROJECT_STATUS_CHANGED: FolderKanban,
+    TASK_OVERDUE: AlertTriangle,
+    TASK_DUE_SOON: AlertTriangle,
+    HABIT_PENDING: Target,
   };
-  return icons[type];
+  return icons[type] ?? Clock;
 }
 
-function getActivityColor(type: Activity['type']) {
-  const colors = {
-    task_completed: { bg: 'var(--icon-bg-success)', text: 'var(--icon-text-success)' },
-    focus_session: { bg: 'var(--icon-bg-info)', text: 'var(--icon-text-info)' },
-    habit_completed: { bg: 'var(--icon-bg-warning)', text: 'var(--icon-text-warning)' },
-    project_created: { bg: 'var(--icon-bg-accent)', text: 'var(--icon-text-accent)' },
-    calendar_sync: { bg: 'var(--icon-bg-info)', text: 'var(--icon-text-info)' },
+function getActivityColor(type: FeedType) {
+  const colors: Record<FeedType, { bg: string; text: string }> = {
+    TASK_CREATED: { bg: 'var(--icon-bg-accent)', text: 'var(--icon-text-accent)' },
+    TASK_COMPLETED: { bg: 'var(--icon-bg-success)', text: 'var(--icon-text-success)' },
+    TASK_STATUS_CHANGED: { bg: 'var(--icon-bg-info)', text: 'var(--icon-text-info)' },
+    HABIT_COMPLETED: { bg: 'var(--icon-bg-warning)', text: 'var(--icon-text-warning)' },
+    HABIT_STREAK: { bg: 'var(--icon-bg-success)', text: 'var(--icon-text-success)' },
+    FOCUS_SESSION_COMPLETED: { bg: 'var(--icon-bg-info)', text: 'var(--icon-text-info)' },
+    PROJECT_CREATED: { bg: 'var(--icon-bg-accent)', text: 'var(--icon-text-accent)' },
+    PROJECT_COMPLETED: { bg: 'var(--icon-bg-success)', text: 'var(--icon-text-success)' },
+    PROJECT_STATUS_CHANGED: { bg: 'var(--icon-bg-info)', text: 'var(--icon-text-info)' },
+    TASK_OVERDUE: { bg: '#fef2f2', text: '#ef4444' },
+    TASK_DUE_SOON: { bg: '#fffbeb', text: '#f59e0b' },
+    HABIT_PENDING: { bg: '#f3f4f6', text: '#6b7280' },
   };
-  return colors[type];
+  return colors[type] ?? { bg: 'var(--icon-bg-info)', text: 'var(--icon-text-info)' };
 }
 
-function getRelativeTime(date: Date): string {
+function getRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -54,7 +61,7 @@ function getRelativeTime(date: Date): string {
   return date.toLocaleDateString();
 }
 
-export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
+export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityFeedProps) {
   const displayActivities = activities.slice(0, maxItems);
 
   return (
@@ -74,13 +81,21 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
         {/* Activity Timeline */}
-        {displayActivities.length > 0 ? (
+        {!isLoading && displayActivities.length > 0 ? (
           <div className="space-y-3">
             {displayActivities.map((activity, index) => {
               const Icon = getActivityIcon(activity.type);
               const colors = getActivityColor(activity.type);
               const isLast = index === displayActivities.length - 1;
+              const isActionable = activity.isActionable;
 
               return (
                 <div key={activity.id} className="relative">
@@ -93,7 +108,7 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
                   )}
 
                   {/* Activity Item */}
-                  <div className="flex items-start gap-3">
+                  <div className={`flex items-start gap-3 ${isActionable ? 'opacity-90' : ''}`}>
                     <div 
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative z-10"
                       style={{ background: colors.bg, color: colors.text }}
@@ -101,9 +116,19 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
                       <Icon size={14} />
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
-                      <p className="text-sm font-bold text-text-primary mb-0.5">
-                        {activity.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-text-primary mb-0.5">
+                          {activity.title}
+                        </p>
+                        {isActionable && (
+                          <span 
+                            className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                            style={{ background: '#fef3c7', color: '#d97706' }}
+                          >
+                            Action needed
+                          </span>
+                        )}
+                      </div>
                       {activity.description && (
                         <p className="text-xs text-text-secondary mb-1">
                           {activity.description}
@@ -113,19 +138,11 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
                         <span className="text-xs font-bold text-text-muted">
                           {getRelativeTime(activity.timestamp)}
                         </span>
-                        {activity.metadata?.duration && (
+                        {activity.metadata?.durationMin && (
                           <>
                             <span className="text-text-muted">•</span>
                             <span className="text-xs text-text-muted">
-                              {activity.metadata.duration} minutes
-                            </span>
-                          </>
-                        )}
-                        {activity.metadata?.projectName && (
-                          <>
-                            <span className="text-text-muted">•</span>
-                            <span className="text-xs text-text-muted">
-                              {activity.metadata.projectName}
+                              {activity.metadata.durationMin} minutes
                             </span>
                           </>
                         )}
@@ -136,7 +153,7 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
               );
             })}
           </div>
-        ) : (
+        ) : !isLoading ? (
           <div 
             className="rounded-xl border p-8 text-center"
             style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
@@ -150,7 +167,7 @@ export function ActivityFeed({ activities, maxItems = 10 }: ActivityFeedProps) {
             <p className="text-sm font-bold text-text-primary mb-1">No activity yet</p>
             <p className="text-xs text-text-secondary">Complete tasks to see your activity here</p>
           </div>
-        )}
+        ) : null}
       </div>
     </Card>
   );

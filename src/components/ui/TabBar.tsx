@@ -19,13 +19,13 @@ interface TabBarProps<T extends string = string> {
  * Supports pill design (dashboard filters) and underline design.
  * Handles transitions smoothly using CSS variables and scaling animations.
  */
-export function TabBar({
+export function TabBar<T extends string = string>({
   tabs,
   activeTab,
   onTabChange,
   variant = 'pill',
   className = '',
-}: TabBarProps) {
+}: TabBarProps<T>) {
   return (
     <div 
       className={[

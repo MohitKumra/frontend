@@ -508,54 +508,205 @@ export function SettingsPage() {
               </div>
             </div>
             </Card>
+          </div>
 
             <Card className="p-4 sm:p-5 lg:p-6" variant="default">
               <SectionHeader
                 icon={<Cloud size={20} />}
                 title="Workspace preview"
-                subtitle="A quick snapshot of how the current layout feels."
+                subtitle="A realistic preview of how the current theme and layout density look."
               />
 
               <div
-                className="mt-4 sm:mt-5 rounded-2xl sm:rounded-[1.5rem] border p-4 sm:p-5 lg:p-6"
+                className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl overflow-hidden border"
                 style={{
                   borderColor: 'var(--color-border)',
-                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 7%, var(--color-surface)), var(--color-surface))',
+                  background: 'var(--color-bg)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)',
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ background: 'var(--gradient-accent)' }}>
-                    <span className="text-base sm:text-lg font-black">P</span>
+                {/* ── Mini app preview ─────────────────────────────────── */}
+                <div className="flex" style={{ minHeight: appearance.layoutPreference === 'COMPACT' ? '200px' : appearance.layoutPreference === 'EXPANDED' ? '260px' : '230px' }}>
+                  {/* Mini sidebar */}
+                  <div
+                    className="flex flex-col shrink-0 border-r"
+                    style={{
+                      width: appearance.layoutPreference === 'COMPACT' ? '56px' : appearance.layoutPreference === 'EXPANDED' ? '72px' : '64px',
+                      background: 'var(--sidebar-bg)',
+                      borderColor: 'var(--sidebar-border)',
+                    }}
+                  >
+                    {/* Logo */}
+                    <div
+                      className="flex items-center justify-center border-b"
+                      style={{
+                        height: appearance.layoutPreference === 'COMPACT' ? '32px' : appearance.layoutPreference === 'EXPANDED' ? '44px' : '38px',
+                        borderColor: 'var(--sidebar-border)',
+                      }}
+                    >
+                      <div
+                        className="rounded-lg flex items-center justify-center"
+                        style={{ width: '22px', height: '22px', background: 'var(--gradient-accent)' }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><path d="M12 3v18M3 12h18"/></svg>
+                      </div>
+                    </div>
+
+                    {/* Nav items */}
+                    <div
+                      className="flex-1 flex flex-col gap-0.5 px-2"
+                      style={{
+                        paddingTop: appearance.layoutPreference === 'COMPACT' ? '6px' : appearance.layoutPreference === 'EXPANDED' ? '14px' : '10px',
+                      }}
+                    >
+                      {[
+                        { active: true, color: 'var(--color-accent)' },
+                        { active: false, color: '' },
+                        { active: false, color: '' },
+                        { active: false, color: '' },
+                      ].map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-center rounded-md"
+                          style={{
+                            height: appearance.layoutPreference === 'COMPACT' ? '24px' : appearance.layoutPreference === 'EXPANDED' ? '32px' : '28px',
+                            background: item.active ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                          }}
+                        >
+                          <div
+                            className="rounded-md"
+                            style={{
+                              width: '14px',
+                              height: '14px',
+                              background: item.active ? 'var(--color-accent)' : 'var(--color-border-subtle)',
+                              opacity: item.active ? 1 : 0.5,
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Bottom avatar */}
+                    <div className="flex items-center justify-center py-2 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
+                      <div
+                        className="rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                        style={{ width: '20px', height: '20px', background: 'var(--gradient-accent)' }}
+                      >
+                        {user?.name ? user.name[0].toUpperCase() : user?.email?.[0]?.toUpperCase() ?? 'U'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-black text-text-primary">FlowSpace workspace</div>
-                    <div className="text-xs text-text-muted mt-1 break-words">
-                      Theme: {appearance.themePreference.toLowerCase()} - Layout: {appearance.layoutPreference.toLowerCase()} - View: {appearance.calendarView}
+
+                  {/* Mini content area */}
+                  <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                    {/* Mini topbar */}
+                    <div
+                      className="flex items-center justify-between border-b px-3"
+                      style={{
+                        height: appearance.layoutPreference === 'COMPACT' ? '32px' : appearance.layoutPreference === 'EXPANDED' ? '44px' : '38px',
+                        background: 'var(--topbar-bg)',
+                        borderColor: 'var(--topbar-border)',
+                      }}
+                    >
+                      <div
+                        className="rounded-full"
+                        style={{
+                          width: '48px',
+                          height: '6px',
+                          background: 'var(--color-border-subtle)',
+                        }}
+                      />
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="rounded-full"
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            background: appearance.themePreference === 'DARK' ? 'var(--color-warning)' : 'var(--color-border-subtle)',
+                          }}
+                        />
+                        <div
+                          className="rounded-lg flex items-center justify-center text-[6px] font-bold text-white"
+                          style={{ width: '18px', height: '18px', background: 'var(--gradient-accent)' }}
+                        >
+                          {user?.name ? user.name[0].toUpperCase() : user?.email?.[0]?.toUpperCase() ?? 'U'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mini page content */}
+                    <div
+                      className="flex-1"
+                      style={{
+                        padding: appearance.layoutPreference === 'COMPACT' ? '6px' : appearance.layoutPreference === 'EXPANDED' ? '16px' : '10px',
+                        background: 'var(--color-bg)',
+                      }}
+                    >
+                      {/* Simulated dashboard cards */}
+                      <div className="flex flex-col gap-2 h-full">
+                        <div
+                          className="rounded-lg"
+                          style={{
+                            height: appearance.layoutPreference === 'COMPACT' ? '50px' : appearance.layoutPreference === 'EXPANDED' ? '75px' : '62px',
+                            background: appearance.themePreference === 'DARK'
+                              ? 'rgba(255,255,255,0.04)'
+                              : 'rgba(0,0,0,0.03)',
+                            border: '1px solid var(--color-border-subtle)',
+                          }}
+                        />
+                        <div className="flex gap-2 flex-1">
+                          <div
+                            className="flex-1 rounded-lg"
+                            style={{
+                              background: appearance.themePreference === 'DARK'
+                                ? 'rgba(255,255,255,0.04)'
+                                : 'rgba(0,0,0,0.03)',
+                              border: '1px solid var(--color-border-subtle)',
+                            }}
+                          />
+                          <div
+                            className="flex-1 rounded-lg"
+                            style={{
+                              background: appearance.themePreference === 'DARK'
+                                ? 'rgba(255,255,255,0.04)'
+                                : 'rgba(0,0,0,0.03)',
+                              border: '1px solid var(--color-border-subtle)',
+                            }}
+                          />
+                        </div>
+                        <div
+                          className="rounded-lg"
+                          style={{
+                            height: appearance.layoutPreference === 'COMPACT' ? '30px' : appearance.layoutPreference === 'EXPANDED' ? '48px' : '40px',
+                            background: appearance.themePreference === 'DARK'
+                              ? 'rgba(255,255,255,0.04)'
+                              : 'rgba(0,0,0,0.03)',
+                            border: '1px solid var(--color-border-subtle)',
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-2 sm:gap-3" style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                  <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                    <div className="h-1.5 sm:h-2 w-12 sm:w-16 rounded-full bg-accent/25" />
-                    <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-                  </div>
-                  <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                    <div className="h-1.5 sm:h-2 w-14 sm:w-20 rounded-full bg-success/25" />
-                    <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-                  </div>
-                  <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4 bg-surface" style={{ borderColor: 'var(--color-border)' }}>
-                    <div className="h-1.5 sm:h-2 w-10 sm:w-14 rounded-full bg-warning/25" />
-                    <div className="mt-3 sm:mt-4 h-16 sm:h-20 rounded-xl sm:rounded-2xl bg-neutral-100 dark:bg-neutral-800" />
-                  </div>
-                </div>
-
-                <div className="mt-4 sm:mt-5 text-xs text-text-muted break-words">
-                  {user?.email ? `Signed in as ${user.email}` : 'Signed in user'}
+                {/* Preview info footer */}
+                <div
+                  className="flex items-center justify-between px-3 py-2 border-t text-[10px] font-semibold"
+                  style={{
+                    borderColor: 'var(--color-border-subtle)',
+                    background: 'var(--color-surface)',
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
+                  <span>
+                    {appearance.themePreference === 'DARK' ? '🌙 Dark' : appearance.themePreference === 'LIGHT' ? '☀️ Light' : '💻 System'}
+                    {' · '}
+                    {appearance.layoutPreference === 'COMPACT' ? 'Compact' : appearance.layoutPreference === 'EXPANDED' ? 'Expanded' : 'Comfortable'}
+                  </span>
+                  <span>{'Preview'}</span>
                 </div>
               </div>
             </Card>
-          </div>
         </TabPanel>
             )}
 

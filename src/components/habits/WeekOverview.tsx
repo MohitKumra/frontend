@@ -132,23 +132,35 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
     return SUCCESS;
   };
 
+  const completedThisWeek = dayScores.reduce((sum, day) => sum + (day.isFuture ? 0 : day.completed), 0);
+  const totalThisWeek = dayScores.reduce((sum, day) => sum + (day.isFuture ? 0 : day.total), 0);
+  const averageScore =
+    dayScores.filter((day) => !day.isFuture).length > 0
+      ? Math.round(
+          dayScores
+            .filter((day) => !day.isFuture)
+            .reduce((sum, day) => sum + day.score, 0) /
+            dayScores.filter((day) => !day.isFuture).length
+        )
+      : 0;
+
   return (
-    <Card variant="default" className="p-4 sm:p-5 lg:p-6">
+    <Card variant="default" className="overflow-hidden p-4 sm:p-5">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5 sm:mb-6 gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'color-mix(in srgb, ' + ACCENT + ' 12%, transparent)' }}
           >
-            <CalendarCheck2 size={18} className="sm:w-5 sm:h-5" style={{ color: ACCENT }} />
+            <CalendarCheck2 size={18} style={{ color: ACCENT }} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm sm:text-base lg:text-lg font-extrabold text-text-primary leading-tight truncate">
-              Your Week at a Glance
+            <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-tight">
+              Week Overview
             </h3>
-            <p className="text-[11px] sm:text-xs lg:text-[13px] text-text-muted truncate">
-              Track your progress and stay consistent every day
+            <p className="text-[11px] sm:text-xs text-text-muted">
+              Daily consistency without the clutter
             </p>
           </div>
         </div>
@@ -170,20 +182,31 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
         )}
       </div>
 
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Average</p>
+          <p className="mt-1 text-lg font-black text-text-primary">{loading ? '--' : `${averageScore}%`}</p>
+        </div>
+        <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Done</p>
+          <p className="mt-1 text-lg font-black text-text-primary">{loading ? '--' : completedThisWeek}</p>
+        </div>
+        <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total</p>
+          <p className="mt-1 text-lg font-black text-text-primary">{loading ? '--' : totalThisWeek}</p>
+        </div>
+      </div>
+
       {/* Days */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+      <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="grid min-w-[620px] grid-cols-7 gap-2">
         {loading ? (
           Array.from({ length: 7 }).map((_, idx) => (
-            <div key={idx} className="flex flex-col items-center gap-2 py-2 px-0.5 sm:px-1 w-full">
-              <p className="text-[9px] sm:text-[10px] lg:text-xs font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <div key={idx} className="flex min-h-[128px] flex-col items-center gap-2 rounded-2xl border px-2 py-3" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 {days[idx]}
               </p>
-              <div className="sm:hidden">
-                <div className="rounded-full" style={{ width: 48, height: 48, background: 'var(--color-border)' }} />
-              </div>
-              <div className="hidden sm:block">
-                <div className="rounded-full" style={{ width: 64, height: 64, background: 'var(--color-border)' }} />
-              </div>
+              <div className="rounded-full" style={{ width: 52, height: 52, background: 'var(--color-border)' }} />
             </div>
           ))
         ) : (
@@ -207,28 +230,22 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
                 )}
 
                 <div
-                  className={[
-                    'flex flex-col items-center gap-2 py-2 px-0.5 sm:px-1 w-full',
-                    idx !== days.length - 1 ? 'border-r' : '',
-                  ].join(' ')}
-                  style={{ borderColor: 'var(--color-border)' }}
+                  className="flex min-h-[128px] w-full flex-col items-center gap-2 rounded-2xl border px-2 py-3"
+                  style={{
+                    borderColor: isToday ? 'color-mix(in srgb, var(--color-accent) 34%, var(--color-border))' : 'var(--color-border)',
+                    background: isToday ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))' : 'var(--color-surface)',
+                  }}
                 >
                   <p
-                    className="text-[9px] sm:text-[10px] lg:text-xs font-extrabold uppercase tracking-wider"
+                    className="text-[10px] font-extrabold uppercase tracking-wider"
                     style={{ color: isToday ? ACCENT : 'var(--color-text-muted)' }}
                   >
                     {days[idx]}
                   </p>
 
-                  {/* Responsive DayRing sizes */}
-                  <div className="hidden sm:block">
-                    <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} size={64} />
-                  </div>
-                  <div className="sm:hidden">
-                    <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} size={48} />
-                  </div>
+                  <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} size={52} />
 
-                  <p className="text-[9px] sm:text-[11px] lg:text-xs font-bold text-center line-clamp-1" style={{ color: labelColor }}>
+                  <p className="text-[10px] font-bold text-center line-clamp-1" style={{ color: labelColor }}>
                     {label}
                   </p>
 
@@ -238,6 +255,7 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
             );
           })
         )}
+      </div>
       </div>
     </Card>
   );

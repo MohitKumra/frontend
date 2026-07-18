@@ -21,7 +21,6 @@ import { HabitList } from '../components/habits/HabitList';
 import { HabitHero } from '../components/habits/HabitHero';
 import { WeekOverview } from '../components/habits/WeekOverview';
 import { LongestStreakCard } from '../components/habits/LongestStreakCard';
-import { AchievementsPanel } from '../components/habits/AchievementsPanel';
 import { AICoachPanel } from '../components/habits/AICoachPanel';
 import { QuoteCard } from '../components/habits/QuoteCard';
 import { getDailyQuotes } from '../data/quotes';
@@ -30,6 +29,7 @@ import { FocusTimeWidget } from '../components/habits/FocusTimeWidget';
 import { HabitEmptyState } from '../components/habits/HabitEmptyState';
 import { HabitHeatmapCombined } from '../components/habits/HabitHeatmapCombined';
 import { getCategory } from '../features/habits/Habitpresentation';
+import { useGamificationProfile } from '../features/dashboard/hooks/useDashboard';
 import type { HabitDTO } from '../types';
 
 type HabitFilter = 'all' | 'active' | 'pending' | 'completed';
@@ -38,6 +38,7 @@ type ViewMode = 'grid' | 'list';
 
 export function HabitsPage() {
   const { data, isLoading } = useHabits();
+  const { data: gamification } = useGamificationProfile();
   const createHabit = useCreateHabit();
   const user = useAuthStore((s) => s.user);
   const [showCreate, setShowCreate] = useState(false);
@@ -57,7 +58,7 @@ export function HabitsPage() {
   const dailyProgress = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
   const streakDays = habits.length > 0 ? Math.max(...habits.map((h) => h.currentStreak)) : 0;
   const activeStreaks = habits.filter((h) => h.currentStreak > 0).length;
-  const xpEarned = completedToday * 40;
+  const xpEarned = gamification?.totalPoints ?? 0;
   const successRate = habits.length > 0
     ? Math.round(
         (habits.reduce((sum, h) => sum + h.completionsThisWeek / Math.max(h.targetPerWeek, 1), 0) /
@@ -123,7 +124,7 @@ export function HabitsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="mx-auto flex flex-col pb-6 sm:pb-8 px-1 sm:px-2"
+      className="mx-auto flex w-full min-w-0 flex-col pb-6 sm:pb-8"
       style={{ maxWidth: '1600px' }}
     >
       {/* Hero Section */}
@@ -141,7 +142,7 @@ export function HabitsPage() {
       />
 
       {/* Main Grid: Left (Habits) | Right (Sidebar) */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] lg:grid-cols-[1fr_320px] gap-4 sm:gap-6 items-start">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
         {/* Left Column */}
         <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
           {/* Week at a Glance + Longest Streak — grid 1x2 on lg, stacked on smaller */}
@@ -150,7 +151,7 @@ export function HabitsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="grid grid-cols-1 xl:grid-cols-[1fr_360px] lg:grid-cols-[1fr_320px] gap-4 sm:gap-6 items-stretch"
+              className="grid min-w-0 grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
             >
               <WeekOverview />
               {longestStreakHabit && (
@@ -267,16 +268,14 @@ export function HabitsPage() {
             </motion.div>
           )}
 
-          {/* Achievements + Habit Heatmap — grid 1x2 on lg, stacked on smaller */}
+          {/* Habit Heatmap */}
           {habits.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch"
+              className="grid grid-cols-1 gap-4 sm:gap-6"
             >
-              <AchievementsPanel habits={habits} />
-
               <Card variant="default" className="p-4 sm:p-6 flex flex-col">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <h3 className="text-xs sm:text-[15px] font-bold text-text-primary flex items-center gap-2">
@@ -291,25 +290,25 @@ export function HabitsPage() {
             </motion.div>
           )}
 
-          {/* Mobile widgets: horizontal scroll (sm and smaller) */}
+          {/* Supporting widgets: horizontal rail until the wide desktop sidebar takes over. */}
           {habits.length > 0 && (
             <motion.div
-              className="lg:hidden"
+              className="2xl:hidden"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.6 }}
             >
-              <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <div className="flex-shrink-0 w-64 sm:w-72">
+              <div className="flex snap-x gap-3 overflow-x-auto pb-2 sm:gap-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
                   <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
                 </div>
-                <div className="flex-shrink-0 w-64 sm:w-72">
-          <QuoteCard quotes={getDailyQuotes()} />
+                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
+                  <QuoteCard quotes={getDailyQuotes()} />
                 </div>
-                <div className="flex-shrink-0 w-64 sm:w-72">
+                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
                   <WeatherWidget />
                 </div>
-                <div className="flex-shrink-0 w-64 sm:w-72">
+                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
                   <FocusTimeWidget />
                 </div>
               </div>
@@ -319,7 +318,7 @@ export function HabitsPage() {
 
         {/* Right Sidebar (lg and xl only) */}
         <motion.div
-          className="hidden lg:flex flex-col gap-4 sm:gap-6 sticky top-6 self-start"
+          className="hidden 2xl:flex flex-col gap-4 sm:gap-6 sticky top-6 self-start min-w-0"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.6, duration: 0.6 }}

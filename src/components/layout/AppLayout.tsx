@@ -169,7 +169,8 @@ export function AppLayout() {
         ? 'dark'
         : 'light', { animate: false });
     setLayoutPreference(settings.appearance.layoutPreference);
-    setCalendarViewPreference(settings.appearance.calendarView);
+    const mappedView = settings.appearance.calendarView === 'agenda' ? 'week' : settings.appearance.calendarView;
+    setCalendarViewPreference(mappedView);
 
     if (user && user.recoveryEmail !== settings.security.recoveryEmail) {
       setUser({ ...user, recoveryEmail: settings.security.recoveryEmail });
@@ -423,14 +424,6 @@ export function AppLayout() {
           </button>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
-          <button
-              onClick={() => toggleTheme({ animate: true })}
-              className="p-2.5 rounded-xl text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
             <div className="p-1">
               <NotificationCenter />
             </div>

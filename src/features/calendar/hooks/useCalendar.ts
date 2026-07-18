@@ -5,7 +5,7 @@ const CALENDAR_KEY = ['calendar'] as const;
 
 export function useCalendarOverview(range: { from: string; to: string }) {
   return useQuery({
-    queryKey: [...CALENDAR_KEY, range],
+    queryKey: [...CALENDAR_KEY, range.from, range.to],
     queryFn: () => calendarApi.getOverview(range),
   });
 }

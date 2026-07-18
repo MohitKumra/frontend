@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart } from 'lucide-react';
+import { Heart, Quote } from 'lucide-react';
 import type { Quote as QuoteType } from '../../data/quotes';
 
 interface QuoteCardProps {
@@ -22,7 +22,7 @@ function SceneDecoration() {
   return (
     <svg
       className="absolute bottom-0 right-0 pointer-events-none"
-      style={{ width: '38%', maxWidth: 170, height: 'auto' }}
+      style={{ width: '48%', maxWidth: 190, height: 'auto' }}
       viewBox="0 0 420 300"
       fill="none"
       preserveAspectRatio="xMaxYMax meet"
@@ -99,52 +99,47 @@ export function QuoteCard({
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative overflow-hidden"
+      className="relative min-h-[220px] overflow-hidden"
       style={{
         containerType: 'inline-size',
         containerName: 'quotecard',
-        borderRadius: 'clamp(16px, 6cqw, 28px)',
-        padding: 'clamp(16px, 6cqw, 32px)',
-        background: 'linear-gradient(160deg, #FFFFFF 0%, #F6F4FD 100%)',
-        border: '1px solid #ECE8FB',
-        boxShadow: '0 24px 60px -20px rgba(109, 92, 246, 0.28)',
+        borderRadius: 'clamp(18px, 6cqw, 26px)',
+        padding: 'clamp(16px, 6cqw, 28px)',
+        background:
+          'radial-gradient(circle at 88% 18%, rgba(124, 92, 255, 0.14), transparent 30%), linear-gradient(150deg, #FFFFFF 0%, #FBFAFF 48%, #F2EDFF 100%)',
+        border: '1px solid rgba(124, 92, 255, 0.16)',
+        boxShadow: '0 22px 46px -26px rgba(109, 92, 246, 0.38), inset 0 1px 0 rgba(255,255,255,0.86)',
       } as React.CSSProperties}
     >
       <SceneDecoration />
+      <div
+        className="absolute -left-16 -top-16 h-36 w-36 rounded-full blur-3xl"
+        style={{ background: 'rgba(124, 92, 255, 0.12)' }}
+      />
 
       {/* Header row */}
       <div
         className="relative z-10 flex items-start justify-between flex-wrap"
-        style={{ gap: 8, marginBottom: 'clamp(20px, 8cqw, 32px)' }}
+        style={{ gap: 8, marginBottom: 'clamp(16px, 7cqw, 26px)' }}
       >
         <div className="flex items-center" style={{ gap: 'clamp(8px, 3cqw, 12px)' }}>
           <div
             className="flex items-center justify-center flex-shrink-0"
             style={{
-              width: 'clamp(34px, 12cqw, 48px)',
-              height: 'clamp(34px, 12cqw, 48px)',
+              width: 'clamp(36px, 12cqw, 50px)',
+              height: 'clamp(36px, 12cqw, 50px)',
               borderRadius: '30%',
               background: 'linear-gradient(135deg, #8C7FFB 0%, #6C5CF0 100%)',
               boxShadow: '0 8px 16px -6px rgba(108, 92, 240, 0.5)',
             }}
           >
-            <span
-              style={{
-                fontFamily: 'Georgia, "Times New Roman", serif',
-                fontWeight: 700,
-                fontSize: 'clamp(16px, 6cqw, 26px)',
-                color: '#FFFFFF',
-                lineHeight: 1,
-              }}
-            >
-              &ldquo;
-            </span>
+            <Quote size={22} color="#FFFFFF" fill="#FFFFFF" />
           </div>
 
           <div
             className="flex items-center flex-shrink-0"
             style={{
-              background: '#F1EEFE',
+              background: 'rgba(124, 92, 255, 0.09)',
               color: '#6C5CF0',
               borderRadius: 999,
               gap: 'clamp(4px, 1.5cqw, 8px)',
@@ -179,8 +174,8 @@ export function QuoteCard({
             width: 'clamp(32px, 11cqw, 44px)',
             height: 'clamp(32px, 11cqw, 44px)',
             borderRadius: 999,
-            background: '#FFFFFF',
-            border: '1px solid #ECE8FB',
+            background: 'rgba(255,255,255,0.72)',
+            border: '1px solid rgba(124, 92, 255, 0.16)',
             boxShadow: '0 4px 10px -4px rgba(108, 92, 240, 0.25)',
           }}
         >
@@ -208,10 +203,11 @@ export function QuoteCard({
               style={{
                 fontFamily: 'Georgia, "Times New Roman", serif',
                 fontWeight: 700,
-                fontSize: 'clamp(15px, 6.5cqw, 34px)',
-                lineHeight: 1.3,
+                fontSize: 'clamp(20px, 8cqw, 34px)',
+                lineHeight: 1.18,
                 color: '#171B2E',
-                maxWidth: '92%',
+                maxWidth: '94%',
+                letterSpacing: 0,
               }}
             >
               {current.quote}
@@ -228,7 +224,7 @@ export function QuoteCard({
 
             <div
               className="flex items-start"
-              style={{ gap: 'clamp(8px, 3cqw, 12px)', marginTop: 'clamp(14px, 5cqw, 24px)' }}
+              style={{ gap: 'clamp(8px, 3cqw, 12px)', marginTop: 'clamp(14px, 5cqw, 22px)' }}
             >
               <span
                 className="mt-2"
@@ -245,8 +241,8 @@ export function QuoteCard({
                 <p
                   className="font-bold"
                   style={{
-                    color: '#6C5CF0',
-                    fontSize: 'clamp(13px, 4.5cqw, 17px)',
+                  color: '#6C5CF0',
+                    fontSize: 'clamp(13px, 4.5cqw, 16px)',
                     marginBottom: 2,
                   }}
                 >
@@ -262,7 +258,7 @@ export function QuoteCard({
       {quotes.length > 1 && (
         <div
           className="relative z-10 flex gap-1.5"
-          style={{ marginTop: 'clamp(12px, 5cqw, 24px)' }}
+          style={{ marginTop: 'clamp(12px, 5cqw, 20px)' }}
         >
           {quotes.map((_, i) => (
             <span

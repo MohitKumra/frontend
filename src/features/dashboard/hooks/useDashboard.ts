@@ -22,5 +22,27 @@ export function useEnhancedDashboard() {
   return useQuery({
     queryKey: [...DASHBOARD_KEY, 'enhanced'],
     queryFn: dashboardApi.getEnhanced,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useActivityFeed(page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: [...DASHBOARD_KEY, 'activity-feed', page, pageSize],
+    queryFn: () => dashboardApi.getActivityFeed(page, pageSize),
+    staleTime: 15 * 1000,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useGamificationProfile() {
+  return useQuery({
+    queryKey: [...DASHBOARD_KEY, 'gamification'],
+    queryFn: dashboardApi.getGamificationProfile,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 }

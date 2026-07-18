@@ -270,7 +270,7 @@ export function HabitHero({
                   iconColor="#FFB800"
                   label="XP"
                   value={xpEarned}
-                  suffix="XP"
+                  suffix="Total XP"
                   delay={1}
                 />
               </motion.div>
