@@ -49,7 +49,7 @@ import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { useUIStore } from '../store/uiStore';
 import type { CalendarEventDTO, TaskDTO } from '../types';
 
-type CalendarView = 'day' | 'week' | 'month';
+type CalendarView = 'day' | 'week' | 'month' | 'agenda';
 type EventTypeKey = CalendarEventDTO['type'];
 
 const EVENT_META: Record<EventTypeKey, { label: string; accent: string; bg: string; dot: string }> = {
@@ -101,6 +101,8 @@ function formatRangeLabel(view: CalendarView, reference: Date) {
     }
     case 'month':
       return format(reference, 'MMMM yyyy');
+    case 'agenda':
+      return format(reference, 'MMMM d, yyyy');
   }
 }
 
@@ -112,6 +114,8 @@ function getRange(view: CalendarView, reference: Date) {
       return { from: startOfWeekRange(reference), to: endOfWeekRange(reference) };
     case 'month':
       return { from: startOfMonthRange(reference), to: endOfMonthRange(reference) };
+    case 'agenda':
+      return { from: startOfDay(reference), to: endOfDay(reference) };
   }
 }
 

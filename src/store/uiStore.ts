@@ -15,12 +15,12 @@ interface UIState {
   theme: Theme;
   themePreference: ThemePreference;
   layoutPreference: ShellLayoutPreference;
-  calendarViewPreference: 'day' | 'week' | 'month';
+  calendarViewPreference: 'day' | 'week' | 'month' | 'agenda';
   sidebarOpen: boolean;
   focusMode: boolean;
   setTheme: (theme: ThemePreference, options?: { animate?: boolean }) => Promise<Theme>;
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
-  setCalendarViewPreference: (view: 'day' | 'week' | 'month') => void;
+  setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
   toggleTheme: (options?: { animate?: boolean }) => Promise<Theme>;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
