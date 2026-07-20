@@ -125,7 +125,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
       className="pointer-events-none fixed inset-y-0 right-0"
       aria-hidden="true"
       style={{
-        width: 'clamp(400px, 39vw, 720px)',
+        width: 'clamp(220px, 55vw, 720px)',   
         WebkitMaskImage: maskImage,
         maskImage,
         WebkitMaskRepeat: 'no-repeat',

@@ -31,7 +31,12 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const res = await axios.post<{ accessToken: string }>('/api/auth/refresh', {}, { withCredentials: true });
+        const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
+        const res = await axios.post<{ accessToken: string }>(
+          `${baseUrl}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
         useAuthStore.getState().setAccessToken(res.data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
         return apiClient(originalRequest);

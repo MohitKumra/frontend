@@ -329,10 +329,10 @@ function FocusModeFullScreen({
 />
 
       {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 sm:p-6 z-10">
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-6 z-10">
         <button
           onClick={onExit}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold border shadow-sm"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold border shadow-sm shrink-0"
           style={{
             background: mixBg(22),
             borderColor: mixBorder(35),
@@ -340,14 +340,16 @@ function FocusModeFullScreen({
             backdropFilter: 'blur(4px)',
           }}
         >
-          <Minimize2 size={16} /> Focus Mode
+          <Minimize2 size={14} className="sm:hidden" />
+          <Minimize2 size={16} className="hidden sm:block" />
+          <span className="hidden xs:inline">Focus Mode</span>
         </button>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <button
             onClick={onToggleAmbient}
             aria-label="Toggle ambient sound"
-            className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border shadow-sm shrink-0"
             style={{
               background: ambientPlaying ? mixIcon(35) : mixBg(18),
               borderColor: mixBorder(30),
@@ -355,12 +357,12 @@ function FocusModeFullScreen({
               backdropFilter: 'blur(4px)',
             }}
           >
-            <Music size={16} />
+            <Music size={14} />
           </button>
           <button
             onClick={() => setStatsVisible((v) => !v)}
             aria-label="Toggle stats panel"
-            className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border shadow-sm shrink-0"
             style={{
               background: statsVisible ? mixIcon(35) : mixBg(18),
               borderColor: mixBorder(30),
@@ -368,16 +370,17 @@ function FocusModeFullScreen({
               backdropFilter: 'blur(4px)',
             }}
           >
-            <LucideTrendingUp  size={16} />
+            <LucideTrendingUp  size={14} />
           </button>
           {/* bare icon — no circle bg/border, matches reference exactly */}
           <button
             onClick={onExit}
             aria-label="Exit focus mode"
-            className="w-10 h-10 flex items-center justify-center ml-1"
+            className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center ml-0.5 sm:ml-1 shrink-0"
             style={{ color: strong }}
           >
-            <X size={20} />
+            <X size={18} className="sm:hidden" />
+            <X size={20} className="hidden sm:block" />
           </button>
         </div>
       </div>
@@ -420,23 +423,31 @@ function FocusModeFullScreen({
         </div>
       )}
 
-      {/* Center — pointer-events-none lets clicks pass through to the top bar behind */}
-      <div className="relative h-full flex items-center justify-center px-4 pointer-events-none">
-        <div className="flex flex-col items-center gap-6 sm:gap-8 w-full max-w-lg p-8 pointer-events-auto">
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-xs sm:text-sm font-black uppercase tracking-[0.35em]" style={{ color: strong }}>
+      {/* Center — pointer-events-none lets clicks pass through to the top bar behind.
+          max-w-[94vw] is a hard safety cap: no matter how the children below
+          are sized, this column can never force the page wider than the
+          viewport. Previously this was max-w-lg with no vw-relative cap, so
+          the action row (built with desktop paddings like px-10/h-16) forced
+          the whole column wider than a phone screen, and everything —
+          timer digits, subtitle, buttons — got silently clipped by the
+          fixed/overflow-hidden wrapper above instead of wrapping or
+          scaling down. */}
+      <div className="relative h-full flex items-center justify-center px-3 sm:px-4 pointer-events-none z-10">
+        <div className="flex flex-col items-center gap-4 sm:gap-8 w-full max-w-[94vw] sm:max-w-lg p-4 sm:p-8 pointer-events-auto">
+          <div className="flex flex-col items-center gap-2 sm:gap-3 w-full px-2">
+            <p className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.25em] sm:tracking-[0.35em]" style={{ color: strong }}>
               {mode === 'focus' ? 'FOCUS' : mode === 'short_break' ? 'SHORT BREAK' : 'LONG BREAK'}
             </p>
-            <p className="text-sm font-semibold text-center" style={{ color: 'var(--color-text-secondary)' }}>{MODE_COPY[mode]}</p>
+            <p className="text-xs sm:text-sm font-semibold text-center max-w-full break-words" style={{ color: 'var(--color-text-secondary)' }}>{MODE_COPY[mode]}</p>
             {selectedTaskTitle && mode === 'focus' && (
-              <div className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
+              <div className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
                 🎯 {selectedTaskTitle}
               </div>
             )}
           </div>
 
           <div className="relative flex items-center justify-center" style={{ animation: running ? 'focus-breathe 4s ease-in-out infinite' : 'none' }}>
-            <div className="w-[clamp(240px,62vw,380px)] h-[clamp(240px,62vw,380px)]">
+            <div className="w-[clamp(200px,58vw,380px)] h-[clamp(200px,58vw,380px)]">
               <ProgressRing
                 logicalSize={380}
                 progress={progress}
@@ -445,27 +456,33 @@ function FocusModeFullScreen({
                 isNight={false}
               />
             </div>
-            <div className="absolute flex flex-col items-center gap-3 select-none">
-              <span className="text-6xl sm:text-7xl md:text-8xl font-black tabular-nums tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <div className="absolute flex flex-col items-center gap-2 sm:gap-3 select-none px-2">
+              <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tabular-nums tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
                 {minutes}:{seconds}
               </span>
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{
+              <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap" style={{
                 background: colors.subtle,
                 color: strong
               }}>
-                <Target size={12} /> {mode === 'focus' ? 'Focus Session' : mode === 'short_break' ? 'Short Break' : 'Long Break'}
+                <Target size={11} className="sm:hidden" />
+                <Target size={12} className="hidden sm:block" />
+                {mode === 'focus' ? 'Focus Session' : mode === 'short_break' ? 'Short Break' : 'Long Break'}
               </span>
             </div>
           </div>
 
           {/* Action row — Reset (labeled) + Start Focus, flanked by small ghost
               prev/next buttons so mode switching stays available without
-              disturbing the reference's two-button visual center. */}
-          <div className="flex items-center justify-center gap-3">
+              disturbing the reference's two-button visual center.
+              Sized down and allowed to wrap on narrow screens so nothing
+              runs off the right edge of a phone viewport (previously fixed
+              desktop sizes here — px-10, h-16, text-lg — were the actual
+              cause of the mobile overflow/clipping). */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
             <button
               onClick={onSkipBack}
               aria-label="Previous mode"
-              className="w-11 h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
+              className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
               style={{
                 background: mixBg(20),
                 borderColor: mixBorder(35),
@@ -473,12 +490,13 @@ function FocusModeFullScreen({
                 backdropFilter: 'blur(4px)',
               }}
             >
-              <SkipBack size={16} />
+              <SkipBack size={14} className="sm:hidden" />
+              <SkipBack size={16} className="hidden sm:block" />
             </button>
 
             <button
               onClick={onReset}
-              className="flex items-center gap-2 px-6 py-4 rounded-full text-sm font-bold border shadow-sm shrink-0"
+              className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-4 rounded-full text-xs sm:text-sm font-bold border shadow-sm shrink-0"
               style={{
                 background: mixBg(22),
                 borderColor: mixBorder(35),
@@ -486,25 +504,46 @@ function FocusModeFullScreen({
                 backdropFilter: 'blur(4px)',
               }}
             >
-              <RotateCcw size={16} /> Reset
+              <RotateCcw size={14} className="sm:hidden" />
+              <RotateCcw size={16} className="hidden sm:block" />
+              Reset
             </button>
 
             <button
               onClick={onStartPause}
-              className="flex items-center justify-center gap-2.5 px-10 h-14 sm:h-16 text-base sm:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
+              className="flex items-center justify-center gap-1.5 sm:gap-2.5 px-5 sm:px-10 h-11 sm:h-14 md:h-16 text-sm sm:text-base md:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
               style={{
                 background: mixBg(30),
                 borderColor: mixBorder(45),
                 color: mixText(100),
               }}
             >
-              {running ? <><Pause size={20} /> Pause</> : mode === 'focus' ? <><Play size={20} /> Start Focus</> : <><Play size={20} /> Start</>}
+              {running ? (
+                <>
+                  <Pause size={17} className="sm:hidden" />
+                  <Pause size={20} className="hidden sm:block" />
+                  Pause
+                </>
+              ) : mode === 'focus' ? (
+                <>
+                  <Play size={17} className="sm:hidden" />
+                  <Play size={20} className="hidden sm:block" />
+                  <span className="hidden min-[380px]:inline">Start Focus</span>
+                  <span className="min-[380px]:hidden">Start</span>
+                </>
+              ) : (
+                <>
+                  <Play size={17} className="sm:hidden" />
+                  <Play size={20} className="hidden sm:block" />
+                  Start
+                </>
+              )}
             </button>
 
             <button
               onClick={onSkipForward}
               aria-label="Next mode"
-              className="w-11 h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
+              className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
               style={{
                 background: mixBg(20),
                 borderColor: mixBorder(35),
@@ -512,11 +551,12 @@ function FocusModeFullScreen({
                 backdropFilter: 'blur(4px)',
               }}
             >
-              <SkipForward size={16} />
+              <SkipForward size={14} className="sm:hidden" />
+              <SkipForward size={16} className="hidden sm:block" />
             </button>
           </div>
 
-          <p className="text-xs font-semibold text-center" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[11px] sm:text-xs font-semibold text-center max-w-full break-words px-2" style={{ color: 'var(--color-text-muted)' }}>
             💡 Tip: Take short breaks to recharge. You'll come back stronger!
           </p>
         </div>
@@ -551,35 +591,35 @@ function FocusModeFullScreen({
       </div>
 
       {/* Bottom-left ambient player */}
-      <div className="absolute bottom-6 left-6 z-10">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-sm" style={{
+      <div className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 z-10">
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl border shadow-sm" style={{
           background: mixBg(20),
           borderColor: mixBorder(30),
           backdropFilter: 'blur(4px)',
         }}>
-          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{
+          <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0" style={{
             background: mixIcon(30),
             color: strong
           }}>
-            <Music size={15} />
+            <Music size={14} />
           </span>
-          <div>
-            <p className="text-xs font-bold" style={{ color: mixText(90) }}>{ambientSound}</p>
-            <p className="text-[10px] font-semibold" style={{ color: mixSub(70) }}>Concentration</p>
+          <div className="min-w-0">
+            <p className="text-[11px] sm:text-xs font-bold truncate" style={{ color: mixText(90) }}>{ambientSound}</p>
+            <p className="text-[9px] sm:text-[10px] font-semibold truncate" style={{ color: mixSub(70) }}>Concentration</p>
           </div>
           {/* ghost equalizer-style toggle — matches reference (no solid button) */}
           <button
             onClick={onToggleAmbient}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0"
             style={{ color: strong }}
             aria-label={ambientPlaying ? 'Pause ambient sound' : 'Play ambient sound'}
           >
-            <AudioLines size={18} />
+            <AudioLines size={16} />
           </button>
         </div>
       </div>
 
-      {/* Bottom-right shortcuts */}
+      {/* Bottom-right shortcuts — desktop only, plenty of room there */}
       <div className="hidden sm:block absolute bottom-6 right-6 z-10">
         <div className="px-5 py-3.5 rounded-2xl border shadow-sm" style={{
           background: mixBg(18),
