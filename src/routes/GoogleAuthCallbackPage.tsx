@@ -4,7 +4,7 @@ import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 async function completeGoogleSession() {
-  const refreshResponse = await fetch('/api/auth/refresh', {
+  const refreshResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -17,7 +17,7 @@ async function completeGoogleSession() {
 
   const refreshData = await refreshResponse.json() as { accessToken: string };
 
-  const meResponse = await fetch('/api/auth/me', {
+  const meResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
     credentials: 'include',
     headers: {
       Authorization: `Bearer ${refreshData.accessToken}`,
