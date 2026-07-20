@@ -13,4 +13,6 @@ export const habitsApi = {
 
 export const focusApi = {
   list: () => apiClient.get<{ data: FocusSessionDTO[]; meta: { total: number } }>('/focus').then((r) => r.data),
+  logTime: (durationMin: number) => apiClient.post('/focus/time-log', { durationMin }).then((r) => r.data),
+  listTimeLogs: () => apiClient.get<{ id: string; userId: string; durationMin: number; date: string }[]>('/focus/time-logs').then((r) => r.data),
 };

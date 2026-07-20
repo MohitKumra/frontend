@@ -19,6 +19,7 @@ import { TaskTimeAnalysis } from '../components/tasks/TaskTimeAnalysis';
 import { JournalAmbientScene } from '../components/focus/JournalAmbientScene';
 import { QuoteCard } from '../components/habits/QuoteCard';
 import { getDailyQuotes } from '../data/quotes';
+import { focusApi } from '../features/habits/api';
 import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
 import { isSameDay } from '../lib/dateUtils';
 import type { FocusSessionDTO, CreateFocusSessionRequest, ListResponse, TaskDTO } from '../types';
@@ -872,7 +873,23 @@ export function FocusPage() {
   useEffect(() => { elapsedRef.current = elapsedSeconds; }, [elapsedSeconds]);
 
   useEffect(() => {
-    const restored = restoreTimerState();
+    // Migration from old single-key storage to per-mode keys
+    try {
+      const oldRaw = localStorage.getItem('focus-timer-state');
+      if (oldRaw) {
+        const oldState = JSON.parse(oldRaw);
+        if (oldState.mode) {
+          const modeKey = `focus-timer-state-${oldState.mode}`;
+          if (!localStorage.getItem(modeKey)) {
+            localStorage.setItem(modeKey, oldRaw);
+          }
+        }
+        localStorage.removeItem('focus-timer-state');
+      }
+    } catch { /* ignore migration errors */ }
+
+    // Restore state for the current mode
+    const restored = restoreTimerState(mode);
     if (restored && !searchParams.get('taskId')) {
       const elapsed = new Date().getTime() - new Date(restored.savedAt).getTime();
       const elapsedSec = Math.floor(elapsed / 1000);
@@ -883,18 +900,16 @@ export function FocusPage() {
         newSecondsLeft = Math.max(0, restored.secondsLeft - elapsedSec);
         newElapsedSec = restored.elapsedSeconds + Math.min(elapsedSec, restored.secondsLeft);
         if (newSecondsLeft <= 0) {
-          setMode('focus');
           setSecondsLeft(DURATIONS.focus * 60);
           setRunning(false);
           setStartedAt(null);
           setElapsedSeconds(0);
           setSelectedTaskId(null);
-          clearTimerState();
+          clearTimerState(mode);
           restoredRef.current = true;
           return;
         }
       }
-      setMode(restored.mode as TimerMode);
       setSecondsLeft(newSecondsLeft);
       setRunning(restored.running);
       setStartedAt(restored.startedAt);
@@ -956,6 +971,14 @@ export function FocusPage() {
 
   const getUnloggedMinutes = useCallback(() => Math.round((elapsedRef.current - lastLoggedElapsedRef.current) / 60), []);
 
+  const logTime = useCallback(() => {
+    const elapsedMin = getUnloggedMinutes();
+    if (elapsedMin >= 1) {
+      focusApi.logTime(elapsedMin).catch(() => {});
+      lastLoggedElapsedRef.current = elapsedRef.current;
+    }
+  }, [getUnloggedMinutes]);
+
   const saveSession = useCallback((completed: boolean) => {
     if (!startedAt) return;
     const elapsedMin = getUnloggedMinutes();
@@ -981,18 +1004,23 @@ export function FocusPage() {
     if (running && secondsLeft === 0 && startedAt && !completionLoggedRef.current) {
       completionLoggedRef.current = true;
       setRunning(false);
-      const elapsedMin = Math.round((elapsedRef.current - lastLoggedElapsedRef.current) / 60);
+      const elapsedMin = getUnloggedMinutes();
       if (elapsedMin >= 1) {
         logSession.mutate({ durationMin: elapsedMin, startedAt, completed: true, taskId: selectedTaskId, isBreak: isBreakModeRef.current });
       }
       lastLoggedElapsedRef.current = elapsedRef.current;
+      clearTimerState(mode);
     }
     if (running && secondsLeft > 0) completionLoggedRef.current = false;
-  }, [running, secondsLeft, startedAt, selectedTaskId, logSession]);
+  }, [running, secondsLeft, startedAt, selectedTaskId, logSession, mode, getUnloggedMinutes]);
 
   useEffect(() => {
     const handler = () => {
-      if (!isFullscreenActive() && focusMode) { setRunning(false); setFocusMode(false); }
+      if (!isFullscreenActive() && focusMode) {
+        if (running) logTime();
+        setRunning(false);
+        setFocusMode(false);
+      }
     };
     document.addEventListener('fullscreenchange', handler);
     document.addEventListener('webkitfullscreenchange', handler);
@@ -1000,13 +1028,17 @@ export function FocusPage() {
       document.removeEventListener('fullscreenchange', handler);
       document.removeEventListener('webkitfullscreenchange', handler);
     };
-  }, [focusMode, setFocusMode]);
+  }, [focusMode, setFocusMode, running, logTime]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => { if (running) setRunning(false); };
+    const handleBeforeUnload = () => {
+      if (running) {
+        saveTimerState({ mode, secondsLeft, running: false, startedAt, elapsedSeconds, selectedTaskId });
+      }
+    };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [running]);
+  }, [running, mode, secondsLeft, startedAt, elapsedSeconds, selectedTaskId]);
 
   const enterFocusMode = async () => {
     try { await requestFullscreen(document.documentElement); } catch { /* denied — overlay still covers viewport */ }
@@ -1021,13 +1053,28 @@ export function FocusPage() {
   const durationForMode = (m: TimerMode) => (m === 'focus' ? focusDurationMin : DURATIONS[m]);
 
   const changeMode = (m: TimerMode) => {
-    setMode(m);
-    setSecondsLeft(durationForMode(m) * 60);
-    setRunning(false);
-    setStartedAt(null);
-    setElapsedSeconds(0);
-    elapsedRef.current = 0;
-    lastLoggedElapsedRef.current = 0;
+    // Save current mode's state to localStorage (NO backend save)
+    if (startedAt) {
+      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId });
+    }
+
+    // Check if target mode has persisted state
+    const targetState = restoreTimerState(m);
+    if (targetState && targetState.startedAt) {
+      setMode(m);
+      setSecondsLeft(targetState.secondsLeft);
+      setRunning(targetState.running);
+      setStartedAt(targetState.startedAt);
+      setElapsedSeconds(targetState.elapsedSeconds);
+      setSelectedTaskId(targetState.selectedTaskId);
+    } else {
+      setMode(m);
+      setSecondsLeft(durationForMode(m) * 60);
+      setRunning(false);
+      setStartedAt(null);
+      setElapsedSeconds(0);
+      elapsedRef.current = 0;
+    }
   };
 
   const handleQuickDuration = (min: number) => {
@@ -1043,18 +1090,32 @@ export function FocusPage() {
   };
 
   const handleStartPause = () => {
-    if (running) { saveSession(false); setRunning(false); }
-    else { if (!startedAt) setStartedAt(new Date().toISOString()); setRunning(true); }
+    if (running) {
+      // Pause: log time to FocusTimeLog (no session created)
+      logTime();
+      setRunning(false);
+    } else {
+      // Reset the last-logged point so the next save only captures new time
+      lastLoggedElapsedRef.current = 0;
+      setElapsedSeconds(0);
+      elapsedRef.current = 0;
+      setStartedAt(new Date().toISOString());
+      setRunning(true);
+    }
   };
 
   const handleReset = () => {
+    // Log unlogged time before resetting
+    if (startedAt && elapsedRef.current > 0) {
+      logTime();
+    }
     setRunning(false);
     setSecondsLeft(durationForMode(mode) * 60);
     setStartedAt(null);
     setElapsedSeconds(0);
     elapsedRef.current = 0;
     lastLoggedElapsedRef.current = 0;
-    clearTimerState();
+    clearTimerState(mode);
   };
 
   // Mode navigation — cycles forward/backward through focus → short break →

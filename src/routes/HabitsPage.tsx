@@ -127,7 +127,7 @@ export function HabitsPage() {
       className="mx-auto flex w-full min-w-0 flex-col pb-6 sm:pb-8"
       style={{ maxWidth: '1600px' }}
     >
-      {/* Hero Section */}
+      {/* Hero Section — shown at every breakpoint, mobile included */}
       <HabitHero
         userName={userName}
         greeting={getGreeting()}
@@ -141,193 +141,244 @@ export function HabitsPage() {
         onCreateHabit={() => setShowCreate(true)}
       />
 
-      {/* Main Grid: Left (Habits) | Right (Sidebar) */}
-      <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        {/* Left Column */}
-        <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
-          {/* Week at a Glance + Longest Streak — grid 1x2 on lg, stacked on smaller */}
-          {habits.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="grid min-w-0 grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
-            >
-              <WeekOverview />
-              {longestStreakHabit && (
-                <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
-              )}
-            </motion.div>
-          )}
+      {/*
+        ====================================================================
+        MOBILE LAYOUT (< sm breakpoint only)
+        Sits directly beneath the hero, same gap rhythm as the rest of the
+        page (gap-4 mt-4) so it reads as one continuous flow rather than a
+        separate section: weather + focus time in a 2-col grid, then quote
+        + heatmap in a 2-col grid, then the full habit list, then AI coach.
+        Everything here is hidden at sm and above so desktop is untouched.
+        ====================================================================
+      */}
+      <div className="flex flex-col gap-4 mt-4 sm:hidden">
+        {habits.length === 0 ? (
+          <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
+        ) : (
+          <>
+            {/* Weather + Focus Time */}
+            <div className="grid grid-cols-2 gap-3">
+              <WeatherWidget />
+              <FocusTimeWidget />
+            </div>
 
-          {/* Filters */}
-          {habits.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="flex flex-col gap-3"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-base sm:text-lg font-black text-text-primary">Your Habits</h2>
-                <div className="flex gap-1 p-1.5 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-                  <motion.button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-accent text-white' : 'text-text-muted'}`}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Grid3x3 size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
-                  </motion.button>
-                  <motion.button
-                    onClick={() => setViewMode('list')}
-                    className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-accent text-white' : 'text-text-muted'}`}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <List size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
-                  </motion.button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch gap-2">
-                <div className="relative flex-1">
-                  <Search size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                  <input
-                    type="text" placeholder="Search habits..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                    style={{
-                      background: 'var(--color-surface)',
-                      borderColor: 'var(--color-border)',
-                      border: '1px solid var(--color-border)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  />
-                </div>
-
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as HabitSort)}
-                  className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                  style={{
-                    background: 'var(--color-surface)',
-                    borderColor: 'var(--color-border)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                >
-                  <option value="custom">Sort: Custom</option>
-                  <option value="streak">Sort: Streak</option>
-                  <option value="name">Sort: Name</option>
-                  <option value="progress">Sort: Progress</option>
-                </select>
-              </div>
-
-              <div className="flex overflow-x-auto gap-2 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {(['all', 'active', 'pending', 'completed'] as HabitFilter[]).map((f) => (
-                  <motion.button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-                      filter === f ? 'text-white shadow-lg' : 'text-text-muted'
-                    }`}
-                    style={filter === f
-                      ? { background: 'var(--gradient-accent)' }
-                      : { background: 'var(--color-surface)', border: '1px solid var(--color-border)' }
-                    }
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {f.charAt(0).toUpperCase() + f.slice(1)} ({filterCounts[f]})
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Habits Grid/List */}
-          {habits.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
-            </motion.div>
-          ) : filteredHabits.length === 0 ? (
-            <Card variant="default" className="p-6 sm:p-10 text-center" style={{ borderRadius: '24px' }}>
-              <p className="text-sm font-bold text-text-primary">No habits match this view</p>
-              <p className="text-xs text-text-muted mt-1">Try a different filter.</p>
-            </Card>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
-              <HabitList habits={filteredHabits} viewMode={viewMode} />
-            </motion.div>
-          )}
-
-          {/* Habit Heatmap */}
-          {habits.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              className="grid grid-cols-1 gap-4 sm:gap-6"
-            >
-              <Card variant="default" className="p-4 sm:p-6 flex flex-col">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h3 className="text-xs sm:text-[15px] font-bold text-text-primary flex items-center gap-2">
-                    Habit Heatmap
-                    <Info size={12} className="sm:w-3.5 sm:h-3.5 w-3 h-3 text-text-muted" />
-                  </h3>
-                </div>
+            {/* Daily Quote + Health Heatmap */}
+            <div className="grid grid-cols-2 gap-3 items-stretch">
+              <QuoteCard quotes={getDailyQuotes()} />
+              <Card variant="default" className="p-4 flex flex-col" style={{ borderRadius: '24px' }}>
+                <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5 mb-3">
+                  Health Heatmap
+                  <Info size={12} className="text-text-muted" />
+                </h3>
                 <div className="flex-1 flex items-center">
                   <HabitHeatmapCombined habits={habits} />
                 </div>
               </Card>
-            </motion.div>
-          )}
+            </div>
 
-          {/* Supporting widgets: horizontal rail until the wide desktop sidebar takes over. */}
-          {habits.length > 0 && (
-            <motion.div
-              className="2xl:hidden"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.6 }}
-            >
-              <div className="flex snap-x gap-3 overflow-x-auto pb-2 sm:gap-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                  <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+            {/* Habit list, full width */}
+            <HabitList habits={filteredHabits} viewMode="list" />
+
+            {/* AI Coach */}
+            <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+          </>
+        )}
+      </div>
+
+      {/*
+        ====================================================================
+        DESKTOP / TABLET LAYOUT (sm and up) — unchanged from before
+        ====================================================================
+      */}
+      <div className="hidden sm:flex sm:flex-col">
+        {/* Main Grid: Left (Habits) | Right (Sidebar) */}
+        <div className="grid min-w-0 grid-cols-1 items-start gap-4 sm:gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]">
+          {/* Left Column */}
+          <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
+            {/* Week at a Glance + Longest Streak — grid 1x2 on lg, stacked on smaller */}
+            {habits.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="grid min-w-0 grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
+              >
+                <WeekOverview />
+                {longestStreakHabit && (
+                  <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
+                )}
+              </motion.div>
+            )}
+
+            {/* Filters */}
+            {habits.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="flex flex-col gap-3"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base sm:text-lg font-black text-text-primary">Your Habits</h2>
+                  <div className="flex gap-1 p-1.5 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                    <motion.button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-accent text-white' : 'text-text-muted'}`}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Grid3x3 size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+                    </motion.button>
+                    <motion.button
+                      onClick={() => setViewMode('list')}
+                      className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-accent text-white' : 'text-text-muted'}`}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <List size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+                    </motion.button>
+                  </div>
                 </div>
-                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                  <QuoteCard quotes={getDailyQuotes()} />
+
+                <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                  <div className="relative flex-1">
+                    <Search size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                    <input
+                      type="text" placeholder="Search habits..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+                      style={{
+                        background: 'var(--color-surface)',
+                        borderColor: 'var(--color-border)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                      }}
+                    />
+                  </div>
+
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as HabitSort)}
+                    className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+                    style={{
+                      background: 'var(--color-surface)',
+                      borderColor: 'var(--color-border)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  >
+                    <option value="custom">Sort: Custom</option>
+                    <option value="streak">Sort: Streak</option>
+                    <option value="name">Sort: Name</option>
+                    <option value="progress">Sort: Progress</option>
+                  </select>
                 </div>
-                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                  <WeatherWidget />
+
+                <div className="flex overflow-x-auto gap-2 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {(['all', 'active', 'pending', 'completed'] as HabitFilter[]).map((f) => (
+                    <motion.button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+                        filter === f ? 'text-white shadow-lg' : 'text-text-muted'
+                      }`}
+                      style={filter === f
+                        ? { background: 'var(--gradient-accent)' }
+                        : { background: 'var(--color-surface)', border: '1px solid var(--color-border)' }
+                      }
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)} ({filterCounts[f]})
+                    </motion.button>
+                  ))}
                 </div>
-                <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                  <FocusTimeWidget />
+              </motion.div>
+            )}
+
+            {/* Habits Grid/List */}
+            {habits.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
+              </motion.div>
+            ) : filteredHabits.length === 0 ? (
+              <Card variant="default" className="p-6 sm:p-10 text-center" style={{ borderRadius: '24px' }}>
+                <p className="text-sm font-bold text-text-primary">No habits match this view</p>
+                <p className="text-xs text-text-muted mt-1">Try a different filter.</p>
+              </Card>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+              >
+                <HabitList habits={filteredHabits} viewMode={viewMode} />
+              </motion.div>
+            )}
+
+            {/* Habit Heatmap */}
+            {habits.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+                className="grid grid-cols-1 gap-4 sm:gap-6"
+              >
+                <Card variant="default" className="p-4 sm:p-6 flex flex-col">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <h3 className="text-xs sm:text-[15px] font-bold text-text-primary flex items-center gap-2">
+                      Habit Heatmap
+                      <Info size={12} className="sm:w-3.5 sm:h-3.5 w-3 h-3 text-text-muted" />
+                    </h3>
+                  </div>
+                  <div className="flex-1 flex items-center">
+                    <HabitHeatmapCombined habits={habits} />
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Supporting widgets: horizontal rail until the wide desktop sidebar takes over. */}
+            {habits.length > 0 && (
+              <motion.div
+                className="2xl:hidden"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+              >
+                <div className="flex snap-x gap-3 overflow-x-auto pb-2 sm:gap-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
+                    <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+                  </div>
+                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
+                    <QuoteCard quotes={getDailyQuotes()} />
+                  </div>
+                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
+                    <WeatherWidget />
+                  </div>
+                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
+                    <FocusTimeWidget />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right Sidebar (lg and xl only) */}
+          <motion.div
+            className="hidden 2xl:flex flex-col gap-4 sm:gap-6 sticky top-6 self-start min-w-0"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+            <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+            <QuoteCard quotes={getDailyQuotes()} />
+            <WeatherWidget />
+            <FocusTimeWidget />
+          </motion.div>
         </div>
-
-        {/* Right Sidebar (lg and xl only) */}
-        <motion.div
-          className="hidden 2xl:flex flex-col gap-4 sm:gap-6 sticky top-6 self-start min-w-0"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-        >
-          <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
-          <QuoteCard quotes={getDailyQuotes()} />
-          <WeatherWidget />
-          <FocusTimeWidget />
-        </motion.div>
       </div>
 
       {/* Modal */}
