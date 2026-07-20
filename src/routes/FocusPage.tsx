@@ -7,6 +7,7 @@ import {
   Timer, Play, Pause, RotateCcw, Maximize2, Minimize2, X, Flame, CheckCircle2, Circle,
   ChevronDown, ChevronRight, Target, Coffee, Settings, Moon, TrendingUp, SkipBack,
   SkipForward, MoreHorizontal, Music, CalendarDays, Clock, AudioLines,
+  LucideTrendingUp ,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
@@ -278,6 +279,18 @@ function FocusModeFullScreen({
   const strong = getStrongColor(mode);
   const [quoteIndex, setQuoteIndex] = useState(0);
 
+  // Store callbacks in refs so the keyboard listener doesn't need to re-register
+  // on every render. Without this, the useEffect below would constantly
+  // add/remove the handler because the callback props change every tick.
+  const onStartPauseRef = useRef(onStartPause);
+  const onResetRef = useRef(onReset);
+  const onSkipBackRef = useRef(onSkipBack);
+  const onSkipForwardRef = useRef(onSkipForward);
+  useEffect(() => { onStartPauseRef.current = onStartPause; }, [onStartPause]);
+  useEffect(() => { onResetRef.current = onReset; }, [onReset]);
+  useEffect(() => { onSkipBackRef.current = onSkipBack; }, [onSkipBack]);
+  useEffect(() => { onSkipForwardRef.current = onSkipForward; }, [onSkipForward]);
+
   useEffect(() => {
     if (quotes.length <= 1) return;
     const delay = Math.floor(Math.random() * 5000) + 5000; // 5-10 seconds
@@ -289,33 +302,31 @@ function FocusModeFullScreen({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space') { e.preventDefault(); onStartPause(); }
-      if (e.key === 'r' || e.key === 'R') onReset();
-      if (e.key === 'ArrowLeft') onSkipBack();
-      if (e.key === 'ArrowRight') onSkipForward();
+      if (e.code === 'Space') { e.preventDefault(); onStartPauseRef.current(); }
+      if (e.key === 'r' || e.key === 'R') onResetRef.current();
+      if (e.key === 'ArrowLeft') onSkipBackRef.current();
+      if (e.key === 'ArrowRight') onSkipForwardRef.current();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onStartPause, onReset, onSkipBack, onSkipForward]);
+  }, []); // No deps — stable refs keep the handler fresh without re-registration
 
   return createPortal(
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--color-bg)', zIndex: 9999 }}>
       {/* soft, light ambience — a faint accent-tinted glow spread evenly */}
      <div
-  className="absolute inset-0 transition-all duration-700"
+  className="absolute inset-0 transition-all duration-700 pointer-events-none"
   style={{
     background: `linear-gradient(180deg, ${MODE_SKY[mode][0]} 0%, ${MODE_SKY[mode][1]} 38%, ${MODE_SKY[mode][2]} 72%, ${MODE_SKY[mode][3]} 100%)`,
   }}
 />
 <div
-  className="absolute inset-0 transition-opacity duration-700"
+  className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
   style={{
     background: `radial-gradient(circle at 50% 30%, color-mix(in srgb, ${colors.primary} 12%, transparent) 0%, transparent 70%)`,
     opacity: running ? 1 : 0.7,
   }}
 />
-
-      <JournalAmbientScene mode={mode} />
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 sm:p-6 z-10">
@@ -331,22 +342,6 @@ function FocusModeFullScreen({
         >
           <Minimize2 size={16} /> Focus Mode
         </button>
-
-        <div
-          className="hidden sm:flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold border shadow-sm"
-          style={{
-            background: mixBg(18),
-            borderColor: mixBorder(30),
-            color: mixText(85),
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          Press Esc to exit full screen
-          <span className="px-2 py-1 rounded-md text-[10px] font-black" style={{
-            background: colors.primary,
-            color: '#fff'
-          }}>Esc</span>
-        </div>
 
         <div className="flex items-center gap-2.5">
           <button
@@ -373,18 +368,7 @@ function FocusModeFullScreen({
               backdropFilter: 'blur(4px)',
             }}
           >
-            <AudioLines size={16} />
-          </button>
-          <button
-            className="w-10 h-10 rounded-full flex items-center justify-center border shadow-sm"
-            style={{
-              background: mixBg(18),
-              borderColor: mixBorder(30),
-              color: mixText(85),
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            <MoreHorizontal size={16} />
+            <LucideTrendingUp  size={16} />
           </button>
           {/* bare icon — no circle bg/border, matches reference exactly */}
           <button
@@ -436,9 +420,9 @@ function FocusModeFullScreen({
         </div>
       )}
 
-      {/* Center */}
-      <div className="relative h-full flex items-center justify-center px-4 z-10">
-        <div className="flex flex-col items-center gap-6 sm:gap-8 w-full max-w-lg p-8">
+      {/* Center — pointer-events-none lets clicks pass through to the top bar behind */}
+      <div className="relative h-full flex items-center justify-center px-4 pointer-events-none">
+        <div className="flex flex-col items-center gap-6 sm:gap-8 w-full max-w-lg p-8 pointer-events-auto">
           <div className="flex flex-col items-center gap-3">
             <p className="text-xs sm:text-sm font-black uppercase tracking-[0.35em]" style={{ color: strong }}>
               {mode === 'focus' ? 'FOCUS' : mode === 'short_break' ? 'SHORT BREAK' : 'LONG BREAK'}
@@ -537,13 +521,13 @@ function FocusModeFullScreen({
           </p>
         </div>
 
-        {/* Rotating quote card */}
+        {/* Rotating quote card — sibling of inner div but pointer-events-auto so it's interactive */}
         {quotes.length > 0 && (
           <div
-            className="hidden lg:block absolute bottom-[15%] right-10 max-w-[320px] p-6 rounded-2xl border shadow-lg"
+            className="hidden lg:block absolute bottom-[15%] right-10 max-w-[320px] p-6 rounded-2xl border shadow-lg pointer-events-auto z-10"
             style={{
-              background: mixBg(18),
-              borderColor: mixBorder(30),
+              background: mixBg(22),
+              borderColor: mixBorder(35),
               backdropFilter: 'blur(4px)',
             }}
           >
@@ -556,9 +540,9 @@ function FocusModeFullScreen({
                   exit={{ y: -40, opacity: 0 }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
                 >
-                  <p className="text-3xl leading-none mb-2" style={{ color: strong }}>“</p>
-                  <p className="text-sm font-semibold leading-snug" style={{ color: mixText(90) }}>{quotes[quoteIndex].quote}</p>
-                  <p className="text-xs font-bold mt-3" style={{ color: mixSub(70) }}>— {quotes[quoteIndex].author}</p>
+                  <p className="text-3xl leading-none mb-2" style={{ color: 'var(--color-accent)' }}>“</p>
+                  <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--color-text-primary)' }}>{quotes[quoteIndex].quote}</p>
+                  <p className="text-xs font-bold mt-3" style={{ color: 'var(--color-text-secondary)' }}>— {quotes[quoteIndex].author}</p>
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -628,6 +612,9 @@ function FocusModeFullScreen({
           </div>
         </div>
       </div>
+
+      {/* Ambient scene rendered AFTER all interactive elements so it doesn't block clicks */}
+      <JournalAmbientScene mode={mode} />
 
       <style>{`
         @keyframes focus-breathe {

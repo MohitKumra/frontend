@@ -357,7 +357,7 @@ function PremiumHero({
               >
                 Priority board
               </div>
-g            </div>
+             </div>
 
             <div className="mt-8 flex-1 flex flex-col justify-center gap-7">
               <div>

@@ -126,7 +126,6 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
       aria-hidden="true"
       style={{
         width: 'clamp(400px, 39vw, 720px)',
-        zIndex: 5,
         WebkitMaskImage: maskImage,
         maskImage,
         WebkitMaskRepeat: 'no-repeat',
@@ -141,6 +140,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
         preserveAspectRatio="xMaxYMid slice"
         className="block h-full w-full"
         role="img"
+        style={{ pointerEvents: 'none' }}
       >
         <defs>
           <linearGradient id={`j-sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
