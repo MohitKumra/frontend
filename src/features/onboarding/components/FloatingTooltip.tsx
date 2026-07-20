@@ -1,6 +1,9 @@
 /**
  * frontend/src/features/onboarding/components/FloatingTooltip.tsx
- * Premium floating coach bubble with responsive desktop and mobile layouts.
+ * Premium floating coach bubble.
+ * Desktop: positioned next to the highlighted element.
+ * Mobile: docked as a bottom sheet above the safe-area.
+ * Full light/dark theme support via CSS tokens.
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,8 +54,8 @@ export function FloatingTooltip({
   }, []);
 
   const isMobile = viewport.width < 768;
-  const tooltipWidth = isMobile ? Math.min(viewport.width - 24, 390) : 380;
-  const gap = isMobile ? 12 : 18;
+  const tooltipWidth = isMobile ? viewport.width : 380;
+  const gap = 18;
 
   const desktopPlacement = useMemo(() => {
     if (!targetRect) {
@@ -63,10 +66,10 @@ export function FloatingTooltip({
     }
 
     const placeRight = targetRect.right + gap + tooltipWidth < viewport.width - 16;
-    const placeLeft = targetRect.left - gap - tooltipWidth > 16;
+    const placeLeft  = targetRect.left  - gap - tooltipWidth > 16;
     const top = Math.min(
       Math.max(targetRect.top + targetRect.height / 2 - 140, 16),
-      Math.max(viewport.height - 290, 16),
+      Math.max(viewport.height - 310, 16),
     );
 
     return {
@@ -80,13 +83,20 @@ export function FloatingTooltip({
   }, [gap, targetRect, tooltipWidth, viewport.height, viewport.width]);
 
   const progressPercent = (progress.current / progress.total) * 100;
-  const accentLabel = progress.current === 1 ? 'Launch' : isLast ? 'Final step' : 'Continue';
 
-  const variants = {
+  // ─── Animation variants ───────────────────────────────────────────────────
+
+  const mobileVariants = {
+    hidden:  reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
+    visible: reducedMotion ? { opacity: 1 } : { y: 0,      opacity: 1 },
+    exit:    reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
+  };
+
+  const desktopVariants = {
     hidden: {
       opacity: 0,
-      x: direction === 'forward' ? 28 : -28,
-      y: isMobile ? 14 : 8,
+      x: direction === 'forward' ? 24 : -24,
+      y: 8,
       scale: 0.97,
       filter: 'blur(3px)',
     },
@@ -96,14 +106,29 @@ export function FloatingTooltip({
       y: 0,
       scale: 1,
       filter: 'blur(0px)',
-      transition: { duration: 0.45, ease: SETTLE_EASE },
+      transition: { duration: 0.42, ease: SETTLE_EASE },
     },
     exit: {
       opacity: 0,
-      x: direction === 'forward' ? -24 : 24,
+      x: direction === 'forward' ? -20 : 20,
       scale: 0.96,
       transition: { duration: 0.18, ease: 'easeOut' } as const,
     },
+  };
+
+  const variants = isMobile ? mobileVariants : desktopVariants;
+
+  // ─── Shared card styles ────────────────────────────────────────────────────
+
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--onboarding-modal-bg)',
+    backdropFilter: 'blur(24px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+    boxShadow: 'var(--onboarding-modal-shadow)',
+    border: isMobile ? 'none' : '1px solid var(--onboarding-modal-border)',
+    borderRadius: isMobile ? '24px 24px 0 0' : '22px',
+    overflow: 'hidden',
+    position: 'relative',
   };
 
   return (
@@ -115,10 +140,10 @@ export function FloatingTooltip({
           style={
             isMobile
               ? {
-                  left: '50%',
-                  bottom: 18,
-                  width: tooltipWidth,
-                  transform: 'translateX(-50%)',
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  width: '100%',
                 }
               : {
                   left: desktopPlacement.left,
@@ -130,91 +155,178 @@ export function FloatingTooltip({
           initial={reducedMotion ? undefined : 'hidden'}
           animate={reducedMotion ? { opacity: 1 } : 'visible'}
           exit={reducedMotion ? { opacity: 1 } : 'exit'}
+          transition={isMobile ? { type: 'spring', damping: 34, stiffness: 320 } : undefined}
           role="dialog"
           aria-label={title}
           aria-live="polite"
         >
-          <div
-            className="relative overflow-hidden rounded-[28px] border"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.88) 100%)',
-              backdropFilter: 'blur(24px) saturate(160%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-              borderColor: 'rgba(255,255,255,0.46)',
-              boxShadow:
-                '0 24px 80px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.55)',
-              maxHeight: isMobile ? Math.min(viewport.height * 0.68, 420) : undefined,
-            }}
-          >
+          <div style={cardStyle}>
+            {/* Gradient accent line */}
             <div
-              className="absolute inset-x-0 top-0 h-1"
-              style={{ background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899)' }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899)',
+                borderRadius: 'inherit',
+              }}
             />
 
-            <div className="absolute inset-x-0 top-0 h-20 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.72), transparent)' }} />
+            {/* Mobile handle */}
+            {isMobile && (
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '12px', paddingBottom: '4px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '4px',
+                    borderRadius: '9999px',
+                    background: 'var(--onboarding-sheet-handle)',
+                  }}
+                />
+              </div>
+            )}
 
-            <div className="relative p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+            <div
+              style={{
+                padding: isMobile ? '16px 20px' : '20px',
+                paddingBottom: isMobile
+                  ? 'calc(20px + env(safe-area-inset-bottom))'
+                  : '20px',
+              }}
+            >
+              {/* Header row */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ minWidth: 0 }}>
+                  {/* Step badge */}
                   <div
-                    className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
                     style={{
-                      background: 'rgba(255,255,255,0.7)',
-                      borderColor: 'rgba(129,140,248,0.16)',
-                      color: 'var(--color-text-muted, #9ca3af)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      borderRadius: '9999px',
+                      padding: '4px 10px',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      background: 'var(--onboarding-pill-bg)',
+                      color: 'var(--onboarding-pill-text)',
+                      border: '1px solid var(--onboarding-pill-border)',
+                      marginBottom: '8px',
                     }}
                   >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'linear-gradient(135deg, #6366f1, #d946ef)' }} />
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #6366f1, #d946ef)',
+                        display: 'inline-block',
+                        flexShrink: 0,
+                      }}
+                    />
                     Step {progress.current} of {progress.total}
                   </div>
+
+                  {/* Title */}
                   <h3
-                    className="mt-3 text-[18px] sm:text-[20px] font-black tracking-tight text-balance"
-                    style={{ color: 'var(--color-text-primary, #111827)' }}
+                    style={{
+                      fontSize: isMobile ? '1rem' : '1.125rem',
+                      fontWeight: 800,
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1.25,
+                      color: 'var(--onboarding-modal-text-primary)',
+                      margin: 0,
+                    }}
                   >
                     {title}
                   </h3>
                 </div>
 
-                <span
-                  className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]"
+                {/* Skip button (top-right corner) */}
+                <button
+                  type="button"
+                  onClick={onSkip}
+                  aria-label="Skip tour"
                   style={{
-                    background: 'color-mix(in srgb, var(--color-accent) 10%, white)',
-                    color: 'var(--color-accent)',
+                    flexShrink: 0,
+                    padding: '5px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    border: '1px solid var(--onboarding-skip-border)',
+                    background: 'var(--onboarding-skip-bg)',
+                    color: 'var(--onboarding-skip-text)',
+                    cursor: 'pointer',
+                    transition: 'opacity 120ms ease',
+                    letterSpacing: '0.02em',
                   }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.65'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
                 >
-                  {accentLabel}
-                </span>
+                  Skip
+                </button>
               </div>
 
-              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+              {/* Description */}
+              <p
+                style={{
+                  fontSize: isMobile ? '0.8rem' : '0.845rem',
+                  lineHeight: 1.65,
+                  color: 'var(--onboarding-modal-text-secondary)',
+                  margin: '0 0 16px 0',
+                }}
+              >
                 {description}
               </p>
 
-              <div className="mt-4 space-y-2.5">
-                <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: Math.min(progress.total, 4) }).map((_, i) => {
-                    const stepNum = i + 1;
-                    const active = stepNum <= progress.current;
+              {/* Progress section */}
+              <div style={{ marginBottom: '14px' }}>
+                {/* Step dots */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${Math.min(progress.total, 6)}, 1fr)`,
+                    gap: '6px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  {Array.from({ length: Math.min(progress.total, 6) }).map((_, i) => {
+                    const active = i + 1 <= progress.current;
                     return (
                       <div
-                        key={stepNum}
-                        className="h-1.5 rounded-full"
+                        key={i}
                         style={{
+                          height: '5px',
+                          borderRadius: '9999px',
                           background: active
                             ? 'linear-gradient(90deg, #6366f1, #a855f7)'
-                            : 'rgba(148,163,184,0.25)',
-                          boxShadow: active ? '0 0 18px rgba(99,102,241,0.18)' : 'none',
+                            : 'var(--onboarding-step-dot-inactive)',
+                          boxShadow: active ? '0 0 10px rgba(99,102,241,0.3)' : 'none',
+                          transition: 'background 0.3s ease',
                         }}
                       />
                     );
                   })}
                 </div>
 
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5">
+                {/* Progress bar */}
+                <div
+                  style={{
+                    height: '4px',
+                    borderRadius: '9999px',
+                    background: 'var(--onboarding-step-dot-inactive)',
+                    overflow: 'hidden',
+                  }}
+                >
                   <motion.div
-                    className="h-full rounded-full"
-                    style={{ background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899)' }}
+                    style={{
+                      height: '100%',
+                      borderRadius: '9999px',
+                      background: 'linear-gradient(90deg, #6366f1, #a855f7, #ec4899)',
+                    }}
                     initial={{ width: `${Math.max(((progress.current - 1) / progress.total) * 100, 4)}%` }}
                     animate={{ width: `${progressPercent}%` }}
                     transition={{ duration: 0.45, ease: SETTLE_EASE }}
@@ -222,50 +334,62 @@ export function FloatingTooltip({
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
-                  {!isFirst && (
-                    <button
-                      type="button"
-                      onClick={onPrev}
-                      className="rounded-xl border px-3 py-2 text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-[0.98]"
-                      style={{
-                        background: 'rgba(255,255,255,0.65)',
-                        color: 'var(--color-text-secondary, #6b7280)',
-                        borderColor: 'rgba(148,163,184,0.24)',
-                      }}
-                      aria-label="Previous step"
-                    >
-                      Previous
-                    </button>
-                  )}
+              {/* Navigation buttons */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isFirst ? 'flex-end' : 'space-between',
+                  gap: '8px',
+                }}
+              >
+                {/* Back button */}
+                {!isFirst && (
                   <button
                     type="button"
-                    onClick={onSkip}
-                    className="rounded-xl border px-3 py-2 text-xs font-bold transition-all hover:opacity-70"
+                    onClick={onPrev}
+                    aria-label="Previous step"
                     style={{
-                      background: 'rgba(255,255,255,0.65)',
-                      color: 'var(--color-text-muted, #9ca3af)',
-                      borderColor: 'rgba(148,163,184,0.18)',
+                      padding: '9px 16px',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      border: '1px solid var(--onboarding-prev-border)',
+                      background: 'var(--onboarding-prev-bg)',
+                      color: 'var(--onboarding-prev-text)',
+                      cursor: 'pointer',
+                      transition: 'transform 120ms ease, opacity 120ms ease',
                     }}
-                    aria-label="Skip tour"
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; }}
                   >
-                    Skip
+                    ← Back
                   </button>
-                </div>
+                )}
 
-                <button
+                {/* Next / Finish */}
+                <motion.button
                   type="button"
                   onClick={onNext}
-                  className="rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    background: 'linear-gradient(135deg, #6366f1, #a855f7, #d946ef)',
-                    boxShadow: '0 10px 24px rgba(99, 102, 241, 0.32)',
-                  }}
                   aria-label={isLast ? 'Finish tour' : 'Next step'}
+                  style={{
+                    padding: '9px 20px',
+                    borderRadius: '12px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 55%, #d946ef 100%)',
+                    boxShadow: '0 6px 20px rgba(99, 102, 241, 0.36)',
+                    minWidth: '90px',
+                  }}
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ duration: 0.12 }}
                 >
-                  {isLast ? 'Finish' : 'Next'}
-                </button>
+                  {isLast ? 'Finish 🎉' : 'Next →'}
+                </motion.button>
               </div>
             </div>
           </div>

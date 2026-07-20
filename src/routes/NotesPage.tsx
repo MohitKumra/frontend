@@ -45,6 +45,8 @@ export function NotesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [attachmentsOnly, setAttachmentsOnly] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createModalIsJournal, setCreateModalIsJournal] = useState(false);
+  const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const [noteMenuOpen, setNoteMenuOpen] = useState<string | null>(null);
@@ -338,22 +340,54 @@ export function NotesPage() {
               </div>
 
               {/* Create Note split button */}
-              <div className="flex items-stretch rounded-xl overflow-hidden shadow-md" style={{ background: 'var(--gradient-accent)' }}>
+              <div className="relative flex items-stretch rounded-xl overflow-hidden shadow-md" style={{ background: 'var(--gradient-accent)' }}>
                 <button
-                  onClick={() => setCreateModalOpen(true)}
+                  onClick={() => {
+                    setCreateModalIsJournal(filter === 'journal');
+                    setCreateModalOpen(true);
+                  }}
                   className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-white"
                 >
                   <Plus size={16} />
-                  New Note
+                  {filter === 'journal' ? 'New Journal' : 'New Note'}
                 </button>
                 <button
-                  onClick={() => setCreateModalOpen(true)}
+                  onClick={() => setNewMenuOpen((o) => !o)}
                   aria-label="More create options"
                   className="px-2.5 flex items-center justify-center border-l transition-colors"
                   style={{ borderColor: 'rgba(255,255,255,0.28)', color: 'rgba(255,255,255,0.9)' }}
                 >
                   <ChevronDown size={14} />
                 </button>
+                {newMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
+                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateModalIsJournal(false);
+                        setCreateModalOpen(true);
+                        setNewMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      📝 New Note
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateModalIsJournal(true);
+                        setCreateModalOpen(true);
+                        setNewMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      📓 New Journal
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -429,11 +463,14 @@ export function NotesPage() {
                     : `No ${filter} entries yet. Create one to get started.`}
               </p>
               <button
-                onClick={() => setCreateModalOpen(true)}
+                onClick={() => {
+                  setCreateModalIsJournal(filter === 'journal');
+                  setCreateModalOpen(true);
+                }}
                 className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md"
                 style={{ background: 'var(--gradient-accent)' }}
               >
-                Create Note
+                {filter === 'journal' ? 'Create Journal Entry' : 'Create Note'}
               </button>
             </Card>
           ) : viewMode === 'list' ? (
@@ -777,6 +814,7 @@ export function NotesPage() {
       {/* ── Modals ─────────────────────────────────── */}
       <EntryFormModal
         isOpen={createModalOpen}
+        defaultIsJournal={createModalIsJournal}
         onClose={() => setCreateModalOpen(false)}
       />
       {viewingNote && (

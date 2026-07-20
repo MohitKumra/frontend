@@ -143,6 +143,26 @@
   --note-blue: #DBEAFE;
   --note-pink: #FCE7F3;
   --note-green: #DCFCE7;
+
+  /* ====== ONBOARDING TOKENS (light) ====== */
+  --onboarding-modal-bg: rgba(255, 255, 255, 0.98);
+  --onboarding-modal-border: rgba(226, 232, 240, 0.9);
+  --onboarding-modal-shadow: 0 32px 96px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(108, 99, 255, 0.08);
+  --onboarding-modal-text-primary: #1E293B;
+  --onboarding-modal-text-secondary: #475569;
+  --onboarding-modal-text-muted: #94A3B8;
+  --onboarding-pill-bg: rgba(238, 242, 255, 0.9);
+  --onboarding-pill-border: rgba(108, 99, 255, 0.18);
+  --onboarding-pill-text: #6C63FF;
+  --onboarding-skip-bg: rgba(248, 250, 252, 0.9);
+  --onboarding-skip-border: rgba(203, 213, 225, 0.6);
+  --onboarding-skip-text: #94A3B8;
+  --onboarding-prev-bg: rgba(248, 250, 252, 0.9);
+  --onboarding-prev-border: rgba(203, 213, 225, 0.5);
+  --onboarding-prev-text: #64748B;
+  --onboarding-step-dot-inactive: rgba(148, 163, 184, 0.3);
+  --onboarding-sheet-handle: rgba(203, 213, 225, 0.8);
+  --onboarding-backdrop: rgba(15, 23, 42, 0.55);
 }
 
 /* ====== DARK THEME ====== */
@@ -251,6 +271,26 @@
   --note-blue: #1E3A5F;
   --note-pink: #4A2545;
   --note-green: #1A4A2E;
+
+  /* ====== ONBOARDING TOKENS (dark) ====== */
+  --onboarding-modal-bg: rgba(26, 35, 53, 0.98);
+  --onboarding-modal-border: rgba(45, 53, 72, 0.9);
+  --onboarding-modal-shadow: 0 32px 96px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 131, 255, 0.15);
+  --onboarding-modal-text-primary: #F5F5F5;
+  --onboarding-modal-text-secondary: #B0B5C3;
+  --onboarding-modal-text-muted: #6B7280;
+  --onboarding-pill-bg: rgba(139, 131, 255, 0.14);
+  --onboarding-pill-border: rgba(139, 131, 255, 0.25);
+  --onboarding-pill-text: #A39DFF;
+  --onboarding-skip-bg: rgba(36, 45, 63, 0.9);
+  --onboarding-skip-border: rgba(63, 74, 95, 0.7);
+  --onboarding-skip-text: #6B7280;
+  --onboarding-prev-bg: rgba(36, 45, 63, 0.9);
+  --onboarding-prev-border: rgba(63, 74, 95, 0.6);
+  --onboarding-prev-text: #94A3B8;
+  --onboarding-step-dot-inactive: rgba(63, 74, 95, 0.7);
+  --onboarding-sheet-handle: rgba(63, 74, 95, 0.9);
+  --onboarding-backdrop: rgba(0, 0, 0, 0.75);
 }
 
 [data-layout='compact'] {

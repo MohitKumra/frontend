@@ -11,6 +11,8 @@ interface QuoteCardProps {
   maxInterval?: number;
   /** Label shown in the eyebrow pill (default "Daily Quote") */
   label?: string;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 /**
@@ -69,6 +71,8 @@ export function QuoteCard({
   minInterval = 5000,
   maxInterval = 10000,
   label = 'Daily Quote',
+  className,
+  style,
 }: QuoteCardProps) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -99,7 +103,7 @@ export function QuoteCard({
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative min-h-[220px] overflow-hidden"
+      className={`relative min-h-[220px] overflow-hidden ${className || ''}`}
       style={{
         containerType: 'inline-size',
         containerName: 'quotecard',
@@ -109,6 +113,7 @@ export function QuoteCard({
           'radial-gradient(circle at 88% 18%, rgba(124, 92, 255, 0.14), transparent 30%), linear-gradient(150deg, #FFFFFF 0%, #FBFAFF 48%, #F2EDFF 100%)',
         border: '1px solid rgba(124, 92, 255, 0.16)',
         boxShadow: '0 22px 46px -26px rgba(109, 92, 246, 0.38), inset 0 1px 0 rgba(255,255,255,0.86)',
+        ...style,
       } as React.CSSProperties}
     >
       <SceneDecoration />

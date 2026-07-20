@@ -321,26 +321,25 @@ export function CalendarPage() {
                   Today
                 </button>
                 <TabBar tabs={viewTabs} activeTab={view} onTabChange={(tab) => setView(tab as CalendarView)} variant="pill" />
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setNewMenuOpen((o) => !o)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
-                    style={{ background: 'var(--gradient-accent)' }}
-                  >
-                    <Plus size={14} /> New <ChevronDown size={12} />
-                  </button>
-                  {newMenuOpen && (
-                    <div
-                      className="absolute right-0 mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
-                      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setNewMenuOpen((o) => !o)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
+                      style={{ background: 'var(--gradient-accent)' }}
                     >
-                      {[
-                        { label: 'Event', to: '/calendar' },
-                        { label: 'Task', to: '/tasks' },
-                        { label: 'Focus', to: '/focus' },
-                        { label: 'Habit', to: '/habits' },
-                      ].map((item) => (
+                      <Plus size={14} /> New <ChevronDown size={12} />
+                    </button>
+                    {newMenuOpen && (
+                      <div
+                        className="absolute right-0 mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
+                        style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                      >
+                        {[
+                          { label: 'Task', to: '/tasks' },
+                          { label: 'Focus', to: '/focus' },
+                          { label: 'Habit', to: '/habits' },
+                        ].map((item) => (
                         <button
                           key={item.label}
                           type="button"
@@ -624,9 +623,8 @@ const RightRail = memo(function RightRail({
       </Card>
       <Card variant="default" className="p-3.5">
         <h4 className="text-xs font-bold text-text-primary mb-2.5">Quick Add</h4>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
-            { label: 'Event', icon: <CalendarDays size={16} />, to: '/calendar' },
             { label: 'Task', icon: <CheckSquare size={16} />, to: '/tasks' },
             { label: 'Focus', icon: <Timer size={16} />, to: '/focus' },
             { label: 'Habit', icon: <Sparkles size={16} />, to: '/habits' },
