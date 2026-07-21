@@ -237,7 +237,12 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="relative mx-auto flex w-full max-w-[1600px] 2xl:max-w-[1920px] flex-col gap-6 sm:gap-8 p-4 sm:p-6 lg:p-8 2xl:p-10">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="relative mx-auto flex w-full max-w-[1600px] 2xl:max-w-[1920px] flex-col gap-6 sm:gap-8 p-4 sm:p-6 lg:p-8 2xl:p-10"
+    >
       <style>{DASHBOARD_RESPONSIVE_CSS}</style>
 
       {/* Background gradients */}
@@ -250,21 +255,21 @@ export function DashboardPage() {
       />
 
       {/* Header: greeting + search + notifications + avatar */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <motion.div variants={itemVariants} className="flex items-center gap-4 flex-wrap">
         <div className="flex flex-col gap-1.5 select-none min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-text-primary">
             Good morning, {displayName} 👋
           </h1>
           <p className="text-sm font-medium text-text-muted">Let's make today productive</p>
         </div>
-        </div>
+      </motion.div>
 
       {/* Main content (left) + sidebar (right) — this split only covers
           the top three rows (stats/weather, plan/insights, priority
           tasks/projects), matching the reference: Weekly Progress and
           Productivity Breakdown further down run the full page width
           with no sidebar beside them. */}
-      <div className="grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
         <div className="dash-cq flex flex-col gap-6 sm:gap-8 min-w-0">
           {/* Stats + Weather */}
           <div className="cq-top-row">
@@ -750,11 +755,11 @@ export function DashboardPage() {
             </div>
           </div>
         </aside>
-      </div>
+      </motion.div>
 
       {/* Quick Actions — inline row, always available regardless of where
           the sidebar currently sits */}
-      <div className="cq-actions">
+      <motion.div variants={itemVariants} className="cq-actions">
         <button
           onClick={() => navigate('/tasks')}
           className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs sm:text-sm font-bold border transition-colors"
@@ -783,11 +788,11 @@ export function DashboardPage() {
         >
           <FileText size={15} /> <span className="hidden xs:inline">New Note</span><span className="xs:hidden">Note</span>
         </button>
-      </div>
+      </motion.div>
 
       {/* Weekly Progress / Productivity Breakdown — full width, no
           sidebar constraint down here, matching the reference. */}
-      <div className="dash-cq cq-12">
+      <motion.div variants={itemVariants} className="dash-cq cq-12">
         <div className="cq-span-8 min-w-0">
           <WeeklyProgressChart data={weeklyProgress} />
         </div>
@@ -803,8 +808,8 @@ export function DashboardPage() {
             }}
           />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

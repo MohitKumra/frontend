@@ -340,13 +340,15 @@ body {
 }
 
 
-/* ====== THEME TRANSITION LOCK ====== */
-/* Previously referenced by theme.ts but never defined — every element's
-   own color transition kept animating independently underneath the
-   overlay during the 550ms theme switch, competing for frame budget. */
+/* ====== THEME SWEEP TRANSITION ====== */
+/* Suppress all element transitions/animations during theme sweep to maximize performance. */
+html.theme-sweeping *,
+html.theme-sweeping *::before,
+html.theme-sweeping *::after,
 .theme-transition-lock,
 .theme-transition-lock * {
   transition: none !important;
+  animation-play-state: paused !important;
 }
 
 /* ====== UTILITY CLASSES ====== */

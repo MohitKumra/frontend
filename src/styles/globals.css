@@ -339,26 +339,6 @@
     -webkit-backface-visibility: hidden;
   }
 
-  /* Theme transition - locks during theme switch */
-  html.theme-transition-lock,
-  html.theme-transition-lock body {
-    overflow: hidden !important;
-  }
-
-  html.theme-transition-lock *,
-  html.theme-transition-lock *::before,
-  html.theme-transition-lock *::after {
-    transition: none !important;
-    animation-play-state: paused !important;
-  }
-
-  .theme-transition-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    will-change: clip-path, opacity;
-  }
 
   /* Card interactive states using tokens - Premium Motion */
   .card-interactive {
@@ -467,6 +447,7 @@
     flex-shrink: 0;
   }
 }
+
 
 /* ====== PREMIUM KEYFRAME ANIMATIONS ====== */
 
@@ -830,4 +811,58 @@
 .stagger>*:nth-child(12) {
   animation-delay: 220ms;
   animation-name: list-item-enter;
+}
+
+/* ====== VIEW TRANSITION THEME SWEEP ====== */
+/* Disable the browser's default fade-out/fade-in animation */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* The new theme snapshot (screenshot of the page after theme change)
+   sits on top of the old theme screenshot, and spreads to reveal itself. */
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* When switching to dark mode: dark theme spreads from top-right corner */
+html[data-theme="dark"]::view-transition-new(root) {
+  animation: sweep-to-dark 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* When switching to light mode: light theme spreads from bottom-left corner */
+html[data-theme="light"]::view-transition-new(root) {
+  animation: sweep-to-light 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes sweep-to-dark {
+  from {
+    clip-path: circle(0px at 100% 0%);
+  }
+  to {
+    clip-path: circle(150vmax at 100% 0%);
+  }
+}
+
+@keyframes sweep-to-light {
+  from {
+    clip-path: circle(0px at 0% 100%);
+  }
+  to {
+    clip-path: circle(150vmax at 0% 100%);
+  }
+}
+
+/* Suppress all element transitions/animations during theme sweep to prevent lag */
+html.theme-sweeping *,
+html.theme-sweeping *::before,
+html.theme-sweeping *::after {
+  transition: none !important;
+  animation-play-state: paused !important;
 }

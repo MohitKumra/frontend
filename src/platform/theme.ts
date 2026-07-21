@@ -1,8 +1,15 @@
-// Theme switching logic - simplified for smooth CSS cross-fade
+// Theme switching logic — directional sweep transition
+// Dark: color spreads from top-right → bottom-left
+// Light: color spreads from bottom-left → top-right
+//
+// Performance: uses CSS View Transitions API (Chrome 111+, Safari 18+)
+// with native hardware-accelerated animations. Falls back to standard CSS
+// transitions on non-supported browsers.
+
 import { storageGet, storageSet } from './storage';
 
 export type Theme = 'light' | 'dark';
-const STORAGE_KEY = 'theme-preference'; // 'light' | 'dark' | 'system'
+const STORAGE_KEY = 'theme-preference';
 export type ThemePreference = Theme | 'system';
 
 function resolveSystemTheme(): Theme {
@@ -24,28 +31,77 @@ export async function initTheme(): Promise<Theme> {
   return resolved;
 }
 
-export async function setTheme(theme: ThemePreference, options: { animate?: boolean } = {}): Promise<Theme> {
+/* ------------------------------------------------------------------ */
+/*  Directional sweep — CSS-driven View Transitions API                */
+/* ------------------------------------------------------------------ */
+
+let isTransitioning = false;
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
+
+async function animatedThemeSwitch(newTheme: Theme): Promise<void> {
+  if (isTransitioning) {
+    applyThemeToDocument(newTheme);
+    return;
+  }
+  isTransitioning = true;
+
+  if (prefersReducedMotion()) {
+    applyThemeToDocument(newTheme);
+    isTransitioning = false;
+    return;
+  }
+
+  const root = document.documentElement;
+
+  if (typeof document.startViewTransition === 'function') {
+    root.classList.add('theme-sweeping');
+    const transition = document.startViewTransition(() => {
+      applyThemeToDocument(newTheme);
+    });
+
+    try {
+      await transition.finished;
+    } catch {
+      // Transition was skipped/aborted — nothing to do
+    } finally {
+      root.classList.remove('theme-sweeping');
+      isTransitioning = false;
+    }
+    return;
+  }
+
+  // Fallback for Firefox and older browsers:
+  // Just switch theme instantly and let CSS transition transitions on elements.
+  applyThemeToDocument(newTheme);
+  isTransitioning = false;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Public API                                                         */
+/* ------------------------------------------------------------------ */
+
+export async function setTheme(
+  theme: ThemePreference,
+  options: { animate?: boolean } = {},
+): Promise<Theme> {
   await storageSet(STORAGE_KEY, theme);
   const resolved = theme === 'system' ? resolveSystemTheme() : theme;
 
   if (options.animate ?? true) {
-    // Simple approach: lock transitions, apply theme, unlock on next frame
-    // The CSS `* { transition: color 0.2s, background-color 0.2s }` in globals.css
-    // handles the smooth cross-fade.
-    const root = document.documentElement;
-    root.classList.add('theme-transition-lock');
-    applyThemeToDocument(resolved);
-    // On the next frame, unlock transitions so CSS smoothly animates the change
-    requestAnimationFrame(() => {
-      root.classList.remove('theme-transition-lock');
-    });
+    await animatedThemeSwitch(resolved);
   } else {
     applyThemeToDocument(resolved);
   }
   return resolved;
 }
 
-export async function toggleTheme(options: { animate?: boolean } = {}): Promise<Theme> {
+export async function toggleTheme(
+  options: { animate?: boolean } = {},
+): Promise<Theme> {
   const current = document.documentElement.getAttribute('data-theme') as Theme | null;
   return setTheme(current === 'dark' ? 'light' : 'dark', options);
 }
