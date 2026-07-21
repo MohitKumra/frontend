@@ -17,6 +17,7 @@ import { useWeather } from '../../features/habits/hooks/useWeather';
 
 interface WeatherWidgetProps {
   location?: string;
+  compact?: boolean;
 }
 
 type Condition = 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'windy';
@@ -292,7 +293,7 @@ const ICONS: Record<Condition, React.ReactElement> = {
   windy: <Wind size={18} />,
 };
 
-export function WeatherWidget({}: WeatherWidgetProps) {
+export function WeatherWidget({ compact }: WeatherWidgetProps) {
   const { weather, loading } = useWeather();
 
   if (!weather && loading) {
@@ -317,6 +318,109 @@ export function WeatherWidget({}: WeatherWidgetProps) {
     year: 'numeric',
   });
 
+  if (compact) {
+    return (
+      <div
+        className="relative w-full overflow-hidden rounded-[24px] border"
+        style={{
+          background: 'var(--color-surface, #fff)',
+          borderColor: 'var(--color-border)',
+          boxShadow: '0 18px 36px -28px rgba(15, 23, 42, 0.38), 0 1px 2px rgba(15, 23, 42, 0.05)',
+        }}
+      >
+        <div className="relative overflow-hidden px-3 pb-2 pt-3" style={{ background: theme.card }}>
+          {/* Decorative glow */}
+          <div
+            className="absolute -right-8 -top-10 h-28 w-28 rounded-full blur-2xl"
+            style={{ background: theme.glow, opacity: 0.2 }}
+          />
+
+          {/* Top row: location + live badge */}
+          <div className="relative z-10 flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl shadow-sm"
+                style={{ background: 'rgba(255,255,255,0.72)', color: theme.ink }}
+              >
+                <MapPin size={13} fill={theme.ink} strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-black leading-tight text-text-primary">
+                  {weather.location}
+                </p>
+                <p className="mt-0.5 truncate text-[10px] font-semibold text-text-muted">
+                  Today - {dateLabel}
+                </p>
+              </div>
+            </div>
+
+            <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/70 bg-white/65 px-2 py-1 shadow-sm backdrop-blur">
+              <motion.span
+                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                animate={{ opacity: [1, 0.35, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+              />
+              <span className="text-[10px] font-black text-emerald-600">Live</span>
+            </div>
+          </div>
+
+          {/* Content row: temp + details on left, SVG scene on right */}
+          <div className="relative z-10 mt-2 flex items-end justify-between gap-2">
+            <div className="max-w-[60%]">
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="text-[28px] font-black leading-none tracking-tight text-text-primary"
+                style={{ textShadow: '0 1px 0 rgba(255,255,255,0.35)' }}
+              >
+                {weather.temp}°
+              </motion.p>
+
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-xl"
+                  style={{ color: theme.ink, background: 'rgba(255,255,255,0.58)' }}
+                >
+                  {ICONS[condition]}
+                </span>
+                <p className="text-xs font-black leading-tight text-text-primary">{theme.label}</p>
+                <span className="text-[10px] font-medium text-text-muted hidden xs:inline">· {theme.blurb}</span>
+              </div>
+
+              <div
+                className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 shadow-sm"
+                style={{ background: 'rgba(255,255,255,0.62)', color: theme.softInk }}
+              >
+                <Thermometer size={11} />
+                <span className="text-[10px] font-black">Feels {weather.feelsLike}°</span>
+              </div>
+            </div>
+
+            {/* SVG scene - smaller in compact mode */}
+            <svg
+              viewBox="0 0 240 150"
+              className="pointer-events-none h-[90px] w-[140px] shrink-0"
+              preserveAspectRatio="xMidYMax meet"
+              aria-hidden="true"
+            >
+              <Scene theme={theme} />
+            </svg>
+          </div>
+        </div>
+
+        {/* Bottom stats row - compact */}
+        <div className="grid grid-cols-4 border-t bg-[var(--color-surface)]" style={{ borderColor: 'var(--color-border)' }}>
+          <CompactStat icon={<TrendingUp size={11} />} bg="#FEE2E2" color="#EF4444" label="High" value={`${weather.high}°`} />
+          <CompactStat icon={<TrendingDown size={11} />} bg="#DBEAFE" color="#2563EB" label="Low" value={`${weather.low}°`} />
+          <CompactStat icon={<Droplet size={11} />} bg="#EDE9FE" color="#7C3AED" label="Humidity" value={`${weather.humidity}%`} />
+          <CompactStat icon={<Wind size={11} />} bg="#CCFBF1" color="#0D9488" label="Wind" value={`${weather.windSpeed} km/h`} />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Original full-size layout ---
   return (
     <div
       className="relative w-full overflow-hidden rounded-[24px] border"
@@ -437,6 +541,30 @@ function Stat({
       </div>
       <p className="text-[10px] font-bold leading-none text-text-muted">{label}</p>
       <p className="max-w-full truncate text-[12px] font-black leading-none text-text-primary">{value}</p>
+    </div>
+  );
+}
+
+function CompactStat({
+  icon,
+  bg,
+  color,
+  label,
+  value,
+}: {
+  icon: React.ReactElement;
+  bg: string;
+  color: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1 px-1 py-2 text-center">
+      <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: bg, color }}>
+        {icon}
+      </div>
+      <p className="text-[9px] font-bold leading-none text-text-muted">{label}</p>
+      <p className="max-w-full truncate text-[11px] font-black leading-none text-text-primary">{value}</p>
     </div>
   );
 }

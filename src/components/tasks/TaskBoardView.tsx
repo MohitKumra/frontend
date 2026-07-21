@@ -1,5 +1,19 @@
 import { useMemo, useState } from 'react';
 import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+} from '@dnd-kit/core';
+import type {
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from '@dnd-kit/core';
+import {
   Calendar,
   CheckCircle2,
   Circle,
@@ -95,6 +109,100 @@ function formatDuration(minutes: number | null) {
   return mins ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
+// ── Draggable wrapper for a task card ──────────────────────────────────────
+function DraggableTaskCard({
+  task,
+  accent,
+  dragging,
+  menuOpen,
+  onMenuToggle,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  formatDueDate,
+  isOverdue,
+  getRecurrenceLabel,
+}: {
+  task: TaskDTO;
+  accent: string;
+  dragging: boolean;
+  menuOpen: boolean;
+  onMenuToggle: (id: string | null) => void;
+  onEdit: (task: TaskDTO) => void;
+  onDelete: (id: string) => void;
+  onStatusChange: (task: TaskDTO, status: TaskStatus) => void;
+  formatDueDate: (dateStr: string | null) => string | null;
+  isOverdue: (date: string | null, status: string) => boolean;
+  getRecurrenceLabel: (rule: string | null) => string | null;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: isDragging ? 50 : undefined,
+      }
+    : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={style}
+    >
+      <TaskBoardCard
+        task={task}
+        accent={accent}
+        dragging={dragging || isDragging}
+        menuOpen={menuOpen}
+        onMenuToggle={onMenuToggle}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onStatusChange={onStatusChange}
+        formatDueDate={formatDueDate}
+        isOverdue={isOverdue}
+        getRecurrenceLabel={getRecurrenceLabel}
+      />
+    </div>
+  );
+}
+
+// ── Droppable column wrapper ───────────────────────────────────────────────
+function DroppableColumn({
+  id,
+  children,
+  className,
+  style: externalStyle,
+  accent,
+}: {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  accent: string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <section
+      ref={setNodeRef}
+      className={className}
+      style={{
+        ...externalStyle,
+        borderColor: isOver ? accent : 'var(--color-border)',
+        boxShadow: isOver
+          ? `0 0 0 4px color-mix(in srgb, ${accent} 14%, transparent)`
+          : '0 18px 38px -34px rgba(15, 23, 42, 0.34)',
+      }}
+    >
+      {children}
+    </section>
+  );
+}
+
 function TaskBoardCard({
   task,
   accent,
@@ -131,7 +239,7 @@ function TaskBoardCard({
 
   return (
     <div
-      className="group relative overflow-hidden rounded-2xl border bg-[var(--color-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-24px_rgba(15,23,42,0.42)]"
+      className="group relative overflow-hidden rounded-2xl border cursor-pointer bg-[var(--color-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-24px_rgba(15,23,42,0.42)]"
       style={{
         borderColor: isDone
           ? 'color-mix(in srgb, var(--color-success) 24%, var(--color-border))'
@@ -140,6 +248,7 @@ function TaskBoardCard({
           : 'var(--color-border)',
         boxShadow: '0 10px 24px -22px rgba(15, 23, 42, 0.38)',
         opacity: dragging ? 0.45 : 1,
+        touchAction: 'none',
       }}
     >
       <div
@@ -367,87 +476,107 @@ export function TaskBoardView({
     [tasks],
   );
 
-  return (
-    <div className="-mx-3 overflow-x-auto px-3 pb-2 sm:mx-0 sm:px-0" style={{ scrollbarWidth: 'thin' }}>
-      <div className="grid min-w-[980px] grid-cols-3 gap-4 xl:min-w-0 xl:gap-5">
-        {grouped.map((col) => {
-          const ColumnIcon = col.icon;
-          const isDragTarget = dragOverCol === col.status;
+  // Configure sensors for both mouse and touch — activation distance prevents
+  // accidental drags when tapping/clicking buttons inside the card.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 8 },
+    }),
+  );
 
-          return (
-            <section
-              key={col.status}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setDragOverCol(col.status);
-              }}
-              onDragLeave={() => setDragOverCol((current) => (current === col.status ? null : current))}
-              onDrop={(event) => {
-                event.preventDefault();
-                const id = event.dataTransfer.getData('text/task-id');
-                const task = tasks.find((item) => item.id === id);
-                if (task && task.status !== col.status) onStatusChange(task, col.status);
-                setDraggingId(null);
-                setDragOverCol(null);
-              }}
-              className="flex min-h-[540px] flex-col rounded-3xl border p-3 transition-all duration-200"
-              style={{
-                background: `linear-gradient(180deg, color-mix(in srgb, ${col.accent} 4%, var(--color-surface-raised)) 0%, var(--color-surface-raised) 100%)`,
-                borderColor: isDragTarget ? col.accent : 'var(--color-border)',
-                boxShadow: isDragTarget
-                  ? `0 0 0 4px color-mix(in srgb, ${col.accent} 14%, transparent)`
-                  : '0 18px 38px -34px rgba(15, 23, 42, 0.34)',
-              }}
-            >
-              <header className="px-2 pb-4 pt-2">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
+  const handleDragStart = (event: DragStartEvent) => {
+    setDraggingId(String(event.active.id));
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const overId = event.over ? String(event.over.id) : null;
+    if (overId && columns.some((col) => col.status === overId)) {
+      setDragOverCol(overId as TaskStatus);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setDraggingId(null);
+    setDragOverCol(null);
+
+    if (!over) return;
+
+    const taskId = String(active.id);
+    const targetColumnStatus = String(over.id) as TaskStatus;
+    const task = tasks.find((item) => item.id === taskId);
+
+    if (task && task.status !== targetColumnStatus) {
+      onStatusChange(task, targetColumnStatus);
+    }
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="-mx-3 overflow-x-auto px-3 pb-2 sm:mx-0 sm:px-0" style={{ scrollbarWidth: 'thin' }}>
+        <div className="grid min-w-[980px] grid-cols-3 gap-4 xl:min-w-0 xl:gap-5">
+          {grouped.map((col) => {
+            const ColumnIcon = col.icon;
+            const isDragTarget = dragOverCol === col.status;
+
+            return (
+              <DroppableColumn
+                key={col.status}
+                id={col.status}
+                accent={col.accent}
+                className="flex min-h-[540px] flex-col rounded-3xl border p-3 transition-all duration-200"
+                style={{
+                  background: `linear-gradient(180deg, color-mix(in srgb, ${col.accent} 4%, var(--color-surface-raised)) 0%, var(--color-surface-raised) 100%)`,
+                }}
+              >
+                <header className="px-2 pb-4 pt-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl"
+                        style={{ color: col.accent, background: `color-mix(in srgb, ${col.accent} 12%, transparent)` }}
+                      >
+                        <ColumnIcon size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-black text-text-primary">{col.label}</h3>
+                        <p className="mt-0.5 truncate text-xs font-medium text-text-muted">{col.helper}</p>
+                      </div>
+                    </div>
+                    <span
+                      className="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-black"
                       style={{ color: col.accent, background: `color-mix(in srgb, ${col.accent} 12%, transparent)` }}
                     >
-                      <ColumnIcon size={18} />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate text-sm font-black text-text-primary">{col.label}</h3>
-                      <p className="mt-0.5 truncate text-xs font-medium text-text-muted">{col.helper}</p>
-                    </div>
+                      {col.tasks.length}
+                    </span>
                   </div>
-                  <span
-                    className="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-black"
-                    style={{ color: col.accent, background: `color-mix(in srgb, ${col.accent} 12%, transparent)` }}
-                  >
-                    {col.tasks.length}
-                  </span>
-                </div>
-                <div className="mt-4 h-1 overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
-                  <div className="h-full w-1/4 rounded-full" style={{ background: col.accent }} />
-                </div>
-              </header>
-
-              <div className="flex flex-1 flex-col gap-3">
-                {col.tasks.length === 0 && (
-                  <div
-                    className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-                  >
-                    <Inbox size={22} className="opacity-45" />
-                    <p className="mt-2 text-xs font-black">{isDragTarget ? 'Drop task here' : col.empty}</p>
+                  <div className="mt-4 h-1 overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
+                    <div className="h-full w-1/4 rounded-full" style={{ background: col.accent }} />
                   </div>
-                )}
+                </header>
 
-                {col.tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    draggable
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData('text/task-id', task.id);
-                      setDraggingId(task.id);
-                    }}
-                    onDragEnd={() => setDraggingId(null)}
-                    className="cursor-grab active:cursor-grabbing"
-                  >
-                    <TaskBoardCard
+                <div className="flex flex-1 flex-col gap-3" style={{ minHeight: 0 }}>
+                  {col.tasks.length === 0 && (
+                    <div
+                      className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center"
+                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                    >
+                      <Inbox size={22} className="opacity-45" />
+                      <p className="mt-2 text-xs font-black">{isDragTarget ? 'Drop task here' : col.empty}</p>
+                    </div>
+                  )}
+
+                  {col.tasks.map((task) => (
+                    <DraggableTaskCard
+                      key={task.id}
                       task={task}
                       accent={col.accent}
                       dragging={draggingId === task.id}
@@ -460,27 +589,37 @@ export function TaskBoardView({
                       isOverdue={isOverdue}
                       getRecurrenceLabel={getRecurrenceLabel}
                     />
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <button
-                type="button"
-                onClick={() => onAddTask?.(col.status)}
-                className="mt-3 inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition-all hover:-translate-y-0.5"
-                style={{
-                  background: 'var(--color-surface)',
-                  borderColor: 'var(--color-border)',
-                  color: col.accent,
-                }}
-              >
-                <Plus size={16} />
-                Add Task
-              </button>
-            </section>
-          );
-        })}
+                {draggingId && (
+                  <div
+                    className="flex min-h-[100px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center mb-3"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                  >
+                    <Inbox size={22} className="opacity-45" />
+                    <p className="mt-2 text-xs font-black">Drop task here</p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => onAddTask?.(col.status)}
+                  className="mt-3 inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: col.accent,
+                  }}
+                >
+                  <Plus size={16} />
+                  Add Task
+                </button>
+              </DroppableColumn>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </DndContext>
   );
 }
