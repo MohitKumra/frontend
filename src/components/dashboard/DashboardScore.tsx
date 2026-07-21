@@ -70,8 +70,8 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
   };
 
   return (
-    <Card variant="default">
-      <div className="p-6 sm:p-7">
+    <Card variant="default" className="h-full">
+      <div className="p-6 sm:p-7 flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center gap-3 mb-7">
           <div 

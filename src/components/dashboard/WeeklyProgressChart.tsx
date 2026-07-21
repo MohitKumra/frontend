@@ -21,10 +21,10 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
   }));
 
   return (
-    <Card variant="default" className="overflow-hidden">
+    <Card variant="default" className="pinterest-card overflow-hidden h-full flex flex-col">
       {/* Header */}
       <div 
-        className="px-5 py-4 border-b flex items-center justify-between"
+        className="px-5 py-4 border-b flex items-center justify-between shrink-0"
         style={{ borderColor: 'var(--color-border-subtle)' }}
       >
         <div className="flex items-center gap-2.5">
@@ -45,8 +45,8 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
       </div>
 
       {/* Chart */}
-      <div className="p-5">
-        <div className="h-[280px] w-full">
+      <div className="p-5 flex-1 flex flex-col min-h-0">
+        <div className="h-full w-full flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>

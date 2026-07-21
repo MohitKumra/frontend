@@ -398,8 +398,17 @@ export function AppLayout() {
             </div>
           </div>
 
-          {/* Desktop search button/input */}
+          {/* Mobile search button */}
           <button
+            onClick={() => setSearchOpen(true)}
+            className="sm:hidden p-2.5 rounded-xl text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
+            aria-label="Search"
+          >
+            <Search size={18} />
+          </button>
+
+          <div className="flex items-center gap-2.5 sm:gap-4">
+             <button
             onClick={() => setSearchOpen(true)}
             className="hidden sm:flex relative items-center max-w-md w-64 md:w-80 transition-all duration-300"
           >
@@ -413,17 +422,6 @@ export function AppLayout() {
               <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>K</span>
             </div>
           </button>
-
-          {/* Mobile search button */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="sm:hidden p-2.5 rounded-xl text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
-            aria-label="Search"
-          >
-            <Search size={18} />
-          </button>
-
-          <div className="flex items-center gap-2.5 sm:gap-4">
             <div className="p-1">
               <NotificationCenter />
             </div>

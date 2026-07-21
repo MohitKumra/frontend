@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -640,8 +640,8 @@ export function DashboardPage() {
             2-up grid when it's rendered full-width (below 2xl), single
             stacked column once it becomes the actual narrow sidebar at
             2xl+. */}
-        <aside className="cq-aside min-w-0">
-          <div className="cq-aside-grid">
+        <aside className="cq-aside min-w-0 h-full">
+          <div className="cq-aside-grid h-full">
             {/* Profile card */}
             <div
               className="rounded-2xl border p-5 flex flex-col gap-4"
@@ -723,32 +723,32 @@ export function DashboardPage() {
               )}
             </div>
 
-            {/* Recent Activity — vertical list */}
+            {/* Recent Activity — vertical list, fills remaining space */}
             <div
-              className="rounded-2xl border p-5 flex flex-col gap-4 col-span-2"
+              className="rounded-2xl border p-6 flex flex-col gap-4 sm:gap-5 col-span-2 flex-1 min-h-0"
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity size={14} className="text-accent" />
+                <div className="flex items-center gap-2.5">
+                  <Activity size={16} className="text-accent" />
                   <span className="text-sm font-extrabold text-text-primary">Recent Activity</span>
                 </div>
                 <button className="text-xs font-bold text-accent hover:underline">View all</button>
               </div>
-              <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-4 sm:gap-5">
                 {recentActivity.map((item, i) => (
-                  <div key={i} className="flex items-start gap-3">
+                  <div key={i} className="flex items-start gap-4">
                     <span
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={{ background: `color-mix(in srgb, ${item.color} 15%, transparent)`, color: item.color }}
                     >
-                      {item.icon}
+                      {React.cloneElement(item.icon, { size: 18 })}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{item.label}</p>
-                      <p className="text-xs font-bold text-text-primary truncate mt-0.5">{item.title}</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{item.label}</p>
+                      <p className="text-sm font-bold text-text-primary mt-1 leading-relaxed">{item.title}</p>
                     </div>
-                    <span className="text-[10px] text-text-muted font-bold whitespace-nowrap shrink-0">{item.time}</span>
+                    <span className="text-xs text-text-muted font-bold whitespace-nowrap shrink-0">{item.time}</span>
                   </div>
                 ))}
               </div>
@@ -790,13 +790,13 @@ export function DashboardPage() {
         </button>
       </motion.div>
 
-      {/* Weekly Progress / Productivity Breakdown — full width, no
-          sidebar constraint down here, matching the reference. */}
-      <motion.div variants={itemVariants} className="dash-cq cq-12">
-        <div className="cq-span-8 min-w-0">
+      {/* Weekly Progress / Productivity Breakdown — 70/30 split,
+          both cards stretch to match heights. */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-5 items-stretch">
+        <div className="min-w-0">
           <WeeklyProgressChart data={weeklyProgress} />
         </div>
-        <div className="cq-span-4 min-w-0">
+        <div className="min-w-0">
           <DashboardScore
             overallScore={dashboard.productivityScore ?? 72}
             breakdown={{
