@@ -158,7 +158,22 @@ export function QuoteCard({
               boxShadow: '0 8px 16px -6px rgba(108, 92, 240, 0.5)',
             }}
           >
-            <Quote size={18} color="#FFFFFF" fill="#FFFFFF" />
+            {/*
+              IMPORTANT: fill/stroke are set via inline `style`, not the
+              `color`/`fill` props. Those props land as plain SVG attributes,
+              which sit at the lowest CSS specificity — a global reset like
+              `svg { fill: none; stroke: currentColor }` (common when icon
+              color is normally driven by a `text-*` class) silently wins
+              and the glyph vanishes with no console error. Inline style
+              beats any stylesheet rule short of `!important`, so this is
+              the robust way to force this icon's color regardless of what
+              the rest of the app does to svg/path elements globally.
+            */}
+            <Quote
+              size={18}
+              strokeWidth={1.5}
+              style={{ fill: '#FFFFFF', stroke: '#FFFFFF', width: 'clamp(14px, 5cqw, 22px)', height: 'clamp(14px, 5cqw, 22px)' }}
+            />
           </div>
 
           <div
@@ -208,12 +223,18 @@ export function QuoteCard({
               : '0 4px 10px -4px rgba(108, 92, 240, 0.25)',
           }}
         >
+          {/* Same fix applied here for consistency: fill/stroke forced via
+              inline style so the liked (filled) state can't be silently
+              defeated by the same kind of global svg reset. */}
           <Heart
             size={16}
-            color={isDark ? '#A39DFF' : '#6C5CF0'}
-            fill={isLiked ? (isDark ? '#A39DFF' : '#6C5CF0') : 'none'}
             strokeWidth={2}
-            style={{ width: 'clamp(12px, 4cqw, 19px)', height: 'clamp(12px, 4cqw, 19px)' }}
+            style={{
+              width: 'clamp(12px, 4cqw, 19px)',
+              height: 'clamp(12px, 4cqw, 19px)',
+              stroke: isDark ? '#A39DFF' : '#6C5CF0',
+              fill: isLiked ? (isDark ? '#A39DFF' : '#6C5CF0') : 'none',
+            }}
           />
         </button>
       </div>

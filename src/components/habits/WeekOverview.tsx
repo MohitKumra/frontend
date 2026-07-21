@@ -16,19 +16,20 @@ const SUCCESS = '#10B981';
 /** Ring with an optional two-tone remainder (used for "today", so the
  *  unfinished portion of the day reads as an active prompt, not a dead track).
  *  Built with a conic-gradient + masked center — far more reliable for a
- *  two-color ring than hand-rotated SVG arcs. */
+ *  two-color ring than hand-rotated SVG arcs.
+ *
+ *  Sized with clamp(...cqw...) instead of a fixed pixel value, so the ring
+ *  shrinks together with the rest of the card as its container narrows,
+ *  instead of forcing the row to overflow. */
 function DayRing({
   score,
   isFuture,
   isToday,
-  size = 56,
 }: {
   score: number;
   isFuture: boolean;
   isToday: boolean;
-  size?: number;
 }) {
-  const stroke = 5;
   const clamped = Math.min(Math.max(score, 0), 100);
 
   const primaryColor = isToday ? ACCENT : SUCCESS;
@@ -42,7 +43,7 @@ function DayRing({
   return (
     <motion.div
       className="relative"
-      style={{ width: size, height: size }}
+      style={{ width: 'clamp(34px, 11cqw, 56px)', height: 'clamp(34px, 11cqw, 56px)' }}
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -55,7 +56,7 @@ function DayRing({
       <div
         className="absolute rounded-full"
         style={{
-          inset: stroke,
+          inset: 'clamp(3px, 1cqw, 5px)',
           background: 'var(--card-bg, var(--color-surface))',
         }}
       />
@@ -63,7 +64,7 @@ function DayRing({
         <p
           className="font-black leading-none"
           style={{
-            fontSize: size * 0.26,
+            fontSize: 'clamp(9px, 2.9cqw, 15px)',
             color: isFuture ? 'var(--color-text-muted)' : isToday ? ACCENT : 'var(--color-text-primary)',
           }}
         >
@@ -82,12 +83,13 @@ function TrendBars({ score, isFuture, isToday }: { score: number; isFuture: bool
   const heights = [0.35, 0.55, 0.75, 1].map((h) => h * (0.55 + (Math.min(score, 100) / 100) * 0.45));
 
   return (
-    <div className="flex items-end justify-center gap-1 h-4">
+    <div className="flex items-end justify-center gap-1" style={{ height: 'clamp(12px, 3.5cqw, 16px)' }}>
       {heights.map((h, i) => (
         <div
           key={i}
-          className="w-1 rounded-full"
+          className="rounded-full"
           style={{
+            width: 'clamp(2px, 0.8cqw, 4px)',
             height: `${Math.max(h, 0.25) * 100}%`,
             background: active ? color : 'var(--color-border)',
             opacity: active ? (i === heights.length - 1 ? 1 : 0.55 + i * 0.12) : 0.6,
@@ -145,7 +147,11 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
       : 0;
 
   return (
-    <Card variant="default" className="overflow-hidden p-4 sm:p-5">
+    <Card
+      variant="default"
+      className="overflow-hidden p-4 sm:p-5"
+      style={{ containerType: 'inline-size', containerName: 'weekoverview' } as React.CSSProperties}
+    >
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 min-w-0">
@@ -153,7 +159,7 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'color-mix(in srgb, ' + ACCENT + ' 12%, transparent)' }}
           >
-            <CalendarCheck2 size={18} style={{ color: ACCENT }} />
+            <CalendarCheck2 size={18} style={{ stroke: ACCENT }} />
           </div>
           <div className="min-w-0">
             <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-tight">
@@ -176,7 +182,7 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
               background: 'color-mix(in srgb, ' + ACCENT + ' 5%, transparent)',
             }}
           >
-            <BarChart3 size={14} />
+            <BarChart3 size={14} style={{ stroke: ACCENT }} />
             View Details
           </button>
         )}
@@ -197,16 +203,33 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
         </div>
       </div>
 
-      {/* Days */}
-      <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-      <div className="grid min-w-[620px] grid-cols-7 gap-2">
+      {/*
+        Days row — scales down as a whole instead of overflowing.
+        No fixed min-width, no horizontal scroll: every size below (ring,
+        gaps, padding, min-height, font) is a clamp() driven by the card's
+        own inline-size (cqw), so all 7 days always stay visible and just
+        get smaller together on narrower containers.
+      */}
+      <div
+        className="mt-4 grid grid-cols-7"
+        style={{ gap: 'clamp(3px, 1.2cqw, 8px)' }}
+      >
         {loading ? (
           Array.from({ length: 7 }).map((_, idx) => (
-            <div key={idx} className="flex min-h-[128px] flex-col items-center gap-2 rounded-2xl border px-2 py-3" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <div
+              key={idx}
+              className="flex flex-col items-center gap-2 rounded-2xl border"
+              style={{
+                minHeight: 'clamp(92px, 30cqw, 128px)',
+                padding: 'clamp(4px, 1.6cqw, 10px) clamp(2px, 1cqw, 8px)',
+                borderColor: 'var(--color-border)',
+                background: 'var(--color-surface)',
+              }}
+            >
+              <p className="font-extrabold uppercase tracking-wider" style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: 'var(--color-text-muted)' }}>
                 {days[idx]}
               </p>
-              <div className="rounded-full" style={{ width: 52, height: 52, background: 'var(--color-border)' }} />
+              <div className="rounded-full" style={{ width: 'clamp(34px, 11cqw, 56px)', height: 'clamp(34px, 11cqw, 56px)', background: 'var(--color-border)' }} />
             </div>
           ))
         ) : (
@@ -216,7 +239,7 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
             const labelColor = getStatusColor(d);
 
             return (
-              <div key={days[idx]} className="relative flex justify-center">
+              <div key={days[idx]} className="relative flex justify-center min-w-0">
                 {/* Highlight panel behind today's column */}
                 {isToday && (
                   <motion.div
@@ -230,22 +253,27 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
                 )}
 
                 <div
-                  className="flex min-h-[128px] w-full flex-col items-center gap-2 rounded-2xl border px-2 py-3"
+                  className="flex w-full flex-col items-center gap-1.5 rounded-2xl border min-w-0"
                   style={{
+                    minHeight: 'clamp(92px, 30cqw, 128px)',
+                    padding: 'clamp(4px, 1.6cqw, 10px) clamp(2px, 1cqw, 8px)',
                     borderColor: isToday ? 'color-mix(in srgb, var(--color-accent) 34%, var(--color-border))' : 'var(--color-border)',
                     background: isToday ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))' : 'var(--color-surface)',
                   }}
                 >
                   <p
-                    className="text-[10px] font-extrabold uppercase tracking-wider"
-                    style={{ color: isToday ? ACCENT : 'var(--color-text-muted)' }}
+                    className="font-extrabold uppercase tracking-wider"
+                    style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: isToday ? ACCENT : 'var(--color-text-muted)' }}
                   >
                     {days[idx]}
                   </p>
 
-                  <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} size={52} />
+                  <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} />
 
-                  <p className="text-[10px] font-bold text-center line-clamp-1" style={{ color: labelColor }}>
+                  <p
+                    className="font-bold text-center line-clamp-1 w-full"
+                    style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: labelColor }}
+                  >
                     {label}
                   </p>
 
@@ -255,7 +283,6 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
             );
           })
         )}
-      </div>
       </div>
     </Card>
   );
