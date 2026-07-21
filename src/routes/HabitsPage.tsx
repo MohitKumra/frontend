@@ -152,9 +152,12 @@ export function HabitsPage() {
           <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
         ) : (
           <>
-            {/* Weather + Focus Time */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Weather + Longest Streak */}
+            <div className="grid grid-cols-2 gap-2 items-stretch">
               <WeatherWidget compact />
+              {longestStreakHabit && (
+                <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
+              )}
             </div>
 
             {/* Daily Quote + Health Heatmap */}
