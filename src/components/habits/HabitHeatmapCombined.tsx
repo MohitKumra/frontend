@@ -23,18 +23,20 @@ export function HabitHeatmapCombined({ habits }: HabitHeatmapCombinedProps) {
   const currentStreakDays = habits.reduce((sum, h) => sum + h.currentStreak, 0);
 
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-4">
         <p className="text-xs font-medium text-text-muted mb-1">
           Current streak: <span className="font-bold text-success">{currentStreakDays} days</span>
         </p>
       </div>
-      <HabitHeatmap 
-        completionDates={allCompletionDates} 
-        color="var(--color-accent)"
-        weeks={4}
-      />
-      <div className="flex items-center justify-between mt-3 text-[10px] font-medium text-text-muted">
+      <div className="overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <HabitHeatmap 
+          completionDates={allCompletionDates} 
+          color="var(--color-accent)"
+          weeks={4}
+        />
+      </div>
+      <div className="flex items-center justify-between px-0.5 mt-3 text-[10px] font-medium text-text-muted">
         <span>Less</span>
         <div className="flex items-center gap-1">
           {[0, 1, 2, 3, 4].map(i => (

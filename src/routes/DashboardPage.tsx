@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   ArrowRight,
+  Calendar,
   CheckSquare,
   FolderKanban,
   Target,
@@ -20,13 +21,6 @@ import {
   Flame,
   FileText,
   Settings,
-  MoreVertical,
-  Activity,
-  Heart,
-  Coffee,
-  BookOpen,
-  Search,
-  Bell,
   CheckCircle2,
 } from 'lucide-react';
 import { LoadingScreen } from '../components/ui/Spinner';
@@ -40,6 +34,7 @@ import { DashboardScore } from '../components/dashboard/DashboardScore';
 import { WeeklyProgressChart } from '../components/dashboard/WeeklyProgressChart';
 import { WeatherWidget } from '../components/habits/WeatherWidget';
 import { PriorityTasksWidget } from '../components/dashboard/PriorityTasksWidget';
+import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import type { FocusSessionDTO, ListResponse } from '../types';
 
 function toUtcDateKey(value: string | Date): string {
@@ -196,6 +191,14 @@ export function DashboardPage() {
       .reduce((sum, session) => sum + session.durationMin, 0);
   }, [completedFocusSessions]);
 
+  const todayTasks = useMemo(() => {
+    if (!tasksData) return [];
+    const todayKey = toUtcDateKey(new Date());
+    return tasks
+      .filter((task) => task.dueDate && toUtcDateKey(task.dueDate) === todayKey && (task.status === 'TODO' || task.status === 'IN_PROGRESS'))
+      .slice(0, 5);
+  }, [tasks, tasksData]);
+
   const topProjects = dashboard?.activeProjects.slice(0, 3) ?? [];
   const taskCompletion = taskTotals > 0 ? Math.round((taskCompletedTotal / taskTotals) * 100) : 0;
   const habitCompletion = habitTotal > 0 ? Math.round((habitCompletedToday / habitTotal) * 100) : 0;
@@ -228,13 +231,6 @@ export function DashboardPage() {
   // for each day of the current streak (capped at 5 slots), matching the
   // reference's small dot row under the streak number.
   const streakDots = Array.from({ length: 5 }, (_, i) => i < Math.min(currentHabitStreak, 5));
-
-  const recentActivity = [
-    { icon: <CheckSquare size={14} />, color: 'var(--color-success)', label: 'Task completed', title: 'Testing of PMS software', time: '2m ago' },
-    { icon: <Timer size={14} />, color: 'var(--color-info)', label: 'Focus session', title: 'Deep Work - 90m', time: '45m ago' },
-    { icon: <Target size={14} />, color: 'var(--color-warning)', label: 'Habit completed', title: 'Read 30 min', time: '2h ago' },
-    { icon: <FileText size={14} />, color: 'var(--color-accent)', label: 'Note created', title: 'Project Ideas', time: '3h ago' },
-  ];
 
   return (
     <motion.div
@@ -399,7 +395,7 @@ export function DashboardPage() {
               className="cq-span-6 rounded-2xl border p-6 flex flex-col justify-between"
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
-              <div>
+              <div className="flex flex-col flex-1">
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-sm font-extrabold text-text-primary">Today's Plan</span>
                   <button
@@ -410,62 +406,54 @@ export function DashboardPage() {
                   </button>
                 </div>
 
-                <div className="space-y-5 relative pl-4 border-l border-border">
-                  <div className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-accent border-2 border-surface" />
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="text-xs font-black text-text-primary">Deep Work Session</h4>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">Focus • 90m</p>
-                      </div>
-                      <span className="text-xs font-black text-text-secondary">09:00</span>
-                    </div>
-                  </div>
+                {todayTasks.length > 0 ? (
+                  <div className="space-y-5 relative pl-4 border-l border-border flex-1">
+                    {todayTasks.map((task) => {
+                      const priorityColors: Record<string, string> = {
+                        CRITICAL: '#ef4444',
+                        HIGH: '#f59e0b',
+                        MEDIUM: 'var(--color-info)',
+                        LOW: '#9ca3af',
+                      };
+                      const dotColor = priorityColors[task.priority] ?? 'var(--color-info)';
+                      const timeStr = task.dueDate
+                        ? new Date(task.dueDate).toLocaleTimeString('en-IN', {
+                            timeZone: 'Asia/Kolkata',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                          })
+                        : null;
+                      const durStr = task.estimatedDuration ? `${task.estimatedDuration}m` : null;
 
-                  <div className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-success border-2 border-surface" />
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="text-xs font-black text-text-primary">Workout</h4>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">Health • 60m</p>
-                      </div>
-                      <span className="text-xs font-black text-text-secondary">11:00</span>
-                    </div>
+                      return (
+                        <div key={task.id} className="relative">
+                          <div
+                            className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-surface"
+                            style={{ background: dotColor }}
+                          />
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="text-xs font-black text-text-primary">{task.title}</h4>
+                              <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">
+                                {task.priority}{durStr ? ` • ${durStr}` : ''}
+                              </p>
+                            </div>
+                            {timeStr && (
+                              <span className="text-xs font-black text-text-secondary">{timeStr}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  <div className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-warning border-2 border-surface" />
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="text-xs font-black text-text-primary">Lunch Break</h4>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">Break • 60m</p>
-                      </div>
-                      <span className="text-xs font-black text-text-secondary">13:00</span>
-                    </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center flex-1 py-8 px-6 text-center">
+                    <Calendar size={44} className="opacity-20 text-text-muted mb-4" />
+                    <p className="text-sm font-bold text-text-primary mb-1">No tasks planned for today</p>
+                    <p className="text-xs text-text-muted">Add a due date to see your plan here</p>
                   </div>
-
-                  <div className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-info border-2 border-surface" />
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="text-xs font-black text-text-primary">Project Review</h4>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">Work • 60m</p>
-                      </div>
-                      <span className="text-xs font-black text-text-secondary">14:00</span>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-purple-500 border-2 border-surface" />
-                    <div className="flex justify-between">
-                      <div>
-                        <h4 className="text-xs font-black text-text-primary">Reading</h4>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">Personal • 45m</p>
-                      </div>
-                      <span className="text-xs font-black text-text-secondary">16:00</span>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -723,35 +711,13 @@ export function DashboardPage() {
               )}
             </div>
 
-            {/* Recent Activity — vertical list, fills remaining space */}
-            <div
-              className="rounded-2xl border p-6 flex flex-col gap-4 sm:gap-5 col-span-2 flex-1 min-h-0"
-              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Activity size={16} className="text-accent" />
-                  <span className="text-sm font-extrabold text-text-primary">Recent Activity</span>
-                </div>
-                <button className="text-xs font-bold text-accent hover:underline">View all</button>
-              </div>
-              <div className="flex flex-col gap-4 sm:gap-5">
-                {recentActivity.map((item, i) => (
-                  <div key={i} className="flex items-start gap-4">
-                    <span
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: `color-mix(in srgb, ${item.color} 15%, transparent)`, color: item.color }}
-                    >
-                      {React.cloneElement(item.icon, { size: 18 })}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold uppercase tracking-wider text-text-muted">{item.label}</p>
-                      <p className="text-sm font-bold text-text-primary mt-1 leading-relaxed">{item.title}</p>
-                    </div>
-                    <span className="text-xs text-text-muted font-bold whitespace-nowrap shrink-0">{item.time}</span>
-                  </div>
-                ))}
-              </div>
+            {/* Recent Activity — real data from backend */}
+            <div className="col-span-2">
+              <ActivityFeed
+                activities={activityFeed?.data ?? []}
+                isLoading={isActivityFeedLoading}
+                maxItems={5}
+              />
             </div>
           </div>
         </aside>

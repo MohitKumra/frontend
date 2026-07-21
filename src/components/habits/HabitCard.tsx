@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -8,16 +9,21 @@ import {
   Zap,
   Star,
   MoreHorizontal,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
-import { useToggleHabit } from '../../features/habits/hooks/useHabits';
+import { useToggleHabit, useUpdateHabit, useDeleteHabit } from '../../features/habits/hooks/useHabits';
 import { Card } from '../ui/Card';
 import { HabitCelebrationModal } from './HabitCelebration';
+import { Modal } from '../ui/Modal';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 import { getAchievement, getCategory } from '../../features/habits/Habitpresentation';
 import type { HabitDTO } from '../../types';
 
 const RING_SIZE = 88; // fixed — the card lives in a narrow grid column, so we don't
-                       // switch sizes on viewport breakpoints (those don't reflect
-                       // the actual space this card has).
+                        // switch sizes on viewport breakpoints (those don't reflect
+                        // the actual space this card has).
 
 function MiniRing({ value, color, completed = false }: { value: number; color: string; completed?: boolean }) {
   const size = RING_SIZE;
@@ -94,10 +100,251 @@ function MiniHeatmapStrip({ completionDates, color }: { completionDates: string[
   );
 }
 
+/** Dropdown menu for edit/delete actions — rendered via portal to escape all overflow clipping */
+function HabitMenu({
+  habit,
+  onEdit,
+  onDelete,
+}: {
+  habit: HabitDTO;
+  onEdit: (habit: HabitDTO) => void;
+  onDelete: (habit: HabitDTO) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen((v) => !v);
+  };
+
+  // Compute position for the dropdown
+  const dropdownStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (!open || !btnRef.current) return undefined;
+    const rect = btnRef.current.getBoundingClientRect();
+    return {
+      position: 'fixed',
+      top: rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+      zIndex: 9999,
+      minWidth: 140,
+      background: 'var(--color-surface)',
+      borderColor: 'var(--color-border)',
+    };
+  }, [open]);
+
+  return (
+    <div className="inline-flex">
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={handleToggle}
+        aria-label="More options"
+        className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-accent/10 transition-colors tap-target"
+      >
+        <MoreHorizontal size={16} />
+      </button>
+
+      {open && dropdownStyle && typeof document !== 'undefined' && createPortal(
+        <motion.div
+          ref={menuRef}
+          initial={{ opacity: 0, scale: 0.92, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={undefined}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className="rounded-xl overflow-hidden shadow-xl border"
+          style={dropdownStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onEdit(habit); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-accent/10 transition-colors text-left"
+          >
+            <Pencil size={13} strokeWidth={2} />
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onDelete(habit); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors text-left"
+          >
+            <Trash2 size={13} strokeWidth={2} />
+            Delete
+          </button>
+        </motion.div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/** Edit habit modal */
+function EditHabitModal({
+  habit,
+  open,
+  onClose,
+}: {
+  habit: HabitDTO | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const updateHabit = useUpdateHabit();
+  const [title, setTitle] = useState('');
+  const [targetPerWeek, setTargetPerWeek] = useState(7);
+  const [reminderTime, setReminderTime] = useState('');
+
+  // Sync state when habit changes
+  useEffect(() => {
+    if (habit) {
+      setTitle(habit.title);
+      setTargetPerWeek(habit.targetPerWeek);
+      setReminderTime(habit.reminderTime || '');
+    }
+  }, [habit]);
+
+  const previewCategory = title.trim() ? getCategory(title) : null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!habit) return;
+    updateHabit.mutate(
+      { id: habit.id, data: { title, targetPerWeek, reminderTime: reminderTime || undefined } },
+      { onSuccess: onClose }
+    );
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Edit Habit">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
+        <div>
+          <Input
+            id="edit-habit-title"
+            label="Habit name"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="e.g. Read 30 minutes"
+          />
+          {previewCategory && (
+            <motion.div
+              className="flex items-center gap-1.5 mt-2"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <div
+                className="w-5 h-5 rounded-md flex items-center justify-center"
+                style={{ background: previewCategory.bg, color: previewCategory.color }}
+              >
+                <previewCategory.icon size={11} />
+              </div>
+              <p className="text-[11px] font-bold text-text-muted">
+                Detected: <span style={{ color: previewCategory.color }}>{previewCategory.name}</span>
+              </p>
+            </motion.div>
+          )}
+        </div>
+
+        <div>
+          <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">
+            Days per week
+          </label>
+          <div className="grid grid-cols-7 gap-2">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <motion.button
+                key={n}
+                type="button"
+                onClick={() => setTargetPerWeek(n)}
+                className={`py-3 rounded-xl text-base font-black transition-all ${
+                  targetPerWeek === n ? 'text-white shadow-lg' : 'text-text-secondary border'
+                }`}
+                style={
+                  targetPerWeek === n
+                    ? { background: 'var(--gradient-accent)' }
+                    : { background: 'var(--color-surface)', borderColor: 'var(--color-border)' }
+                }
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {n}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        <Input
+          id="edit-habit-reminder"
+          label="Reminder (optional)"
+          type="time"
+          value={reminderTime}
+          onChange={(e) => setReminderTime(e.target.value)}
+        />
+
+        <Button type="submit" fullWidth loading={updateHabit.isPending}>
+          Save Changes
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+/** Delete confirmation dialog */
+function DeleteHabitModal({
+  habit,
+  open,
+  onClose,
+}: {
+  habit: HabitDTO | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const deleteHabit = useDeleteHabit();
+
+  const handleDelete = () => {
+    if (!habit) return;
+    deleteHabit.mutate(habit.id, { onSuccess: onClose });
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Delete Habit">
+      <div className="flex flex-col gap-5 pt-2">
+        <p className="text-sm text-text-primary">
+          Are you sure you want to delete <strong>{habit?.title}</strong>? This action cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDelete} loading={deleteHabit.isPending} className="flex-1">
+            Delete
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function HabitCard({ habit }: { habit: HabitDTO }) {
   const toggle = useToggleHabit();
   const [showCelebration, setShowCelebration] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Edit / Delete modal state
+  const [editTarget, setEditTarget] = useState<HabitDTO | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<HabitDTO | null>(null);
 
   const category = getCategory(habit.title);
   const achievement = getAchievement(Math.max(habit.currentStreak, habit.bestStreak));
@@ -118,6 +365,9 @@ export function HabitCard({ habit }: { habit: HabitDTO }) {
       },
     });
   };
+
+  const handleEdit = (h: HabitDTO) => setEditTarget(h);
+  const handleDelete = (h: HabitDTO) => setDeleteTarget(h);
 
   return (
     <>
@@ -165,13 +415,7 @@ export function HabitCard({ habit }: { habit: HabitDTO }) {
                 </motion.div>
               )}
             </AnimatePresence>
-            <button
-              type="button"
-              aria-label="More options"
-              className="w-5 h-5 rounded-full flex items-center justify-center text-text-muted/70 hover:text-text-primary transition-colors"
-            >
-              <MoreHorizontal size={15} />
-            </button>
+            <HabitMenu habit={habit} onEdit={handleEdit} onDelete={handleDelete} />
           </div>
 
           {/* Header: Icon + title + streak */}
@@ -327,6 +571,20 @@ export function HabitCard({ habit }: { habit: HabitDTO }) {
           </div>
         </Card>
       </motion.div>
+
+      {/* Edit modal */}
+      <EditHabitModal
+        habit={editTarget}
+        open={editTarget !== null}
+        onClose={() => setEditTarget(null)}
+      />
+
+      {/* Delete confirmation */}
+      <DeleteHabitModal
+        habit={deleteTarget}
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+      />
 
       <HabitCelebrationModal
         open={showCelebration}

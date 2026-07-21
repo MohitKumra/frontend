@@ -118,12 +118,12 @@ export function QuoteCard({
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className={`relative min-h-[220px] overflow-hidden ${className || ''}`}
+      className={`relative min-h-[180px] sm:min-h-[220px] overflow-hidden ${className || ''}`}
       style={{
         containerType: 'inline-size',
         containerName: 'quotecard',
-        borderRadius: 'clamp(18px, 6cqw, 26px)',
-        padding: 'clamp(16px, 6cqw, 28px)',
+        borderRadius: 'clamp(14px, 6cqw, 26px)',
+        padding: 'clamp(12px, 6cqw, 28px)',
         background: isDark
           ? 'radial-gradient(circle at 88% 18%, rgba(139, 131, 255, 0.12), transparent 30%), linear-gradient(150deg, #1A2335 0%, #1E2840 48%, #242D4F 100%)'
           : 'radial-gradient(circle at 88% 18%, rgba(124, 92, 255, 0.14), transparent 30%), linear-gradient(150deg, #FFFFFF 0%, #FBFAFF 48%, #F2EDFF 100%)',
@@ -145,20 +145,20 @@ export function QuoteCard({
       {/* Header row */}
       <div
         className="relative z-10 flex items-start justify-between flex-wrap"
-        style={{ gap: 8, marginBottom: 'clamp(16px, 7cqw, 26px)' }}
+        style={{ gap: 8, marginBottom: 'clamp(12px, 5cqw, 26px)' }}
       >
-        <div className="flex items-center" style={{ gap: 'clamp(8px, 3cqw, 12px)' }}>
+        <div className="flex items-center" style={{ gap: 'clamp(6px, 2.5cqw, 12px)' }}>
           <div
             className="flex items-center justify-center flex-shrink-0"
             style={{
-              width: 'clamp(36px, 12cqw, 50px)',
-              height: 'clamp(36px, 12cqw, 50px)',
+              width: 'clamp(30px, 10cqw, 50px)',
+              height: 'clamp(30px, 10cqw, 50px)',
               borderRadius: '30%',
               background: 'linear-gradient(135deg, #8C7FFB 0%, #6C5CF0 100%)',
               boxShadow: '0 8px 16px -6px rgba(108, 92, 240, 0.5)',
             }}
           >
-            <Quote size={22} color="#FFFFFF" fill="#FFFFFF" />
+            <Quote size={18} color="#FFFFFF" fill="#FFFFFF" />
           </div>
 
           <div
@@ -168,7 +168,7 @@ export function QuoteCard({
               color: isDark ? '#A39DFF' : '#6C5CF0',
               borderRadius: 999,
               gap: 'clamp(4px, 1.5cqw, 8px)',
-              padding: 'clamp(5px, 2cqw, 7px) clamp(9px, 3.5cqw, 14px)',
+              padding: 'clamp(4px, 1.5cqw, 7px) clamp(6px, 2.5cqw, 14px)',
             }}
           >
             <span
@@ -183,7 +183,7 @@ export function QuoteCard({
             />
             <span
               className="font-bold uppercase whitespace-nowrap"
-              style={{ letterSpacing: '0.06em', fontSize: 'clamp(9px, 3cqw, 12px)' }}
+              style={{ letterSpacing: '0.06em', fontSize: 'clamp(8px, 2.5cqw, 12px)' }}
             >
               {label}
             </span>
@@ -196,8 +196,8 @@ export function QuoteCard({
           aria-label={isLiked ? 'Unfavorite quote' : 'Favorite quote'}
           className="flex items-center justify-center transition-transform active:scale-90 flex-shrink-0"
           style={{
-            width: 'clamp(32px, 11cqw, 44px)',
-            height: 'clamp(32px, 11cqw, 44px)',
+            width: 'clamp(26px, 9cqw, 44px)',
+            height: 'clamp(26px, 9cqw, 44px)',
             borderRadius: 999,
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.72)',
             border: isDark
@@ -209,11 +209,11 @@ export function QuoteCard({
           }}
         >
           <Heart
-            size={19}
+            size={16}
             color={isDark ? '#A39DFF' : '#6C5CF0'}
             fill={isLiked ? (isDark ? '#A39DFF' : '#6C5CF0') : 'none'}
             strokeWidth={2}
-            style={{ width: 'clamp(14px, 5cqw, 19px)', height: 'clamp(14px, 5cqw, 19px)' }}
+            style={{ width: 'clamp(12px, 4cqw, 19px)', height: 'clamp(12px, 4cqw, 19px)' }}
           />
         </button>
       </div>
@@ -232,7 +232,7 @@ export function QuoteCard({
               style={{
                 fontFamily: 'Georgia, "Times New Roman", serif',
                 fontWeight: 700,
-                fontSize: 'clamp(20px, 8cqw, 34px)',
+                fontSize: 'clamp(15px, 7cqw, 34px)',
                 lineHeight: 1.18,
                 color: isDark ? '#E8E8F0' : '#171B2E',
                 maxWidth: '94%',
@@ -253,7 +253,7 @@ export function QuoteCard({
 
             <div
               className="flex items-start"
-              style={{ gap: 'clamp(8px, 3cqw, 12px)', marginTop: 'clamp(14px, 5cqw, 22px)' }}
+              style={{ gap: 'clamp(6px, 2.5cqw, 12px)', marginTop: 'clamp(10px, 4cqw, 22px)' }}
             >
               <span
                 className="mt-2"
@@ -273,7 +273,7 @@ export function QuoteCard({
                   className="font-bold"
                   style={{
                     color: isDark ? '#A39DFF' : '#6C5CF0',
-                    fontSize: 'clamp(13px, 4.5cqw, 16px)',
+                    fontSize: 'clamp(11px, 4cqw, 16px)',
                     marginBottom: 2,
                   }}
                 >
@@ -289,7 +289,7 @@ export function QuoteCard({
       {quotes.length > 1 && (
         <div
           className="relative z-10 flex gap-1.5"
-          style={{ marginTop: 'clamp(12px, 5cqw, 20px)' }}
+          style={{ marginTop: 'clamp(8px, 3cqw, 20px)' }}
         >
           {quotes.map((_, i) => (
             <span

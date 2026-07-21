@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HabitHeatmapProps {
@@ -7,7 +7,8 @@ interface HabitHeatmapProps {
   weeks?: number; // how many weeks to show per page, default 4
 }
 
-const CELL = 13; // px — cell size, bumped up from 10 for visibility
+const CELL_DEFAULT = 13; // px — cell size, bumped up from 10 for visibility
+const CELL_MIN = 8; // minimum cell size when squeezed
 
 const MONTH_LABELS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -25,6 +26,35 @@ const MONTH_LABELS = [
  */
 export function HabitHeatmap({ completionDates, color = 'var(--color-accent)', weeks = 4 }: HabitHeatmapProps) {
   const completedSet = useMemo(() => new Set(completionDates), [completionDates]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [cellSize, setCellSize] = useState(CELL_DEFAULT);
+
+  // Responsive cell sizing: shrink cells when container is narrow
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const computeSize = () => {
+      const containerWidth = el.clientWidth;
+      // Total grid width = (7 cells * cellSize) + (6 gaps * 3px) + some padding
+      const GAP = 3;
+      const maxGridWidth = containerWidth - 4; // 2px margin each side
+      const idealWidth = 7 * CELL_DEFAULT + 6 * GAP;
+      if (idealWidth <= maxGridWidth) {
+        setCellSize(CELL_DEFAULT);
+      } else {
+        // Shrink proportionally — cellSize = (maxGridWidth - 6*GAP) / 7
+        const shrunk = Math.max(CELL_MIN, Math.floor((maxGridWidth - 6 * GAP) / 7));
+        setCellSize(shrunk);
+      }
+    };
+
+    computeSize();
+    const observer = new ResizeObserver(computeSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
 
   // 0 = current page (most recent), 1 = one page back, etc.
   const [page, setPage] = useState(0);
@@ -104,10 +134,11 @@ export function HabitHeatmap({ completionDates, color = 'var(--color-accent)', w
       </div>
 
       <div
+        ref={containerRef}
         className="grid mx-auto"
         style={{
-          gridTemplateColumns: `repeat(7, ${CELL}px)`,
-          gridTemplateRows: `repeat(${weeks}, ${CELL}px)`,
+          gridTemplateColumns: `repeat(7, ${cellSize}px)`,
+          gridTemplateRows: `repeat(${weeks}, ${cellSize}px)`,
           gap: '3px',
         }}
         role="img"

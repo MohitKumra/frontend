@@ -30,20 +30,20 @@ export function FocusTimeWidget() {
 
   if (isLoading) {
     return (
-      <Card variant="default" className="p-5 relative overflow-hidden" style={{ borderRadius: '20px' }}>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 size={24} className="text-text-muted animate-spin" />
+      <Card variant="default" className="p-3 sm:p-5 relative overflow-hidden" style={{ borderRadius: '16px' }}>
+        <div className="flex items-center justify-center py-6 sm:py-8">
+          <Loader2 size={20} className="text-text-muted animate-spin" />
         </div>
       </Card>
     );
   }
 
   return (
-    <Card
-      variant="default"
-      className="p-5 relative overflow-hidden"
-      style={{ borderRadius: '20px' }}
-    >
+      <Card
+        variant="default"
+        className="p-3 sm:p-5 relative overflow-hidden"
+        style={{ borderRadius: '16px' }}
+      >
       {/* Gradient background */}
       <div
         className="absolute inset-0 pointer-events-none opacity-5"
@@ -54,32 +54,32 @@ export function FocusTimeWidget() {
 
       <div className="relative">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+          <h3 className="text-[11px] sm:text-sm font-bold text-text-primary flex items-center gap-1.5 sm:gap-2">
             <Clock size={16} className="text-accent" />
             Focus Time
           </h3>
         </div>
 
         {/* Time display */}
-        <div className="mb-5">
+        <div className="mb-3 sm:mb-5">
           <motion.p
-            className="text-[40px] font-black text-text-primary leading-none mb-2"
+            className="text-2xl sm:text-[40px] font-black text-text-primary leading-none mb-1 sm:mb-2"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.6, type: 'spring' }}
           >
             {focusData.hours}h {focusData.minutes}m
           </motion.p>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-text-muted font-medium">Today</p>
-            <span className="text-[10px] font-bold text-accent">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <p className="text-[10px] sm:text-xs text-text-muted font-medium">Today</p>
+            <span className="text-[9px] sm:text-[10px] font-bold text-accent">
               {progressPercentage}% of {goalHours}h goal
             </span>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="relative h-2 rounded-full overflow-hidden mb-5" style={{ background: 'var(--color-border)' }}>
+        <div className="relative h-1.5 sm:h-2 rounded-full overflow-hidden mb-3 sm:mb-5" style={{ background: 'var(--color-border)' }}>
           <motion.div
             className="h-full rounded-full"
             style={{ background: 'var(--gradient-accent)' }}
@@ -90,7 +90,7 @@ export function FocusTimeWidget() {
         </div>
 
         {/* Hourly bars */}
-        <div className="flex items-end justify-between gap-[2px] h-20 mb-3">
+        <div className="flex items-end justify-between gap-[1px] sm:gap-[2px] h-14 sm:h-20 mb-2 sm:mb-3">
           {hourBuckets.map((minutes, hour) => {
             const heightPercent = (minutes / maxMinutes) * 100;
             const isCurrent = hour === currentHour;

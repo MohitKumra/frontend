@@ -73,9 +73,9 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
   return (
     <Card
       variant="default"
-      className="p-5 relative overflow-hidden"
+      className="p-3 sm:p-5 relative overflow-hidden"
       style={{
-        borderRadius: '20px',
+        borderRadius: '16px',
         background: 'rgba(255, 255, 255, 0.05)',
         backdropFilter: 'blur(10px)',
         border: '1px solid var(--color-border)',
@@ -106,9 +106,9 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
 
       <div className="relative">
         {/* Header */}
-        <div className="flex items-center gap-2.5 mb-4">
+        <div className="flex items-center gap-2 sm:gap-2.5 mb-3 sm:mb-4">
           <motion.div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center"
             style={{ background: `${color}20`, color }}
             animate={{
               rotate: [0, 5, 0, -5, 0],
@@ -119,7 +119,7 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
               ease: 'easeInOut',
             }}
           >
-            <Sparkles size={18} />
+            <Sparkles size={14} />
           </motion.div>
           
           <div className="flex-1">
@@ -138,8 +138,8 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
         </div>
 
         {/* Message */}
-        <div className="mb-4">
-          <p className="text-[15px] font-extrabold text-text-primary mb-1.5 flex items-center gap-1.5">
+        <div className="mb-3 sm:mb-4">
+          <p className="text-[13px] sm:text-[15px] font-extrabold text-text-primary mb-1 sm:mb-1.5 flex items-center gap-1.5">
             {title} <span>{emoji}</span>
           </p>
           <p className="text-xs text-text-secondary font-medium leading-relaxed">
@@ -150,14 +150,14 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
         {/* Trend indicator */}
         {percentage >= 80 && (
           <motion.div
-            className="flex items-center gap-1.5 mb-4 px-3 py-2 rounded-lg"
+            className="flex items-center gap-1.5 mb-3 sm:mb-4 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg"
             style={{ background: `${color}10` }}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <TrendingUp size={14} style={{ color }} />
-            <span className="text-[11px] font-bold" style={{ color }}>
+            <TrendingUp size={12} style={{ color }} />
+            <span className="text-[10px] sm:text-[11px] font-bold" style={{ color }}>
               +18% vs last week
             </span>
           </motion.div>
@@ -165,7 +165,7 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
 
         {/* Suggestion box with glass effect */}
         <motion.div
-          className="p-3.5 rounded-xl mb-4 relative overflow-hidden"
+          className="p-2.5 sm:p-3.5 rounded-xl mb-3 sm:mb-4 relative overflow-hidden"
           style={{
             background: 'var(--color-surface-raised)',
             border: '1px solid var(--color-border)',
@@ -174,12 +174,12 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="relative flex items-start gap-2.5">
+          <div className="relative flex items-start gap-2 sm:gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: '#FFB80015', color: '#FFB800' }}
             >
-              <Lightbulb size={14} />
+              <Lightbulb size={12} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">

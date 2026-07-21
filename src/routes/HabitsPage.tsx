@@ -157,15 +157,15 @@ export function HabitsPage() {
         ) : (
           <>
             {/* Weather + Focus Time */}
-            <div className="grid grid-cols-2 gap-3">
-              <WeatherWidget />
+            <div className="grid grid-cols-2 gap-2">
+              <WeatherWidget compact />
               <FocusTimeWidget />
             </div>
 
             {/* Daily Quote + Health Heatmap */}
-            <div className="grid grid-cols-2 gap-3 items-stretch">
+            <div className="grid grid-cols-2 gap-2 items-stretch">
               <QuoteCard quotes={getDailyQuotes()} />
-              <Card variant="default" className="p-4 flex flex-col" style={{ borderRadius: '24px' }}>
+              <Card variant="default" className="p-3 flex flex-col min-w-0 overflow-hidden" style={{ borderRadius: '20px' }}>
                 <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5 mb-3">
                   Health Heatmap
                   <Info size={12} className="text-text-muted" />
@@ -187,7 +187,7 @@ export function HabitsPage() {
 
       {/*
         ====================================================================
-        DESKTOP / TABLET LAYOUT (sm and up) — unchanged from before
+        DESKTOP / TABLET LAYOUT (sm and up)
         ====================================================================
       */}
       <div className="hidden sm:flex sm:flex-col">
@@ -318,55 +318,49 @@ export function HabitsPage() {
               </motion.div>
             )}
 
-            {/* Habit Heatmap */}
+            {/*
+              Habit Heatmap + Supporting widgets — combined into one row so the
+              heatmap no longer takes the full width on its own. On xl it sits
+              side-by-side with a 2x2 grid of the 4 widgets (all equal-sized via
+              items-stretch); below xl they stack. Hidden at 2xl+ where the
+              sticky right sidebar takes over instead.
+            */}
             {habits.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
-                className="grid grid-cols-1 gap-4 sm:gap-6"
+                className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 items-stretch gap-4 sm:gap-6 2xl:hidden"
               >
-                <Card variant="default" className="p-4 sm:p-6 flex flex-col">
-                  <div className="flex items-center justify-between mb-4 sm:mb-6">
-                    <h3 className="text-xs sm:text-[15px] font-bold text-text-primary flex items-center gap-2">
-                      Habit Heatmap
-                      <Info size={12} className="sm:w-3.5 sm:h-3.5 w-3 h-3 text-text-muted" />
-                    </h3>
-                  </div>
-                  <div className="flex-1 flex items-center">
+                {/* Left column: Quote + Heatmap stacked */}
+                <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
+                  <QuoteCard quotes={getDailyQuotes()} />
+                  <Card variant="default" className="p-4 sm:p-6 flex flex-col">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h3 className="text-xs sm:text-[15px] font-bold text-text-primary flex items-center gap-2">
+                        Habit Heatmap
+                        <Info size={12} className="sm:w-3.5 sm:h-3.5 w-3 h-3 text-text-muted" />
+                      </h3>
+                    </div>
                     <HabitHeatmapCombined habits={habits} />
-                  </div>
-                </Card>
-              </motion.div>
-            )}
+                  </Card>
+                </div>
 
-            {/* Supporting widgets: horizontal rail until the wide desktop sidebar takes over. */}
-            {habits.length > 0 && (
-              <motion.div
-                className="2xl:hidden"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.6 }}
-              >
-                <div className="flex snap-x gap-3 overflow-x-auto pb-2 sm:gap-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                    <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
-                  </div>
-                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                    <QuoteCard quotes={getDailyQuotes()} />
-                  </div>
-                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                    <WeatherWidget />
-                  </div>
-                  <div className="w-[min(82vw,320px)] flex-shrink-0 snap-start sm:w-80">
-                    <FocusTimeWidget />
-                  </div>
+                {/* Middle column: AI Coach, stretched to match the height of the side columns */}
+                <div className="min-w-0 [&>*]:h-full">
+                  <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+                </div>
+
+                {/* Right column: Weather + Focus Time stacked */}
+                <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
+                  <WeatherWidget />
+                  <FocusTimeWidget />
                 </div>
               </motion.div>
             )}
           </div>
 
-          {/* Right Sidebar (lg and xl only) */}
+          {/* Right Sidebar (2xl only) */}
           <motion.div
             className="hidden 2xl:flex flex-col gap-4 sm:gap-6 sticky top-6 self-start min-w-0"
             initial={{ opacity: 0, x: 20 }}
@@ -379,6 +373,31 @@ export function HabitsPage() {
             <FocusTimeWidget />
           </motion.div>
         </div>
+
+        {/*
+          2xl-only: heatmap needs its own row here since the 4 widgets moved
+          into the sticky right sidebar above and aren't paired with it anymore.
+        */}
+        {habits.length > 0 && (
+          <motion.div
+            className="hidden 2xl:block mt-4 sm:mt-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            <Card variant="default" className="p-4 sm:p-6 flex flex-col">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h3 className="text-xs sm:text-[15px] font-bold text-text-primary flex items-center gap-2">
+                  Habit Heatmap
+                  <Info size={12} className="sm:w-3.5 sm:h-3.5 w-3 h-3 text-text-muted" />
+                </h3>
+              </div>
+              <div className="flex-1 flex items-center">
+                <HabitHeatmapCombined habits={habits} />
+              </div>
+            </Card>
+          </motion.div>
+        )}
       </div>
 
       {/* Modal */}

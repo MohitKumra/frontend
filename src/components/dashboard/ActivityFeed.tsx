@@ -57,8 +57,14 @@ function getRelativeTime(dateStr: string): string {
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  return date.toLocaleDateString();
+  // For items 24+ hours old, show date + time in Indian locale/timezone
+  return date.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityFeedProps) {
