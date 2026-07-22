@@ -475,16 +475,6 @@ export function TasksPage() {
                 <Plus size={18} />
                 New Task
               </button>
-
-              <button
-                type="button"
-                title="Preferences"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border shadow-sm transition-all"
-                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                onClick={() => navigate('/settings')}
-              >
-                <Settings2 size={17} />
-              </button>
             </div>
           </div>
         </div>
@@ -662,6 +652,7 @@ export function TasksPage() {
                 onStatusChange={changeTaskStatus}
                 onEdit={setEditingTask}
                 onDelete={handleDeleteTask}
+                onViewDetails={(task) => navigate(`/tasks/${task.id}`)}
                 onAddTask={() => setCreateModalOpen(true)}
                 formatDueDate={(d) => {
                   if (!d) return null;
@@ -741,10 +732,6 @@ export function TasksPage() {
                         Scroll to load more
                       </span>
                     </div>
-                  ) : tasks.length > 0 ? (
-                    <span className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
-                      All tasks loaded
-                    </span>
                   ) : null}
                 </div>
               </>

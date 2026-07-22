@@ -10,250 +10,313 @@ type IconProps = {
   color?: string;
 };
 
-// ─── Shared trophy silhouette ───────────────────────────────────────────────
-// Cup + two handles + stem + tiered base, rendered with a metallic gradient,
-// a glossy highlight streak, a soft drop shadow, and (optionally) sparkles.
-// Every tier trophy is built from this so proportions stay identical and
-// only the palette/extras change.
+// ─── Premium 3D trophy engine ───────────────────────────────────────────────
+//
+// Built to read as a professionally-illustrated 3D render, not a flat icon:
+//  - Cup fill uses a diagonal cylindrical-light gradient (light upper-left,
+//    falling off to shadow lower-right) instead of a flat tint.
+//  - A blurred specular highlight is clipped to the cup's own silhouette so
+//    the glossy patch never spills outside the metal.
+//  - The star emblem is "embossed": a larger dark star sits behind a smaller
+//    light star at the same center, so a rim of shadow reads as a recessed
+//    bevel — the cheap-but-effective way flat-render tools fake engraving.
+//  - A dark pedestal with an inset, gradient-filled nameplate replaces the
+//    old two-rectangle stack.
+//  - A soft radial glow sits behind the whole piece, and platinum gets a
+//    genuinely multi-hue iridescent gradient rather than a flat gray tint.
 
-type TrophyBuildProps = {
-  size: number;
-  gradientStops: { offset: string; color: string }[];
+type TierPalette = {
+  /** Cup body — light → mid → shadow, applied along a diagonal (top-left lit). */
+  cupStops: { offset: string; color: string }[];
   rimColor: string;
-  accentColor: string; // handles, stem, base, rim shading
-  sparkle?: boolean;
-  crownSpikes?: boolean; // extra spikes on the rim, used for platinum
-  ribbon?: boolean; // small bow at the neck — silver and up
-  gem?: boolean; // faceted gem set into the bowl — gold and up
-  laurel?: boolean; // laurel leaves flanking the stem — gold and up
-  starFinial?: boolean; // star sitting above the rim — platinum only
-  extraBaseTier?: boolean; // third, narrower base tier — platinum only
+  rimShadow: string;
+  metalMid: string; // handles, stem, waist bead, foot
+  metalDark: string; // deepest shadow tone, used for the embossed star's recess
+  nameplateStops: { offset: string; color: string }[];
+  glowColor: string;
+  sparkleColor: string;
+  sparkleCount: 1 | 2 | 3;
 };
 
-function TrophyBase({
-  size,
-  gradientStops,
-  rimColor,
-  accentColor,
-  sparkle,
-  crownSpikes,
-  ribbon,
-  gem,
-  laurel,
-  starFinial,
-  extraBaseTier,
-}: TrophyBuildProps) {
+function PremiumTrophy({ size, palette }: { size: number; palette: TierPalette }) {
   const uid = useId();
   const cupGradId = `${uid}-cup`;
-  const shadowId = `${uid}-shadow`;
+  const plateGradId = `${uid}-plate`;
+  const plinthGradId = `${uid}-plinth`;
+  const glowGradId = `${uid}-glow`;
+  const cupClipId = `${uid}-cupclip`;
+  const shadowFilterId = `${uid}-shadow`;
+  const blurFilterId = `${uid}-blur`;
+
+  // Shared cup silhouette path, reused for both the fill and the clip path
+  // that contains the specular highlight.
+  const cupPath =
+    'M9 8C9 6.2 15.5 5 24 5C32.5 5 39 6.2 39 8L39 15C39 22 33 27 24 27C15 27 9 22 9 15Z';
 
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id={cupGradId} x1="14" y1="7" x2="34" y2="30" gradientUnits="userSpaceOnUse">
-          {gradientStops.map((s, i) => (
+        <linearGradient id={cupGradId} x1="10" y1="5" x2="39" y2="27" gradientUnits="userSpaceOnUse">
+          {palette.cupStops.map((s, i) => (
             <stop key={i} offset={s.offset} stopColor={s.color} />
           ))}
         </linearGradient>
-        <filter id={shadowId} x="-40%" y="-40%" width="180%" height="180%">
-          <feDropShadow dx="0" dy="1.5" stdDeviation="1.4" floodColor={accentColor} floodOpacity="0.4" />
+
+        <linearGradient id={plateGradId} x1="17" y1="39.5" x2="31" y2="42.5" gradientUnits="userSpaceOnUse">
+          {palette.nameplateStops.map((s, i) => (
+            <stop key={i} offset={s.offset} stopColor={s.color} />
+          ))}
+        </linearGradient>
+
+        <linearGradient id={plinthGradId} x1="24" y1="37" x2="24" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#46464e" />
+          <stop offset="100%" stopColor="#17171b" />
+        </linearGradient>
+
+        <radialGradient id={glowGradId} cx="50%" cy="46%" r="55%">
+          <stop offset="0%" stopColor={palette.glowColor} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={palette.glowColor} stopOpacity="0" />
+        </radialGradient>
+
+        <clipPath id={cupClipId}>
+          <path d={cupPath} />
+        </clipPath>
+
+        <filter id={shadowFilterId} x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="1.6" stdDeviation="1.5" floodColor={palette.metalDark} floodOpacity="0.35" />
+        </filter>
+
+        <filter id={blurFilterId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.3" />
         </filter>
       </defs>
 
-      {/* Ground shadow — grounds the trophy visually */}
-      <ellipse cx="24" cy="41.5" rx="11" ry="1.4" fill="black" opacity="0.09" />
+      {/* Ambient glow — soft colored halo behind the whole piece */}
+      <circle cx="24" cy="21" r="21" fill={`url(#${glowGradId})`} />
 
-      <g filter={`url(#${shadowId})`}>
-        {/* Tiered base — a third, narrower tier is inserted for platinum */}
-        <rect x="13" y="37.5" width="22" height="3" rx="1.5" fill={accentColor} opacity="0.9" />
-        <rect x="17" y="34" width="14" height="3" rx="1.5" fill={accentColor} />
-        {extraBaseTier && (
-          <rect x="19.5" y="31.3" width="9" height="2.3" rx="1.15" fill={accentColor} opacity="0.85" />
-        )}
+      {/* Ground contact shadow */}
+      <ellipse cx="24" cy="45.5" rx="11.5" ry="1.3" fill="black" opacity="0.16" />
 
-        {/* Stem connecting cup to base */}
-        <path d="M20.5 29.5H27.5L26.3 34H21.7L20.5 29.5Z" fill={accentColor} />
+      <g filter={`url(#${shadowFilterId})`}>
+        {/* Pedestal */}
+        <rect x="12" y="37.5" width="24" height="7" rx="2.2" fill={`url(#${plinthGradId})`} />
+        <rect x="12" y="37.5" width="24" height="1.4" rx="0.7" fill="#5c5c66" opacity="0.6" />
 
-        {/* Laurel leaves flanking the stem — gold and up */}
-        {laurel && (
-          <>
-            <ellipse cx="18.2" cy="31.5" rx="2.1" ry="1" fill={accentColor} opacity="0.75" transform="rotate(-25 18.2 31.5)" />
-            <ellipse cx="16.6" cy="33.6" rx="2.1" ry="1" fill={accentColor} opacity="0.7" transform="rotate(-50 16.6 33.6)" />
-            <ellipse cx="16" cy="36.1" rx="2" ry="0.95" fill={accentColor} opacity="0.65" transform="rotate(-78 16 36.1)" />
-            <ellipse cx="29.8" cy="31.5" rx="2.1" ry="1" fill={accentColor} opacity="0.75" transform="rotate(25 29.8 31.5)" />
-            <ellipse cx="31.4" cy="33.6" rx="2.1" ry="1" fill={accentColor} opacity="0.7" transform="rotate(50 31.4 33.6)" />
-            <ellipse cx="32" cy="36.1" rx="2" ry="0.95" fill={accentColor} opacity="0.65" transform="rotate(78 32 36.1)" />
-          </>
-        )}
+        {/* Nameplate — recessed inset, then the raised gradient plaque on top */}
+        <rect x="16.6" y="39.3" width="14.8" height="3.6" rx="1" fill="#0c0c0e" opacity="0.45" />
+        <rect x="17" y="39.6" width="14" height="3" rx="0.85" fill={`url(#${plateGradId})`} />
+        <rect x="17" y="39.6" width="14" height="1" rx="0.5" fill="white" opacity="0.22" />
 
-        {/* Cup bowl */}
+        {/* Foot — flares from stem down to the pedestal */}
+        <path d="M21 34L27 34L30.5 37.5L17.5 37.5Z" fill={palette.metalMid} />
+
+        {/* Stem */}
+        <rect x="22.2" y="30" width="3.6" height="4.3" fill={palette.metalMid} />
+
+        {/* Waist bead */}
+        <ellipse cx="24" cy="29.6" rx="3.8" ry="1.7" fill={palette.metalMid} />
+
+        {/* Handles — thicker tubular loops with a highlight edge for roundness */}
         <path
-          d="M14 10C14 8.3 16.3 7 24 7C31.7 7 34 8.3 34 10V19C34 25.1 29.7 30 24 30C18.3 30 14 25.1 14 19V10Z"
-          fill={`url(#${cupGradId})`}
-        />
-
-        {/* Rim lip — gives the bowl a 3D opening */}
-        <path
-          d="M14 10C14 11.7 18.5 13 24 13C29.5 13 34 11.7 34 10C34 8.3 29.5 7 24 7C18.5 7 14 8.3 14 10Z"
-          fill={rimColor}
-          opacity="0.95"
-        />
-
-        {/* Ribbon bow at the neck — silver and up */}
-        {ribbon && (
-          <>
-            <path d="M20 12.6L23 14.1L20 15.6Z" fill={accentColor} opacity="0.85" />
-            <path d="M28 12.6L25 14.1L28 15.6Z" fill={accentColor} opacity="0.85" />
-            <circle cx="24" cy="14.1" r="1" fill={accentColor} />
-          </>
-        )}
-
-        {/* Faceted gem set into the bowl — gold and up */}
-        {gem && (
-          <>
-            <path d="M24 15L26.2 17.5L24 20L21.8 17.5Z" fill="white" opacity="0.9" />
-            <path d="M24 15L26.2 17.5L24 17.9L21.8 17.5Z" fill="white" opacity="0.5" />
-            <path d="M24 15L26.2 17.5L24 20L21.8 17.5Z" fill="none" stroke={accentColor} strokeWidth="0.6" opacity="0.7" />
-          </>
-        )}
-
-        {/* Handles */}
-        <path
-          d="M14.5 13C9 12.3 6 15.3 6.5 18.8C7 22.3 10.5 24.3 14.8 23.2"
-          stroke={accentColor}
-          strokeWidth="2.1"
+          d="M11 12C4 11 1 15 1.5 19C2 23 6 25.5 11.5 24.3"
+          stroke={palette.metalMid}
+          strokeWidth="3.4"
           strokeLinecap="round"
           fill="none"
         />
         <path
-          d="M33.5 13C39 12.3 42 15.3 41.5 18.8C41 22.3 37.5 24.3 33.2 23.2"
-          stroke={accentColor}
-          strokeWidth="2.1"
+          d="M37 12C44 11 47 15 46.5 19C46 23 42 25.5 36.5 24.3"
+          stroke={palette.metalMid}
+          strokeWidth="3.4"
           strokeLinecap="round"
           fill="none"
         />
+        <path
+          d="M11.3 12.6C5.4 11.8 2.6 15.1 3 18.6"
+          stroke="white"
+          strokeWidth="0.9"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.35"
+        />
+        <path
+          d="M36.7 12.6C42.6 11.8 45.4 15.1 45 18.6"
+          stroke="white"
+          strokeWidth="0.9"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.35"
+        />
 
-        {/* Optional crown spikes on the rim (platinum) */}
-        {crownSpikes && (
-          <>
-            <path d="M17 8.5L18.5 5.5L20 8.5" stroke={rimColor} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path d="M28 8.5L29.5 5.5L31 8.5" stroke={rimColor} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </>
-        )}
+        {/* Cup body */}
+        <path d={cupPath} fill={`url(#${cupGradId})`} />
 
-        {/* Star finial above the rim — platinum only */}
-        {starFinial && (
-          <path
-            d="M24 2L24.7 3.9L26.7 4.1L25.1 5.4L25.6 7.4L24 6.2L22.4 7.4L22.9 5.4L21.3 4.1L23.3 3.9L24 2Z"
-            fill={rimColor}
-            stroke={accentColor}
-            strokeWidth="0.4"
+        {/* Specular highlight, clipped tightly to the cup so it never bleeds outside the metal */}
+        <g clipPath={`url(#${cupClipId})`}>
+          <ellipse
+            cx="16.5"
+            cy="12"
+            rx="5.5"
+            ry="8"
+            fill="white"
+            opacity="0.5"
+            filter={`url(#${blurFilterId})`}
           />
-        )}
+          <ellipse cx="34" cy="20" rx="4" ry="9" fill="black" opacity="0.14" filter={`url(#${blurFilterId})`} />
+        </g>
 
-        {/* Glossy highlight streak on the bowl */}
+        {/* Rim — top opening of the cup, lighter than the body with a thin inner-shadow line */}
+        <ellipse cx="24" cy="8" rx="15" ry="3.2" fill={palette.rimColor} />
+        <ellipse cx="24" cy="8.55" rx="13.2" ry="2.4" fill="none" stroke={palette.rimShadow} strokeWidth="0.5" opacity="0.55" />
+
+        {/* Embossed star emblem — darker star behind a smaller lighter star = recessed bevel */}
         <path
-          d="M17.5 11.5C16.5 14.5 16.5 18 18.5 21.5"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.4"
+          d="M24 9.6L25.32 13.42L29.36 13.5L26.14 15.9L27.28 19.76L24 17.5L20.72 19.76L21.86 15.9L18.64 13.5L22.68 13.42Z"
+          fill={palette.metalDark}
+          opacity="0.55"
+          transform="translate(24,15) translate(0,0.5) translate(-24,-15)"
         />
         <path
-          d="M20 11C19.6 12.3 19.6 13.6 20.2 15"
+          d="M24 9.6L25.32 13.42L29.36 13.5L26.14 15.9L27.28 19.76L24 17.5L20.72 19.76L21.86 15.9L18.64 13.5L22.68 13.42Z"
+          fill={palette.rimColor}
+          stroke={palette.metalMid}
+          strokeWidth="0.4"
+          transform="translate(24,15) scale(0.82) translate(-24,-15)"
+        />
+
+        {/* Cup vertical highlight streak, on top of everything for the final glossy pop */}
+        <path
+          d="M13.5 10.5C12.7 14 13 18.5 15.5 22.5"
           stroke="white"
-          strokeWidth="1.2"
+          strokeWidth="1.6"
           strokeLinecap="round"
           fill="none"
           opacity="0.3"
         />
       </g>
 
-      {/* Sparkles — sit outside the shadow group so they stay crisp */}
-      {sparkle && (
-        <>
-          <path d="M40 8L40.7 9.8L42.5 10.5L40.7 11.2L40 13L39.3 11.2L37.5 10.5L39.3 9.8L40 8Z" fill={rimColor} />
-          <path d="M8 30L8.5 31.3L9.8 31.8L8.5 32.3L8 33.6L7.5 32.3L6.2 31.8L7.5 31.3L8 30Z" fill={rimColor} />
-          <circle cx="8.5" cy="14" r="1.1" fill={rimColor} opacity="0.85" />
-        </>
+      {/* Sparkles — sit outside the shadow group so they render crisp, not blurred */}
+      <path
+        d="M40 7L40.8 9.1L43 10L40.8 10.9L40 13L39.2 10.9L37 10L39.2 9.1L40 7Z"
+        fill={palette.sparkleColor}
+      />
+      {palette.sparkleCount >= 2 && (
+        <path
+          d="M7.5 27L8 28.4L9.4 29L8 29.6L7.5 31L7 29.6L5.6 29L7 28.4L7.5 27Z"
+          fill={palette.sparkleColor}
+        />
+      )}
+      {palette.sparkleCount >= 3 && (
+        <circle cx="8" cy="14" r="1" fill={palette.sparkleColor} opacity="0.85" />
       )}
     </svg>
   );
 }
 
 // ─── Tier-based trophy SVGs ─────────────────────────────────────────────────
+// Each palette is tuned to the tier's own material — the `color` prop from
+// the original API is kept for backwards compatibility but the full
+// multi-stop palette (light/mid/shadow) is what actually renders, since a
+// single flat color can't produce a 3D-looking metal surface.
 
-export function BronzeTrophy({ size = 48, color = '#CD7F32' }: IconProps) {
-  return (
-    <TrophyBase
-      size={size}
-      accentColor={color}
-      rimColor="#E3A063"
-      gradientStops={[
-        { offset: '0%', color: '#E3A063' },
-        { offset: '55%', color: '#CD7F32' },
-        { offset: '100%', color: '#8A5223' },
-      ]}
-    />
-  );
+const BRONZE_PALETTE: TierPalette = {
+  cupStops: [
+    { offset: '0%', color: '#F2C49B' },
+    { offset: '32%', color: '#E08A4C' },
+    { offset: '65%', color: '#C06B2E' },
+    { offset: '100%', color: '#7A4118' },
+  ],
+  rimColor: '#EFAE79',
+  rimShadow: '#8A4E22',
+  metalMid: '#C9773D',
+  metalDark: '#5E3313',
+  nameplateStops: [
+    { offset: '0%', color: '#F2C49B' },
+    { offset: '100%', color: '#C06B2E' },
+  ],
+  glowColor: '#E08A4C',
+  sparkleColor: '#F2C49B',
+  sparkleCount: 1,
+};
+
+const SILVER_PALETTE: TierPalette = {
+  cupStops: [
+    { offset: '0%', color: '#FFFFFF' },
+    { offset: '32%', color: '#E4E7EC' },
+    { offset: '65%', color: '#B7BEC9' },
+    { offset: '100%', color: '#6E7480' },
+  ],
+  rimColor: '#F3F4F6',
+  rimShadow: '#7C818C',
+  metalMid: '#C3C8D1',
+  metalDark: '#565b64',
+  nameplateStops: [
+    { offset: '0%', color: '#F5F6F8' },
+    { offset: '100%', color: '#B7BEC9' },
+  ],
+  glowColor: '#B7BEC9',
+  sparkleColor: '#F3F4F6',
+  sparkleCount: 1,
+};
+
+const GOLD_PALETTE: TierPalette = {
+  cupStops: [
+    { offset: '0%', color: '#FFF3C4' },
+    { offset: '32%', color: '#FFDD66' },
+    { offset: '65%', color: '#F5B400' },
+    { offset: '100%', color: '#9C6A00' },
+  ],
+  rimColor: '#FFE59A',
+  rimShadow: '#9C6A00',
+  metalMid: '#F0B92A',
+  metalDark: '#7A4F00',
+  nameplateStops: [
+    { offset: '0%', color: '#FFEFB0' },
+    { offset: '100%', color: '#F5B400' },
+  ],
+  glowColor: '#FFC629',
+  sparkleColor: '#FFEFB0',
+  sparkleCount: 3,
+};
+
+const PLATINUM_PALETTE: TierPalette = {
+  // Genuinely multi-hue rather than a flat gray — that's what reads as
+  // "iridescent" instead of "dull metal" at a glance.
+  cupStops: [
+    { offset: '0%', color: '#F5F1FF' },
+    { offset: '24%', color: '#D9CBFF' },
+    { offset: '48%', color: '#B9C7FF' },
+    { offset: '72%', color: '#CDE3FF' },
+    { offset: '100%', color: '#8FA0DE' },
+  ],
+  rimColor: '#EDEBFF',
+  rimShadow: '#8FA0DE',
+  metalMid: '#B9C0E8',
+  metalDark: '#5C63A0',
+  nameplateStops: [
+    { offset: '0%', color: '#FBD9F5' },
+    { offset: '50%', color: '#CFE3FF' },
+    { offset: '100%', color: '#D9C9FF' },
+  ],
+  glowColor: '#B9C7FF',
+  sparkleColor: '#E8EEFF',
+  sparkleCount: 3,
+};
+
+export function BronzeTrophy({ size = 48 }: IconProps) {
+  return <PremiumTrophy size={size} palette={BRONZE_PALETTE} />;
 }
 
-export function SilverTrophy({ size = 48, color = '#C0C0C0' }: IconProps) {
-  return (
-    <TrophyBase
-      size={size}
-      accentColor={color}
-      rimColor="#F1F1F1"
-      ribbon
-      gradientStops={[
-        { offset: '0%', color: '#F5F5F5' },
-        { offset: '50%', color: '#C0C0C0' },
-        { offset: '100%', color: '#8E8E8E' },
-      ]}
-    />
-  );
+export function SilverTrophy({ size = 48 }: IconProps) {
+  return <PremiumTrophy size={size} palette={SILVER_PALETTE} />;
 }
 
-export function GoldTrophy({ size = 48, color = '#FFD700' }: IconProps) {
-  return (
-    <TrophyBase
-      size={size}
-      accentColor={color}
-      rimColor="#FFEB99"
-      sparkle
-      ribbon
-      gem
-      laurel
-      gradientStops={[
-        { offset: '0%', color: '#FFEB99' },
-        { offset: '50%', color: '#FFD700' },
-        { offset: '100%', color: '#E8A200' },
-      ]}
-    />
-  );
+export function GoldTrophy({ size = 48 }: IconProps) {
+  return <PremiumTrophy size={size} palette={GOLD_PALETTE} />;
 }
 
-export function PlatinumTrophy({ size = 48, color = '#E5E4E2' }: IconProps) {
-  return (
-    <TrophyBase
-      size={size}
-      accentColor="#B0C4DE"
-      rimColor="#FFFFFF"
-      sparkle
-      crownSpikes
-      ribbon
-      gem
-      laurel
-      starFinial
-      extraBaseTier
-      gradientStops={[
-        { offset: '0%', color: '#FFFFFF' },
-        { offset: '45%', color: '#E5E4E2' },
-        { offset: '100%', color: '#A9B9CC' },
-      ]}
-    />
-  );
+export function PlatinumTrophy({ size = 48 }: IconProps) {
+  return <PremiumTrophy size={size} palette={PLATINUM_PALETTE} />;
 }
 
 // ─── Achievement-specific icons ─────────────────────────────────────────────

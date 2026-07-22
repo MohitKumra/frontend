@@ -5,7 +5,7 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
   LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
   Timer, BarChart2, LogOut, X ,Sparkles, Moon, Sun,
-  Search, MoreHorizontal, Settings2, FolderKanban
+  Search, MoreHorizontal, Settings2, FolderKanban, User
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -14,6 +14,7 @@ import { useSettings } from '../../features/settings/hooks/useSettings';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { SearchModal } from '../../features/search/components/SearchModal';
 import { Tooltip } from '../ui/Tooltip';
+import { Avatar } from '../ui/Avatar';
 import { DraggableModal } from '../ui/DraggableModal';
 import { Badge } from '../ui/Badge';
 import { PageTransition } from './PageTransition';
@@ -109,6 +110,9 @@ function warmRouteData(route: string): void {
     case '/settings':
       void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
       break;
+    case '/profile':
+      void queryClient.prefetchQuery({ queryKey: ['auth', 'me'], queryFn: () => apiClient.get('/auth/me').then((r) => r.data) });
+      break;
     default:
       break;
   }
@@ -152,7 +156,7 @@ export function AppLayout() {
   }, [layoutPreference]);
 
   useEffect(() => {
-    const routesToWarm = ['/', '/tasks', '/projects', '/calendar', '/habits', '/notes', '/focus', '/analytics', '/settings'];
+    const routesToWarm = ['/', '/tasks', '/projects', '/calendar', '/habits', '/notes', '/focus', '/analytics', '/profile', '/settings'];
     const timer = window.setTimeout(() => {
       routesToWarm.forEach((route) => warmRouteData(route));
     }, 500);
@@ -346,22 +350,39 @@ export function AppLayout() {
         {/* User profile & logout */}
         <div className="p-3 border-t shrink-0 flex flex-col gap-2" style={{ borderColor: 'var(--sidebar-border)' }}>
           {sidebarOpen && user && (
-            <div
-              className="px-3 py-2.5 rounded-lg border flex items-center gap-3 min-w-0"
+            <NavLink
+              to="/profile"
+              className="px-3 py-2.5 rounded-lg border flex items-center gap-3 min-w-0 transition-colors hover:bg-[var(--sidebar-item-hover)]"
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
-              <div
-                className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center font-bold text-sm text-text-onaccent"
-                style={{ background: 'var(--gradient-accent)' }}
-              >
-                {user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()}
-              </div>
+              <Avatar
+                src={user.avatarUrl}
+                name={user.name}
+                email={user.email}
+                size="sm"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-text-primary truncate">
                   {user.name ?? user.email.split('@')[0]}
                 </p>
               </div>
-            </div>
+            </NavLink>
+          )}
+          
+          {!sidebarOpen && user && (
+            <Tooltip content="Profile" side="right">
+              <NavLink
+                to="/profile"
+                className="flex justify-center py-2"
+              >
+                <Avatar
+                  src={user.avatarUrl}
+                  name={user.name}
+                  email={user.email}
+                  size="sm"
+                />
+              </NavLink>
+            </Tooltip>
           )}
 
           <button
@@ -427,19 +448,24 @@ export function AppLayout() {
             </div>
 
             {user && (
-              <div className="flex items-center gap-3 pl-1 sm:pl-2 border-l" style={{ borderColor: 'var(--color-border)' }}>
-                <div
-                  className="w-9 h-9 rounded-xl text-white font-extrabold text-sm flex items-center justify-center shadow-sm shrink-0"
-                  style={{ background: 'var(--gradient-accent)' }}
-                >
-                  {user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()}
-                </div>
+              <NavLink
+                to="/profile"
+                className="flex items-center gap-3 pl-1 sm:pl-2 border-l transition-opacity hover:opacity-80"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                <Avatar
+                  src={user.avatarUrl}
+                  name={user.name}
+                  email={user.email}
+                  size="md"
+                  showBorder
+                />
                 <div className="hidden lg:flex flex-col min-w-0">
                   <span className="text-xs font-bold text-text-primary leading-tight truncate">
                     {user.name ?? user.email.split('@')[0]}
                   </span>
                 </div>
-              </div>
+              </NavLink>
             )}
           </div>
         </header>
@@ -551,14 +577,18 @@ export function AppLayout() {
               />
               
               <div className="relative flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-extrabold text-xl text-white shadow-lg border-2 border-white/20" 
-                     style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.name ?? 'User'} className="w-full h-full object-cover rounded-2xl" />
-                  ) : (
-                    user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()
-                  )}
-                </div>
+                <NavLink
+                  to="/profile"
+                  onClick={() => setMobileMoreOpen(false)}
+                >
+                  <Avatar
+                    src={user.avatarUrl}
+                    name={user.name}
+                    email={user.email}
+                    size="lg"
+                    className="shadow-lg border-2 border-white/20"
+                  />
+                </NavLink>
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-extrabold text-white truncate">
                     {user.name ?? user.email.split('@')[0]}

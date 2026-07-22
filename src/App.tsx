@@ -26,6 +26,7 @@ import { FocusPage }      from './routes/FocusPage';
 import { AnalyticsPage }  from './routes/AnalyticsPage';
 import { ProjectsPage }   from './routes/ProjectsPage';
 import { SettingsPage }   from './routes/SettingsPage';
+import { ProfilePage }    from './routes/ProfilePage';
 import { TaskDetailPage } from './routes/TaskDetailPage';
 import { ProjectDetailPage } from './routes/ProjectDetailPage';
 import { NotFoundPage } from './routes/NotFoundPage';
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="analytics"    element={<AnalyticsPage />} />
           <Route path="projects"     element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="profile"      element={<ProfilePage />} />
           <Route path="settings"     element={<SettingsPage />} />
         </Route>
 

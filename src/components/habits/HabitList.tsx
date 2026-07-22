@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { HabitCard } from './HabitCard';
 import { HabitCardCompact } from './HabitCardCompact';
@@ -9,137 +9,164 @@ interface HabitListProps {
   viewMode: 'grid' | 'list';
 }
 
-const CARD_WIDTH = 300; // px, matches HabitCard's comfortable min width
+const PAGE_SIZE = 10;
+
+/** Builds a page-number sequence with ellipses, e.g. [1, 'ellipsis', 4, 5, 6, 'ellipsis', 10] */
+function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
+  const delta = 1;
+  const range: number[] = [];
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+      range.push(i);
+    }
+  }
+  const withDots: (number | 'ellipsis')[] = [];
+  let prev = 0;
+  for (const i of range) {
+    if (prev) {
+      if (i - prev === 2) withDots.push(prev + 1);
+      else if (i - prev > 2) withDots.push('ellipsis');
+    }
+    withDots.push(i);
+    prev = i;
+  }
+  return withDots;
+}
+
+/**
+ * Single pagination bar used by both list and grid views. This replaces the
+ * old pattern of horizontal-scroll dots (representing scroll position) stacked
+ * on top of Prev/Next page buttons (representing a page of 10) — two controls
+ * that didn't correspond to each other. There is now exactly one way to move
+ * through the set, and it's the same control in both view modes.
+ */
+function Pagination({
+  page,
+  totalPages,
+  total,
+  pageSize,
+  onPageChange,
+}: {
+  page: number; // 0-indexed
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const current = page + 1; // 1-indexed for display/logic
+  const canPrev = page > 0;
+  const canNext = page < totalPages - 1;
+  const rangeStart = page * pageSize + 1;
+  const rangeEnd = Math.min((page + 1) * pageSize, total);
+  const pageNumbers = getPageNumbers(current, totalPages);
+
+  const pageButtonClass = (active: boolean) =>
+    `min-w-[26px] h-[26px] px-1 rounded-lg text-[11px] font-bold transition-colors ${
+      active ? 'text-white' : 'text-text-muted hover:text-text-primary hover:bg-accent/10'
+    }`;
+
+  return (
+    <div
+      className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-3 mt-4 border-t"
+      style={{ borderColor: 'var(--color-border)' }}
+    >
+      <span className="text-[11px] font-medium text-text-muted order-2 sm:order-1">
+        Showing {rangeStart}–{rangeEnd} of {total}
+      </span>
+
+      <div className="flex items-center gap-1 order-1 sm:order-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={!canPrev}
+          aria-label="Previous page"
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30 text-text-muted hover:text-text-primary hover:bg-accent/10"
+        >
+          <ChevronLeft size={14} />
+        </button>
+
+        {/* Numbered pages — hidden on the narrowest screens in favor of "2 / 5" text */}
+        <div className="hidden sm:flex items-center gap-0.5">
+          {pageNumbers.map((p, i) =>
+            p === 'ellipsis' ? (
+              <span key={`dots-${i}`} className="px-1 text-[11px] text-text-muted select-none">
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPageChange(p - 1)}
+                aria-label={`Go to page ${p}`}
+                aria-current={p === current ? 'page' : undefined}
+                className={pageButtonClass(p === current)}
+                style={p === current ? { background: 'var(--gradient-accent)' } : undefined}
+              >
+                {p}
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Compact fallback for narrow viewports */}
+        <span className="sm:hidden text-[11px] font-bold text-text-muted px-1.5 whitespace-nowrap">
+          {current} / {totalPages}
+        </span>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={!canNext}
+          aria-label="Next page"
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30 text-text-muted hover:text-text-primary hover:bg-accent/10"
+        >
+          <ChevronRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function HabitList({ habits, viewMode }: HabitListProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [totalScrollWidth, setTotalScrollWidth] = useState(0);
+  const [page, setPage] = useState(0);
 
-  const updateScrollState = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-    setScrollPosition(el.scrollLeft);
-    setContainerWidth(el.clientWidth);
-    setTotalScrollWidth(el.scrollWidth);
-  }, []);
+  const totalPages = Math.max(1, Math.ceil(habits.length / PAGE_SIZE));
+  const paginatedHabits = habits.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
+  // Reset to a valid page if the underlying list shrinks (e.g. a habit is deleted)
   useEffect(() => {
-    updateScrollState();
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', updateScrollState, { passive: true });
-    window.addEventListener('resize', updateScrollState);
-    return () => {
-      el.removeEventListener('scroll', updateScrollState);
-      window.removeEventListener('resize', updateScrollState);
-    };
-  }, [updateScrollState, habits.length]);
+    if (page > totalPages - 1) setPage(Math.max(0, totalPages - 1));
+  }, [page, totalPages]);
 
-  const scrollBy = (dir: 1 | -1) => {
-    scrollRef.current?.scrollBy({ left: dir * (CARD_WIDTH + 16) * 2, behavior: 'smooth' });
-  };
-
-  const scrollToIndex = (index: number) => {
-    scrollRef.current?.scrollTo({ left: index * (CARD_WIDTH + 16), behavior: 'smooth' });
-  };
-
-  const currentPage = Math.floor(scrollPosition / (CARD_WIDTH + 16));
-  const totalPages = Math.ceil(totalScrollWidth / (CARD_WIDTH + 16));
-
-  if (viewMode === 'list') {
-    return (
-      <div className="flex flex-col gap-2 sm:gap-3">
-        {habits.map((h) => <HabitCardCompact key={h.id} habit={h} />)}
-      </div>
-    );
-  }
+  if (habits.length === 0) return null;
 
   return (
     <div className="relative">
-      {/* ── Desktop: responsive grid (lg+) ── */}
-      <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-        {habits.map((h) => (
-          <HabitCard key={h.id} habit={h} />
-        ))}
-      </div>
-
-      {/* ── Mobile/tablet: horizontal scroll (below lg) ── */}
-      <div className="lg:hidden relative">
-        {/* Left fade + arrow */}
-        {canScrollLeft && (
-          <>
-            <div
-              className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 sm:w-12 z-10"
-              style={{ background: 'linear-gradient(90deg, var(--color-bg, var(--color-surface)), transparent)' }}
-            />
-            <button
-              type="button"
-              onClick={() => scrollBy(-1)}
-              aria-label="Scroll habits left"
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105"
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-            >
-              <ChevronLeft size={14} className="sm:w-4 sm:h-4 text-text-primary" />
-            </button>
-          </>
-        )}
-
-        <div
-          ref={scrollRef}
-          className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 scroll-smooth snap-x snap-mandatory"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {habits.map((h) => (
-            <div key={h.id} className="shrink-0 snap-start w-[280px] sm:w-[300px]">
-              <HabitCard habit={h} />
-            </div>
-          ))}
+      {/* ── List View ── */}
+      {viewMode === 'list' && (
+        <div className="flex flex-col">
+          <div className="flex flex-col gap-2 sm:gap-3">
+            {paginatedHabits.map((h) => <HabitCardCompact key={h.id} habit={h} />)}
+          </div>
+          <Pagination page={page} totalPages={totalPages} total={habits.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
         </div>
+      )}
 
-        {/* Right fade + arrow */}
-        {canScrollRight && (
-          <>
-            <div
-              className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 sm:w-12 z-10"
-              style={{ background: 'linear-gradient(270deg, var(--color-bg, var(--color-surface)), transparent)' }}
-            />
-            <button
-              type="button"
-              onClick={() => scrollBy(1)}
-              aria-label="Scroll habits right"
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105"
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-            >
-              <ChevronRight size={14} className="sm:w-4 sm:h-4 text-text-primary" />
-            </button>
-          </>
-        )}
-
-        {/* Scroll indicators (dots) */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-1.5 sm:gap-2 mt-3 sm:mt-4">
-            {[...Array(totalPages)].map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => scrollToIndex(idx)}
-                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all ${
-                  idx === currentPage 
-                    ? 'bg-accent w-4 sm:w-6' 
-                    : 'bg-border hover:bg-accent/50'
-                }`}
-                aria-label={`Go to page ${idx + 1}`}
-              />
+      {/* ── Grid View ── */}
+      {/* One responsive grid at every breakpoint — no separate mobile scroll
+          rail. Pagination is the only navigation, on every screen size. */}
+      {viewMode === 'grid' && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {paginatedHabits.map((h) => (
+              <HabitCard key={h.id} habit={h} />
             ))}
           </div>
-        )}
-      </div>
+          <Pagination page={page} totalPages={totalPages} total={habits.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+        </>
+      )}
     </div>
   );
 }

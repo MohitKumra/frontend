@@ -8,7 +8,6 @@ import {
   Calendar,
   CheckSquare,
   FolderKanban,
-  Target,
   Timer,
   TrendingUp,
   Plus,
@@ -35,6 +34,9 @@ import { WeeklyProgressChart } from '../components/dashboard/WeeklyProgressChart
 import { WeatherWidget } from '../components/habits/WeatherWidget';
 import { PriorityTasksWidget } from '../components/dashboard/PriorityTasksWidget';
 import { ActivityFeed } from '../components/dashboard/ActivityFeed';
+import { FloatingCalendarEmpty } from '../components/ui/FloatingCalendarEmpty';
+import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
+import { Avatar } from '../components/ui/Avatar';
 import type { FocusSessionDTO, ListResponse } from '../types';
 
 function toUtcDateKey(value: string | Date): string {
@@ -270,116 +272,237 @@ export function DashboardPage() {
           {/* Stats + Weather */}
           <div className="cq-top-row">
             <div className="cq-stats items-stretch">
-              {/* Tasks Today */}
+              {/* ── Tasks Today ── */}
               <div
-                className="rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[150px]"
+                className="relative rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[158px] overflow-hidden group transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center text-accent shrink-0" style={{ background: 'var(--icon-bg-accent)' }}>
-                    <CheckSquare size={16} />
-                  </span>
-                  <span className="text-xs font-bold text-text-secondary">Tasks Today</span>
-                </div>
-                <div>
-                  <span className="text-2xl sm:text-3xl font-black text-text-primary leading-none">
-                    {taskCompletedTotal} <span className="text-base sm:text-lg font-bold text-text-muted">/ {taskTotals}</span>
-                  </span>
-                  <p className="text-xs text-text-muted mt-1">{taskCompletion}% completed</p>
-                </div>
-                <div className="flex items-center h-6">
-                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
-                    <div className="h-full bg-accent transition-all duration-500" style={{ width: `${taskCompletion}%` }} />
+                {/* Subtle glow blob */}
+                <div className="pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-2xl" style={{ background: 'var(--color-accent)' }} />
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: 'var(--gradient-accent)' }} />
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                      style={{ background: 'var(--gradient-accent)', color: 'white' }}
+                    >
+                      <CheckSquare size={16} />
+                    </span>
+                    <span className="text-xs font-bold text-text-secondary">Tasks Today</span>
                   </div>
+                  {/* Ring progress */}
+                  <svg width="36" height="36" viewBox="0 0 36 36" className="-rotate-90 shrink-0">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="var(--color-border)" strokeWidth="3" />
+                    <circle
+                      cx="18" cy="18" r="14" fill="none"
+                      stroke="var(--color-accent)" strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 14}`}
+                      strokeDashoffset={`${2 * Math.PI * 14 * (1 - taskCompletion / 100)}`}
+                      style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1)' }}
+                    />
+                  </svg>
+                </div>
+
+                <div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black text-text-primary leading-none">{taskCompletedTotal}</span>
+                    <span className="text-base font-bold text-text-muted">/ {taskTotals}</span>
+                  </div>
+                  <p className="text-xs text-text-muted mt-1 font-medium">{taskCompletion}% completed</p>
+                </div>
+
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${taskCompletion}%`,
+                      background: 'var(--gradient-accent)',
+                      boxShadow: '0 0 8px color-mix(in srgb, var(--color-accent) 60%, transparent)',
+                    }}
+                  />
                 </div>
               </div>
 
-              {/* Focus Time */}
+              {/* ── Focus Time ── */}
               <div
-                className="rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[150px]"
+                className="relative rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[158px] overflow-hidden group transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
               >
+                <div className="pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-15 blur-2xl" style={{ background: 'var(--color-info)' }} />
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: 'linear-gradient(90deg, var(--color-info), var(--color-accent))' }} />
+
                 <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center text-info shrink-0" style={{ background: 'var(--icon-bg-info)' }}>
+                  <span
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                    style={{ background: 'linear-gradient(135deg, var(--color-info), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))', color: 'white' }}
+                  >
                     <Timer size={16} />
                   </span>
                   <span className="text-xs font-bold text-text-secondary">Focus Time</span>
                 </div>
+
                 <div>
-                  <span className="text-2xl sm:text-3xl font-black text-text-primary leading-none block truncate">
+                  <span className="text-3xl font-black text-text-primary leading-none block">
                     {Math.floor(todayFocusMinutes / 60)}h {todayFocusMinutes % 60}m
                   </span>
-                  <p className="text-xs text-success font-bold mt-1">+20m <span className="text-text-muted font-normal">vs yesterday</span></p>
+                  <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-success)' }}>
+                    +20m <span className="text-text-muted font-normal">vs yesterday</span>
+                  </p>
                 </div>
-                <div className="flex items-center h-6">
-                  <svg className="w-full" viewBox="0 0 70 30" preserveAspectRatio="none">
+
+                {/* Sparkline with gradient fill */}
+                <div className="h-9">
+                  <svg className="w-full h-full" viewBox="0 0 70 30" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="focusGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-info)" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="var(--color-info)" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d={`M ${sparklineFocus.map((val, idx) => `${idx * 10},${30 - (val / 150) * 25}`).join(' L ')} L 60,30 L 0,30 Z`}
+                      fill="url(#focusGrad)"
+                    />
                     <path
                       d={`M ${sparklineFocus.map((val, idx) => `${idx * 10},${30 - (val / 150) * 25}`).join(' L ')}`}
                       fill="none"
                       stroke="var(--color-info)"
                       strokeWidth="2"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
+                    {/* Live dot at end */}
+                    <circle cx="60" cy={`${30 - (sparklineFocus[6] / 150) * 25}`} r="2.5" fill="var(--color-info)" />
                   </svg>
                 </div>
               </div>
 
-              {/* Productivity Score */}
+              {/* ── Productivity Score ── */}
               <div
-                className="rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[150px]"
+                className="relative rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[158px] overflow-hidden group transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center text-success shrink-0" style={{ background: 'var(--icon-bg-success)' }}>
-                    <TrendingUp size={16} />
+                <div className="pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-15 blur-2xl" style={{ background: 'var(--color-success)' }} />
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: 'linear-gradient(90deg, var(--color-success), var(--color-info))' }} />
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                      style={{ background: 'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, var(--color-info)))', color: 'white' }}
+                    >
+                      <TrendingUp size={16} />
+                    </span>
+                    <span className="text-xs font-bold text-text-secondary">Productivity Score</span>
+                  </div>
+                  {/* Score badge */}
+                  <span
+                    className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                    style={{
+                      background: 'color-mix(in srgb, var(--color-success) 15%, transparent)',
+                      color: 'var(--color-success)',
+                    }}
+                  >
+                    TOP
                   </span>
-                  <span className="text-xs font-bold text-text-secondary">Productivity Score</span>
                 </div>
+
                 <div>
-                  <span className="text-2xl sm:text-3xl font-black text-text-primary leading-none block">
+                  <span className="text-3xl font-black text-text-primary leading-none block">
                     {dashboard.productivityScore ?? 72}
                   </span>
-                  <p className="text-xs text-success font-bold mt-1">+12% <span className="text-text-muted font-normal">this week</span></p>
+                  <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-success)' }}>
+                    +12% <span className="text-text-muted font-normal">this week</span>
+                  </p>
                 </div>
-                <div className="flex items-center h-6">
-                  <svg className="w-full" viewBox="0 0 70 30" preserveAspectRatio="none">
+
+                <div className="h-9">
+                  <svg className="w-full h-full" viewBox="0 0 70 30" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="scoreGrad2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-success)" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="var(--color-success)" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d={`M ${sparklineScore.map((val, idx) => `${idx * 10},${30 - (val / 100) * 25}`).join(' L ')} L 60,30 L 0,30 Z`}
+                      fill="url(#scoreGrad2)"
+                    />
                     <path
                       d={`M ${sparklineScore.map((val, idx) => `${idx * 10},${30 - (val / 100) * 25}`).join(' L ')}`}
                       fill="none"
                       stroke="var(--color-success)"
                       strokeWidth="2"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
+                    <circle cx="60" cy={`${30 - (sparklineScore[6] / 100) * 25}`} r="2.5" fill="var(--color-success)" />
                   </svg>
                 </div>
               </div>
 
-              {/* Habit Streak */}
+              {/* ── Habit Streak ── */}
               <div
-                className="rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[150px]"
+                className="relative rounded-2xl border p-5 flex flex-col gap-3 justify-between min-h-[158px] overflow-hidden group transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center text-success shrink-0" style={{ background: 'var(--icon-bg-success)' }}>
-                    <Target size={16} />
-                  </span>
-                  <span className="text-xs font-bold text-text-secondary">Habit Streak</span>
-                </div>
-                <div>
-                  <span className="text-2xl sm:text-3xl font-black text-text-primary leading-none">{currentHabitStreak}</span>
-                  <p className="text-xs text-text-muted mt-1">days in a row</p>
-                </div>
-                <div className="flex items-center h-6">
-                  <div className="flex items-center gap-1.5">
-                    {streakDots.map((checked, i) => (
-                      <span
-                        key={i}
-                        className={`w-4 h-4 rounded-full flex items-center justify-center border ${checked ? 'bg-success border-success text-white' : 'border-border bg-surface'}`}
-                      >
-                        {checked && <span className="text-[8px]">✓</span>}
-                      </span>
-                    ))}
+                <div className="pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-2xl" style={{ background: 'var(--color-warning)' }} />
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: 'linear-gradient(90deg, var(--color-warning), var(--color-danger))' }} />
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                      style={{ background: 'linear-gradient(135deg, var(--color-warning), color-mix(in srgb, var(--color-warning) 70%, var(--color-danger)))', color: 'white' }}
+                    >
+                      <Flame size={16} />
+                    </span>
+                    <span className="text-xs font-bold text-text-secondary">Habit Streak</span>
                   </div>
+                  {currentHabitStreak > 0 && (
+                    <span
+                      className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
+                        color: 'var(--color-warning)',
+                      }}
+                    >
+                      🔥 ON FIRE
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black text-text-primary leading-none">{currentHabitStreak}</span>
+                    <span className="text-sm font-bold text-text-muted">days</span>
+                  </div>
+                  <p className="text-xs text-text-muted mt-1 font-medium">in a row</p>
+                </div>
+
+                {/* Streak dots — filled with flame gradient */}
+                <div className="flex items-center gap-1.5">
+                  {streakDots.map((checked, i) => (
+                    <span
+                      key={i}
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black border transition-all duration-300"
+                      style={checked ? {
+                        background: 'linear-gradient(135deg, var(--color-warning), var(--color-danger))',
+                        borderColor: 'transparent',
+                        color: 'white',
+                        boxShadow: '0 0 6px color-mix(in srgb, var(--color-warning) 50%, transparent)',
+                      } : {
+                        borderColor: 'var(--color-border)',
+                        background: 'var(--color-surface)',
+                        color: 'transparent',
+                      }}
+                    >
+                      {checked && '✓'}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -448,11 +571,7 @@ export function DashboardPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center flex-1 py-8 px-6 text-center">
-                    <Calendar size={44} className="opacity-20 text-text-muted mb-4" />
-                    <p className="text-sm font-bold text-text-primary mb-1">No tasks planned for today</p>
-                    <p className="text-xs text-text-muted">Add a due date to see your plan here</p>
-                  </div>
+                  <FloatingCalendarEmpty />
                 )}
               </div>
             </div>
@@ -614,9 +733,7 @@ export function DashboardPage() {
                   })}
 
                   {topProjects.length === 0 && (
-                    <div className="text-center py-8 text-text-muted">
-                      No active projects yet. Get started today!
-                    </div>
+                    <FloatingProjectsEmpty />
                   )}
                 </div>
               </div>
@@ -636,12 +753,15 @@ export function DashboardPage() {
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
               <div className="flex items-start gap-3">
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0"
-                  style={{ background: 'var(--gradient-accent)' }}
-                >
-                  {avatarInitial}
-                </div>
+                <Avatar
+                  src={user.avatarUrl}
+                  name={user.name}
+                  email={user.email}
+                  size="lg"
+                  showBorder
+                  onClick={() => navigate('/profile')}
+                  className="cursor-pointer"
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Profile</p>
                   <h4 className="text-sm font-black text-text-primary truncate">{displayName}</h4>

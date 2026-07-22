@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import {
@@ -21,6 +21,7 @@ import {
   CheckSquare,
   Ban,
   FolderKanban,
+  ChevronDown,
 } from 'lucide-react';
 import type { TaskDTO, TaskStatus } from '../../types';
 
@@ -78,10 +79,10 @@ interface StatusConfig {
 }
 
 export const STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
-  TODO:        { label: 'To Do',      color: 'var(--color-info)',         icon: <Circle size={12} /> },
-  IN_PROGRESS: { label: 'In Progress',color: 'var(--color-warning)',      icon: <Play size={12} /> },
-  DONE:        { label: 'Done',       color: 'var(--color-success)',       icon: <CheckCircle2 size={12} /> },
-  CANCELLED:   { label: 'Cancelled',  color: 'var(--color-text-muted)',    icon: <Ban size={12} /> },
+  TODO:        { label: 'To Do',       color: 'var(--color-info)',       icon: <Circle size={10} /> },
+  IN_PROGRESS: { label: 'In Progress', color: 'var(--color-warning)',    icon: <Play size={10} /> },
+  DONE:        { label: 'Done',        color: 'var(--color-success)',    icon: <CheckCircle2 size={10} /> },
+  CANCELLED:   { label: 'Cancelled',   color: 'var(--color-text-muted)', icon: <Ban size={10} /> },
 };
 
 // ── priority config ────────────────────────────────────────────────────────
@@ -93,14 +94,32 @@ export const PRIORITY_COLOR: Record<string, string> = {
   CRITICAL: '#7c3aed',
 };
 
-function priorityHeaderGradient(priority: string, done: boolean): string {
-  if (done) return 'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 55%, black))';
-  switch (priority) {
-    case 'CRITICAL': return 'linear-gradient(135deg, #7c3aed, #4c1d95)';
-    case 'HIGH':     return 'linear-gradient(135deg, var(--color-danger), color-mix(in srgb, var(--color-danger) 55%, black))';
-    case 'MEDIUM':   return 'linear-gradient(135deg, var(--color-warning), color-mix(in srgb, var(--color-warning) 55%, black))';
-    default:         return 'linear-gradient(135deg, var(--color-info), color-mix(in srgb, var(--color-info) 55%, black))';
-  }
+function priorityAccent(priority: string, done: boolean, cancelled: boolean): string {
+  if (done) return 'var(--color-success)';
+  if (cancelled) return 'var(--color-text-muted)';
+  return PRIORITY_COLOR[priority] ?? 'var(--color-info)';
+}
+
+// ── small shared bits ────────────────────────────────────────────────────────
+
+function Chip({
+  children,
+  color,
+  icon,
+}: {
+  children: React.ReactNode;
+  color: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-1.5 py-[3px] text-[9.5px] font-bold leading-none"
+      style={{ background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
+    >
+      {icon}
+      {children}
+    </span>
+  );
 }
 
 // ── props ──────────────────────────────────────────────────────────────────
@@ -148,7 +167,6 @@ export function TaskCard({
   onDeleteSubtask,
   onFocus,
   onOpen,
-  index,
 }: TaskCardProps) {
   const done = task.status === 'DONE';
   const cancelled = task.status === 'CANCELLED';
@@ -160,22 +178,21 @@ export function TaskCard({
 
   const subTotal = task.subTasks?.length ?? 0;
   const subDone = task.subTasks?.filter((s) => s.completed).length ?? 0;
-  const subPct = subTotal > 0
-    ? Math.round((subDone / subTotal) * 100)
-    : done ? 100 : task.status === 'IN_PROGRESS' ? 50 : 0;
+  const subPct = subTotal > 0 ? Math.round((subDone / subTotal) * 100) : 0;
 
   const statusCfg = STATUS_CONFIG[task.status] ?? STATUS_CONFIG.TODO;
-  
+  const accent = priorityAccent(task.priority, done, cancelled);
+
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = React.useState<{ top: number; right: number } | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
-  // Update menu position when it opens
+  // Position the portal menu relative to its trigger button
   useEffect(() => {
     if (isMenuOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setMenuPosition({
-        top: rect.bottom + 8,
+        top: rect.bottom + 6,
         right: window.innerWidth - rect.right,
       });
     } else {
@@ -188,13 +205,14 @@ export function TaskCard({
     if (!isMenuOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
-          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+      if (
+        menuRef.current && !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(event.target as Node)
+      ) {
         onToggleMenu(null);
       }
     };
 
-    // Add small delay to prevent immediate closing when opening
     const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 0);
@@ -206,91 +224,75 @@ export function TaskCard({
   }, [isMenuOpen, onToggleMenu]);
 
   return (
-    <motion.div
-      className="relative group/card"
-      style={{
-        zIndex: isMenuOpen ? 9997 : 1,
-      }}
-    >
+    <motion.div className="relative" style={{ zIndex: isMenuOpen ? 9997 : 1 }}>
       <div
-        className="relative rounded-[22px] border transition-all duration-300 hover:-translate-y-1"
+        className="relative overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
         style={{
-          borderColor: isSelected ? 'var(--color-accent)' : overdue ? 'color-mix(in srgb, var(--color-danger) 40%, var(--color-border))' : 'var(--color-border)',
+          borderColor: isSelected
+            ? 'var(--color-accent)'
+            : overdue
+            ? 'color-mix(in srgb, var(--color-danger) 40%, var(--color-border))'
+            : 'var(--color-border)',
           background: 'var(--color-surface)',
           boxShadow: isSelected
-            ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent), 0 12px 28px -12px rgba(0,0,0,0.18)'
-            : overdue
-            ? '0 0 0 1px color-mix(in srgb, var(--color-danger) 15%, transparent)'
+            ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent)'
             : '0 1px 2px rgba(0,0,0,0.04)',
         }}
-        onMouseEnter={(e) => {
-          if (!isSelected) e.currentTarget.style.boxShadow = '0 18px 34px -16px rgba(0,0,0,0.22)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isSelected) e.currentTarget.style.boxShadow = overdue
-            ? '0 0 0 1px color-mix(in srgb, var(--color-danger) 15%, transparent)'
-            : '0 1px 2px rgba(0,0,0,0.04)';
-        }}
       >
-        {/* Header band */}
-        <div
-          className="relative h-[72px] px-4 flex items-center justify-between overflow-hidden rounded-t-[22px]"
-          style={{ background: priorityHeaderGradient(task.priority, done) }}
-        >
-          {/* decorative highlight */}
-          <div
-            className="absolute inset-0 opacity-[0.15]"
-            style={{ backgroundImage: 'radial-gradient(circle at 85% -20%, white 0%, transparent 55%)' }}
-          />
+        {/* slim priority/status accent line replaces the old tall gradient header */}
+        <div className="h-[3px] w-full" style={{ background: accent }} />
 
-          {/* Left: Selection checkbox + Status icon */}
-          <div className="relative flex items-center gap-3">
-            {/* Selection checkbox - now inline with status icon */}
+        <div className="p-3 sm:p-3.5">
+          {/* Row 1 — select, complete toggle, title, menu */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => onToggleSelect(task.id)}
-              className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all hover:scale-110 shrink-0"
+              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border-2 transition-all"
               style={{
-                background: isSelected ? 'white' : 'rgba(255,255,255,0.2)',
-                borderColor: isSelected ? 'white' : 'rgba(255,255,255,0.6)',
-                opacity: isSelected ? 1 : undefined,
+                borderColor: isSelected ? 'var(--color-accent)' : 'var(--color-border)',
+                background: isSelected ? 'var(--color-accent)' : 'transparent',
               }}
+              aria-label="Select task"
             >
-              <span className={`transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'}`}>
-                {isSelected ? (
-                  <CheckCircle2 size={12} style={{ color: 'var(--color-accent)' }} />
-                ) : (
-                  <Circle size={12} style={{ color: 'white' }} />
-                )}
-              </span>
+              {isSelected && <CheckCircle2 size={11} className="text-white" />}
             </button>
 
-            {/* Status icon */}
-            <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white shadow-sm shrink-0">
-              {done ? <CheckCircle2 size={18} /> : task.status === 'IN_PROGRESS' ? <Play size={16} /> : task.status === 'CANCELLED' ? <Ban size={16} /> : <CheckSquare size={16} />}
-            </div>
-          </div>
+            <button
+              type="button"
+              onClick={() => onToggleStatus(task)}
+              className="shrink-0 transition-transform hover:scale-110"
+              title={done ? 'Mark as To Do' : 'Mark as Done'}
+            >
+              {done ? (
+                <CheckCircle2 size={19} style={{ color: 'var(--color-success)' }} />
+              ) : (
+                <Circle size={19} style={{ color: 'var(--color-border)' }} />
+              )}
+            </button>
 
-          {/* Right: Action buttons */}
-          <div className="relative flex items-center gap-1">
-            {!done && !cancelled && (
-              <button
-                type="button"
-                onClick={() => onFocus(task.id)}
-                className="p-1.5 rounded-lg text-white/90 hover:bg-white/20 transition-all"
-                title="Focus on this task"
+            <button type="button" onClick={() => onOpen?.(task.id)} className="min-w-0 flex-1 text-left">
+              <h3
+                className="truncate text-[13px] font-bold leading-snug"
+                style={{
+                  color: done || cancelled ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                  textDecorationLine: done || cancelled ? 'line-through' : 'none',
+                  textDecorationColor: done ? 'var(--color-success)' : 'var(--color-text-muted)',
+                  textDecorationThickness: '1.5px',
+                }}
               >
-                <Timer size={15} />
-              </button>
-            )}
-            <div className="relative">
+                {task.title}
+              </h3>
+            </button>
+
+            <div className="relative shrink-0">
               <button
                 ref={buttonRef}
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleMenu(isMenuOpen ? null : task.id);
                 }}
-                className="p-1.5 rounded-lg text-white/90 hover:bg-white/20 transition-all"
+                className="rounded-lg p-1 text-text-muted transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                 aria-label="Task actions"
               >
                 <MoreVertical size={16} />
@@ -298,255 +300,169 @@ export function TaskCard({
 
               {isMenuOpen && menuPosition && createPortal(
                 <>
-                  {/* Backdrop overlay for better visibility */}
-                  <div
-                    className="fixed inset-0"
-                    style={{ zIndex: 9998 }}
-                    onClick={() => onToggleMenu(null)}
-                  />
-                  
+                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => onToggleMenu(null)} />
                   <div
                     ref={menuRef}
                     className="fixed w-48 rounded-xl py-2"
-                    style={{ 
+                    style={{
                       top: `${menuPosition.top}px`,
                       right: `${menuPosition.right}px`,
-                      background: 'var(--color-surface-raised)', 
+                      background: 'var(--color-surface-raised)',
                       border: '1px solid var(--color-border)',
                       zIndex: 9999,
                       boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                  {/* View Details */}
-                  <button
-                    onClick={() => { onOpen?.(task.id); onToggleMenu(null); }}
-                    className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    <Eye size={13} style={{ color: 'var(--color-accent)' }} /> View Details
-                  </button>
-                  <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
-                  
-                  {task.status !== 'IN_PROGRESS' && !done && !cancelled && (
                     <button
-                      onClick={() => { onChangeStatus(task, 'IN_PROGRESS'); onToggleMenu(null); }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                      onClick={() => { onOpen?.(task.id); onToggleMenu(null); }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
                       style={{ color: 'var(--color-text-primary)' }}
                     >
-                      <Play size={13} style={{ color: 'var(--color-warning)' }} /> Start Progress
+                      <Eye size={13} style={{ color: 'var(--color-accent)' }} /> View Details
                     </button>
-                  )}
-                  {task.status === 'IN_PROGRESS' && (
-                    <button
-                      onClick={() => { onChangeStatus(task, 'TODO'); onToggleMenu(null); }}
-                      className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      <Pause size={13} style={{ color: 'var(--color-text-muted)' }} /> Pause Progress
-                    </button>
-                  )}
+                    <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
 
-                  <button
-                    onClick={() => { onEdit(task); onToggleMenu(null); }}
-                    className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    <Edit3 size={13} /> Edit Task
-                  </button>
-                  <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
-                  <button
-                    onClick={() => onDelete(task.id)}
-                    className="w-full px-4 py-2.5 text-left text-xs font-semibold flex items-center gap-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                    style={{ color: 'var(--color-danger)' }}
-                  >
-                    <Trash2 size={13} /> Delete
-                  </button>
-                </div>
+                    {task.status !== 'IN_PROGRESS' && !done && !cancelled && (
+                      <button
+                        onClick={() => { onChangeStatus(task, 'IN_PROGRESS'); onToggleMenu(null); }}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        <Play size={13} style={{ color: 'var(--color-warning)' }} /> Start Progress
+                      </button>
+                    )}
+                    {task.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={() => { onChangeStatus(task, 'TODO'); onToggleMenu(null); }}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        <Pause size={13} style={{ color: 'var(--color-text-muted)' }} /> Pause Progress
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => { onEdit(task); onToggleMenu(null); }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      <Edit3 size={13} /> Edit Task
+                    </button>
+                    <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
+                    <button
+                      onClick={() => onDelete(task.id)}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                      style={{ color: 'var(--color-danger)' }}
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  </div>
                 </>,
-                document.body
+                document.body,
               )}
             </div>
           </div>
-        </div>
 
-        {/* Body */}
-        <div className="px-4 pt-3.5 pb-4">
-          {/* Title + complete toggle */}
-          <div className="flex items-start justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => onOpen?.(task.id)}
-              className="text-left flex-1"
-            >
-              <h3
-              className="text-[13.5px] font-bold leading-snug flex-1"
-              style={{
-                color: done || cancelled ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
-                textDecorationLine: done || cancelled ? 'line-through' : 'none',
-                textDecorationColor: done ? 'var(--color-success)' : 'var(--color-text-muted)',
-                textDecorationThickness: '1.5px',
-              }}
-            >
-              {task.title}
-              </h3>
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleStatus(task)}
-              className="shrink-0 mt-0.5 transition-transform hover:scale-110"
-              title={done ? 'Mark as To Do' : 'Mark as Done'}
-            >
-              {done ? (
-                <CheckCircle2 size={18} style={{ color: 'var(--color-success)' }} />
-              ) : (
-                <Circle size={18} style={{ color: 'var(--color-border)' }} />
-              )}
-            </button>
-          </div>
-
-          {/* Description */}
+          {/* Row 2 — description, one line max */}
           {task.description && (
-            <p className="text-[11.5px] mt-1.5 line-clamp-2 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="mt-1 line-clamp-1 pl-[50px] text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               {task.description}
             </p>
           )}
 
-          {/* Status + Recurrence badges */}
-          <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+          {/* Row 3 — compact meta chips */}
+          <div className="mt-2 flex flex-wrap items-center gap-1 pl-[50px]">
             {task.project && (
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}
-              >
-                <FolderKanban size={9} />
-                {task.project.name}
-              </span>
+              <Chip color="var(--color-success)" icon={<FolderKanban size={9} />}>{task.project.name}</Chip>
             )}
             {task.status !== 'TODO' && (
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{
-                  background: `color-mix(in srgb, ${statusCfg.color} 12%, transparent)`,
-                  color: statusCfg.color,
-                }}
-              >
-                {statusCfg.icon}
-                {statusCfg.label}
-              </span>
+              <Chip color={statusCfg.color} icon={statusCfg.icon}>{statusCfg.label}</Chip>
             )}
-
             {recurrenceLabel && (
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}
-              >
-                <RefreshCw size={9} />
-                {recurrenceLabel}
-              </span>
+              <Chip color="var(--color-accent)" icon={<RefreshCw size={9} />}>{recurrenceLabel}</Chip>
             )}
-
-            {overdue && (
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)' }}
-              >
-                Overdue
-              </span>
+            <Chip color={PRIORITY_COLOR[task.priority] ?? 'var(--color-text-muted)'} icon={<Flag size={9} fill="currentColor" />}>
+              {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
+            </Chip>
+            {dueDateLabel && (
+              <Chip color={overdue ? 'var(--color-danger)' : today ? 'var(--color-warning)' : 'var(--color-text-muted)'} icon={<Calendar size={9} />}>
+                {overdue ? `Overdue · ${dueDateLabel}` : dueDateLabel}
+              </Chip>
             )}
           </div>
 
-          {/* Progress bar */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Progress</span>
-              <span className="text-[11px] font-bold" style={{ color: subPct === 100 ? 'var(--color-success)' : 'var(--color-text-primary)' }}>
-                {subPct}%
-              </span>
+          {/* Row 4 — thin subtask progress, only if there are subtasks */}
+          {subTotal > 0 && (
+            <div className="mt-2.5 flex items-center gap-2 pl-[50px]">
+              <div className="relative h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}>
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${subPct}%`, background: subPct === 100 ? 'var(--color-success)' : accent }}
+                />
+              </div>
+              <span className="shrink-0 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{subDone}/{subTotal}</span>
             </div>
-            <div className="relative h-2 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}>
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
-                style={{
-                  width: `${subPct}%`,
-                  background: subPct === 100 ? 'var(--color-success)' : 'var(--gradient-accent)',
-                  boxShadow: subPct > 0 ? '0 0 8px rgba(99, 102, 241, 0.4)' : 'none',
-                }}
-              />
-            </div>
-          </div>
+          )}
 
-          {/* Footer row */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+          {/* Row 5 — footer utility icons */}
+          <div className="mt-2.5 flex items-center justify-between pl-[50px]">
             <div className="flex items-center gap-3">
-              {/* Subtasks toggle */}
               <button
                 type="button"
                 onClick={() => onToggleSubtasks(task.id)}
-                className="flex items-center gap-1.5 text-[11px] font-semibold transition-all hover:scale-105"
+                className="flex items-center gap-1 text-[10.5px] font-semibold transition-opacity hover:opacity-70"
                 style={{ color: subTotal > 0 ? 'var(--color-text-secondary)' : 'var(--color-text-muted)' }}
                 title="Toggle subtasks"
               >
-                <ListChecks size={14} />
-                <span>{subTotal > 0 ? `${subDone}/${subTotal}` : '0'}</span>
+                <ListChecks size={12} />
+                <span>{subTotal > 0 ? `${subDone}/${subTotal}` : 'Subtasks'}</span>
+                <ChevronDown size={11} style={{ transform: subExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
               </button>
 
-              {/* Attachment indicator */}
               {task.attachmentUrl && (
                 <a
                   href={task.attachmentUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1.5 text-[11px] font-semibold hover:scale-105 transition-all"
+                  className="flex items-center gap-1 text-[10.5px] font-semibold transition-opacity hover:opacity-70"
                   style={{ color: 'var(--color-accent)' }}
                   title="Open attachment"
                 >
-                  <Paperclip size={13} />
+                  <Paperclip size={12} />
                 </a>
               )}
 
-              {/* Duration */}
               {duration && (
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                  <Clock size={12} />
-                  <span>{duration}</span>
+                <span className="flex items-center gap-1 text-[10.5px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                  <Clock size={11} />
+                  {duration}
                 </span>
               )}
-
-              {/* Priority flag */}
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-                <Flag size={12} style={{ color: PRIORITY_COLOR[task.priority] ?? 'var(--color-text-muted)', fill: PRIORITY_COLOR[task.priority] ?? 'none' }} />
-                <span>{task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}</span>
-              </span>
             </div>
 
-            {/* Due date badge */}
-            {dueDateLabel && (
-              <div
-                className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg"
-                style={{
-                  color: overdue ? 'var(--color-danger)' : today ? 'var(--color-warning)' : 'var(--color-text-muted)',
-                  background: overdue
-                    ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
-                    : today
-                    ? 'color-mix(in srgb, var(--color-warning) 12%, transparent)'
-                    : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)',
-                }}
+            {!done && !cancelled && (
+              <button
+                type="button"
+                onClick={() => onFocus(task.id)}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10.5px] font-bold transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]"
+                style={{ color: 'var(--color-accent)' }}
+                title="Focus on this task"
               >
-                <Calendar size={11} />
-                <span>{dueDateLabel}</span>
-              </div>
+                <Timer size={12} />
+                Focus
+              </button>
             )}
           </div>
 
           {/* Subtasks expandable panel */}
           {subExpanded && (
             <div
-              className="mt-3 rounded-xl border px-3.5 py-3 space-y-1"
+              className="mt-2.5 space-y-1 rounded-xl border px-3 py-2.5"
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
               {task.subTasks?.map((subTask) => (
-                <div key={subTask.id} className="flex items-center gap-2.5 group/sub py-1 -mx-1.5 px-1.5 rounded-lg hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
+                <div key={subTask.id} className="group/sub -mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                   <button type="button" onClick={() => onToggleSubtask(task.id, subTask.id, !subTask.completed)} className="shrink-0">
                     {subTask.completed ? (
                       <CheckCircle2 size={15} style={{ color: 'var(--color-success)' }} />
@@ -555,7 +471,7 @@ export function TaskCard({
                     )}
                   </button>
                   <span
-                    className="text-[11.5px] leading-tight flex-1"
+                    className="flex-1 text-[11.5px] leading-tight"
                     style={{
                       color: subTask.completed ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
                       textDecoration: subTask.completed ? 'line-through' : 'none',
@@ -566,7 +482,7 @@ export function TaskCard({
                   <button
                     type="button"
                     onClick={() => onDeleteSubtask(task.id, subTask.id)}
-                    className="shrink-0 p-1 rounded-md opacity-0 group-hover/sub:opacity-100 transition-opacity"
+                    className="shrink-0 rounded-md p-1 opacity-0 transition-opacity group-hover/sub:opacity-100"
                     style={{ color: 'var(--color-danger)' }}
                     aria-label="Delete subtask"
                   >
@@ -575,11 +491,10 @@ export function TaskCard({
                 </div>
               ))}
               {subTotal === 0 && (
-                <p className="text-[11px] text-center py-1" style={{ color: 'var(--color-text-muted)' }}>No subtasks yet</p>
+                <p className="py-1 text-center text-[11px]" style={{ color: 'var(--color-text-muted)' }}>No subtasks yet</p>
               )}
 
-              {/* Quick-add subtask */}
-              <div className="flex items-center gap-2 pt-1.5">
+              <div className="flex items-center gap-2 pt-1">
                 <input
                   type="text"
                   value={subtaskDraft}
@@ -593,7 +508,7 @@ export function TaskCard({
                   type="button"
                   onClick={() => onAddSubtask(task.id)}
                   disabled={!subtaskDraft.trim()}
-                  className="p-1 rounded-md transition-opacity disabled:opacity-30"
+                  className="rounded-md p-1 transition-opacity disabled:opacity-30"
                   style={{ color: 'var(--color-accent)' }}
                 >
                   <CheckSquare size={14} />
