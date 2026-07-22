@@ -168,8 +168,12 @@ export function HabitsPage() {
             {/* Habit list, full width */}
             <HabitList habits={filteredHabits} viewMode="list" />
 
+          
+
             {/* AI Coach */}
             <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+              {/* Achievements */}
+            <AchievementsPanel />
           </>
         )}
       </div>
