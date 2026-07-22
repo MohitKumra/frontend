@@ -325,7 +325,7 @@ export function HabitsPage() {
               transition={{ delay: 0.5, duration: 0.6 }}
               className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6"
             >
-              <AchievementsPanel habits={habits} />
+              <AchievementsPanel />
               <HabitHeatmapCombined habits={habits} />
             </motion.div>
           )}
