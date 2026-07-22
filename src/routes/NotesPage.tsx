@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
@@ -21,29 +21,53 @@ import {
   ChevronDown,
   Clock,
   StickyNote,
+  Archive,
+  RotateCcw,
+  ArrowUpDown,
+  Loader2,
 } from 'lucide-react';
-import { useNotes, useDeleteNote } from '../features/notes/hooks/useNotes';
-import { LoadingScreen } from '../components/ui/Spinner';
+import { useNotes, useDeleteNote, useUpdateNote, useTogglePin, useArchiveNote, useUnarchiveNote } from '../features/notes/hooks/useNotes';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
-import type { NoteDTO } from '../types';
+import { TagInput } from '../components/notes/TagInput';
+import { MoodPicker } from '../components/notes/MoodPicker';
+import type { NoteDTO, NoteSortField, NoteSortOrder, NoteMood } from '../types';
 import { isImageMedia } from '../components/media/MediaPreview';
 import '../styles/theme-journal-notes.css';
 
 type ViewMode = 'grid' | 'list';
-type NoteFilter = 'all' | 'notes' | 'journal';
+type NoteFilter = 'all' | 'notes' | 'journal' | 'archived';
 type CardTheme = 'violet' | 'amber' | 'green' | 'blue' | 'pink';
 
-const STARRED_STORAGE_KEY = 'notes:starred';
 const NOTE_THEME_ROTATION: CardTheme[] = ['amber', 'blue', 'pink'];
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedValue(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+const MOOD_EMOJI: Record<string, string> = {
+  great: '🌟',
+  good: '🙂',
+  neutral: '😐',
+  bad: '😔',
+  awful: '😢',
+};
 
 export function NotesPage() {
   const [filter, setFilter] = useState<NoteFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [attachmentsOnly, setAttachmentsOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalIsJournal, setCreateModalIsJournal] = useState(false);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
@@ -51,114 +75,98 @@ export function NotesPage() {
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const [noteMenuOpen, setNoteMenuOpen] = useState<string | null>(null);
   const [originRect, setOriginRect] = useState<DOMRect | null>(null);
-  const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
   const [featuredIndex, setFeaturedIndex] = useState(0);
 
-  const { data: allNotes, isLoading } = useNotes();
+  // Sort & filter state
+  const [sortField, setSortField] = useState<NoteSortField>('updatedAt');
+  const [sortOrder, setSortOrder] = useState<NoteSortOrder>('desc');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [filterMood, setFilterMood] = useState<NoteMood>(null);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const isSearchSettling = searchQuery !== debouncedSearchQuery;
+
+  // Archive state
+  const showArchived = filter === 'archived';
   const deleteNote = useDeleteNote();
+  const updateNote = useUpdateNote();
+  const togglePin = useTogglePin();
+  const archiveNote = useArchiveNote();
+  const unarchiveNote = useUnarchiveNote();
 
-  const notes = allNotes?.data ?? [];
+  // Build query filters
+  const queryFilters = useMemo(() => ({
+    isJournal: filter === 'journal' ? true : filter === 'notes' ? false : undefined,
+    archived: showArchived ? true : undefined,
+    search: debouncedSearchQuery || undefined,
+    sortField,
+    sortOrder,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    mood: filterMood || undefined,
+    tags: filterTags.length > 0 ? filterTags : undefined,
+  }), [filter, debouncedSearchQuery, sortField, sortOrder, dateFrom, dateTo, filterMood, filterTags, showArchived]);
 
-  // Pin/favorite is a client-side convenience (not part of NoteDTO yet) —
-  // persisted locally so a starred note keeps showing under "Pinned".
+  const {
+    data: pagesData,
+    isLoading,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useNotes(queryFilters);
+  const isInitialNotesLoading = isLoading && !pagesData;
+  const isNotesRefreshing = (isSearchSettling || (isFetching && !isFetchingNextPage)) && !isInitialNotesLoading;
+
+  // Flatten all pages into a single array
+  const allNotes = useMemo(
+    () => pagesData?.pages.flatMap((page) => page.data) ?? [],
+    [pagesData]
+  );
+
+  // Infinite scroll observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STARRED_STORAGE_KEY);
-      if (raw) setStarredIds(new Set(JSON.parse(raw)));
-    } catch {
-      /* ignore malformed/blocked storage */
-    }
-  }, []);
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const toggleStar = (id: string) => {
-    setStarredIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      try {
-        localStorage.setItem(STARRED_STORAGE_KEY, JSON.stringify([...next]));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  };
-
+  // Apply client-side attachment filter
   const filteredNotes = useMemo(() => {
-    return notes.filter((note) => {
-      const matchesFilter =
-        filter === 'all' ||
-        (filter === 'notes' && !note.isJournal) ||
-        (filter === 'journal' && note.isJournal);
+    if (!attachmentsOnly) return allNotes;
+    return allNotes.filter((n) => Boolean(n.attachmentUrl || n.voiceNoteUrl));
+  }, [allNotes, attachmentsOnly]);
 
-      const matchesSearch =
-        searchQuery === '' ||
-        note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchQuery.toLowerCase());
+  // Separate pinned and unpinned for grid view
+  const starredNotes = useMemo(() => filteredNotes.filter((n) => n.isPinned), [filteredNotes]);
+  const otherNotes = useMemo(() => filteredNotes.filter((n) => !n.isPinned), [filteredNotes]);
 
-      const matchesAttachments =
-        !attachmentsOnly || Boolean(note.attachmentUrl || note.voiceNoteUrl);
-
-      return matchesFilter && matchesSearch && matchesAttachments;
-    });
-  }, [notes, filter, searchQuery, attachmentsOnly]);
-
-  const counts = {
-    all: notes.length,
-    notes: notes.filter((n) => !n.isJournal).length,
-    journal: notes.filter((n) => n.isJournal).length,
-  };
-
-  const starredNotes = filteredNotes.filter((n) => starredIds.has(n.id));
-  const otherNotes = filteredNotes.filter((n) => !starredIds.has(n.id));
-
+  // Journal notes for featured panel
   const journalNotes = useMemo(
     () =>
-      notes
+      filteredNotes
         .filter((n) => n.isJournal)
         .sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ),
-    [notes]
+    [filteredNotes]
   );
 
-  const handleDeleteNote = (id: string) => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      deleteNote.mutate(id);
-      setNoteMenuOpen(null);
-      setViewingNote((current) => (current?.id === id ? null : current));
-    }
-  };
+  // Counts from server meta
+  const totalCount = pagesData?.pages[0]?.meta?.total ?? 0;
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const formatFullDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-
-  const formatTime = (dateStr: string) =>
-    new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-
-  // ── theming helpers (derived from real fields — no fake data) ──────────
   const themeForNote = (note: NoteDTO, starred: boolean): CardTheme => {
     if (starred) return 'violet';
     if (note.isJournal) return 'green';
@@ -175,7 +183,56 @@ export function NotesPage() {
     return FileText;
   };
 
-  /** Small icon indicating a note has attached media. */
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatFullDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+  const formatTime = (dateStr: string) =>
+    new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  const handleDeleteNote = (id: string) => {
+    if (confirm('Are you sure you want to delete this note?')) {
+      deleteNote.mutate(id);
+      setNoteMenuOpen(null);
+      setViewingNote((current) => (current?.id === id ? null : current));
+    }
+  };
+
+  const handleTogglePin = (id: string, currentPinned: boolean) => {
+    togglePin.mutate({ id, isPinned: !currentPinned });
+    setNoteMenuOpen(null);
+  };
+
+  const handleArchive = (id: string) => {
+    archiveNote.mutate(id);
+    setNoteMenuOpen(null);
+  };
+
+  const handleUnarchive = (id: string) => {
+    unarchiveNote.mutate(id);
+    setNoteMenuOpen(null);
+  };
+
   const CardMediaIcons = ({ note }: { note: NoteDTO }) => {
     const hasAttach = Boolean(note.attachmentUrl);
     const hasVoice = Boolean(note.voiceNoteUrl);
@@ -189,13 +246,23 @@ export function NotesPage() {
     );
   };
 
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+  // Toggle sort direction
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+  };
+
+  const setSortFieldAndReset = (field: NoteSortField) => {
+    if (sortField === field) {
+      toggleSortOrder();
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
 
   const EntryMenu = ({ note }: { note: NoteDTO }) => (
     <div
-      className="absolute right-3 top-[52px] w-40 rounded-lg shadow-xl z-30 py-1"
+      className="absolute right-3 top-12 w-44 rounded-lg shadow-xl z-30 py-1"
       style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -213,6 +280,39 @@ export function NotesPage() {
       <button
         onClick={(e) => {
           e.stopPropagation();
+          handleTogglePin(note.id, note.isPinned);
+        }}
+        className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+      >
+        <Pin size={12} />
+        {note.isPinned ? 'Unpin' : 'Pin'}
+      </button>
+      {showArchived ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleUnarchive(note.id);
+          }}
+          className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+        >
+          <RotateCcw size={12} />
+          Restore
+        </button>
+      ) : (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleArchive(note.id);
+          }}
+          className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+        >
+          <Archive size={12} />
+          Archive
+        </button>
+      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
           handleDeleteNote(note.id);
         }}
         className="w-full px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
@@ -223,13 +323,12 @@ export function NotesPage() {
     </div>
   );
 
-  // Shared note card renderer — pastel "premium" card used by the grid view.
   const renderCard = (note: NoteDTO) => {
-    const starred = starredIds.has(note.id);
+    const starred = note.isPinned;
     const theme = themeForNote(note, starred);
     const Icon = iconForNote(note);
-    const preview =
-      note.content?.length > 140 ? note.content.slice(0, 140) + '…' : note.content;
+    const preview = note.content?.length > 140 ? note.content.slice(0, 140) + '…' : note.content;
+    const moodEmoji = note.mood ? MOOD_EMOJI[note.mood] : null;
 
     return (
       <div
@@ -240,20 +339,51 @@ export function NotesPage() {
         }}
         className={`np-card np-theme-${theme} group`}
       >
-        <div className="flex items-start justify-between">
+        {/* Top row: Icon and Action Buttons */}
+        <div className="flex items-start justify-between mb-3">
           <div className="np-card-icon">
             <Icon size={18} />
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleStar(note.id);
-            }}
-            className={`np-card-star ${starred ? 'is-starred' : ''}`}
-            aria-label={starred ? 'Unpin note' : 'Pin note'}
-          >
-            <Star size={15} fill={starred ? 'currentColor' : 'none'} />
-          </button>
+          <div className="flex items-center gap-1">
+            {moodEmoji && <span className="text-sm" title={`Mood: ${note.mood}`}>{moodEmoji}</span>}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTogglePin(note.id, note.isPinned);
+              }}
+              className={`np-card-action-btn ${starred ? 'is-starred' : ''}`}
+              aria-label={starred ? 'Unpin note' : 'Pin note'}
+              title={starred ? 'Unpin' : 'Pin'}
+            >
+              <Pin size={14} fill={starred ? 'currentColor' : 'none'} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (showArchived) {
+                  handleUnarchive(note.id);
+                } else {
+                  handleArchive(note.id);
+                }
+              }}
+              className="np-card-action-btn"
+              aria-label={showArchived ? 'Restore note' : 'Archive note'}
+              title={showArchived ? 'Restore' : 'Archive'}
+            >
+              {showArchived ? <RotateCcw size={14} /> : <Archive size={14} />}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setNoteMenuOpen(noteMenuOpen === note.id ? null : note.id);
+              }}
+              className="np-card-action-btn"
+              aria-label="More actions"
+              title="More"
+            >
+              <MoreVertical size={14} />
+            </button>
+          </div>
         </div>
 
         <h3 className="np-card-title">
@@ -266,20 +396,33 @@ export function NotesPage() {
         <p className="np-card-meta">{note.createdAt ? formatDate(note.createdAt) : ''}</p>
         <p className="np-card-preview">{preview}</p>
 
+        {/* Tags */}
+        {note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {note.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider"
+                style={{
+                  background: 'var(--tag-bg, rgba(99,102,241,0.12))',
+                  color: 'var(--tag-color, #6366f1)',
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+            {note.tags.length > 3 && (
+              <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                +{note.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Bottom row: Badge and Media Icons */}
         <div className="np-card-footer">
           <span className="np-card-badge">{note.isJournal ? 'Journal' : 'Note'}</span>
-          <div className="flex items-center gap-1.5">
-            <CardMediaIcons note={note} />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setNoteMenuOpen(noteMenuOpen === note.id ? null : note.id);
-              }}
-              className="np-card-menu-btn"
-            >
-              <MoreVertical size={14} />
-            </button>
-          </div>
+          <CardMediaIcons note={note} />
         </div>
 
         {noteMenuOpen === note.id && <EntryMenu note={note} />}
@@ -307,10 +450,10 @@ export function NotesPage() {
               </div>
               <div>
                 <h1 className="text-[1.9rem] font-black text-text-primary tracking-tight leading-tight">
-                  Notes &amp; Journal
+                  Notes & Journal
                 </h1>
                 <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--color-accent)' }}>
-                  {filteredNotes.length} note{filteredNotes.length !== 1 ? 's' : ''}
+                  {totalCount} note{totalCount !== 1 ? 's' : ''}
                 </p>
                 <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
                   Jot down thoughts, journal entries, and important ideas
@@ -418,8 +561,7 @@ export function NotesPage() {
 
             {/* Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-              {(['all', 'notes', 'journal'] as NoteFilter[]).map((f) => {
-                const count = counts[f];
+              {(['all', 'notes', 'journal', 'archived'] as NoteFilter[]).map((f) => {
                 const isActive = filter === f;
                 return (
                   <button
@@ -428,7 +570,6 @@ export function NotesPage() {
                     className={`np-pill ${isActive ? 'is-active' : ''}`}
                   >
                     {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
-                    <span className="np-pill-count">({count})</span>
                   </button>
                 );
               })}
@@ -438,15 +579,134 @@ export function NotesPage() {
                 title="Show only notes with attachments"
               >
                 <Filter size={13} />
-                Filters
+                Media
+              </button>
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className={`np-pill ${showFilters ? 'is-active' : ''}`}
+                title="Advanced filters"
+              >
+                <ArrowUpDown size={13} />
+                Sort
               </button>
             </div>
           </div>
+
+          {/* Advanced filters panel */}
+          {showFilters && (
+            <div className="np-filters-panel">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Sort */}
+                <div className="np-filter-section">
+                  <label className="np-filter-label">Sort by</label>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      {(['updatedAt', 'createdAt', 'title'] as NoteSortField[]).map((field) => (
+                        <button
+                          key={field}
+                          onClick={() => setSortFieldAndReset(field)}
+                          className={`np-filter-btn ${sortField === field ? 'is-active' : ''}`}
+                        >
+                          {field === 'updatedAt' ? 'Updated' : field === 'createdAt' ? 'Created' : 'Title'}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={toggleSortOrder}
+                      className="np-filter-order-btn"
+                    >
+                      <ArrowUpDown size={13} />
+                      {sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Date range */}
+                <div className="np-filter-section">
+                  <label className="np-filter-label">Date range</label>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="np-filter-date-input"
+                      placeholder="From"
+                    />
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="np-filter-date-input"
+                      placeholder="To"
+                    />
+                  </div>
+                </div>
+
+                {/* Mood filter */}
+                <div className="np-filter-section">
+                  <label className="np-filter-label">Mood</label>
+                  <MoodPicker value={filterMood} onChange={setFilterMood} />
+                </div>
+
+                {/* Tag filter */}
+                <div className="np-filter-section">
+                  <label className="np-filter-label">Tags</label>
+                  <TagInput
+                    tags={filterTags}
+                    onChange={setFilterTags}
+                    placeholder="Filter by tag..."
+                  />
+                </div>
+              </div>
+
+              {/* Clear filters */}
+              {(dateFrom || dateTo || filterMood || filterTags.length > 0 || sortField !== 'updatedAt' || sortOrder !== 'desc') && (
+                <button
+                  onClick={() => {
+                    setDateFrom('');
+                    setDateTo('');
+                    setFilterMood(null);
+                    setFilterTags([]);
+                    setSortField('updatedAt');
+                    setSortOrder('desc');
+                  }}
+                  className="np-filter-clear-btn"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
 
-        {/* Notes Grid/List */}
-        <motion.div variants={itemVariants} className="flex flex-col gap-8">
-          {filteredNotes.length === 0 ? (
+        {/* Notes Grid/List with Infinite Scroll */}
+        <motion.div variants={itemVariants} className="relative flex flex-col gap-8">
+          {isNotesRefreshing && (
+            <div className="pointer-events-none absolute right-0 top-0 z-20 flex justify-end">
+              <div
+                className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold shadow-sm"
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                <Loader2 size={12} className="animate-spin" />
+                Updating notes
+              </div>
+            </div>
+          )}
+
+          {isInitialNotesLoading ? (
+            <Card variant="default" className="p-12 text-center">
+              <div className="flex min-h-[260px] items-center justify-center">
+                <div className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  <Loader2 size={18} className="animate-spin" />
+                  Loading notes
+                </div>
+              </div>
+            </Card>
+          ) : filteredNotes.length === 0 ? (
             <Card variant="default" className="p-12 text-center">
               <div
                 className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
@@ -454,118 +714,150 @@ export function NotesPage() {
               >
                 <FileText size={32} />
               </div>
-              <h3 className="text-lg font-bold text-text-primary mb-2">No notes found</h3>
+              <h3 className="text-lg font-bold text-text-primary mb-2">
+                {showArchived ? 'No archived notes' : filter === 'all' ? 'No Journal / Notes found' : filter === 'journal' ? 'No Journal found' : 'No notes found'}
+              </h3>
               <p className="text-sm text-text-muted mb-6">
-                {filter === 'all'
-                  ? 'Get started by creating your first note'
-                  : searchQuery
-                    ? 'No notes match your search. Try a different keyword.'
-                    : `No ${filter} entries yet. Create one to get started.`}
+                {showArchived
+                  ? 'Archived notes will appear here when you archive them.'
+                  : filter === 'all'
+                    ? 'Get started by creating your first note'
+                    : searchQuery
+                      ? 'No notes match your search. Try a different keyword.'
+                      : `No ${filter} entries yet. Create one to get started.`}
               </p>
-              <button
-                onClick={() => {
-                  setCreateModalIsJournal(filter === 'journal');
-                  setCreateModalOpen(true);
-                }}
-                className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md"
-                style={{ background: 'var(--gradient-accent)' }}
-              >
-                {filter === 'journal' ? 'Create Journal Entry' : 'Create Note'}
-              </button>
+              {!showArchived && (
+                <button
+                  onClick={() => {
+                    setCreateModalIsJournal(filter === 'journal');
+                    setCreateModalOpen(true);
+                  }}
+                  className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md"
+                  style={{ background: 'var(--gradient-accent)' }}
+                >
+                  {filter === 'all' ? 'Create Journal / Note' : filter === 'journal' ? 'Create Journal Entry' : 'Create Note'}
+                </button>
+              )}
             </Card>
           ) : viewMode === 'list' ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {filteredNotes.map((note) => {
                 const isJournal = note.isJournal;
+                const moodEmoji = note.mood ? MOOD_EMOJI[note.mood] : null;
+                const starred = note.isPinned;
+
                 return (
                   <div
                     key={note.id}
-                    onClick={() => setViewingNote(note)}
-                    className="relative flex items-start gap-4 p-5 rounded-2xl border cursor-pointer transition-all hover:shadow-md"
-                    style={{
-                      background: isJournal ? 'var(--journal-card-bg)' : 'var(--color-surface-raised)',
-                      borderColor: isJournal ? 'var(--journal-card-border)' : 'var(--color-border)',
+                    onClick={(e) => {
+                      setOriginRect(e.currentTarget.getBoundingClientRect());
+                      setViewingNote(note);
                     }}
+                    className="np-list-item group"
                   >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{
-                        background: isJournal ? 'var(--journal-icon-bg)' : 'var(--icon-bg-accent)',
-                        color: isJournal ? 'var(--journal-gold)' : 'var(--icon-text-accent)',
-                      }}
-                    >
-                      {isJournal ? <BookOpen size={18} /> : <StickyNote size={18} />}
+                    {/* Left: Icon */}
+                    <div className={`np-list-icon ${isJournal ? 'is-journal' : ''}`}>
+                      {isJournal ? <BookOpen size={20} /> : <FileText size={20} />}
                     </div>
 
+                    {/* Center: Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-bold text-text-primary truncate">
-                          {note.title || 'Untitled'}
+                      {/* Title Row */}
+                      <div className="flex items-center gap-2 mb-2">
+                        {moodEmoji && <span className="text-base" title={`Mood: ${note.mood}`}>{moodEmoji}</span>}
+                        <h4 className="np-list-title">
+                          {note.title && !note.title.startsWith('Journal Entry —')
+                            ? note.title
+                            : isJournal
+                              ? 'Daily Reflection'
+                              : 'Untitled'}
                         </h4>
-                        {isJournal && (
-                          <Badge variant="warning" size="sm" className="shrink-0">Journal</Badge>
+                        {starred && (
+                          <Pin size={13} fill="currentColor" className="shrink-0" style={{ color: '#f5b301' }} />
                         )}
-                        {!isJournal && note.createdAt && (
-                          <span className="text-[10px] font-semibold text-text-muted shrink-0">
-                            {formatDate(note.createdAt)}
-                          </span>
-                        )}
+                        <span className="np-list-badge">{isJournal ? 'Journal' : 'Note'}</span>
                       </div>
-                      <p className="text-xs text-text-secondary line-clamp-2">
-                        {note.content?.length > 120 ? note.content.slice(0, 120) + '…' : note.content}
-                      </p>
-                      <div className="mt-1">
+
+                      {/* Date */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock size={12} className="shrink-0 opacity-70" />
+                        <span className="np-list-date">
+                          {note.createdAt ? formatFullDate(note.createdAt) : ''}
+                        </span>
                         <CardMediaIcons note={note} />
                       </div>
+
+                      {/* Preview */}
+                      <p className="np-list-preview">
+                        {note.content?.length > 180 ? note.content.slice(0, 180) + '…' : note.content}
+                      </p>
+
+                      {/* Tags */}
+                      {note.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {note.tags.slice(0, 5).map((tag) => (
+                            <span key={tag} className="np-list-tag">{tag}</span>
+                          ))}
+                          {note.tags.length > 5 && (
+                            <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                              +{note.tags.length - 5} more
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setNoteMenuOpen(noteMenuOpen === note.id ? null : note.id);
-                      }}
-                      className="p-1.5 rounded-md shrink-0 transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                      style={{ color: 'var(--color-text-muted)' }}
-                    >
-                      <MoreVertical size={14} />
-                    </button>
-
-                    {noteMenuOpen === note.id && (
-                      <div
-                        className="absolute right-4 top-14 w-40 rounded-lg shadow-xl z-30 py-1"
-                        style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-                        onClick={(e) => e.stopPropagation()}
+                    {/* Right: Action Buttons */}
+                    <div className="np-list-actions">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePin(note.id, note.isPinned);
+                        }}
+                        className={`np-list-action-btn ${starred ? 'is-starred' : ''}`}
+                        aria-label={starred ? 'Unpin note' : 'Pin note'}
+                        title={starred ? 'Unpin' : 'Pin'}
                       >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingNote(note);
-                            setNoteMenuOpen(null);
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
-                        >
-                          <Edit3 size={12} />
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNote(note.id);
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 size={12} />
-                          Delete
-                        </button>
-                      </div>
-                    )}
+                        <Pin size={16} fill={starred ? 'currentColor' : 'none'} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (showArchived) {
+                            handleUnarchive(note.id);
+                          } else {
+                            handleArchive(note.id);
+                          }
+                        }}
+                        className="np-list-action-btn"
+                        aria-label={showArchived ? 'Restore note' : 'Archive note'}
+                        title={showArchived ? 'Restore' : 'Archive'}
+                      >
+                        {showArchived ? <RotateCcw size={16} /> : <Archive size={16} />}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNoteMenuOpen(noteMenuOpen === note.id ? null : note.id);
+                        }}
+                        className="np-list-action-btn"
+                        aria-label="More actions"
+                        title="More"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    {noteMenuOpen === note.id && <EntryMenu note={note} />}
                   </div>
                 );
               })}
             </div>
           ) : (
             <>
-              {starredNotes.length > 0 && (
+              {/* Grid View — Pinned section */}
+              {!showArchived && starredNotes.length > 0 && (
                 <div>
                   <div className="np-eyebrow">
                     <Pin size={12} />
@@ -581,9 +873,10 @@ export function NotesPage() {
                 </div>
               )}
 
+              {/* Grid View — Other notes */}
               {otherNotes.length > 0 && (
                 <div>
-                  {starredNotes.length > 0 && (
+                  {!showArchived && starredNotes.length > 0 && (
                     <div className="np-eyebrow">
                       <Pin size={12} style={{ opacity: 0.4 }} />
                       Others
@@ -594,17 +887,21 @@ export function NotesPage() {
                   </div>
                 </div>
               )}
+
+              {/* Grid View — archived items (no eyebrow sections) */}
+              {showArchived && filteredNotes.map((note) => renderCard(note))}
             </>
           )}
 
           {/* Featured journal entry panel */}
-          {journalNotes.length > 0 &&
+          {!showArchived && journalNotes.length > 0 && viewMode === 'grid' &&
             (() => {
               const entry = journalNotes[featuredIndex % journalNotes.length];
               const words = entry.content
                 ? entry.content.trim().split(/\s+/).filter(Boolean).length
                 : 0;
               const hasMedia = Boolean(entry.attachmentUrl || entry.voiceNoteUrl);
+              const moodEmoji = entry.mood ? MOOD_EMOJI[entry.mood] : null;
               const menuKey = `featured-${entry.id}`;
 
               return (
@@ -615,6 +912,7 @@ export function NotesPage() {
                       <span className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>
                         Journal Entry
                       </span>
+                      {moodEmoji && <span className="text-base">{moodEmoji}</span>}
                     </div>
                     <div className="relative flex items-center gap-2">
                       <button
@@ -628,7 +926,7 @@ export function NotesPage() {
                       </button>
                       <button
                         onClick={() => setNoteMenuOpen(noteMenuOpen === menuKey ? null : menuKey)}
-                        className="np-card-menu-btn"
+                        className="np-card-action-btn"
                         style={{ opacity: 1, position: 'static' }}
                       >
                         <MoreVertical size={15} />
@@ -654,6 +952,15 @@ export function NotesPage() {
                         ? entry.content.slice(0, 200) + '…'
                         : entry.content}
                     </p>
+
+                    {/* Tags */}
+                    {entry.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {entry.tags.map((tag) => (
+                          <span key={tag} className="np-list-tag">{tag}</span>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="np-featured-stats">
                       <div className="np-stat">
@@ -743,38 +1050,17 @@ export function NotesPage() {
                       </defs>
 
                       <g mask="url(#npj-edge-mask)">
-                        {/* sky */}
                         <rect x="0" y="0" width="460" height="300" fill="url(#npj-sky)" />
-
-                        {/* sun + glow */}
                         <circle cx="322" cy="64" r="72" fill="url(#npj-sun-glow)" />
                         <circle cx="322" cy="64" r="18" fill="#FFE6C2" filter="url(#npj-blur-sm)" />
-
-                        {/* clouds */}
                         <g filter="url(#npj-blur-sm)" opacity="0.8">
                           <ellipse cx="118" cy="52" rx="32" ry="10" fill="#FFFFFF" />
                           <ellipse cx="146" cy="47" rx="22" ry="8" fill="#FFFFFF" />
                           <ellipse cx="246" cy="92" rx="24" ry="7" fill="#FFFFFF" />
                         </g>
-
-                        {/* back mountain range — softened for atmospheric depth */}
-                        <path
-                          d="M0 208 L68 126 L118 168 L172 106 L248 172 L318 116 L398 172 L460 148 L460 232 L0 232 Z"
-                          fill="url(#npj-m1)"
-                          filter="url(#npj-blur-sm)"
-                        />
-                        {/* mid mountain range */}
-                        <path
-                          d="M0 224 L88 146 L148 192 L228 128 L298 198 L368 148 L460 198 L460 240 L0 240 Z"
-                          fill="url(#npj-m2)"
-                        />
-                        {/* front mountain range */}
-                        <path
-                          d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z"
-                          fill="url(#npj-m3)"
-                        />
-
-                        {/* pine cluster */}
+                        <path d="M0 208 L68 126 L118 168 L172 106 L248 172 L318 116 L398 172 L460 148 L460 232 L0 232 Z" fill="url(#npj-m1)" filter="url(#npj-blur-sm)" />
+                        <path d="M0 224 L88 146 L148 192 L228 128 L298 198 L368 148 L460 198 L460 240 L0 240 Z" fill="url(#npj-m2)" />
+                        <path d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z" fill="url(#npj-m3)" />
                         <g fill="#463B85">
                           <path d="M366 176 L376 203 L356 203 Z" />
                           <path d="M383 188 L394 216 L372 216 Z" />
@@ -785,21 +1071,9 @@ export function NotesPage() {
                           <rect x="405" y="199" width="4" height="9" />
                           <rect x="423" y="216" width="4" height="9" />
                         </g>
-
-                        {/* lake */}
                         <rect x="0" y="228" width="460" height="72" fill="url(#npj-lake)" />
-
-                        {/* blurred reflection of the front range + sun in the water */}
-                        <g
-                          clipPath="url(#npj-lake-clip)"
-                          transform="translate(0 456) scale(1 -1)"
-                          opacity="0.38"
-                          filter="url(#npj-blur-lg)"
-                        >
-                          <path
-                            d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z"
-                            fill="url(#npj-m3)"
-                          />
+                        <g clipPath="url(#npj-lake-clip)" transform="translate(0 456) scale(1 -1)" opacity="0.38" filter="url(#npj-blur-lg)">
+                          <path d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z" fill="url(#npj-m3)" />
                           <circle cx="322" cy="64" r="18" fill="#FFE6C2" />
                         </g>
                       </g>
@@ -808,6 +1082,22 @@ export function NotesPage() {
                 </div>
               );
             })()}
+
+          {/* Infinite scroll sentinel */}
+          <div ref={loadMoreRef} className="flex justify-center py-4">
+            {isFetchingNextPage && (
+              <div className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+                Loading more...
+              </div>
+            )}
+            {!hasNextPage && filteredNotes.length > 0 && (
+              <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                All {totalCount} notes loaded
+              </span>
+            )}
+          </div>
         </motion.div>
       </motion.div>
 

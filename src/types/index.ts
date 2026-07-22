@@ -308,6 +308,10 @@ export interface HabitCompletionDTO {
 
 // ─── Notes ───────────────────────────────────────────────────────────────────
 
+export type NoteMood = 'great' | 'good' | 'neutral' | 'bad' | 'awful' | null;
+export type NoteSortField = 'updatedAt' | 'createdAt' | 'title';
+export type NoteSortOrder = 'asc' | 'desc';
+
 export interface NoteDTO {
   id: string;
   userId: string;
@@ -318,6 +322,10 @@ export interface NoteDTO {
   projectId: string | null;
   attachmentUrl: string | null;
   voiceNoteUrl: string | null;
+  isPinned: boolean;
+  mood: NoteMood;
+  tags: string[];
+  archived: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -330,6 +338,8 @@ export interface CreateNoteRequest {
   projectId?: string | null;
   attachmentUrl?: string | null;
   voiceNoteUrl?: string | null;
+  mood?: NoteMood;
+  tags?: string[];
 }
 
 export interface UpdateNoteRequest {
@@ -340,6 +350,36 @@ export interface UpdateNoteRequest {
   projectId?: string | null;
   attachmentUrl?: string | null;
   voiceNoteUrl?: string | null;
+  isPinned?: boolean;
+  mood?: NoteMood;
+  tags?: string[];
+  archived?: boolean;
+}
+
+export interface NoteListParams {
+  isJournal?: boolean;
+  taskId?: string;
+  projectId?: string;
+  search?: string;
+  tags?: string[];
+  mood?: NoteMood;
+  dateFrom?: string;
+  dateTo?: string;
+  archived?: boolean;
+  isPinned?: boolean;
+  sortField?: NoteSortField;
+  sortOrder?: NoteSortOrder;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    totalPages: number;
+  };
 }
 
 // ─── Focus Sessions ──────────────────────────────────────────────────────────

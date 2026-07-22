@@ -3,6 +3,8 @@ import { BookOpen, StickyNote, Check, X } from 'lucide-react';
 import type { NoteDTO } from '../../types';
 import type { EntryFormState } from './EnteryFormModal';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
+import { MoodPicker } from './MoodPicker';
+import { TagInput } from './TagInput';
 
 interface JournalEntryShellProps {
   mode: 'create' | 'edit';
@@ -118,6 +120,24 @@ export function JournalEntryShell({
               className="journal-edit-textarea"
               style={{ minHeight: '120px' }}
             />
+
+            {/* Mood & Tags */}
+            <div className="note-edit-extras" style={{ marginTop: '16px' }}>
+              <div className="note-extra-row">
+                <span className="note-extra-label">Mood</span>
+                <MoodPicker
+                  value={formData.mood}
+                  onChange={(mood) => setFormData((f) => ({ ...f, mood }))}
+                />
+              </div>
+              <div className="note-extra-row">
+                <span className="note-extra-label">Tags</span>
+                <TagInput
+                  tags={formData.tags}
+                  onChange={(tags) => setFormData((f) => ({ ...f, tags }))}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Media attachment icons — always visible at bottom */}

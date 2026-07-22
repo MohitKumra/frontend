@@ -13,10 +13,9 @@ export interface EntryFormState {
   projectId: string | null;
   attachmentUrl: string;
   voiceNoteUrl: string;
-}   
-
-
-
+  mood: NoteDTO['mood'];
+  tags: string[];
+}
 
 interface EntryFormModalProps {
   isOpen: boolean;
@@ -48,6 +47,8 @@ export function EntryFormModal({ isOpen, mode, note, editNote, defaultIsJournal 
     projectId: activeNote?.projectId ?? projectId,
     attachmentUrl: activeNote?.attachmentUrl ?? '',
     voiceNoteUrl: activeNote?.voiceNoteUrl ?? '',
+    mood: activeNote?.mood ?? null,
+    tags: activeNote?.tags ?? [],
   }));
 
   useEffect(() => {
@@ -59,6 +60,8 @@ export function EntryFormModal({ isOpen, mode, note, editNote, defaultIsJournal 
       projectId: activeNote?.projectId ?? projectId,
       attachmentUrl: activeNote?.attachmentUrl ?? '',
       voiceNoteUrl: activeNote?.voiceNoteUrl ?? '',
+      mood: activeNote?.mood ?? null,
+      tags: activeNote?.tags ?? [],
     });
   }, [activeNote, defaultIsJournal, projectId, taskId]);
 
@@ -74,7 +77,7 @@ export function EntryFormModal({ isOpen, mode, note, editNote, defaultIsJournal 
         await updateNote.mutateAsync({ id: activeNote.id, data: formData });
       } else {
         await createNote.mutateAsync(formData);
-        setFormData({ title: '', content: '', isJournal: defaultIsJournal, taskId, projectId, attachmentUrl: '', voiceNoteUrl: '' });
+        setFormData({ title: '', content: '', isJournal: defaultIsJournal, taskId, projectId, attachmentUrl: '', voiceNoteUrl: '', mood: null, tags: [] });
       }
       onClose();
     } catch (error) {
