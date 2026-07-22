@@ -44,9 +44,9 @@ export function AchievementsPanel() {
     .slice(0, 4);
 
   return (
-    <Card variant="default" className="p-6">
+    <Card variant="default" className="p-6 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 shrink-0">
         <h3 className="text-[15px] font-bold text-text-primary flex items-center gap-2">
           <Trophy size={18} className="text-warning" />
           Achievements
@@ -59,6 +59,9 @@ export function AchievementsPanel() {
           {showAll ? <ChevronUp size={12} /> : <Trophy size={12} />}
         </button>
       </div>
+
+      {/* Content — scrollable when taller than max-height */}
+      <div className="overflow-y-auto -mx-6 px-6" style={{ maxHeight: '400px' }}>
 
       {showAll ? (
         /* ─── Full gallery inline ─── */
@@ -262,6 +265,7 @@ export function AchievementsPanel() {
           })}
         </div>
       )}
+      </div>
     </Card>
   );
 }
