@@ -46,3 +46,12 @@ export function useGamificationProfile() {
     refetchOnWindowFocus: true,
   });
 }
+
+export function useAchievements() {
+  return useQuery({
+    queryKey: [...DASHBOARD_KEY, 'achievements'],
+    queryFn: dashboardApi.getAchievements,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+  });
+}

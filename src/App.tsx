@@ -14,6 +14,7 @@ import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { ResetPasswordPage }  from './routes/ResetPasswordPage';
 import { GoogleAuthCallbackPage } from './routes/GoogleAuthCallbackPage';
 import { AnimationTestPage } from './routes/AnimationTestPage';
+import { AchievementsTestPage } from './routes/AchievementsTestPage';
 
 // Protected pages
 import { DashboardPage }  from './routes/DashboardPage';
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/reset-password"  element={<PageTransition className="min-h-dvh"><ResetPasswordPage /></PageTransition>} />
         <Route path="/google/callback" element={<PageTransition className="min-h-dvh"><GoogleAuthCallbackPage /></PageTransition>} />
         <Route path="/animation-test"  element={<PageTransition className="min-h-dvh"><AnimationTestPage /></PageTransition>} />
+        <Route path="/achievements-test" element={<PageTransition className="min-h-dvh"><AchievementsTestPage /></PageTransition>} />
 
         {/* Protected routes — inside AppLayout */}
         <Route

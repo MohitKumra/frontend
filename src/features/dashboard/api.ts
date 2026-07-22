@@ -1,6 +1,6 @@
 // frontend/src/features/dashboard/api.ts
 import apiClient from '../../lib/apiClient';
-import type { AnalyticsSummaryDTO, EnhancedDashboardDTO, ActivityFeedResponse, GamificationProfileDTO } from '../../types';
+import type { AnalyticsSummaryDTO, EnhancedDashboardDTO, ActivityFeedResponse, GamificationProfileDTO, AchievementWithStatusDTO } from '../../types';
 
 export const dashboardApi = {
   getSummary: () =>
@@ -17,4 +17,7 @@ export const dashboardApi = {
 
   getActivityFeed: (page = 1, pageSize = 20) =>
     apiClient.get<ActivityFeedResponse>(`/notifications/activity-feed?page=${page}&pageSize=${pageSize}`).then((r) => r.data),
+
+  getAchievements: () =>
+    apiClient.get<AchievementWithStatusDTO[]>('/gamification/achievements').then((r) => r.data),
 };

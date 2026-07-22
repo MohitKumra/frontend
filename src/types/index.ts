@@ -441,6 +441,20 @@ export interface AchievementDTO {
   unlockedAt: string;
 }
 
+export interface AchievementWithStatusDTO {
+  key: string;
+  title: string;
+  description: string;
+  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+  icon: string;
+  pointsAwarded: number;
+  isUnlocked: boolean;
+  unlockedAt: string | null;
+  progress: number;
+  progressCurrent: number;
+  progressTarget: number;
+}
+
 export interface GamificationProfileDTO {
   totalPoints: number;
   level: number;

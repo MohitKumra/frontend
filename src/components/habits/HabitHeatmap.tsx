@@ -2,51 +2,62 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HabitHeatmapProps {
-  completionDates: string[]; // 'YYYY-MM-DD' UTC strings from the API — real history
+  /** Date -> ratio 0..1 of habits completed on that day */
+  dayFrequency: Map<string, number>;
   color?: string;
-  weeks?: number; // how many weeks to show per page, default 4
 }
 
-const CELL_DEFAULT = 13; // px — cell size, bumped up from 10 for visibility
 const CELL_MIN = 8; // minimum cell size when squeezed
+const CELL_DEFAULT = 16; // px — comfortable size when there's room to breathe
+const CELL_MAX = 22; // px — cap so cells don't get comically large in wide cards
+const GAP_RATIO = 0.22; // gap scales with cell size so proportions stay consistent
 
 const MONTH_LABELS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
 /**
- * GitHub-style contribution heatmap.
- * Layout: weeks as rows (top to bottom), days as columns (left to right).
- * Top-left = oldest week Monday of the page, Top-right = oldest week Sunday.
- * Bottom-left = newest week Monday, Bottom-right = newest week Sunday.
+ * GitHub-style contribution heatmap showing completion *frequency* per day,
+ * scoped to a single calendar month at a time.
  *
- * A prev/next filter above the grid lets the user page backward and forward
- * through history in `weeks`-sized chunks, so they can reach older months/years.
+ * Each cell's opacity/intensity reflects what fraction of the user's habits
+ * (that existed on that date) were completed:
+ *   0%      → muted background (no completion)
+ *   1–25%   → 25% intensity
+ *   26–50%  → 50% intensity
+ *   51–75%  → 75% intensity
+ *   76–100% → 100% intensity (full accent)
+ *
+ * Layout: weeks as rows (top to bottom), days as columns (left to right).
+ * The grid is padded with empty (non-interactive) cells before day 1 and
+ * after the last day of the month so every row lines up Mon–Sun.
+ *
+ * Sizing: cells scale to *fill* the available container width (up to
+ * CELL_MAX), and shrink down to CELL_MIN only when space is tight — so the
+ * grid reads clearly whether it sits in a narrow sidebar or a wide card.
  */
-export function HabitHeatmap({ completionDates, color = 'var(--color-accent)', weeks = 4 }: HabitHeatmapProps) {
-  const completedSet = useMemo(() => new Set(completionDates), [completionDates]);
+export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)' }: HabitHeatmapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState(CELL_DEFAULT);
 
-  // Responsive cell sizing: shrink cells when container is narrow
+  // Responsive cell sizing: fill available width, growing or shrinking cells
+  // (within CELL_MIN–CELL_MAX) so the grid never looks lost in empty space.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const computeSize = () => {
       const containerWidth = el.clientWidth;
-      // Total grid width = (7 cells * cellSize) + (6 gaps * 3px) + some padding
-      const GAP = 3;
-      const maxGridWidth = containerWidth - 4; // 2px margin each side
-      const idealWidth = 7 * CELL_DEFAULT + 6 * GAP;
-      if (idealWidth <= maxGridWidth) {
-        setCellSize(CELL_DEFAULT);
-      } else {
-        // Shrink proportionally — cellSize = (maxGridWidth - 6*GAP) / 7
-        const shrunk = Math.max(CELL_MIN, Math.floor((maxGridWidth - 6 * GAP) / 7));
-        setCellSize(shrunk);
-      }
+      if (containerWidth <= 0) return;
+
+      const usableWidth = containerWidth - 4;
+      // 7 cells + 6 gaps, where gap = cellSize * GAP_RATIO
+      const rawSize = usableWidth / (7 + 6 * GAP_RATIO);
+      const clamped = Math.min(CELL_MAX, Math.max(CELL_MIN, Math.floor(rawSize)));
+      setCellSize(clamped);
     };
 
     computeSize();
@@ -55,112 +66,181 @@ export function HabitHeatmap({ completionDates, color = 'var(--color-accent)', w
     return () => observer.disconnect();
   }, []);
 
+  const gap = Math.max(3, Math.round(cellSize * GAP_RATIO));
 
-  // 0 = current page (most recent), 1 = one page back, etc.
+  // 0 = current month, 1 = one month back, etc.
   const [page, setPage] = useState(0);
 
-  const { cells, gridStart, gridEnd } = useMemo(() => {
+  const { cells, weekRows, monthIndex, monthYear } = useMemo(() => {
     const now = new Date();
     const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-    const dow = today.getUTCDay(); // 0=Sun..6=Sat
-    const offsetToMonday = (dow + 6) % 7;
-    const thisMonday = new Date(today);
-    thisMonday.setUTCDate(thisMonday.getUTCDate() - offsetToMonday);
+    const targetMonthFirst = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - page, 1));
+    const mIndex = targetMonthFirst.getUTCMonth();
+    const mYear = targetMonthFirst.getUTCFullYear();
 
-    // Shift the whole window back by `page` chunks of `weeks` weeks.
-    const pageStart = new Date(thisMonday);
-    pageStart.setUTCDate(pageStart.getUTCDate() - page * weeks * 7);
+    const lastOfMonth = new Date(Date.UTC(mYear, mIndex + 1, 0));
+    const daysInMonth = lastOfMonth.getUTCDate();
 
-    const start = new Date(pageStart);
-    start.setUTCDate(start.getUTCDate() - (weeks - 1) * 7);
+    const firstDow = targetMonthFirst.getUTCDay(); // 0=Sun..6=Sat
+    const leadingPad = (firstDow + 6) % 7;
 
-    const end = new Date(start);
-    end.setUTCDate(end.getUTCDate() + weeks * 7 - 1);
+    const lastDow = lastOfMonth.getUTCDay();
+    const trailingPad = (7 - lastDow) % 7;
 
-    const totalDays = weeks * 7;
-    const cells = Array.from({ length: totalDays }, (_, i) => {
-      const d = new Date(start);
+    const totalCells = leadingPad + daysInMonth + trailingPad;
+    const numWeeks = totalCells / 7;
+
+    const gridStart = new Date(targetMonthFirst);
+    gridStart.setUTCDate(gridStart.getUTCDate() - leadingPad);
+
+    const cells = Array.from({ length: totalCells }, (_, i) => {
+      const d = new Date(gridStart);
       d.setUTCDate(d.getUTCDate() + i);
       const dateStr = d.toISOString().split('T')[0];
+      const inMonth = d.getUTCMonth() === mIndex && d.getUTCFullYear() === mYear;
       const isFuture = d.getTime() > today.getTime();
       const isToday = dateStr === today.toISOString().split('T')[0];
-      const done = !isFuture && completedSet.has(dateStr);
-      const weekIdx = Math.floor(i / 7); // row (0 = oldest week on this page)
-      const dayIdx = i % 7; // column (0 = Monday)
-      return { dateStr, done, isFuture, isToday, weekIdx, dayIdx };
+      const ratio = dayFrequency.get(dateStr);
+      const done = inMonth && !isFuture && ratio !== undefined && ratio > 0;
+      const intensity = inMonth && !isFuture && ratio !== undefined ? ratio : 0;
+      const weekIdx = Math.floor(i / 7);
+      const dayIdx = i % 7;
+      return { dateStr, inMonth, done, isFuture, isToday, intensity, weekIdx, dayIdx };
     });
 
-    return { cells, gridStart: start, gridEnd: end };
-  }, [completedSet, weeks, page]);
+    return { cells, weekRows: numWeeks, monthIndex: mIndex, monthYear: mYear };
+  }, [dayFrequency, page]);
 
-  const label = useMemo(() => {
-    const startMonth = MONTH_LABELS[gridStart.getUTCMonth()];
-    const endMonth = MONTH_LABELS[gridEnd.getUTCMonth()];
-    const startYear = gridStart.getUTCFullYear();
-    const endYear = gridEnd.getUTCFullYear();
+  const label = `${MONTH_LABELS[monthIndex]} ${monthYear}`;
+  const isCurrentMonth = page === 0;
 
-    if (startYear === endYear) {
-      return startMonth === endMonth ? `${startMonth} ${startYear}` : `${startMonth} – ${endMonth} ${startYear}`;
+  const intensityOpacity = (intensity: number): number => {
+    if (intensity <= 0) return 0;
+    if (intensity <= 0.25) return 0.25;
+    if (intensity <= 0.5) return 0.5;
+    if (intensity <= 0.75) return 0.75;
+    return 1;
+  };
+
+  const cellTooltip = (dateStr: string, intensity: number) => {
+    if (intensity <= 0) {
+      return `${dateStr} — no habits completed`;
     }
-    return `${startMonth} ${startYear} – ${endMonth} ${endYear}`;
-  }, [gridStart, gridEnd]);
+    const pct = Math.round(intensity * 100);
+    return `${dateStr} — ${pct}% completed`;
+  };
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center justify-center gap-3">
+    <div className="flex flex-col items-center gap-3 w-full">
+      {/* Month navigation */}
+      <div className="flex items-center justify-center gap-4">
         <button
           type="button"
           onClick={() => setPage((p) => p + 1)}
-          className="p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors tap-target"
-          aria-label="Show earlier period"
+          className="flex items-center justify-center w-6 h-6 rounded-full text-text-muted hover:text-text-primary transition-colors tap-target"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          aria-label="Show previous month"
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft size={13} />
         </button>
 
-        <p className="text-[10px] font-extrabold text-text-primary uppercase tracking-wider whitespace-nowrap">
+        <p className="text-[13px] font-black text-text-primary tracking-tight whitespace-nowrap min-w-[92px] text-center">
           {label}
         </p>
 
         <button
           type="button"
           onClick={() => setPage((p) => Math.max(0, p - 1))}
-          disabled={page === 0}
-          className="p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors tap-target disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-          aria-label="Show later period"
+          disabled={isCurrentMonth}
+          className="flex items-center justify-center w-6 h-6 rounded-full text-text-muted hover:text-text-primary transition-colors tap-target disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          aria-label="Show next month"
         >
-          <ChevronRight size={14} />
+          <ChevronRight size={13} />
         </button>
       </div>
 
+      {/* Grid panel — sits in its own soft-shaded surface so it reads as a
+          distinct, grounded element rather than floating loose in the card */}
       <div
-        ref={containerRef}
-        className="grid mx-auto"
-        style={{
-          gridTemplateColumns: `repeat(7, ${cellSize}px)`,
-          gridTemplateRows: `repeat(${weeks}, ${cellSize}px)`,
-          gap: '3px',
-        }}
-        role="img"
-        aria-label={`${weeks}-week completion history, ${label}`}
+        className="w-full rounded-2xl px-3 py-3.5 flex flex-col items-center gap-2"
+        style={{ background: 'color-mix(in srgb, var(--color-accent) 4%, var(--color-surface))' }}
       >
-        {cells.map((cell) => (
-          <div
-            key={cell.dateStr}
-            title={`${cell.dateStr}${cell.done ? ' — completed' : ''}`}
-            className="rounded-[3px] transition-transform hover:scale-110"
-            style={{
-              gridColumn: cell.dayIdx + 1,
-              gridRow: cell.weekIdx + 1,
-              background: cell.done ? color : 'color-mix(in srgb, var(--color-text-muted) 18%, transparent)',
-              border: cell.done ? 'none' : '1px solid color-mix(in srgb, var(--color-text-muted) 28%, transparent)',
-              opacity: cell.isFuture ? 0.35 : 1,
-              outline: cell.isToday ? `1.5px solid ${color}` : 'none',
-              outlineOffset: '1.5px',
-              boxShadow: cell.done ? `0 0 0 1px color-mix(in srgb, ${color} 40%, transparent)` : 'none',
-            }}
-          />
-        ))}
+        {/* Weekday labels — locked to the same 7-column grid as the cells below */}
+        <div
+          className="grid mx-auto w-full"
+          style={{
+            gridTemplateColumns: `repeat(7, ${cellSize}px)`,
+            gap: `${gap}px`,
+            justifyContent: 'center',
+          }}
+          aria-hidden="true"
+        >
+          {WEEKDAY_LABELS.map((d, i) => (
+            <span
+              key={i}
+              className="text-center text-[9px] font-bold uppercase text-text-muted/60 select-none leading-none tracking-wider"
+              style={{ gridColumn: i + 1 }}
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+
+        <div
+          key={`${monthIndex}-${monthYear}`}
+          ref={containerRef}
+          className="grid mx-auto w-full"
+          style={{
+            gridTemplateColumns: `repeat(7, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${weekRows}, ${cellSize}px)`,
+            gap: `${gap}px`,
+            justifyContent: 'center',
+          }}
+          role="img"
+          aria-label={`Completion history for ${label}`}
+        >
+          {cells.map((cell) => {
+            const opacity = intensityOpacity(cell.intensity);
+
+            if (!cell.inMonth) {
+              return (
+                <div
+                  key={cell.dateStr}
+                  style={{
+                    gridColumn: cell.dayIdx + 1,
+                    gridRow: cell.weekIdx + 1,
+                  }}
+                />
+              );
+            }
+
+            return (
+              <div
+                key={cell.dateStr}
+                title={cellTooltip(cell.dateStr, cell.intensity)}
+                className="rounded-[5px] transition-all duration-150 hover:scale-[1.15] hover:z-10 relative"
+                style={{
+                  gridColumn: cell.dayIdx + 1,
+                  gridRow: cell.weekIdx + 1,
+                  background: cell.done
+                    ? `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
+                    : 'color-mix(in srgb, var(--color-text-muted) 14%, transparent)',
+                  border: cell.done
+                    ? 'none'
+                    : '1px solid color-mix(in srgb, var(--color-text-muted) 22%, transparent)',
+                  opacity: cell.isFuture ? 0.35 : 1,
+                  outline: cell.isToday ? `2px solid ${color}` : 'none',
+                  outlineOffset: '1.5px',
+                  boxShadow: cell.done
+                    ? `0 1px 3px color-mix(in srgb, ${color} 35%, transparent)`
+                    : 'none',
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ import {
   Grid3x3,
   List,
   X,
-  Info,
 } from 'lucide-react';
 import { useHabits, useCreateHabit } from '../features/habits/hooks/useHabits';
 import { useAuthStore } from '../store/authStore';
@@ -160,18 +159,10 @@ export function HabitsPage() {
               )}
             </div>
 
-            {/* Daily Quote + Health Heatmap */}
+            {/* Daily Quote + Habit Heatmap */}
             <div className="grid grid-cols-2 gap-2 items-stretch">
               <QuoteCard quotes={getDailyQuotes()} />
-              <Card variant="default" className="p-3 flex flex-col min-w-0 overflow-hidden max-w-xs mx-auto w-full" style={{ borderRadius: '20px' }}>
-                <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5 mb-3">
-                  Health Heatmap
-                  <Info size={12} className="text-text-muted" />
-                </h3>
-                <div className="flex-1 flex items-center">
-                  <HabitHeatmapCombined habits={habits} />
-                </div>
-              </Card>
+              <HabitHeatmapCombined habits={habits} compact />
             </div>
 
             {/* Habit list, full width */}
@@ -179,6 +170,9 @@ export function HabitsPage() {
 
             {/* AI Coach */}
             <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+
+            {/* Achievements */}
+            <AchievementsPanel />
           </>
         )}
       </div>
@@ -332,21 +326,10 @@ export function HabitsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
-              className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-stretch gap-4 sm:gap-6"
+              className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6"
             >
-              <AchievementsPanel habits={habits} />
-
-              <Card variant="default" className="p-4 sm:p-5 flex flex-col">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <h3 className="text-xs sm:text-sm font-bold text-text-primary flex items-center gap-2">
-                    Habit Heatmap
-                    <Info size={12} className="sm:w-3.5 sm:h-3.5 w-3 h-3 text-text-muted" />
-                  </h3>
-                </div>
-                <div className="flex-1 flex items-center justify-center">
-                  <HabitHeatmapCombined habits={habits} />
-                </div>
-              </Card>
+              <AchievementsPanel />
+              <HabitHeatmapCombined habits={habits} />
             </motion.div>
           )}
 
