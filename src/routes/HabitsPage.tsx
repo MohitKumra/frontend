@@ -170,9 +170,6 @@ export function HabitsPage() {
 
             {/* AI Coach */}
             <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
-
-            {/* Achievements */}
-            <AchievementsPanel />
           </>
         )}
       </div>
@@ -326,9 +323,9 @@ export function HabitsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
-              className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6"
+              className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-stretch gap-4 sm:gap-6"
             >
-              <AchievementsPanel />
+              <AchievementsPanel habits={habits} />
               <HabitHeatmapCombined habits={habits} />
             </motion.div>
           )}
