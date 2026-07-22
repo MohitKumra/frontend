@@ -1,8 +1,23 @@
 import { motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 
-export function FloatingProjectsEmpty() {
+interface FloatingProjectsEmptyProps {
+  title?: string;
+  description?: string;
+  onCreateProject?: () => void;
+  ctaText?: string;
+  showCtaHint?: boolean;
+}
+
+export function FloatingProjectsEmpty({
+  title = 'No active projects yet',
+  description = 'Get started today — create your first project',
+  onCreateProject,
+  ctaText = 'Click "View all" to get started',
+  showCtaHint = true,
+}: FloatingProjectsEmptyProps = {}) {
   return (
-    <div className="flex flex-col items-center justify-center py-10">
+    <div className="flex flex-col items-center justify-center py-6 sm:py-10">
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -159,26 +174,38 @@ export function FloatingProjectsEmpty() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.35 }}
-        className="mt-5 text-center"
+        className="mt-5 text-center flex flex-col items-center"
       >
-        <p className="text-sm font-bold text-text-primary mb-1">
-          No active projects yet
+        <p className="text-sm sm:text-base font-bold text-text-primary mb-1">
+          {title}
         </p>
-        <p className="text-xs text-text-muted mb-4">
-          Get started today — create your first project
+        <p className="text-xs sm:text-sm text-text-muted mb-4 max-w-xs">
+          {description}
         </p>
 
-        {/* Animated CTA hint */}
-        <motion.div
-          className="inline-flex items-center gap-1.5 text-xs font-bold"
-          style={{ color: 'var(--color-accent)' }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <span>Click "View all" to get started</span>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3 7 H11 M8 4 L11 7 L8 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </motion.div>
+        {onCreateProject ? (
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onCreateProject}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-md hover:shadow-lg transition-all"
+            style={{ background: 'var(--gradient-accent)' }}
+          >
+            <Plus size={18} />
+            <span>Create Project</span>
+          </motion.button>
+        ) : showCtaHint ? (
+          <motion.div
+            className="inline-flex items-center gap-1.5 text-xs font-bold"
+            style={{ color: 'var(--color-accent)' }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <span>{ctaText}</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7 H11 M8 4 L11 7 L8 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </motion.div>
+        ) : null}
       </motion.div>
     </div>
   );

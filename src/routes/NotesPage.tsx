@@ -29,6 +29,7 @@ import {
 import { useNotes, useDeleteNote, useUpdateNote, useTogglePin, useArchiveNote, useUnarchiveNote } from '../features/notes/hooks/useNotes';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { FloatingNotesEmpty } from '../components/ui/FloatingNotesEmpty';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
 import { TagInput } from '../components/notes/TagInput';
@@ -707,42 +708,47 @@ export function NotesPage() {
               </div>
             </Card>
           ) : filteredNotes.length === 0 ? (
-            <Card variant="default" className="p-12 text-center">
-              <div
-                className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
-              >
-                <FileText size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-text-primary mb-2">
-                {showArchived ? 'No archived notes' : filter === 'all' ? 'No Journal / Notes found' : filter === 'journal' ? 'No Journal found' : 'No notes found'}
-              </h3>
-              <p className="text-sm text-text-muted mb-6">
-                {showArchived
-                  ? 'Archived notes will appear here when you archive them.'
-                  : filter === 'all'
-                    ? 'Get started by creating your first note'
+            <Card variant="default" className="p-6 sm:p-10 text-center">
+              <FloatingNotesEmpty
+                title={
+                  showArchived
+                    ? 'No archived notes'
+                    : filter === 'all'
+                    ? 'No Journal / Notes found'
+                    : filter === 'journal'
+                    ? 'No Journal entries found'
+                    : 'No notes found'
+                }
+                description={
+                  showArchived
+                    ? 'Archived notes will appear here when you archive them.'
+                    : filter === 'all'
+                    ? 'Get started by creating your first note or journal entry.'
                     : searchQuery
-                      ? 'No notes match your search. Try a different keyword.'
-                      : `No ${filter} entries yet. Create one to get started.`}
-              </p>
-              {!showArchived && (
-                <button
-                  onClick={() => {
-                    setCreateModalIsJournal(filter === 'journal');
-                    setCreateModalOpen(true);
-                  }}
-                  className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md"
-                  style={{ background: 'var(--gradient-accent)' }}
-                >
-                  {filter === 'all' ? 'Create Journal / Note' : filter === 'journal' ? 'Create Journal Entry' : 'Create Note'}
-                </button>
-              )}
+                    ? 'No notes match your search keyword.'
+                    : `No ${filter} entries yet. Create one to get started.`
+                }
+                onCreateNote={
+                  !showArchived
+                    ? () => {
+                        setCreateModalIsJournal(filter === 'journal');
+                        setCreateModalOpen(true);
+                      }
+                    : undefined
+                }
+                actionText={
+                  filter === 'all'
+                    ? 'Create Journal / Note'
+                    : filter === 'journal'
+                    ? 'Create Journal Entry'
+                    : 'Create Note'
+                }
+                isJournal={filter === 'journal'}
+              />
             </Card>
           ) : viewMode === 'list' ? (
             <div className="flex flex-col gap-4">
               {filteredNotes.map((note) => {
-                const isJournal = note.isJournal;
                 const moodEmoji = note.mood ? MOOD_EMOJI[note.mood] : null;
                 const starred = note.isPinned;
 

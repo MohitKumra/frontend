@@ -27,6 +27,7 @@ import {
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
 import { useProjects, useDeleteProject } from '../features/projects/hooks/useProjects';
 import { CreateProjectModal } from '../components/projects/CreateProjectModal';
 import { EditProjectModal } from '../components/projects/EditProjectModal';
@@ -327,26 +328,25 @@ export function ProjectsPage() {
         {/* Projects Grid/List */}
         <motion.div variants={itemVariants}>
           {filteredProjects.length === 0 ? (
-            <Card variant="default" className="p-12 text-center">
-              <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
-                <Folder size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-text-primary mb-2">No projects found</h3>
-              <p className="text-sm text-text-muted mb-6">
-                {filterStatus === 'ALL' && !searchQuery
-                  ? 'Get started by creating your first project'
-                  : 'Try a different filter or search term'}
-              </p>
-              {filterStatus === 'ALL' && !searchQuery && (
-                <button
-                  onClick={() => setCreateModalOpen(true)}
-                  className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-md"
-                  style={{ background: 'var(--gradient-accent)' }}
-                >
-                  <Plus size={18} className="inline mr-2" />
-                  Create Project
-                </button>
-              )}
+            <Card variant="default" className="p-6 sm:p-10 text-center">
+              <FloatingProjectsEmpty
+                title={
+                  filterStatus === 'ALL' && !searchQuery
+                    ? 'No active projects yet'
+                    : 'No projects found'
+                }
+                description={
+                  filterStatus === 'ALL' && !searchQuery
+                    ? 'Get started today — create your first project'
+                    : 'Try a different filter or search term'
+                }
+                onCreateProject={
+                  filterStatus === 'ALL' && !searchQuery
+                    ? () => setCreateModalOpen(true)
+                    : undefined
+                }
+                showCtaHint={false}
+              />
             </Card>
           ) : (
             <motion.div
