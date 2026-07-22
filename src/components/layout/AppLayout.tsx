@@ -131,7 +131,7 @@ export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const location = useLocation();
-  const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme, layoutPreference, setTheme, setLayoutPreference, setCalendarViewPreference } = useUIStore();
+  const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme, layoutPreference, setTheme, setLayoutPreference, setCalendarViewPreference, setTaskViewPreference } = useUIStore();
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -175,6 +175,9 @@ export function AppLayout() {
     setLayoutPreference(settings.appearance.layoutPreference);
     const mappedView = settings.appearance.calendarView === 'agenda' ? 'week' : settings.appearance.calendarView;
     setCalendarViewPreference(mappedView);
+    if (settings.appearance.taskView) {
+      setTaskViewPreference(settings.appearance.taskView);
+    }
 
     if (user && user.recoveryEmail !== settings.security.recoveryEmail) {
       setUser({ ...user, recoveryEmail: settings.security.recoveryEmail });
@@ -183,6 +186,7 @@ export function AppLayout() {
     settings,
     setCalendarViewPreference,
     setLayoutPreference,
+    setTaskViewPreference,
     setTheme,
     setUser,
     user,

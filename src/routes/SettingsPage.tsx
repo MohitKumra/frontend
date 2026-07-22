@@ -10,8 +10,10 @@ import {
   CalendarClock,
   CheckCircle2,
   Cloud,
+  Columns3,
   KeyRound,
   LayoutGrid,
+  ListChecks,
   Lock,
   Mail,
   Monitor,
@@ -43,10 +45,11 @@ import {
 } from '../features/settings/hooks/useSettings';
 import { useChangePassword, useSetPassword } from '../features/auth/hooks/useAuth';
 import { usePushNotifications } from '../features/notifications/hooks/usePushNotifications';
-import type { LayoutPreference, ThemePreference } from '../types';
+import type { LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
 
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
+type TaskView = 'list' | 'board';
 
 const SETTINGS_TABS: Array<{
   id: SettingsTab;
@@ -270,6 +273,7 @@ export function SettingsPage() {
     themePreference: toThemePreference(uiTheme),
     layoutPreference: uiLayout as LayoutPreference,
     calendarView: 'month' as CalendarView,
+    taskView: 'board' as TaskView,
   });
   const [notifications, setNotifications] = useState({
     taskDue: true,
@@ -501,6 +505,28 @@ export function SettingsPage() {
                         title={option.label}
                         description={option.description}
                         onClick={() => applyAppearance({ calendarView: option.id })}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Columns3 size={16} className="text-accent" />
+                  <h3 className="text-sm font-bold text-text-primary">Task view</h3>
+                </div>
+                <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2">
+                  {(['board', 'list'] as TaskView[]).map((id) => {
+                    const active = appearance.taskView === id;
+                    return (
+                      <ChoiceChip
+                        key={id}
+                        active={active}
+                        title={id === 'board' ? 'Board' : 'List'}
+                        description={id === 'board' ? 'Kanban-style columns' : 'Vertical task list'}
+                        icon={id === 'board' ? <Columns3 size={16} /> : <ListChecks size={16} />}
+                        onClick={() => applyAppearance({ taskView: id })}
                       />
                     );
                   })}

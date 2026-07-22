@@ -26,6 +26,7 @@ export function useCreateTask() {
     mutationFn: (data: CreateTaskRequest) => tasksApi.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: TASKS_KEY });
+      qc.invalidateQueries({ queryKey: ['projects'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -37,6 +38,7 @@ export function useUpdateTask() {
     mutationFn: ({ id, data }: { id: string; data: UpdateTaskRequest }) => tasksApi.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: TASKS_KEY });
+      qc.invalidateQueries({ queryKey: ['projects'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -48,6 +50,7 @@ export function useDeleteTask() {
     mutationFn: (id: string) => tasksApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: TASKS_KEY });
+      qc.invalidateQueries({ queryKey: ['projects'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });

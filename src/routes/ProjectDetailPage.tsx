@@ -9,6 +9,7 @@ import { Button } from '../components/ui/Button';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { MediaPreview } from '../components/media/MediaPreview';
+import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { useProject } from '../features/projects/hooks/useProjects';
 import { notesApi } from '../features/notes/api';
 import apiClient from '../lib/apiClient';
@@ -19,6 +20,7 @@ export function ProjectDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [noteOpen, setNoteOpen] = useState<null | 'note' | 'journal'>(null);
+  const [taskOpen, setTaskOpen] = useState(false);
 
   const { data: project, isLoading } = useProject(id);
   const { data: linkedNotes } = useQuery({
@@ -67,6 +69,10 @@ export function ProjectDetailPage() {
           Back to projects
         </button>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="secondary" size="sm" onClick={() => setTaskOpen(true)}>
+            <Plus size={14} />
+            Add Task
+          </Button>
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add Note</Button>
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add Journal</Button>
         </div>
@@ -123,7 +129,18 @@ export function ProjectDetailPage() {
         <Card className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
             <p className="text-sm font-bold">Project Tasks</p>
-            <span className="text-xs text-text-muted">{tasks.length} tasks</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">{tasks.length} tasks</span>
+              <button
+                type="button"
+                onClick={() => setTaskOpen(true)}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border transition-colors hover:text-accent"
+                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                title="Add task"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
             {tasks.length ? tasks.map((task) => (
@@ -170,7 +187,7 @@ export function ProjectDetailPage() {
           <p className="text-sm font-bold">Project Focus View</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => navigate('/focus')}>Open Focus</Button>
+          <Button size="sm" onClick={() => navigate(`/focus?projectId=${id}`)}>Open Focus</Button>
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add project note</Button>
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
         </div>
@@ -185,6 +202,12 @@ export function ProjectDetailPage() {
           onClose={() => setNoteOpen(null)}
         />
       )}
+      <CreateTaskModal
+        isOpen={taskOpen}
+        onClose={() => setTaskOpen(false)}
+        initialProjectId={project.id}
+        lockProject
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Calendar,
   Flag,
+  FolderKanban,
   Plus,
   Trash2,
   Repeat,
@@ -12,6 +13,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useCreateTask } from '../../features/tasks/hooks/useTasks';
+import { useProjects } from '../../features/projects/hooks/useProjects';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { CreateTaskRequest, Priority, CreateSubTaskRequest, TaskStatus } from '../../types';
 import { Modal } from '../ui/Modal';
@@ -21,6 +23,8 @@ import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialProjectId?: string | null;
+  lockProject?: boolean;
 }
 
 type RecurrenceOption = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
@@ -66,8 +70,9 @@ function suggestedDueDate(recurrence: RecurrenceOption): string {
   }
 }
 
-export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
+export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lockProject = false }: CreateTaskModalProps) {
   const createTask = useCreateTask();
+  const { data: projectsData } = useProjects();
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
@@ -76,6 +81,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<Priority>('MEDIUM');
+  const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId ?? '');
 
   // Extended fields (More Options)
   const [description, setDescription] = useState('');
@@ -88,6 +94,13 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
   const [voiceNoteUrl, setVoiceNoteUrl] = useState('');
   const [subTasks, setSubTasks] = useState<CreateSubTaskRequest[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
+  const projects = projectsData?.data ?? [];
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedProjectId(initialProjectId ?? '');
+    }
+  }, [initialProjectId, isOpen]);
 
   const handleRecurrenceChange = (option: RecurrenceOption) => {
     setRecurrence(option);
@@ -112,6 +125,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
     setTitle('');
     setDueDate('');
     setPriority('MEDIUM');
+    setSelectedProjectId(initialProjectId ?? '');
     setDescription('');
     setStatus('TODO');
     setRecurrence('none');
@@ -152,6 +166,7 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
       if (description.trim()) body.description = description.trim();
       if (priority) body.priority = priority;
       if (dueDate) body.dueDate = dueDate;
+      if (selectedProjectId) body.projectId = selectedProjectId;
       if (recurrenceRule) body.recurrenceRule = recurrenceRule;
       if (recurrenceEndDate) body.recurrenceEndDate = recurrenceEndDate;
       if (resolvedDuration && resolvedDuration > 0) body.estimatedDuration = resolvedDuration;
@@ -471,6 +486,30 @@ export function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
               className={inputCls}
               style={inputStyle}
             />
+          </div>
+
+          {/* Project */}
+          <div>
+            <label
+              className="flex items-center gap-1 text-xs font-bold mb-1.5"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              <FolderKanban size={12} /> Project
+            </label>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              disabled={lockProject}
+              className={inputCls}
+              style={inputStyle}
+            >
+              <option value="">No project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Due Date + Priority side-by-side */}

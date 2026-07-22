@@ -7,6 +7,7 @@ import {
   Timer, Play, Pause, RotateCcw, Maximize2, Minimize2, X, Flame, CheckCircle2, Circle,
   ChevronDown, ChevronRight, Target, Coffee, Settings, Moon, TrendingUp, SkipBack,
   SkipForward, MoreHorizontal, Music, CalendarDays, Clock, AudioLines,
+  FolderKanban,
   LucideTrendingUp ,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +24,7 @@ import { getDailyQuotes } from '../data/quotes';
 import { focusApi } from '../features/habits/api';
 import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
 import { isSameDay } from '../lib/dateUtils';
-import type { FocusSessionDTO, CreateFocusSessionRequest, ListResponse, TaskDTO } from '../types';
+import type { FocusSessionDTO, CreateFocusSessionRequest, ListResponse, ProjectDTO, TaskDTO } from '../types';
 import type { Quote as QuoteType } from '../data/quotes';
 
 export type TimerMode = 'focus' | 'short_break' | 'long_break';
@@ -230,13 +231,13 @@ function FocusModeStatCard({ icon, label, value, sub, isNight = false, mode }: {
 /* ───────────────────────── Fullscreen Focus Mode ───────────────────────── */
 
 function FocusModeFullScreen({
-  mode, minutes, seconds, progress, running, selectedTaskTitle, quotes,
+  mode, minutes, seconds, progress, running, selectedTaskTitle, selectedProjectTitle, quotes,
   ambientPlaying, ambientSound, onToggleAmbient,
   todayFocusCount, todayFocusTimeLabel, todayBreakCount, longestStreakDays,
   onExit, onReset, onStartPause, onSkipBack, onSkipForward,
 }: {
   mode: TimerMode; minutes: string; seconds: string; progress: number; running: boolean;
-  selectedTaskTitle: string | null; quotes: QuoteType[];
+  selectedTaskTitle: string | null; selectedProjectTitle: string | null; quotes: QuoteType[];
   ambientPlaying: boolean; ambientSound: string; onToggleAmbient: () => void;
   todayFocusCount: number; todayFocusTimeLabel: string; todayBreakCount: number; longestStreakDays: number;
   onExit: () => void; onReset: () => void; onStartPause: () => void;
@@ -442,6 +443,11 @@ function FocusModeFullScreen({
             {selectedTaskTitle && mode === 'focus' && (
               <div className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
                 🎯 {selectedTaskTitle}
+              </div>
+            )}
+            {selectedProjectTitle && mode === 'focus' && (
+              <div className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
+                {selectedProjectTitle}
               </div>
             )}
           </div>
@@ -744,6 +750,78 @@ function TaskSelector({
   );
 }
 
+function ProjectSelector({
+  projects, selectedProjectId, onSelect,
+}: {
+  projects: ProjectDTO[]; selectedProjectId: string | null; onSelect: (projectId: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all hover:border-accent/50"
+        style={{
+          background: 'var(--color-surface)',
+          borderColor: selectedProjectId ? 'var(--color-accent)' : 'var(--color-border)',
+          color: selectedProjectId ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <FolderKanban size={14} className="shrink-0" style={{ color: selectedProjectId ? 'var(--color-accent)' : undefined }} />
+          <span className="truncate">{selectedProject ? selectedProject.name : 'Link a project (optional)'}</span>
+        </div>
+        <ChevronDown size={14} className="shrink-0" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full left-0 right-0 mt-2 rounded-xl border shadow-xl overflow-hidden"
+          style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', zIndex: 50, maxHeight: 260, overflowY: 'auto' }}
+        >
+          <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800" style={{ color: 'var(--color-text-secondary)' }}>
+            No project
+          </button>
+          {projects.length === 0 && <div className="px-3.5 py-2.5 text-[11px] text-text-muted">No projects found</div>}
+          {projects.map((project) => {
+            const isActive = project.id === selectedProjectId;
+            return (
+              <button
+                key={project.id}
+                onClick={() => { onSelect(project.id); setOpen(false); }}
+                className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-3"
+                style={{ background: isActive ? 'var(--color-accent-subtle)' : undefined }}
+              >
+                <span className="truncate" style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-primary)' }}>{project.name}</span>
+                <span
+                  className="shrink-0 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-text-muted) 15%, transparent)',
+                    color: project.color || 'var(--color-text-muted)',
+                  }}
+                >
+                  {project.status.replace('_', ' ')}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ───────────────────────── Small presentational cards ───────────────────────── */
 
 function StatCard({ icon, iconBg, iconColor, label, value, sub, subColor, sparkline }: {
@@ -838,7 +916,11 @@ function AmbientSoundCard({ sound, setSound, playing, onToggle }: { sound: strin
 }
 
 
-function RecentSessionsCard({ sessions, tasksById }: { sessions: FocusSessionDTO[]; tasksById: Map<string, string> }) {
+function RecentSessionsCard({
+  sessions, tasksById, projectsById,
+}: {
+  sessions: FocusSessionDTO[]; tasksById: Map<string, string>; projectsById: Map<string, string>;
+}) {
   const recent = sessions.slice(0, 5);
   return (
     <Card variant="default" className="p-4">
@@ -851,7 +933,13 @@ function RecentSessionsCard({ sessions, tasksById }: { sessions: FocusSessionDTO
       ) : (
         <div className="flex flex-col gap-2.5">
           {recent.map((s) => {
-            const label = s.taskId ? tasksById.get(s.taskId) ?? 'Task' : s.isBreak ? 'Break' : 'Focus Session';
+            const label = s.taskId
+              ? tasksById.get(s.taskId) ?? 'Task'
+              : s.projectId
+                ? projectsById.get(s.projectId) ?? 'Project'
+                : s.isBreak
+                  ? 'Break'
+                  : 'Focus Session';
             return (
               <div key={s.id} className="flex items-center gap-2.5">
                 {s.completed ? (
@@ -886,6 +974,7 @@ export function FocusPage() {
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [ambientSound, setAmbientSound] = useState(AMBIENT_SOUNDS[0]);
   const [ambientPlaying, setAmbientPlaying] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -932,6 +1021,7 @@ export function FocusPage() {
           setStartedAt(null);
           setElapsedSeconds(0);
           setSelectedTaskId(null);
+          setSelectedProjectId(null);
           clearTimerState(mode);
           restoredRef.current = true;
           return;
@@ -942,8 +1032,11 @@ export function FocusPage() {
       setStartedAt(restored.startedAt);
       setElapsedSeconds(newElapsedSec);
       setSelectedTaskId(restored.selectedTaskId);
+      setSelectedProjectId(restored.selectedProjectId ?? null);
     } else if (searchParams.get('taskId')) {
       setSelectedTaskId(searchParams.get('taskId'));
+    } else if (searchParams.get('projectId')) {
+      setSelectedProjectId(searchParams.get('projectId'));
     }
     restoredRef.current = true;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -951,9 +1044,9 @@ export function FocusPage() {
   useEffect(() => {
     if (!restoredRef.current) return;
     if (startedAt) {
-      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId });
+      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId });
     }
-  }, [mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId]);
+  }, [mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId]);
 
   const { data: sessions } = useQuery({
     queryKey: ['focus'],
@@ -965,10 +1058,28 @@ export function FocusPage() {
     queryFn: () => apiClient.get<ListResponse<TaskDTO>>('/tasks').then((r) => r.data),
   });
 
+  const { data: projectsData } = useQuery({
+    queryKey: ['projects', 'focus-link'],
+    queryFn: () => apiClient.get<ListResponse<ProjectDTO>>('/projects').then((r) => r.data),
+  });
+
   const activeTasks = useMemo(() => (tasksData?.data ?? []).filter((t) => t.status === 'TODO' || t.status === 'IN_PROGRESS'), [tasksData]);
   const allTasks = tasksData?.data ?? [];
   const selectedTask = allTasks.find((t) => t.id === selectedTaskId) ?? null;
   const tasksById = useMemo(() => new Map(allTasks.map((t) => [t.id, t.title])), [allTasks]);
+  const activeProjects = useMemo(() => (projectsData?.data ?? []).filter((p) => p.status !== 'COMPLETED' && p.status !== 'CANCELLED'), [projectsData]);
+  const allProjects = projectsData?.data ?? [];
+  const selectedProject = allProjects.find((p) => p.id === selectedProjectId) ?? null;
+  const projectsById = useMemo(() => new Map(allProjects.map((p) => [p.id, p.name])), [allProjects]);
+
+  // When projects load and URL has projectId, auto-select it
+  useEffect(() => {
+    const projectIdParam = searchParams.get('projectId');
+    if (projectIdParam && allProjects.length > 0 && !selectedProjectId) {
+      const match = allProjects.find((p) => p.id === projectIdParam);
+      if (match) setSelectedProjectId(projectIdParam);
+    }
+  }, [allProjects, searchParams, selectedProjectId]);
 
   const todaysPlanItems = useMemo(() => {
     const colors = ['var(--color-accent)', 'var(--color-warning)', 'var(--color-success)', 'var(--color-info)'];
@@ -1010,10 +1121,17 @@ export function FocusPage() {
     if (!startedAt) return;
     const elapsedMin = getUnloggedMinutes();
     if (elapsedMin >= 1) {
-      logSession.mutate({ durationMin: elapsedMin, startedAt, completed, taskId: selectedTaskId, isBreak: isBreakModeRef.current });
+      logSession.mutate({
+        durationMin: elapsedMin,
+        startedAt,
+        completed,
+        taskId: selectedTaskId,
+        projectId: selectedProjectId,
+        isBreak: isBreakModeRef.current,
+      });
       lastLoggedElapsedRef.current = elapsedRef.current;
     }
-  }, [startedAt, getUnloggedMinutes, selectedTaskId, logSession]);
+  }, [startedAt, getUnloggedMinutes, selectedTaskId, selectedProjectId, logSession]);
 
   useEffect(() => {
     if (!running) {
@@ -1033,13 +1151,20 @@ export function FocusPage() {
       setRunning(false);
       const elapsedMin = getUnloggedMinutes();
       if (elapsedMin >= 1) {
-        logSession.mutate({ durationMin: elapsedMin, startedAt, completed: true, taskId: selectedTaskId, isBreak: isBreakModeRef.current });
+        logSession.mutate({
+          durationMin: elapsedMin,
+          startedAt,
+          completed: true,
+          taskId: selectedTaskId,
+          projectId: selectedProjectId,
+          isBreak: isBreakModeRef.current,
+        });
       }
       lastLoggedElapsedRef.current = elapsedRef.current;
       clearTimerState(mode);
     }
     if (running && secondsLeft > 0) completionLoggedRef.current = false;
-  }, [running, secondsLeft, startedAt, selectedTaskId, logSession, mode, getUnloggedMinutes]);
+  }, [running, secondsLeft, startedAt, selectedTaskId, selectedProjectId, logSession, mode, getUnloggedMinutes]);
 
   useEffect(() => {
     const handler = () => {
@@ -1060,12 +1185,12 @@ export function FocusPage() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (running) {
-        saveTimerState({ mode, secondsLeft, running: false, startedAt, elapsedSeconds, selectedTaskId });
+        saveTimerState({ mode, secondsLeft, running: false, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId });
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [running, mode, secondsLeft, startedAt, elapsedSeconds, selectedTaskId]);
+  }, [running, mode, secondsLeft, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId]);
 
   const enterFocusMode = async () => {
     try { await requestFullscreen(document.documentElement); } catch { /* denied — overlay still covers viewport */ }
@@ -1082,7 +1207,7 @@ export function FocusPage() {
   const changeMode = (m: TimerMode) => {
     // Save current mode's state to localStorage (NO backend save)
     if (startedAt) {
-      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId });
+      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId });
     }
 
     // Check if target mode has persisted state
@@ -1094,6 +1219,7 @@ export function FocusPage() {
       setStartedAt(targetState.startedAt);
       setElapsedSeconds(targetState.elapsedSeconds);
       setSelectedTaskId(targetState.selectedTaskId);
+      setSelectedProjectId(targetState.selectedProjectId ?? null);
     } else {
       setMode(m);
       setSecondsLeft(durationForMode(m) * 60);
@@ -1249,6 +1375,7 @@ export function FocusPage() {
           progress={progress}
           running={running}
           selectedTaskTitle={selectedTask?.title ?? null}
+          selectedProjectTitle={selectedProject?.name ?? null}
           quotes={getDailyQuotes()}
           ambientPlaying={ambientPlaying}
           ambientSound={ambientSound}
@@ -1456,8 +1583,9 @@ export function FocusPage() {
 
             {/* Right column */}
             <motion.div variants={itemVariants} className="order-3 flex flex-col gap-4">
-              <Card variant="default" className="p-4">
+              <Card variant="default" className="p-4 flex flex-col gap-3">
                 <TaskSelector tasks={activeTasks} selectedTaskId={selectedTaskId} onSelect={setSelectedTaskId} />
+                <ProjectSelector projects={activeProjects} selectedProjectId={selectedProjectId} onSelect={setSelectedProjectId} />
                 {selectedTask && (
                   <div className="mt-3 flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--gradient-accent)' }}>
                     <span className="w-9 h-9 rounded-lg flex items-center justify-center bg-white/20 shrink-0">
@@ -1472,7 +1600,11 @@ export function FocusPage() {
                 )}
               </Card>
 
-              <RecentSessionsCard sessions={[...allSessions].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())} tasksById={tasksById} />
+              <RecentSessionsCard
+                sessions={[...allSessions].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())}
+                tasksById={tasksById}
+                projectsById={projectsById}
+              />
 
               <Card variant="default" className="p-4">
                 <div className="flex items-center justify-between mb-4">

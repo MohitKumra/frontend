@@ -7,6 +7,7 @@ import type {
   UpdateAppearanceRequest,
   UpdateNotificationPreferencesRequest,
 } from '../../../types';
+import type { TaskViewPreference } from '../../../types';
 
 const SETTINGS_KEY = ['settings'] as const;
 
@@ -24,6 +25,7 @@ export function useUpdateAppearance() {
   const setTheme = useUIStore((s) => s.setTheme);
   const setLayoutPreference = useUIStore((s) => s.setLayoutPreference);
   const setCalendarViewPreference = useUIStore((s) => s.setCalendarViewPreference);
+  const setTaskViewPreference = useUIStore((s) => s.setTaskViewPreference);
 
   return useMutation({
     mutationFn: (data: UpdateAppearanceRequest) => settingsApi.updateAppearance(data),
@@ -37,6 +39,9 @@ export function useUpdateAppearance() {
       }
       if (data.calendarView) {
         setCalendarViewPreference(data.calendarView);
+      }
+      if (data.taskView) {
+        setTaskViewPreference(data.taskView as TaskViewPreference);
       }
       qc.invalidateQueries({ queryKey: SETTINGS_KEY });
       toast.success('Appearance updated');

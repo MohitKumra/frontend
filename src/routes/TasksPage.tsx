@@ -38,6 +38,7 @@ import { TaskCard, isOverdue, isToday } from '../components/tasks/TaskCard';
 import { TasksEmptyState } from '../components/tasks/TasksEmptyState';
 import { useTaskKeyboardShortcuts } from '../hooks/useTaskKeyboardShortcuts';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
 import type { DailyAnalyticsDTO, TaskDTO, TaskStatus } from '../types';
 
 type TaskFilter = 'all' | 'today' | 'upcoming' | 'completed' | 'overdue';
@@ -110,7 +111,13 @@ export function TasksPage() {
 
   const [filter, setFilter] = useState<TaskFilter>('all');
   const [sortBy, setSortBy] = useState<SortKey>('priority');
-  const [view, setView] = useState<ViewMode>('board');
+  const savedTaskView = useUIStore((s) => s.taskViewPreference);
+  const setTaskViewPreference = useUIStore((s) => s.setTaskViewPreference);
+  const [view, setView] = useState<ViewMode>(savedTaskView);
+
+  useEffect(() => {
+    setView(savedTaskView);
+  }, [savedTaskView]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskDTO | null>(null);
   const [taskMenuOpen, setTaskMenuOpen] = useState<string | null>(null);
@@ -450,7 +457,7 @@ export function TasksPage() {
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1 rounded-2xl border p-1 shadow-sm" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
                 <button
-                  onClick={() => setView('list')}
+                  onClick={() => { setView('list'); setTaskViewPreference('list'); }}
                   className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition-all"
                   style={view === 'list' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}
                 >
@@ -458,7 +465,7 @@ export function TasksPage() {
                   List
                 </button>
                 <button
-                  onClick={() => setView('board')}
+                  onClick={() => { setView('board'); setTaskViewPreference('board'); }}
                   className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition-all"
                   style={view === 'board' ? { background: 'var(--gradient-accent)', color: 'white' } : { color: 'var(--color-text-muted)' }}
                 >
