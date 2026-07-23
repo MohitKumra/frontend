@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
 export type AmbientSound = 'Forest' | 'Rain' | 'Cafe' | 'Silence';
 
@@ -6,14 +6,17 @@ const SOUND_MAP: Record<AmbientSound, string> = {
   Forest: '/sounds/ambience/forest-ambience.mp3',
   Rain: '/sounds/ambience/rain-ambience.mp3',
   Cafe: '/sounds/ambience/cafe-ambience.mp3',
-  Silence: '/sounds/ambience/night-ambience.mp3',
+  Silence: '',
 };
 
 /**
  * Manages an HTML5 Audio element for ambient sound playback.
- * - Plays/loops the selected sound when `playing` is true
- * - Switches tracks when `sound` changes
- * - Cleans up on unmount
+ *
+ * - Audio element is created once on mount, destroyed on unmount
+ * - Sound source is set immediately on mount (not just on change)
+ * - Uses `canplaythrough` event to start playback after loading new src,
+ *   preventing the "plays 2 sec then stops" issue
+ * - Play/pause state is tracked via ref, so sound switches preserve it
  *
  * @param sound - The ambient sound key ('Forest', 'Rain', 'Cafe', 'Silence')
  * @param playing - Whether the sound should be playing
@@ -26,70 +29,103 @@ export function useAmbientSound(
 ) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playingRef = useRef(playing);
-  const soundRef = useRef(sound);
+  const resumeHandlerRef = useRef<(() => void) | null>(null);
 
-  // Keep refs in sync for the cleanup effect
+  // Keep playingRef in sync
   playingRef.current = playing;
-  soundRef.current = sound;
 
-  // Effect for audio lifecycle
+  // Create audio element once on mount, destroy on unmount.
+  // Also sets the initial src so playback works without needing a "sound change" to trigger.
   useEffect(() => {
+    const audio = new Audio();
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.volume = volume;
+
+    const src = SOUND_MAP[sound];
+    if (src) {
+      audio.src = src;
+    }
+
+    audioRef.current = audio;
+
+    // If already playing on mount (e.g. state restored), start playback
+    if (playing && src) {
+      audio.play().catch(() => {});
+    }
+
+    return () => {
+      // Clean up any pending canplaythrough handler
+      if (resumeHandlerRef.current) {
+        audio.removeEventListener('canplaythrough', resumeHandlerRef.current);
+        resumeHandlerRef.current = null;
+      }
+      audio.pause();
+      audio.src = '';
+      audio.load();
+      audioRef.current = null;
+    };
+    // Intentionally run only on mount/unmount. Sound/play changes are handled below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Swap source when sound changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     const src = SOUND_MAP[sound];
 
-    // Silence or no sound — do nothing
+    // Clean up any previous canplaythrough handler
+    if (resumeHandlerRef.current) {
+      audio.removeEventListener('canplaythrough', resumeHandlerRef.current);
+      resumeHandlerRef.current = null;
+    }
+
     if (!src) {
-      // Stop any existing playback
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-        audioRef.current.load();
-        audioRef.current = null;
-      }
+      // Silence — stop playback and clear src
+      audio.pause();
+      audio.src = '';
+      audio.load();
       return;
     }
 
-    // Create or reuse audio element
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.loop = true;
-      audioRef.current.preload = 'auto';
-    }
+    // Always set src and load when sound changes (even re-selecting same sound reloads it)
+    audio.pause();
 
+    // Set up a handler to resume playback once the new audio is loaded
+    const resume = () => {
+      if (playingRef.current && audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+      resumeHandlerRef.current = null;
+    };
+
+    resumeHandlerRef.current = resume;
+    audio.addEventListener('canplaythrough', resume, { once: true });
+
+    audio.src = src;
+    audio.load();
+  }, [sound]);
+
+  // Handle play/pause — does NOT recreate the audio element
+  useEffect(() => {
     const audio = audioRef.current;
-
-    // If the source changed, reload
-    if (audio.src && !audio.src.endsWith(src)) {
-      audio.pause();
-      audio.src = src;
-      audio.load();
-    } else if (!audio.src) {
-      audio.src = src;
-      audio.load();
-    }
-
-    audio.volume = volume;
+    if (!audio || !audio.src) return;
 
     if (playing) {
-      audio.play().catch(() => {
-        // Autoplay blocked — user needs to interact first
-        // That's fine, the button click gives user gesture
-      });
+      // If the audio has buffered enough, play immediately.
+      // Otherwise the canplaythrough handler from the [sound] effect will start it.
+      if (audio.readyState >= 3) {
+        // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
+        audio.play().catch(() => {});
+      }
     } else {
       audio.pause();
     }
+  }, [playing]);
 
-    // Cleanup on unmount
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-        audioRef.current.load();
-        audioRef.current = null;
-      }
-    };
-  }, [sound, playing, volume]);
-
-  // Update volume without recreating the element
+  // Update volume without touching playback state
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
