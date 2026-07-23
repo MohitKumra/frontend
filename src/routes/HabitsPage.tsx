@@ -53,7 +53,7 @@ export function HabitsPage() {
   const resetStreakPopup = useUIStore((s) => s.resetStreakPopup);
   const [streakModalOpen, setStreakModalOpen] = useState(true);
 
-  const showStreakPopup = !streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen;
+  const showStreakPopup = !!(!streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen);
 
   const habits = data?.data ?? [];
   const completedToday = habits.filter((h) => h.completedToday).length;

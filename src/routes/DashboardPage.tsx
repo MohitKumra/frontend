@@ -171,7 +171,7 @@ export function DashboardPage() {
   const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
   const resetStreakPopup = useUIStore((s) => s.resetStreakPopup);
   const [streakModalOpen, setStreakModalOpen] = useState(true);
-  const showStreakPopup = !streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen;
+  const showStreakPopup = !!(!streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen);
 
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const habits = habitsData?.data ?? [];
