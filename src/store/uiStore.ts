@@ -3,6 +3,7 @@
 // - theme (dark/light/system)
 // - sidebar open/closed state on desktop
 // - focus mode (full-screen timer)
+// - streak popup dismissal
 //
 // Per Architecture rules: local UI state (modal open, form values) stays in useState.
 
@@ -20,6 +21,7 @@ interface UIState {
   taskViewPreference: TaskViewPreference;
   sidebarOpen: boolean;
   focusMode: boolean;
+  streakPopupDismissed: boolean;
   setTheme: (theme: ThemePreference, options?: { animate?: boolean }) => Promise<Theme>;
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
   setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
@@ -29,6 +31,8 @@ interface UIState {
   toggleSidebar: () => void;
   setFocusMode: (open: boolean) => void;
   toggleFocusMode: () => void;
+  dismissStreakPopup: () => void;
+  resetStreakPopup: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -41,6 +45,7 @@ export const useUIStore = create<UIState>()(
       taskViewPreference: 'board',
       sidebarOpen: true,
       focusMode: false,
+      streakPopupDismissed: false,
 
       setTheme: async (theme, options) => {
         const resolved = await applyTheme(theme, options);
@@ -64,6 +69,8 @@ export const useUIStore = create<UIState>()(
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setFocusMode: (open) => set({ focusMode: open }),
       toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
+      dismissStreakPopup: () => set({ streakPopupDismissed: true }),
+      resetStreakPopup: () => set({ streakPopupDismissed: false }),
     }),
     { name: 'ui-store' },
   ),

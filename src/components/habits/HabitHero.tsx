@@ -93,6 +93,14 @@ export function HabitHero({
   successRate,
   onCreateHabit,
 }: HabitHeroProps) {
+  const gradientId = React.useId();
+  
+  // Circular progress ring math
+  const radius = 105;
+  const circumference = 2 * Math.PI * radius;
+  const clampedProgress = Math.min(Math.max(dailyProgress, 0), 100);
+  const offset = circumference - (clampedProgress / 100) * circumference;
+  
   return (
     <motion.div
       variants={containerVariants}
@@ -184,7 +192,7 @@ export function HabitHero({
                 viewBox="0 0 240 240"
               >
                 <defs>
-                  <linearGradient id="hero-progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#8B5CF6" />
                     <stop offset="50%" stopColor="#A78BFA" />
                     <stop offset="100%" stopColor="#6366F1" />
@@ -205,15 +213,14 @@ export function HabitHero({
                 <motion.circle
                   cx="120"
                   cy="120"
-                  r="105"
+                  r={radius}
                   fill="none"
-                  stroke="url(#hero-progress-gradient)"
+                  stroke={`url(#${gradientId})`}
                   strokeWidth="10"
-                  strokeDasharray={`${2 * Math.PI * 105}`}
-                  strokeDashoffset={`${2 * Math.PI * 105 * (1 - dailyProgress / 100)}`}
+                  strokeDasharray={circumference}
                   strokeLinecap="round"
-                  initial={{ strokeDashoffset: 2 * Math.PI * 105 }}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 105 * (1 - dailyProgress / 100) }}
+                  initial={{ strokeDashoffset: circumference }}
+                  animate={{ strokeDashoffset: offset }}
                   transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
                   style={{
                     filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.5))'

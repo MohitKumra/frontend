@@ -28,7 +28,10 @@ import apiClient from '../lib/apiClient';
 import { useEnhancedDashboard, useActivityFeed } from '../features/dashboard/hooks/useDashboard';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useHabits } from '../features/habits/hooks/useHabits';
+import { useStreakStatus } from '../features/habits/hooks/useHabits';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
+import { StreakBreakModal } from '../components/habits/StreakBreakModal';
 import { DashboardScore } from '../components/dashboard/DashboardScore';
 import { WeeklyProgressChart } from '../components/dashboard/WeeklyProgressChart';
 import { WeatherWidget } from '../components/habits/WeatherWidget';
@@ -161,6 +164,14 @@ export function DashboardPage() {
     queryFn: () => apiClient.get<ListResponse<FocusSessionDTO>>('/focus').then((r) => r.data),
   });
   const user = useAuthStore((s) => s.user);
+
+  // Streak break popup — MUST be before early returns (hooks rules)
+  const { data: brokenStreaks } = useStreakStatus();
+  const streakPopupDismissed = useUIStore((s) => s.streakPopupDismissed);
+  const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
+  const resetStreakPopup = useUIStore((s) => s.resetStreakPopup);
+  const [streakModalOpen, setStreakModalOpen] = useState(true);
+  const showStreakPopup = !streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen;
 
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const habits = habitsData?.data ?? [];
@@ -895,6 +906,20 @@ export function DashboardPage() {
           />
         </div>
       </motion.div>
+
+      {/* Streak Break Popup — shows on first screen load */}
+      <StreakBreakModal
+        open={showStreakPopup}
+        brokenStreaks={brokenStreaks || []}
+        onClose={() => {
+          setStreakModalOpen(false);
+          resetStreakPopup();
+        }}
+        onDismiss={() => {
+          setStreakModalOpen(false);
+          dismissStreakPopup();
+        }}
+      />
     </motion.div>
   );
 }

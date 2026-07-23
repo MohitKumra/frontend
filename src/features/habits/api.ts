@@ -1,6 +1,6 @@
 // frontend/src/features/habits/api.ts
 import apiClient from '../../lib/apiClient';
-import type { HabitDTO, CreateHabitRequest, UpdateHabitRequest, HabitsListResponse, FocusSessionDTO, WeekOverviewDTO } from '../../types';
+import type { HabitDTO, CreateHabitRequest, UpdateHabitRequest, HabitsListResponse, FocusSessionDTO, WeekOverviewDTO, HabitStreakBreakDTO } from '../../types';
 
 export const habitsApi = {
   list: () => apiClient.get<HabitsListResponse>('/habits').then((r) => r.data),
@@ -9,6 +9,7 @@ export const habitsApi = {
   delete: (id: string) => apiClient.delete(`/habits/${id}`),
   toggle: (id: string) => apiClient.post<HabitDTO>(`/habits/${id}/toggle`).then((r) => r.data),
   weekOverview: () => apiClient.get<WeekOverviewDTO>('/habits/week-overview').then((r) => r.data),
+  streakStatus: () => apiClient.get<HabitStreakBreakDTO[]>('/habits/streak-status').then((r) => r.data),
 };
 
 export const focusApi = {

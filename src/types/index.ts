@@ -256,6 +256,11 @@ export interface HabitDTO {
   title: string;
   targetPerWeek: number;
   reminderTime: string | null;
+  reminderMessage: string | null;
+  durationDays: number | null;
+  skipDays: number[];
+  streakBrokenAt: string | null;
+  isActive: boolean;
   createdAt: string;
   currentStreak: number;
   bestStreak: number;
@@ -264,6 +269,7 @@ export interface HabitDTO {
   completionsLastWeek: number;
   weekPattern: boolean[];
   completionDates: string[];
+  streakSafeDays: string[];
 }
 
 export interface HabitsListResponse {
@@ -272,6 +278,12 @@ export interface HabitsListResponse {
     total: number;
     weeklyTrend: number;
   };
+}
+
+export interface HabitStreakBreakDTO {
+  habitId: string;
+  title: string;
+  previousStreak: number;
 }
 
 // ─── Week Overview ────────────────────────────────────────────────────────────
@@ -291,14 +303,18 @@ export interface WeekOverviewDTO {
 
 export interface CreateHabitRequest {
   title: string;
-  targetPerWeek?: number;
   reminderTime?: string;
+  reminderMessage?: string;
+  durationDays?: number | null;
+  skipDays?: number[];
 }
 
 export interface UpdateHabitRequest {
   title?: string;
-  targetPerWeek?: number;
   reminderTime?: string | null;
+  reminderMessage?: string | null;
+  durationDays?: number | null;
+  skipDays?: number[];
 }
 
 // ─── Habit Completions ────────────────────────────────────────────────────────

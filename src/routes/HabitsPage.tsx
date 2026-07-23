@@ -6,8 +6,9 @@ import {
   Grid3x3,
   List,
 } from 'lucide-react';
-import { useHabits, useCreateHabit } from '../features/habits/hooks/useHabits';
+import { useHabits, useCreateHabit, useStreakStatus } from '../features/habits/hooks/useHabits';
 import { useAuthStore } from '../store/authStore';
+import { useUIStore } from '../store/uiStore';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -24,7 +25,8 @@ import { WeatherWidget } from '../components/habits/WeatherWidget';
 import { HabitEmptyState } from '../components/habits/HabitEmptyState';
 import { HabitHeatmapCombined } from '../components/habits/HabitHeatmapCombined';
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
-import { getCategory } from '../features/habits/Habitpresentation';
+import { CreateHabitWizard } from '../components/habits/CreateHabitWizard';
+import { StreakBreakModal } from '../components/habits/StreakBreakModal';
 import { useGamificationProfile } from '../features/dashboard/hooks/useDashboard';
 import type { HabitDTO } from '../types';
 
@@ -38,14 +40,20 @@ export function HabitsPage() {
   const createHabit = useCreateHabit();
   const user = useAuthStore((s) => s.user);
   const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState('');
-  const [targetPerWeek, setTargetPerWeek] = useState(7);
-  const [reminderTime, setReminderTime] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<HabitFilter>('all');
   const [sort, setSort] = useState<HabitSort>('custom');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  // Streak break popup
+  const { data: brokenStreaks } = useStreakStatus();
+  const streakPopupDismissed = useUIStore((s) => s.streakPopupDismissed);
+  const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
+  const resetStreakPopup = useUIStore((s) => s.resetStreakPopup);
+  const [streakModalOpen, setStreakModalOpen] = useState(true);
+
+  const showStreakPopup = !streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen;
 
   const habits = data?.data ?? [];
   const completedToday = habits.filter((h) => h.completedToday).length;
@@ -94,16 +102,6 @@ export function HabitsPage() {
     completed: habits.filter((h) => h.completedToday).length,
   };
 
-  const previewCategory = title.trim() ? getCategory(title) : null;
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    createHabit.mutate(
-      { title, targetPerWeek, reminderTime: reminderTime || undefined },
-      { onSuccess: () => { setShowCreate(false); setTitle(''); setTargetPerWeek(7); setReminderTime(''); } }
-    );
-  };
-
   if (isLoading) return <LoadingScreen />;
 
   const getGreeting = () => {
@@ -138,7 +136,6 @@ export function HabitsPage() {
     >
       {/* ================================================================
           MOBILE LAYOUT (< sm)
-          Hero full width, then empty state or widgets below
           ================================================================ */}
       <div className="sm:hidden flex flex-col gap-4">
         <HabitHero {...heroProps} />
@@ -164,7 +161,7 @@ export function HabitsPage() {
       </div>
 
       {/* ================================================================
-          TABLET (sm–lg): no sidebar, everything stacks in one column
+          TABLET (sm–lg)
           ================================================================ */}
       <div className="hidden sm:flex lg:hidden flex-col gap-4 sm:gap-6">
         <HabitHero {...heroProps} />
@@ -178,7 +175,6 @@ export function HabitsPage() {
                 <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
               )}
             </div>
-            {/* Filters + list */}
             {renderFiltersAndList()}
             <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6">
               <AchievementsPanel />
@@ -194,13 +190,10 @@ export function HabitsPage() {
       </div>
 
       {/* ================================================================
-          DESKTOP (lg+): two-column layout with sticky right sidebar.
-          When NO habits: hero takes left col, AI Coach takes right col.
-          When habits exist: hero is full-width above, then two-col below.
+          DESKTOP (lg+)
           ================================================================ */}
       <div className="hidden lg:block">
         {habits.length === 0 ? (
-          /* Empty state: hero left, sidebar right — fits in one viewport */
           <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-6">
             <div className="flex flex-col gap-6">
               <HabitHero {...heroProps} />
@@ -213,11 +206,9 @@ export function HabitsPage() {
             </div>
           </div>
         ) : (
-          /* Has habits: full-width hero, then main + sidebar below */
           <>
             <HabitHero {...heroProps} />
             <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-4 sm:gap-6">
-              {/* Left / Main Column */}
               <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -244,7 +235,6 @@ export function HabitsPage() {
                 </motion.div>
               </div>
 
-              {/* Right Sidebar */}
               <motion.div
                 className="flex flex-col gap-4 sm:gap-6 sticky top-6 self-start min-w-0"
                 initial={{ opacity: 0, x: 20 }}
@@ -260,81 +250,28 @@ export function HabitsPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Create Habit Wizard Modal */}
       <AnimatePresence>
         {showCreate && (
-          <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Habit">
-            <form onSubmit={handleCreate} className="flex flex-col gap-5 pt-2">
-              <div>
-                <Input
-                  id="habit-title"
-                  label="Habit name"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  placeholder="e.g. Read 30 minutes"
-                />
-                {previewCategory && (
-                  <motion.div
-                    className="flex items-center gap-1.5 mt-2"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
-                    <div
-                      className="w-5 h-5 rounded-md flex items-center justify-center"
-                      style={{ background: previewCategory.bg, color: previewCategory.color }}
-                    >
-                      <previewCategory.icon size={11} />
-                    </div>
-                    <p className="text-[11px] font-bold text-text-muted">
-                      Detected: <span style={{ color: previewCategory.color }}>{previewCategory.name}</span>
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">
-                  Days per week
-                </label>
-                <div className="grid grid-cols-7 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                    <motion.button
-                      key={n}
-                      type="button"
-                      onClick={() => setTargetPerWeek(n)}
-                      className={`py-3 rounded-xl text-base font-black transition-all ${
-                        targetPerWeek === n ? 'text-white shadow-lg' : 'text-text-secondary border'
-                      }`}
-                      style={
-                        targetPerWeek === n
-                          ? { background: 'var(--gradient-accent)' }
-                          : { background: 'var(--color-surface)', borderColor: 'var(--color-border)' }
-                      }
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {n}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              <Input
-                id="habit-reminder"
-                label="Reminder (optional)"
-                type="time"
-                value={reminderTime}
-                onChange={(e) => setReminderTime(e.target.value)}
-              />
-
-              <Button type="submit" fullWidth loading={createHabit.isPending}>
-                Create Habit
-              </Button>
-            </form>
+          <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Habit" maxWidth="max-w-md">
+            <CreateHabitWizard open={showCreate} onClose={() => setShowCreate(false)} />
           </Modal>
         )}
       </AnimatePresence>
+
+      {/* Streak Break Popup */}
+      <StreakBreakModal
+        open={showStreakPopup}
+        brokenStreaks={brokenStreaks || []}
+        onClose={() => {
+          setStreakModalOpen(false);
+          resetStreakPopup();
+        }}
+        onDismiss={() => {
+          setStreakModalOpen(false);
+          dismissStreakPopup();
+        }}
+      />
     </motion.div>
   );
 

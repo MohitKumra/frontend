@@ -137,14 +137,12 @@ function EditHabitModal({
 }) {
   const updateHabit = useUpdateHabit();
   const [title, setTitle] = useState('');
-  const [targetPerWeek, setTargetPerWeek] = useState(7);
   const [reminderTime, setReminderTime] = useState('');
 
   // Sync state when habit changes
   useEffect(() => {
     if (habit) {
       setTitle(habit.title);
-      setTargetPerWeek(habit.targetPerWeek);
       setReminderTime(habit.reminderTime || '');
     }
   }, [habit]);
@@ -155,7 +153,7 @@ function EditHabitModal({
     e.preventDefault();
     if (!habit) return;
     updateHabit.mutate(
-      { id: habit.id, data: { title, targetPerWeek, reminderTime: reminderTime || undefined } },
+      { id: habit.id, data: { title, reminderTime: reminderTime || undefined } },
       { onSuccess: onClose }
     );
   };
@@ -189,33 +187,6 @@ function EditHabitModal({
               </p>
             </motion.div>
           )}
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">
-            Days per week
-          </label>
-          <div className="grid grid-cols-7 gap-2">
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <motion.button
-                key={n}
-                type="button"
-                onClick={() => setTargetPerWeek(n)}
-                className={`py-3 rounded-xl text-base font-black transition-all ${
-                  targetPerWeek === n ? 'text-white shadow-lg' : 'text-text-secondary border'
-                }`}
-                style={
-                  targetPerWeek === n
-                    ? { background: 'var(--gradient-accent)' }
-                    : { background: 'var(--color-surface)', borderColor: 'var(--color-border)' }
-                }
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {n}
-              </motion.button>
-            ))}
-          </div>
         </div>
 
         <Input
@@ -282,9 +253,15 @@ export function HabitCardCompact({ habit }: { habit: HabitDTO }) {
   const Icon = category.icon;
 
   const progress = useMemo(() => {
-    if (!habit.targetPerWeek) return 0;
-    return Math.round((habit.completionsThisWeek / habit.targetPerWeek) * 100);
-  }, [habit.completionsThisWeek, habit.targetPerWeek]);
+    // If duration is set, progress = completionDates / durationDays
+    if (habit.durationDays) {
+      return Math.round((habit.completionDates.length / habit.durationDays) * 100);
+    }
+    // Otherwise, weekly progress from available days (7 - skipDays)
+    const availableDays = 7 - (habit.skipDays?.length ?? 0);
+    const target = Math.max(availableDays, habit.targetPerWeek || 1);
+    return Math.round((habit.completionsThisWeek / target) * 100);
+  }, [habit.completionsThisWeek, habit.completionDates.length, habit.durationDays, habit.targetPerWeek, habit.skipDays]);
 
   const handleToggle = () => {
     const wasCompleted = habit.completedToday;
@@ -364,7 +341,7 @@ export function HabitCardCompact({ habit }: { habit: HabitDTO }) {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span
                 className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                 style={{ color: category.color, background: `color-mix(in srgb, ${category.color} 12%, transparent)` }}
@@ -375,6 +352,41 @@ export function HabitCardCompact({ habit }: { habit: HabitDTO }) {
               <p className="text-[10px] font-semibold text-text-muted">
                 {habit.completionsThisWeek}/{habit.targetPerWeek} this week
               </p>
+              {/* Skip days */}
+              {habit.skipDays && habit.skipDays.length > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    color: 'var(--color-text-muted)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  Skip: {habit.skipDays.map((d) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][d]).join(',')}
+                </span>
+              )}
+              {/* Duration completed */}
+              {habit.durationDays && !habit.isActive && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    color: 'var(--color-success, #22C55E)',
+                    border: '1px solid color-mix(in srgb, var(--color-success, #22C55E) 30%, transparent)',
+                  }}
+                >
+                  Completed 🎉
+                </span>
+              )}
+              {habit.durationDays && habit.isActive && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                  style={{
+                    color: 'var(--color-text-muted)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  {habit.completionDates.length}/{habit.durationDays}d
+                </span>
+              )}
             </div>
           </div>
 

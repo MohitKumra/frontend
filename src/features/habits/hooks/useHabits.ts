@@ -52,3 +52,12 @@ export function useDeleteHabit() {
     },
   });
 }
+
+export function useStreakStatus() {
+  return useQuery({
+    queryKey: [...HABITS_KEY, 'streak-status'],
+    queryFn: habitsApi.streakStatus,
+    staleTime: 60_000, // 1 minute
+    retry: false,
+  });
+}

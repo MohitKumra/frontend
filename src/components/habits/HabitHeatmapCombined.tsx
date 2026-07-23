@@ -26,6 +26,7 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
 
     const habitMeta = habits.map((h) => ({
       completionSet: new Set(h.completionDates ?? []),
+      safeSet: new Set(h.streakSafeDays ?? []),
       createdDate: h.createdAt ? h.createdAt.split('T')[0] : null,
     }));
 
@@ -61,7 +62,7 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
         const meta = habitMeta[i];
         if (meta.createdDate && meta.createdDate <= dateStr) {
           total++;
-          if (meta.completionSet.has(dateStr)) {
+          if (meta.completionSet.has(dateStr) || meta.safeSet.has(dateStr)) {
             completed++;
           }
         }
@@ -89,6 +90,17 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
       : consistencyPct >= 40
       ? { title: 'Keep it going!', body: 'Every completion moves your streak forward.' }
       : { title: 'Let\u2019s build momentum', body: 'Small, consistent steps add up fast.' };
+
+  // Collect all safe/skipped dates for the tooltip in the heatmap
+  const allSafeDates = useMemo(() => {
+    const safe = new Set<string>();
+    for (const h of habits) {
+      if (h.streakSafeDays) {
+        for (const d of h.streakSafeDays) safe.add(d);
+      }
+    }
+    return safe;
+  }, [habits]);
 
   return (
     <Card
