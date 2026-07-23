@@ -762,8 +762,8 @@ export function NotesPage() {
                     className="np-list-item group"
                   >
                     {/* Left: Icon */}
-                    <div className={`np-list-icon ${isJournal ? 'is-journal' : ''}`}>
-                      {isJournal ? <BookOpen size={20} /> : <FileText size={20} />}
+                    <div className={`np-list-icon ${note.isJournal ? 'is-journal' : ''}`}>
+                      {note.isJournal ? <BookOpen size={20} /> : <FileText size={20} />}
                     </div>
 
                     {/* Center: Content */}
@@ -774,14 +774,14 @@ export function NotesPage() {
                         <h4 className="np-list-title">
                           {note.title && !note.title.startsWith('Journal Entry —')
                             ? note.title
-                            : isJournal
+                            : note.isJournal
                               ? 'Daily Reflection'
                               : 'Untitled'}
                         </h4>
                         {starred && (
                           <Pin size={13} fill="currentColor" className="shrink-0" style={{ color: '#f5b301' }} />
                         )}
-                        <span className="np-list-badge">{isJournal ? 'Journal' : 'Note'}</span>
+                        <span className="np-list-badge">{note.isJournal ? 'Journal' : 'Note'}</span>
                       </div>
 
                       {/* Date */}
