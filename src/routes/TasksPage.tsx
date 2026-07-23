@@ -31,6 +31,8 @@ import { tasksApi } from '../features/tasks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
 import { LoadingScreen } from '../components/ui/Spinner';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { EditTaskModal } from '../components/tasks/EditTaskModal';
 import { TaskBoardView } from '../components/tasks/TaskBoardView';
@@ -129,6 +131,7 @@ export function TasksPage() {
 
   const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({});
   const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'single'; task: TaskDTO } | { type: 'bulk'; count: number } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -322,11 +325,11 @@ export function TasksPage() {
   }, [updateTask]);
 
   const handleDeleteTask = useCallback((id: string) => {
-    if (confirm('Delete this task?')) {
-      deleteTask.mutate(id);
-      setTaskMenuOpen(null);
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      setDeleteConfirmation({ type: 'single', task });
     }
-  }, [deleteTask]);
+  }, [tasks]);
 
   const handleAddSubtask = useCallback(async (taskId: string) => {
     const title = (subtaskDraft[taskId] ?? '').trim();
@@ -365,14 +368,30 @@ export function TasksPage() {
 
   const handleBulkDelete = async () => {
     if (visibleSelectedTasks.length === 0) return;
-    if (!confirm(`Delete ${visibleSelectedTasks.length} selected task${visibleSelectedTasks.length !== 1 ? 's' : ''}?`)) return;
-    setBulkAction('delete');
-    try {
-      await Promise.all(visibleSelectedTasks.map((t) => tasksApi.delete(t.id)));
-      await invalidateTasks();
-      clearSelection();
-    } finally { setBulkAction(null); }
+    setDeleteConfirmation({ type: 'bulk', count: visibleSelectedTasks.length });
   };
+
+  // ── confirm delete ───────────────────────────────────────────────────────
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!deleteConfirmation) return;
+    
+    if (deleteConfirmation.type === 'single') {
+      deleteTask.mutate(deleteConfirmation.task.id);
+      setTaskMenuOpen(null);
+    } else {
+      setBulkAction('delete');
+      const taskIds = Array.from(selectedTaskIds);
+      Promise.all(taskIds.map((id) => tasksApi.delete(id))).then(() => {
+        invalidateTasks();
+        clearSelection();
+      }).finally(() => {
+        setBulkAction(null);
+      });
+    }
+    
+    setDeleteConfirmation(null);
+  }, [deleteConfirmation, deleteTask, selectedTaskIds, invalidateTasks, clearSelection]);
 
   // ── keyboard shortcuts ───────────────────────────────────────────────────
 
@@ -981,6 +1000,31 @@ export function TasksPage() {
         </div>,
         document.body,
       )}
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteConfirmation !== null}
+        onClose={() => setDeleteConfirmation(null)}
+        title="Delete Task"
+      >
+        <div className="flex flex-col gap-5 pt-2">
+          <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
+            {deleteConfirmation?.type === 'single' ? (
+              <>Are you sure you want to delete <strong>{deleteConfirmation.task.title}</strong>? This action cannot be undone.</>
+            ) : deleteConfirmation?.type === 'bulk' ? (
+              <>Are you sure you want to delete <strong>{deleteConfirmation.count}</strong> selected task{deleteConfirmation.count !== 1 ? 's' : ''}? This action cannot be undone.</>
+            ) : null}
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setDeleteConfirmation(null)} className="flex-1">
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleConfirmDelete} className="flex-1">
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </motion.div>
   );
 }

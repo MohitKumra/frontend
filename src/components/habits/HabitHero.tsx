@@ -93,7 +93,6 @@ export function HabitHero({
   successRate,
   onCreateHabit,
 }: HabitHeroProps) {
-
   return (
     <motion.div
       variants={containerVariants}

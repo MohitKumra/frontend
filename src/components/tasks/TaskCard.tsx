@@ -351,7 +351,7 @@ export function TaskCard({
                     </button>
                     <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
                     <button
-                      onClick={() => onDelete(task.id)}
+                      onClick={() => {onDelete(task.id); onToggleMenu(null)}}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
                       style={{ color: 'var(--color-danger)' }}
                     >

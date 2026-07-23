@@ -49,6 +49,12 @@ export function useForgotPassword() {
   });
 }
 
+export function useForgotPasswordByRecoveryEmail() {
+  return useMutation({
+    mutationFn: (recoveryEmail: string) => authApi.forgotPasswordByRecoveryEmail(recoveryEmail),
+  });
+}
+
 export function useResetPassword() {
   const navigate = useNavigate();
   return useMutation({

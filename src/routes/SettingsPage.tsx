@@ -738,6 +738,7 @@ export function SettingsPage() {
 
             {activeTab === 'notifications' && (
               <TabPanel key="notifications" panelKey="notifications" className="w-full">
+          <div data-onboarding="settings-notifications">
           <Card className="p-4 sm:p-5 lg:p-6" variant="default">
             <SectionHeader
               icon={<BellRing size={20} />}
@@ -775,6 +776,7 @@ export function SettingsPage() {
               ))}
             </div>
           </Card>
+          </div>
         </TabPanel>
             )}
 

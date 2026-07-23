@@ -3,8 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
-async function completeGoogleSession() {
-  const refreshResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/refresh`, {
+async function completeGoogleSession(): Promise<{ accessToken: string; user: any }> {
+  const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  // ── Path 1: URL fragment path (mobile) ──────────────────────────────────
+  // Tokens passed via #accessToken=xxx&refreshToken=yyy by the backend redirect.
+  // Fragment (#) is used instead of query params (?) because fragments are never
+  // sent to servers, avoiding Referer header leaks and server log exposure.
+  const hash = window.location.hash.replace(/^#/, '');
+  const hashParams = new URLSearchParams(hash);
+  const accessTokenFromHash = hashParams.get('accessToken');
+
+  if (accessTokenFromHash) {
+    // Clear the fragment from the URL immediately — removes it from address bar & history
+    window.history.replaceState(null, '', window.location.pathname);
+
+    const meResponse = await fetch(`${VITE_BACKEND_URL}/auth/me`, {
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${accessTokenFromHash}`,
+      },
+    });
+
+    if (!meResponse.ok) {
+      const payload = await meResponse.json().catch(() => null);
+      throw new Error(payload?.error?.message ?? 'Google sign-in could not load your account.');
+    }
+
+    const user = await meResponse.json();
+    return { accessToken: accessTokenFromHash, user };
+  }
+
+  // ── Path 2: Cookie-based path (desktop) ─────────────────────────────────
+  // Existing flow: backend set the refreshToken cookie, we exchange it for an access token.
+  const refreshResponse = await fetch(`${VITE_BACKEND_URL}/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -17,7 +49,7 @@ async function completeGoogleSession() {
 
   const refreshData = await refreshResponse.json() as { accessToken: string };
 
-  const meResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/me`, {
+  const meResponse = await fetch(`${VITE_BACKEND_URL}/auth/me`, {
     credentials: 'include',
     headers: {
       Authorization: `Bearer ${refreshData.accessToken}`,

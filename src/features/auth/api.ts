@@ -23,6 +23,9 @@ export const authApi = {
   forgotPassword: (email: string) =>
     apiClient.post('/auth/forgot-password', { email }).then((r) => r.data),
 
+  forgotPasswordByRecoveryEmail: (recoveryEmail: string) =>
+    apiClient.post('/auth/forgot-password/recovery', { recoveryEmail }).then((r) => r.data),
+
   resetPassword: (token: string, password: string) =>
     apiClient.post('/auth/reset-password', { token, password }).then((r) => r.data),
 
