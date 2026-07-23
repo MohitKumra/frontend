@@ -24,6 +24,7 @@ import { QuoteCard } from '../components/habits/QuoteCard';
 import { getDailyQuotes } from '../data/quotes';
 import { focusApi } from '../features/habits/api';
 import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
+import { useAmbientSound } from '../hooks/useAmbientSound';
 import { isSameDay } from '../lib/dateUtils';
 import type { FocusSessionDTO, FocusSessionStatus, ListResponse, ProjectDTO, TaskDTO } from '../types';
 import type { Quote as QuoteType } from '../data/quotes';
@@ -955,6 +956,7 @@ export function FocusPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [ambientSound, setAmbientSound] = useState(AMBIENT_SOUNDS[0]);
   const [ambientPlaying, setAmbientPlaying] = useState(false);
+  useAmbientSound(ambientSound as 'Forest' | 'Rain' | 'Cafe' | 'Silence', ambientPlaying);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
