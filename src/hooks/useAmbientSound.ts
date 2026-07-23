@@ -40,6 +40,7 @@ export function useAmbientSound(
   const [error, setError] = useState(false);
   const fadeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const canPlayHandlerRef = useRef<(() => void) | null>(null);
+  const playingHandlerRef = useRef<(() => void) | null>(null);
   const errorHandlerRef = useRef<((e: Event) => void) | null>(null);
   const stalledHandlerRef = useRef<((e: Event) => void) | null>(null);
   const waitingHandlerRef = useRef<((e: Event) => void) | null>(null);
@@ -59,6 +60,10 @@ export function useAmbientSound(
     if (canPlayHandlerRef.current) {
       audio.removeEventListener('canplay', canPlayHandlerRef.current);
       canPlayHandlerRef.current = null;
+    }
+    if (playingHandlerRef.current) {
+      audio.removeEventListener('playing', playingHandlerRef.current);
+      playingHandlerRef.current = null;
     }
     if (errorHandlerRef.current) {
       audio.removeEventListener('error', errorHandlerRef.current);
@@ -129,13 +134,18 @@ export function useAmbientSound(
 
     audioRef.current = audio;
 
-    // Set up canplay handler for initial load
+    // Set up handlers for initial load and buffering recovery
     const onCanPlay = () => {
       setLoading(false);
       setError(false);
       if (playingRef.current && audioRef.current) {
         startPlayback(audioRef.current);
       }
+    };
+    const onPlaying = () => {
+      // Critical: clears loading state when playback resumes after buffering
+      setLoading(false);
+      setError(false);
     };
     const onError = () => {
       setLoading(false);
@@ -150,11 +160,13 @@ export function useAmbientSound(
     };
 
     audio.addEventListener('canplay', onCanPlay);
+    audio.addEventListener('playing', onPlaying);
     audio.addEventListener('error', onError);
     audio.addEventListener('stalled', onStalled);
     audio.addEventListener('waiting', onWaiting);
 
     canPlayHandlerRef.current = onCanPlay;
+    playingHandlerRef.current = onPlaying;
     errorHandlerRef.current = onError;
     stalledHandlerRef.current = onStalled;
     waitingHandlerRef.current = onWaiting;
@@ -208,6 +220,11 @@ export function useAmbientSound(
         }
       });
     };
+    const onPlaying = () => {
+      // Critical: clears loading when playback resumes after buffering
+      setLoading(false);
+      setError(false);
+    };
     const onError = () => {
       setLoading(false);
       setError(true);
@@ -220,11 +237,13 @@ export function useAmbientSound(
     };
 
     audio.addEventListener('canplay', onCanPlay);
+    audio.addEventListener('playing', onPlaying);
     audio.addEventListener('error', onError);
     audio.addEventListener('stalled', onStalled);
     audio.addEventListener('waiting', onWaiting);
 
     canPlayHandlerRef.current = onCanPlay;
+    playingHandlerRef.current = onPlaying;
     errorHandlerRef.current = onError;
     stalledHandlerRef.current = onStalled;
     waitingHandlerRef.current = onWaiting;
