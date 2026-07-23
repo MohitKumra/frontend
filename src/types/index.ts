@@ -388,12 +388,16 @@ export interface PaginatedResponse<T> {
 
 // ─── Focus Sessions ──────────────────────────────────────────────────────────
 
+export type FocusSessionStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
 export interface FocusSessionDTO {
   id: string;
   userId: string;
   durationMin: number;
+  elapsedMin: number;
   startedAt: string;
-  completed: boolean;
+  status: FocusSessionStatus;
+  completedAt: string | null;
   taskId: string | null;
   projectId: string | null;
   isBreak: boolean;
@@ -401,11 +405,14 @@ export interface FocusSessionDTO {
 
 export interface CreateFocusSessionRequest {
   durationMin: number;
-  startedAt: string;
-  completed: boolean;
   taskId?: string | null;
   projectId?: string | null;
   isBreak?: boolean;
+}
+
+export interface UpdateFocusSessionRequest {
+  elapsedMin: number;
+  status?: FocusSessionStatus;
 }
 
 // ─── Calendar ────────────────────────────────────────────────────────────────

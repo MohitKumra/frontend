@@ -182,7 +182,7 @@ export function DashboardPage() {
   };
 
   const completedFocusSessions = useMemo(
-    () => focusSessions.filter((session) => session.completed && !session.isBreak),
+    () => focusSessions.filter((session) => session.status === 'COMPLETED' && !session.isBreak),
     [focusSessions]
   );
 

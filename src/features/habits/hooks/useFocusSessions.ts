@@ -39,7 +39,7 @@ export function computeFocusTime(sessions: FocusSessionDTO[]): FocusTimeData {
   // Filter to today's completed, non-break sessions
   const todaySessions = sessions.filter((s) => {
     if (s.isBreak) return false;
-    if (!s.completed) return false;
+    if (s.status !== 'COMPLETED') return false;
     const sessionDate = s.startedAt.split('T')[0];
     return sessionDate === todayStr;
   });

@@ -1,6 +1,7 @@
-import { CheckSquare, Clock, Flag, TrendingUp, ChevronRight } from 'lucide-react';
+import { CheckSquare, Clock, Flag, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
+import { FloatingPriorityTasksEmpty } from '../ui/FloatingPriorityTasksEmpty';
 import type { TaskDTO, SubTaskDTO } from '../../types';
 import { isOverdue } from '../tasks/TaskCard';
 
@@ -213,26 +214,11 @@ export function PriorityTasksWidget({ tasks, maxTasks = 5 }: PriorityTasksWidget
             })}
           </div>
         ) : (
-          <div 
-            className="rounded-xl border p-8 text-center"
-            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-          >
-            <div 
-              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
-              style={{ background: 'var(--icon-bg-success)', color: 'var(--icon-text-success)' }}
-            >
-              <TrendingUp size={20} />
-            </div>
-            <p className="text-sm font-bold text-text-primary mb-1">All clear!</p>
-            <p className="text-xs text-text-secondary mb-4">No priority tasks right now.</p>
-            <button
-              type="button"
-              onClick={() => navigate('/tasks')}
-              className="text-xs font-bold text-accent hover:text-accent-hover transition-colors"
-            >
-              Create a new task →
-            </button>
-          </div>
+          <FloatingPriorityTasksEmpty
+            title="No priority tasks"
+            description="All clear! When you mark tasks as high priority, they'll appear here."
+            onViewAllTasks={() => navigate('/tasks')}
+          />
         )}
       </div>
     </Card>

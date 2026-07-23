@@ -18,6 +18,7 @@ export interface PersistedTimerState {
   elapsedSeconds: number;
   selectedTaskId: string | null;
   selectedProjectId?: string | null;
+  sessionId: string | null;
   /** ISO timestamp when this state was last persisted */
   savedAt: string;
 }

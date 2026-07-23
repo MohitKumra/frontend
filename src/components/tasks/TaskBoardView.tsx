@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import {
   DndContext,
   PointerSensor,
@@ -24,7 +25,6 @@ import {
   Edit3,
   ExternalLink,
   Flag,
-  Inbox,
   ListChecks,
   MoreVertical,
   Play,
@@ -540,6 +540,210 @@ function MoveTasksHereBtn({
   );
 }
 
+// ── Per-column animated empty state ────────────────────────────────────────
+function BoardColumnEmpty({
+  status,
+  accent,
+  isDragTarget,
+  onAddTask,
+}: {
+  status: TaskStatus;
+  accent: string;
+  isDragTarget: boolean;
+  onAddTask?: () => void;
+}) {
+  if (isDragTarget) {
+    return (
+      <div
+        className="flex min-h-[160px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center transition-all"
+        style={{ borderColor: accent, color: accent, background: `color-mix(in srgb, ${accent} 6%, transparent)` }}
+      >
+        <motion.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}>
+          <Plus size={22} />
+        </motion.div>
+        <p className="mt-2 text-xs font-black">Drop task here</p>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-1 flex-col items-center justify-center rounded-2xl px-4 py-6 text-center"
+      style={{ background: `color-mix(in srgb, ${accent} 4%, transparent)` }}
+    >
+      {/* Illustration */}
+      <div className="relative mb-4 flex items-center justify-center" style={{ width: 100, height: 80 }}>
+        {/* Dashed ring */}
+        <svg className="absolute inset-0" width="100" height="80" viewBox="0 0 100 80" fill="none">
+          <motion.ellipse
+            cx="50" cy="40" rx="44" ry="34"
+            stroke={accent}
+            strokeWidth="1"
+            strokeDasharray="4 6"
+            opacity="0.25"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+            style={{ transformOrigin: '50px 40px' }}
+          />
+        </svg>
+
+        {status === 'TODO' && (
+          <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
+            {/* Back card */}
+            <motion.g animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} style={{ transformOrigin: '20px 30px' }}>
+              <rect x="4" y="14" width="38" height="32" rx="6" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.2" />
+              <circle cx="14" cy="24" r="3.5" fill="none" stroke="var(--color-border)" strokeWidth="1.2" />
+              <rect x="21" y="22.5" width="16" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
+              <circle cx="14" cy="33" r="3.5" fill="none" stroke="var(--color-border)" strokeWidth="1.2" />
+              <rect x="21" y="31.5" width="12" height="3" rx="1.5" fill="var(--color-border)" opacity="0.4" />
+            </motion.g>
+            {/* Front card */}
+            <motion.g animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '46px 28px' }}>
+              <rect x="24" y="6" width="42" height="50" rx="7" fill="var(--color-surface-raised)" stroke={accent} strokeWidth="1.5" style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }} />
+              {/* Top accent bar */}
+              <rect x="24" y="6" width="42" height="4" rx="2" fill={accent} opacity="0.5" />
+              {/* Empty checkbox rows */}
+              <circle cx="34" cy="24" r="4" fill="none" stroke={accent} strokeWidth="1.4" opacity="0.7" />
+              <rect x="42" y="22" width="18" height="3.5" rx="1.75" fill={accent} opacity="0.3" />
+              <circle cx="34" cy="36" r="4" fill="none" stroke="var(--color-border)" strokeWidth="1.2" />
+              <rect x="42" y="34" width="14" height="3.5" rx="1.75" fill="var(--color-border)" opacity="0.4" />
+              <circle cx="34" cy="48" r="4" fill="none" stroke="var(--color-border)" strokeWidth="1.2" />
+              <rect x="42" y="46" width="16" height="3.5" rx="1.75" fill="var(--color-border)" opacity="0.3" />
+            </motion.g>
+          </svg>
+        )}
+
+        {status === 'IN_PROGRESS' && (
+          <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
+            {/* Back card */}
+            <motion.g animate={{ y: [0, -3, 0], rotate: [3, 4, 3] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} style={{ transformOrigin: '50px 30px' }}>
+              <rect x="28" y="14" width="38" height="32" rx="6" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.2" />
+              <rect x="34" y="24" width="26" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
+              <rect x="34" y="31" width="18" height="3" rx="1.5" fill="var(--color-border)" opacity="0.35" />
+              {/* half-filled progress bar */}
+              <rect x="34" y="39" width="26" height="3" rx="1.5" fill="var(--color-border)" opacity="0.3" />
+              <rect x="34" y="39" width="14" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
+            </motion.g>
+            {/* Front card */}
+            <motion.g animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '28px 28px' }}>
+              <rect x="4" y="4" width="46" height="54" rx="8" fill="var(--color-surface-raised)" stroke={accent} strokeWidth="1.5" style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }} />
+              <rect x="4" y="4" width="46" height="4" rx="2" fill={accent} opacity="0.5" />
+              {/* Animated partial-fill clock arc */}
+              <circle cx="27" cy="26" r="10" fill="none" stroke="var(--color-border)" strokeWidth="2" opacity="0.3" />
+              <motion.circle
+                cx="27" cy="26" r="10"
+                fill="none"
+                stroke={accent}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="62.8"
+                animate={{ strokeDashoffset: [47, 25, 47] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ transform: 'rotate(-90deg)', transformOrigin: '27px 26px' }}
+              />
+              {/* Clock hands */}
+              <line x1="27" y1="26" x2="27" y2="19" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+              <line x1="27" y1="26" x2="32" y2="29" stroke={accent} strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
+              {/* Labels */}
+              <rect x="12" y="44" width="28" height="3.5" rx="1.75" fill={accent} opacity="0.25" />
+              <rect x="12" y="51" width="20" height="3" rx="1.5" fill="var(--color-border)" opacity="0.35" />
+            </motion.g>
+          </svg>
+        )}
+
+        {status === 'DONE' && (
+          <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
+            {/* Back card */}
+            <motion.g animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} style={{ transformOrigin: '20px 30px' }}>
+              <rect x="4" y="14" width="36" height="30" rx="6" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.2" />
+              <circle cx="15" cy="25" r="4" fill="var(--color-border)" opacity="0.3" />
+              <path d="M13 25 L14.5 26.5 L17.5 23.5" stroke="var(--color-border)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+              <rect x="23" y="23" width="12" height="3" rx="1.5" fill="var(--color-border)" opacity="0.4" />
+              <circle cx="15" cy="36" r="4" fill="var(--color-border)" opacity="0.3" />
+              <path d="M13 36 L14.5 37.5 L17.5 34.5" stroke="var(--color-border)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+              <rect x="23" y="34" width="9" height="3" rx="1.5" fill="var(--color-border)" opacity="0.3" />
+            </motion.g>
+            {/* Front card — with animated check */}
+            <motion.g animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '44px 28px' }}>
+              <rect x="22" y="4" width="44" height="52" rx="8" fill="var(--color-surface-raised)" stroke={accent} strokeWidth="1.5" style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }} />
+              <rect x="22" y="4" width="44" height="4" rx="2" fill={accent} opacity="0.5" />
+              {/* Big check circle */}
+              <motion.circle
+                cx="44" cy="28" r="14"
+                fill={`color-mix(in srgb, ${accent} 18%, transparent)`}
+                stroke={accent}
+                strokeWidth="1.5"
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.path
+                d="M37 28 L42 33 L51 22"
+                fill="none"
+                stroke={accent}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <rect x="30" y="48" width="28" height="3" rx="1.5" fill={accent} opacity="0.2" />
+            </motion.g>
+          </svg>
+        )}
+
+        {/* Floating accent sparkles */}
+        {[
+          { x: 2, y: 4, delay: 0 },
+          { x: 88, y: 8, delay: 0.6 },
+          { x: 10, y: 68, delay: 1.1 },
+          { x: 82, y: 64, delay: 0.3 },
+        ].map((dot, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{ width: 4, height: 4, left: dot.x, top: dot.y, background: accent, opacity: 0 }}
+            animate={{ scale: [1, 1.8, 1], opacity: [0, 0.5, 0], y: [0, -4, 0] }}
+            transition={{ duration: 2 + i * 0.3, repeat: Infinity, delay: dot.delay, ease: 'easeInOut' }}
+          />
+        ))}
+      </div>
+
+      {/* Text */}
+      <p className="text-xs font-black mb-1" style={{ color: accent }}>
+        {status === 'TODO' && 'Nothing planned yet'}
+        {status === 'IN_PROGRESS' && 'Nothing in progress'}
+        {status === 'DONE' && 'No wins logged yet'}
+      </p>
+      <p className="text-[10px] text-text-muted leading-relaxed mb-3 max-w-[140px]">
+        {status === 'TODO' && 'Add your first task to get started'}
+        {status === 'IN_PROGRESS' && 'Start a task to track active work'}
+        {status === 'DONE' && 'Complete a task to celebrate here'}
+      </p>
+
+      {onAddTask && status === 'TODO' && (
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={onAddTask}
+          className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-black transition-all"
+          style={{
+            background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+            color: accent,
+            border: `1.5px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+          }}
+        >
+          <Plus size={12} />
+          Add task
+        </motion.button>
+      )}
+    </motion.div>
+  );
+}
+
 export function TaskBoardView({
   tasks,
   onStatusChange,
@@ -638,13 +842,12 @@ export function TaskBoardView({
             return (
               <div key={col.status} className="mt-3 flex flex-col gap-2.5">
                 {pageTasks.length === 0 && (
-                  <div
-                    className="flex min-h-[160px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-                  >
-                    <Inbox size={20} className="opacity-45" />
-                    <p className="mt-2 text-xs font-black">{col.empty}</p>
-                  </div>
+                  <BoardColumnEmpty
+                    status={col.status}
+                    accent={col.accent}
+                    isDragTarget={false}
+                    onAddTask={onAddTask ? () => onAddTask(col.status) : undefined}
+                  />
                 )}
 
                 {pageTasks.map((task) => (
@@ -720,13 +923,12 @@ export function TaskBoardView({
                   {/* scrollable card area — fixed column height instead of growing forever */}
                   <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5" style={{ scrollbarWidth: 'thin' }}>
                     {pageTasks.length === 0 && !draggingId && (
-                      <div
-                        className="flex min-h-[160px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center"
-                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-                      >
-                        <Inbox size={20} className="opacity-45" />
-                        <p className="mt-2 text-xs font-black">{isDragTarget ? 'Drop task here' : col.empty}</p>
-                      </div>
+                      <BoardColumnEmpty
+                        status={col.status}
+                        accent={col.accent}
+                        isDragTarget={isDragTarget}
+                        onAddTask={onAddTask ? () => onAddTask(col.status) : undefined}
+                      />
                     )}
 
                     {pageTasks.map((task) => (
@@ -747,14 +949,13 @@ export function TaskBoardView({
                       />
                     ))}
 
-                    {draggingId && (
-                      <div
-                        className="flex min-h-[90px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center"
-                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-                      >
-                        <Inbox size={18} className="opacity-45" />
-                        <p className="mt-1.5 text-xs font-black">Drop task here</p>
-                      </div>
+                    {draggingId && pageTasks.length === 0 && (
+                      <BoardColumnEmpty
+                        status={col.status}
+                        accent={col.accent}
+                        isDragTarget={true}
+                        onAddTask={undefined}
+                      />
                     )}
                   </div>
 
