@@ -12,6 +12,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [key, setKey] = useState(0); // Force re-mount of audio element when src changes
 
   // Calculate bars based on container size
   const numBars = compact ? 30 : 50;
@@ -39,6 +40,10 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
+      // Also check duration here in case metadata wasn't loaded yet
+      if (audioRef.current.duration > 0 && duration === 0) {
+        setDuration(audioRef.current.duration);
+      }
     }
   };
 
@@ -50,7 +55,14 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
 
   // Load metadata
   const handleLoadedMetadata = () => {
-    if (audioRef.current) {
+    if (audioRef.current && audioRef.current.duration > 0) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  // Canplay event as fallback
+  const handleCanPlay = () => {
+    if (audioRef.current && audioRef.current.duration > 0) {
       setDuration(audioRef.current.duration);
     }
   };
@@ -59,9 +71,8 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   useEffect(() => {
     setIsPlaying(false);
     setCurrentTime(0);
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-    }
+    setDuration(0);
+    setKey(prev => prev + 1); // Force re-mount to reload src
   }, [src]);
 
   // Calculate progress percentage
@@ -70,11 +81,14 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   return (
     <div className="w-full">
       <audio
+        key={key}
         ref={audioRef}
         src={src}
+        preload="metadata"
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
       />
       
       <div 
