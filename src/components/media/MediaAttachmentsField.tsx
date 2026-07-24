@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Paperclip, Mic, Square, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/mediaUpload';
+import { VoiceNotePlayer } from './VoiceNotePlayer';
 
 interface MediaAttachmentsFieldProps {
   attachmentUrl: string;
@@ -167,18 +168,15 @@ export function MediaAttachmentsField({
         </span>
       )}
 
-      {/* Voice note preview chip */}
+      {/* Voice note preview */}
       {hasVoice && (
-        <span
-          className="inline-flex items-center gap-1 rounded-lg text-xs font-semibold"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          <Mic size={12} />
-          Voice note
-          <button type="button" onClick={() => onVoiceNoteUrlChange('')} className="hover:text-danger transition-colors">
-            <Trash2 size={11} />
-          </button>
-        </span>
+        <div className="w-full">
+          <VoiceNotePlayer 
+            src={voiceNoteUrl} 
+            onDelete={() => onVoiceNoteUrlChange('')}
+            compact
+          />
+        </div>
       )}
 
       {/* Error message */}

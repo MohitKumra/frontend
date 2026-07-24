@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Image as ImageIcon, Paperclip, X } from 'lucide-react';
 import { ModalPortal } from '../ui/ModalRoot';
+import { VoiceNotePlayer } from './VoiceNotePlayer';
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif', '.svg'];
 
@@ -190,9 +191,7 @@ export function MediaPreview({
           <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--color-text-muted)' }}>
             {voiceLabel}
           </p>
-          <div className="rounded-2xl border px-3 py-3" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
-            <audio controls preload="metadata" className="w-full" src={voiceNoteUrl} />
-          </div>
+          <VoiceNotePlayer src={voiceNoteUrl} />
         </div>
       )}
     </div>
