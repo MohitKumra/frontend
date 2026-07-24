@@ -17,7 +17,7 @@ function fallbackPeaks(seed: string, count: number): number[] {
   for (let i = 0; i < count; i++) {
     h = (h * 1103515245 + 12345) >>> 0;
     const r = (h % 1000) / 1000;
-    peaks.push(0.25 + r * 0.6 + Math.sin(i * 0.4) * 0.12);
+    peaks.push(0.35 + r * 0.5 + Math.sin(i * 0.4) * 0.1);
   }
   return peaks;
 }
@@ -39,7 +39,9 @@ function computePeaks(buffer: AudioBuffer, count: number): number[] {
     if (avg > max) max = avg;
   }
   if (max === 0) return peaks.map(() => 0.15);
-  return peaks.map((p) => Math.max(0.08, p / max));
+  // Compress dynamic range (sqrt-ish curve) so quiet passages stay visible
+  // instead of collapsing to near-zero-height "dots".
+  return peaks.map((p) => Math.max(0.22, Math.pow(p / max, 0.62)));
 }
 
 export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePlayerProps) {
@@ -57,7 +59,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [showRemaining, setShowRemaining] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const numBars = compact ? 40 : 64;
+  const numBars = compact ? 28 : 44;
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setMounted(true));
@@ -344,28 +346,32 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerLeave}
-          className="flex-1 relative flex items-center gap-[2.5px] h-9 cursor-pointer select-none outline-none"
+          className="flex-1 relative flex items-center gap-[3px] h-9 cursor-pointer select-none outline-none"
         >
           {displayPeaks.map((amp, i) => {
             const barRatio = i / displayPeaks.length;
             const isPast = barRatio <= progress;
             const isHoverPast = scrubRatio !== null && barRatio <= scrubRatio;
-            const height = Math.max(3, amp * 32);
+            const height = Math.max(5, amp * 30);
             return (
               <div
                 key={i}
                 className="flex-1 rounded-full"
                 style={{
                   height: `${height}px`,
-                  minWidth: '2px',
+                  minWidth: '2.5px',
+                  // Derived from --color-text-muted (not --color-border): the
+                  // app already keeps that legible against every note color,
+                  // so unplayed bars stay visible on any card background
+                  // instead of blending into it.
                   background: isPast
-                    ? 'var(--color-primary)'
+                    ? 'linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 85%, white 15%), var(--color-primary))'
                     : isHoverPast
-                    ? 'color-mix(in srgb, var(--color-primary) 40%, var(--color-border))'
-                    : 'var(--color-border)',
+                    ? 'color-mix(in srgb, var(--color-primary) 45%, var(--color-text-muted) 55%)'
+                    : 'color-mix(in srgb, var(--color-text-muted) 50%, transparent)',
                   transition: 'background 0.15s ease, height 0.2s ease',
-                  transform: !peaks ? 'scaleY(0.6)' : 'none',
-                  opacity: !peaks ? 0.5 : 1,
+                  transform: !peaks ? 'scaleY(0.7)' : 'none',
+                  opacity: !peaks ? 0.6 : 1,
                 }}
               />
             );
