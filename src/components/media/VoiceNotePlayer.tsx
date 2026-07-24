@@ -15,13 +15,12 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [key, setKey] = useState(0); // Force re-mount of audio element when src changes
   const [loadError, setLoadError] = useState(false);
 
-  console.log('[VoiceNotePlayer] Initializing with src:', src);
-
   // Calculate bars based on container size
   const numBars = compact ? 30 : 50;
 
   // Helper to format time (mm:ss)
   const formatTime = (time: number) => {
+    if (!isFinite(time) || time < 0) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -29,17 +28,13 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
 
   // Toggle play/pause
   const togglePlay = () => {
-    console.log('[VoiceNotePlayer] togglePlay called. isPlaying:', isPlaying);
     if (audioRef.current) {
-      console.log('[VoiceNotePlayer] audio element current:', audioRef.current);
       if (isPlaying) {
         audioRef.current.pause();
       } else {
         audioRef.current.play();
       }
       setIsPlaying(!isPlaying);
-    } else {
-      console.error('[VoiceNotePlayer] No audioRef.current');
     }
   };
 
@@ -48,11 +43,9 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
     if (audioRef.current) {
       const currTime = audioRef.current.currentTime;
       const dur = audioRef.current.duration;
-      console.log('[VoiceNotePlayer] handleTimeUpdate:', { currentTime: currTime, duration: dur });
       setCurrentTime(currTime);
       // Also check duration here in case metadata wasn't loaded yet
-      if (dur > 0 && duration === 0) {
-        console.log('[VoiceNotePlayer] Setting duration from handleTimeUpdate:', dur);
+      if (dur > 0 && isFinite(dur) && duration === 0) {
         setDuration(dur);
       }
     }
@@ -60,19 +53,41 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
 
   // Handle audio ended
   const handleEnded = () => {
-    console.log('[VoiceNotePlayer] Audio ended');
     setIsPlaying(false);
     setCurrentTime(0);
+  };
+
+  /**
+   * Chrome/MediaRecorder WebM duration bug: recordings produced by
+   * MediaRecorder don't have a Duration element in the WebM header
+   * (the recorder doesn't know the final length while streaming), so
+   * `audio.duration` reports Infinity until the browser has scanned
+   * the whole file. Seeking near the end forces the demuxer to index
+   * through to EOF and discover the real duration; we then seek back
+   * to the start so playback isn't affected.
+   */
+  const fixInfiniteDuration = (audio: HTMLAudioElement) => {
+    const onTimeUpdate = () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      if (isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+      audio.currentTime = 0;
+    };
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    // Seeking beyond the actual length forces Chrome to clamp to (and
+    // discover) the real end of the file.
+    audio.currentTime = 1e101;
   };
 
   // Load metadata
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       const dur = audioRef.current.duration;
-      console.log('[VoiceNotePlayer] handleLoadedMetadata:', { duration: dur });
-      if (dur > 0) {
-        console.log('[VoiceNotePlayer] Setting duration from handleLoadedMetadata:', dur);
+      if (dur > 0 && isFinite(dur)) {
         setDuration(dur);
+      } else if (dur === Infinity) {
+        fixInfiniteDuration(audioRef.current);
       }
     }
   };
@@ -81,41 +96,36 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const handleCanPlay = () => {
     if (audioRef.current) {
       const dur = audioRef.current.duration;
-      console.log('[VoiceNotePlayer] handleCanPlay:', { duration: dur });
-      if (dur > 0) {
-        console.log('[VoiceNotePlayer] Setting duration from handleCanPlay:', dur);
+      if (dur > 0 && isFinite(dur) && duration === 0) {
         setDuration(dur);
+      } else if (dur === Infinity && duration === 0) {
+        fixInfiniteDuration(audioRef.current);
       }
     }
   };
 
   // Handle audio loadstart
-  const handleLoadStart = () => {
-    console.log('[VoiceNotePlayer] handleLoadStart');
-  };
+  const handleLoadStart = () => {};
 
   // Handle audio loadeddata
   const handleLoadedData = () => {
-    console.log('[VoiceNotePlayer] handleLoadedData');
     if (audioRef.current) {
       const dur = audioRef.current.duration;
-      if (dur > 0 && duration === 0) {
-        console.log('[VoiceNotePlayer] Setting duration from handleLoadedData:', dur);
+      if (dur > 0 && isFinite(dur) && duration === 0) {
         setDuration(dur);
+      } else if (dur === Infinity && duration === 0) {
+        fixInfiniteDuration(audioRef.current);
       }
     }
   };
 
   // Handle audio error
-  const handleError = (e: any) => {
-    console.error('[VoiceNotePlayer] handleError:', e);
-    console.error('[VoiceNotePlayer] Audio element error:', audioRef.current?.error);
+  const handleError = () => {
     setLoadError(true);
   };
 
   // Reset when src changes
   useEffect(() => {
-    console.log('[VoiceNotePlayer] src changed. Resetting state and incrementing key. src:', src);
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
@@ -126,14 +136,16 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   // Polling fallback: check duration every 100ms until we get it
   useEffect(() => {
     if (duration > 0) return;
-    console.log('[VoiceNotePlayer] Starting duration polling fallback');
     const interval = setInterval(() => {
       if (audioRef.current) {
         const dur = audioRef.current.duration;
-        console.log('[VoiceNotePlayer] Polling duration:', dur);
         if (dur > 0 && isFinite(dur)) {
-          console.log('[VoiceNotePlayer] Setting duration from polling:', dur);
           setDuration(dur);
+          clearInterval(interval);
+        } else if (dur === Infinity) {
+          // Metadata events may have fired before listeners were attached
+          // (e.g. cached responses) — retry the seek-hack here too.
+          fixInfiniteDuration(audioRef.current);
           clearInterval(interval);
         }
       }
@@ -142,7 +154,6 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
     // Clear interval after 5 seconds (give up after that)
     const timeout = setTimeout(() => {
       clearInterval(interval);
-      console.log('[VoiceNotePlayer] Duration polling timeout');
     }, 5000);
 
     return () => {
