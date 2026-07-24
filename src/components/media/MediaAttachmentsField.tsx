@@ -73,7 +73,7 @@ export function MediaAttachmentsField({
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const preferredMime =
-        ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
+        ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
       const recorder = preferredMime ? new MediaRecorder(stream, { mimeType: preferredMime }) : new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
@@ -86,7 +86,7 @@ export function MediaAttachmentsField({
         // Determine correct extension based on mimeType
         let ext = '.webm';
         if (mimeType.includes('mp4') || mimeType.includes('mpeg')) {
-          ext = '.mp4';
+          ext = '.m4a';
         } else if (mimeType.includes('ogg')) {
           ext = '.ogg';
         } else if (mimeType.includes('mp3')) {
