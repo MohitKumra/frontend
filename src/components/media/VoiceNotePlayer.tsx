@@ -13,6 +13,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [key, setKey] = useState(0); // Force re-mount of audio element when src changes
+  const [loadError, setLoadError] = useState(false);
 
   console.log('[VoiceNotePlayer] Initializing with src:', src);
 
@@ -109,6 +110,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const handleError = (e: any) => {
     console.error('[VoiceNotePlayer] handleError:', e);
     console.error('[VoiceNotePlayer] Audio element error:', audioRef.current?.error);
+    setLoadError(true);
   };
 
   // Reset when src changes
@@ -117,6 +119,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
+    setLoadError(false);
     setKey(prev => prev + 1); // Force re-mount to reload src
   }, [src]);
 
@@ -150,6 +153,38 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
 
   // Calculate progress percentage
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Show error state if file failed to load
+  if (loadError) {
+    return (
+      <div className="w-full">
+        <div 
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+          style={{ 
+            borderColor: 'var(--color-border)', 
+            background: 'var(--color-surface)'
+          }}
+        >
+          <div className="flex items-center justify-center w-12 h-12 rounded-full" style={{ background: 'var(--color-danger-bg, #fce4ec)', color: '#e53935' }}>
+            <Mic size={22} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-secondary)' }}>Voice note unavailable</p>
+            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>The audio file could not be loaded. It may have been lost during deployment.</p>
+          </div>
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:scale-110 hover:bg-red-50"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
