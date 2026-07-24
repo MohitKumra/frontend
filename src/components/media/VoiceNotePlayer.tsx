@@ -38,10 +38,10 @@ function computePeaks(buffer: AudioBuffer, count: number): number[] {
     peaks.push(avg);
     if (avg > max) max = avg;
   }
-  if (max === 0) return peaks.map(() => 0.15);
-  // Compress dynamic range (sqrt-ish curve) so quiet passages stay visible
-  // instead of collapsing to near-zero-height "dots".
-  return peaks.map((p) => Math.max(0.22, Math.pow(p / max, 0.62)));
+  if (max === 0) return peaks.map(() => 0.4);
+  // Compress dynamic range so quiet passages (and short clips that are
+  // mostly silence) still read as a shaped waveform, not a flat line.
+  return peaks.map((p) => Math.max(0.32, Math.pow(p / max, 0.45)));
 }
 
 export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePlayerProps) {
@@ -352,7 +352,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
             const barRatio = i / displayPeaks.length;
             const isPast = barRatio <= progress;
             const isHoverPast = scrubRatio !== null && barRatio <= scrubRatio;
-            const height = Math.max(5, amp * 30);
+            const height = Math.max(8, amp * 30);
             return (
               <div
                 key={i}
@@ -367,8 +367,8 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
                   background: isPast
                     ? 'linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 85%, white 15%), var(--color-primary))'
                     : isHoverPast
-                    ? 'color-mix(in srgb, var(--color-primary) 45%, var(--color-text-muted) 55%)'
-                    : 'color-mix(in srgb, var(--color-text-muted) 50%, transparent)',
+                    ? 'color-mix(in srgb, var(--color-primary) 55%, var(--color-text-muted) 45%)'
+                    : 'var(--color-text-muted)',
                   transition: 'background 0.15s ease, height 0.2s ease',
                   transform: !peaks ? 'scaleY(0.7)' : 'none',
                   opacity: !peaks ? 0.6 : 1,
