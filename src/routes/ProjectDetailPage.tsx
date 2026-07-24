@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Calendar, CheckCircle2, FolderKanban, Plus, Timer } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -58,8 +60,13 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6"
+    >
+      <motion.div variants={itemVariants} className="flex items-center justify-between gap-3 flex-wrap">
         <button
           type="button"
           onClick={() => navigate('/projects')}
@@ -76,56 +83,58 @@ export function ProjectDetailPage() {
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add Note</Button>
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add Journal</Button>
         </div>
-      </div>
+      </motion.div>
 
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <PageHeader icon={<FolderKanban size={24} />} title={project.name} subtitle={project.description ?? 'Project detail'} />
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <Badge variant="accent" size="sm">{project.status}</Badge>
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)', color: 'var(--color-info)' }}>
-                <Calendar size={12} />
-                {project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No deadline'}
-              </span>
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
-                <CheckCircle2 size={12} />
-                {project.progress}% complete
-              </span>
+      <motion.div variants={itemVariants}>
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0 flex-1">
+              <PageHeader icon={<FolderKanban size={24} />} title={project.name} subtitle={project.description ?? 'Project detail'} />
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <Badge variant="accent" size="sm">{project.status}</Badge>
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)', color: 'var(--color-info)' }}>
+                  <Calendar size={12} />
+                  {project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No deadline'}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
+                  <CheckCircle2 size={12} />
+                  {project.progress}% complete
+                </span>
+              </div>
+            </div>
+            <div className="w-full md:w-72">
+              <div className="h-2 rounded-full overflow-hidden bg-border">
+                <div className="h-full rounded-full" style={{ width: `${project.progress}%`, background: 'var(--gradient-accent)' }} />
+              </div>
             </div>
           </div>
-          <div className="w-full md:w-72">
-            <div className="h-2 rounded-full overflow-hidden bg-border">
-              <div className="h-full rounded-full" style={{ width: `${project.progress}%`, background: 'var(--gradient-accent)' }} />
-            </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
-          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachment</p>
-            <div className="mt-2">
-              {project.attachmentUrl ? (
-                <MediaPreview attachmentUrl={project.attachmentUrl} compact />
-              ) : (
-                <p className="text-sm font-bold text-text-primary">None</p>
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachment</p>
+              <div className="mt-2">
+                {project.attachmentUrl ? (
+                  <MediaPreview attachmentUrl={project.attachmentUrl} compact />
+                ) : (
+                  <p className="text-sm font-bold text-text-primary">None</p>
+                )}
+              </div>
+            </div>
+            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
+              <div className="mt-2">
+                {project.voiceNoteUrl ? (
+                  <MediaPreview voiceNoteUrl={project.voiceNoteUrl} compact />
+                ) : (
+                  <p className="text-sm font-bold text-text-primary">None</p>
+                )}
+              </div>
             </div>
           </div>
-          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
-            <div className="mt-2">
-              {project.voiceNoteUrl ? (
-                <MediaPreview voiceNoteUrl={project.voiceNoteUrl} compact />
-              ) : (
-                <p className="text-sm font-bold text-text-primary">None</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      </motion.div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <Card className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
             <p className="text-sm font-bold">Project Tasks</p>
@@ -179,19 +188,21 @@ export function ProjectDetailPage() {
             {(linkedNotes?.data?.length ?? 0) === 0 && <p className="text-sm text-text-muted">No linked notes yet</p>}
           </div>
         </Card>
-      </div>
+      </motion.div>
 
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Timer size={16} className="text-accent" />
-          <p className="text-sm font-bold">Project Focus View</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => navigate(`/focus?projectId=${id}`)}>Open Focus</Button>
-          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add project note</Button>
-          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
-        </div>
-      </Card>
+      <motion.div variants={itemVariants}>
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Timer size={16} className="text-accent" />
+            <p className="text-sm font-bold">Project Focus View</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => navigate(`/focus?projectId=${id}`)}>Open Focus</Button>
+            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add project note</Button>
+            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
+          </div>
+        </Card>
+      </motion.div>
 
       {noteOpen && (
         <EntryFormModal
@@ -208,6 +219,6 @@ export function ProjectDetailPage() {
         initialProjectId={project.id}
         lockProject
       />
-    </div>
+    </motion.div>
   );
 }

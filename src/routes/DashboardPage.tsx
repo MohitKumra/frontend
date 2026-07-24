@@ -26,7 +26,7 @@ import { LoadingScreen } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
 import apiClient from '../lib/apiClient';
 import { useEnhancedDashboard, useActivityFeed } from '../features/dashboard/hooks/useDashboard';
-import { useTasks } from '../features/tasks/hooks/useTasks';
+import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { useHabits } from '../features/habits/hooks/useHabits';
 import { useStreakStatus } from '../features/habits/hooks/useHabits';
 import { useAuthStore } from '../store/authStore';
@@ -40,7 +40,7 @@ import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { FloatingCalendarEmpty } from '../components/ui/FloatingCalendarEmpty';
 import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
 import { Avatar } from '../components/ui/Avatar';
-import type { FocusSessionDTO, ListResponse } from '../types';
+import type { FocusSessionDTO, ListResponse, TaskStatus } from '../types';
 
 function toUtcDateKey(value: string | Date): string {
   return new Date(value).toISOString().split('T')[0];
@@ -164,6 +164,7 @@ export function DashboardPage() {
     queryFn: () => apiClient.get<ListResponse<FocusSessionDTO>>('/focus').then((r) => r.data),
   });
   const user = useAuthStore((s) => s.user);
+  const updateTask = useUpdateTask();
 
   // Streak break popup — MUST be before early returns (hooks rules)
   const { data: brokenStreaks } = useStreakStatus();
@@ -541,45 +542,89 @@ export function DashboardPage() {
                 </div>
 
                 {todayTasks.length > 0 ? (
-                  <div className="space-y-5 relative pl-4 border-l border-border flex-1">
-                    {todayTasks.map((task) => {
-                      const priorityColors: Record<string, string> = {
-                        CRITICAL: '#ef4444',
-                        HIGH: '#f59e0b',
-                        MEDIUM: 'var(--color-info)',
-                        LOW: '#9ca3af',
-                      };
-                      const dotColor = priorityColors[task.priority] ?? 'var(--color-info)';
-                      const timeStr = task.dueDate
-                        ? new Date(task.dueDate).toLocaleTimeString('en-IN', {
-                            timeZone: 'Asia/Kolkata',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: false,
-                          })
-                        : null;
-                      const durStr = task.estimatedDuration ? `${task.estimatedDuration}m` : null;
+                  <div className="flex-1">
+                    {/* Progress bar */}
+                    <div className="h-1.5 rounded-full overflow-hidden mb-5" style={{ background: 'var(--color-border-subtle)' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${Math.round((todayTasks.filter(t => t.status === 'IN_PROGRESS').length / todayTasks.length) * 100)}%`,
+                          background: 'var(--gradient-accent)',
+                        }}
+                      />
+                    </div>
 
-                      return (
-                        <div key={task.id} className="relative">
+                    <div className="space-y-3">
+                      {todayTasks.map((task) => {
+                        const priorityColors: Record<string, string> = {
+                          CRITICAL: '#ef4444',
+                          HIGH: '#f59e0b',
+                          MEDIUM: 'var(--color-info)',
+                          LOW: '#9ca3af',
+                        };
+                        const priorityBg: Record<string, string> = {
+                          CRITICAL: 'color-mix(in srgb, #ef4444 12%, transparent)',
+                          HIGH: 'color-mix(in srgb, #f59e0b 12%, transparent)',
+                          MEDIUM: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
+                          LOW: 'color-mix(in srgb, #9ca3af 12%, transparent)',
+                        };
+                        const dotColor = priorityColors[task.priority] ?? 'var(--color-info)';
+                        const durStr = task.estimatedDuration ? `${task.estimatedDuration}m` : null;
+
+                        return (
                           <div
-                            className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-surface"
-                            style={{ background: dotColor }}
-                          />
-                          <div className="flex justify-between">
-                            <div>
-                              <h4 className="text-xs font-black text-text-primary">{task.title}</h4>
-                              <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">
-                                {task.priority}{durStr ? ` • ${durStr}` : ''}
-                              </p>
+                            key={task.id}
+                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            className="group flex items-start gap-3 p-3 rounded-xl border transition-all hover:shadow-sm cursor-pointer"
+                            style={{
+                              background: 'var(--color-surface)',
+                              borderColor: 'var(--color-border)',
+                            }}
+                          >
+                            {/* Checkbox circle */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTask.mutate({
+                                  id: task.id,
+                                  data: { status: 'DONE' as TaskStatus },
+                                });
+                              }}
+                              className="mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all hover:scale-110"
+                              style={{
+                                borderColor: dotColor,
+                                background: task.status === 'IN_PROGRESS' ? dotColor : 'transparent',
+                              }}
+                              aria-label={`Mark ${task.title} as done`}
+                            >
+                              {task.status === 'IN_PROGRESS' && (
+                                <span className="text-white text-[9px] font-black">✓</span>
+                              )}
+                            </button>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs font-black text-text-primary truncate">{task.title}</h4>
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span
+                                  className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                                  style={{
+                                    background: priorityBg[task.priority] ?? priorityBg.MEDIUM,
+                                    color: dotColor,
+                                  }}
+                                >
+                                  {task.priority}
+                                </span>
+                                {durStr && (
+                                  <span className="text-[9px] font-bold text-text-muted">{durStr}</span>
+                                )}
+                              </div>
                             </div>
-                            {timeStr && (
-                              <span className="text-xs font-black text-text-secondary">{timeStr}</span>
-                            )}
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <FloatingCalendarEmpty />

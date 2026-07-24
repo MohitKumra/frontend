@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   ArrowLeft,
   Calendar,
@@ -99,8 +101,13 @@ export function TaskDetailPage() {
   const project = task.project;
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6"
+    >
+      <motion.div variants={itemVariants} className="flex items-center justify-between gap-3 flex-wrap">
         <button
           type="button"
           onClick={() => navigate('/tasks')}
@@ -114,105 +121,104 @@ export function TaskDetailPage() {
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add Journal</Button>
           <Button size="sm" onClick={() => navigate(`/focus?taskId=${task.id}`)}>Focus</Button>
         </div>
-      </div>
+      </motion.div>
 
-      <Card className="p-5 sm:p-6 overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-8">
-          <div className="flex-1 min-w-0 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white" style={{ background: 'var(--gradient-accent)' }}>
-                <ListChecks size={24} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <PageHeader icon={<ListChecks size={20} />} title={task.title} subtitle={task.description ?? 'Task detail'} />
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <Badge variant={statusBadgeVariant} size="sm">{statusLabel(task.status)}</Badge>
-                  <Badge variant={task.priority === 'CRITICAL' ? 'danger' : task.priority === 'HIGH' ? 'warning' : task.priority === 'MEDIUM' ? 'info' : 'default'} size="sm">
-                    {task.priority}
-                  </Badge>
-                  {project && (
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
-                    >
-                      <FolderKanban size={12} />
-                      {project.name}
-                    </button>
-                  )}
-                  {recurrenceLabel && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}>
-                      <Repeat size={12} />
-                      {recurrenceLabel}
-                    </span>
-                  )}
-                  {overdue && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)' }}>
-                      Overdue
-                    </span>
-                  )}
+      <motion.div variants={itemVariants}>
+        <Card className="p-5 sm:p-6 overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-8">
+            <div className="flex-1 min-w-0 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <PageHeader icon={<ListChecks size={20} />} title={task.title} subtitle={task.description ?? 'Task detail'} />
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <Badge variant={statusBadgeVariant} size="sm">{statusLabel(task.status)}</Badge>
+                    <Badge variant={task.priority === 'CRITICAL' ? 'danger' : task.priority === 'HIGH' ? 'warning' : task.priority === 'MEDIUM' ? 'info' : 'default'} size="sm">
+                      {task.priority}
+                    </Badge>
+                    {project && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                        style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
+                      >
+                        <FolderKanban size={12} />
+                        {project.name}
+                      </button>
+                    )}
+                    {recurrenceLabel && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}>
+                        <Repeat size={12} />
+                        {recurrenceLabel}
+                      </span>
+                    )}
+                    {overdue && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)' }}>
+                        Overdue
+                      </span>
+                    )}
+                  </div>
                 </div>
+              </div>
+
+              {task.description && <p className="text-sm leading-relaxed text-text-secondary">{task.description}</p>}
+
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+                <Card className="p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Due Date</p>
+                  <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Calendar size={14} />{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</p>
+                </Card>
+                <Card className="p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Estimate</p>
+                  <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Clock size={14} />{duration ?? 'Unestimated'}</p>
+                </Card>
+                <Card className="p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachments</p>
+                  <div className="mt-2">
+                    {task.attachmentUrl ? (
+                      <MediaPreview attachmentUrl={task.attachmentUrl} compact />
+                    ) : (
+                      <p className="text-sm font-bold text-text-primary">None</p>
+                    )}
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
+                  <div className="space-y-2 mt-1">
+                    {task.voiceNoteUrl ? (
+                      <MediaPreview voiceNoteUrl={task.voiceNoteUrl} compact />
+                    ) : (
+                      <p className="text-sm font-bold text-text-primary">None</p>
+                    )}
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus</p>
+                  <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Timer size={14} />{task.completedAt ? 'Tracked' : 'Available'}</p>
+                </Card>
               </div>
             </div>
 
-            {task.description && <p className="text-sm leading-relaxed text-text-secondary">{task.description}</p>}
-
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div className="lg:w-[340px] shrink-0 space-y-3">
               <Card className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Due Date</p>
-                <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Calendar size={14} />{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</p>
-              </Card>
-              <Card className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Estimate</p>
-                <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Clock size={14} />{duration ?? 'Unestimated'}</p>
-              </Card>
-              <Card className="p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachments</p>
-                <div className="mt-2">
-                  {task.attachmentUrl ? (
-                    <MediaPreview attachmentUrl={task.attachmentUrl} compact />
-                  ) : (
-                    <p className="text-sm font-bold text-text-primary">None</p>
-                  )}
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle2 size={16} className="text-success" />
+                  <p className="text-sm font-bold">Quick Actions</p>
                 </div>
-              </Card>
-              <Card className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
-                <div className="space-y-2 mt-1">
-                  {task.voiceNoteUrl ? (
-                    <MediaPreview voiceNoteUrl={task.voiceNoteUrl} compact />
-                  ) : (
-                    <p className="text-sm font-bold text-text-primary">None</p>
-                  )}
+                <div className="flex flex-col gap-2">
+                  <Button size="sm" onClick={() => updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })}>
+                    {task.status === 'DONE' ? 'Reopen' : 'Mark Done'}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add linked note</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
                 </div>
-              </Card>
-              <Card className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Focus</p>
-                <p className="text-sm font-bold text-text-primary mt-1 flex items-center gap-2"><Timer size={14} />{task.completedAt ? 'Tracked' : 'Available'}</p>
               </Card>
             </div>
           </div>
+        </Card>
+      </motion.div>
 
-          <div className="lg:w-[340px] shrink-0 space-y-3">
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle2 size={16} className="text-success" />
-                <p className="text-sm font-bold">Quick Actions</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button size="sm" onClick={() => updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })}>
-                  {task.status === 'DONE' ? 'Reopen' : 'Mark Done'}
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add linked note</Button>
-                <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <Card className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
@@ -235,77 +241,83 @@ export function TaskDetailPage() {
             )) : <p className="text-sm text-text-muted">No subtasks yet</p>}
           </div>
         </Card>
-      </div>
+      </motion.div>
 
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            <Timer size={16} className="text-warning" />
-            <p className="text-sm font-bold">Time Entries</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <input
-            value={timeMinutes}
-            onChange={(e) => setTimeMinutes(e.target.value)}
-            type="number"
-            min="1"
-            placeholder="Minutes"
-            className="rounded-xl border px-3 py-2 text-sm"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-          />
-          <input
-            value={timeNote}
-            onChange={(e) => setTimeNote(e.target.value)}
-            placeholder="Optional note"
-            className="rounded-xl border px-3 py-2 text-sm md:col-span-2"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-          />
-        </div>
-        <Button size="sm" disabled={!timeMinutes || timeMutation.isPending} onClick={() => timeMutation.mutate()}>
-          Log time
-        </Button>
-        <div className="mt-4 space-y-2">
-          {task.timeEntries.length ? task.timeEntries.map((item) => (
-            <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-              <div>
-                <p className="text-sm font-semibold text-text-primary">{item.minutes} min</p>
-                {item.note && <p className="text-xs text-text-muted">{item.note}</p>}
-              </div>
-              <p className="text-[10px] text-text-muted">{new Date(item.createdAt).toLocaleString()}</p>
+      <motion.div variants={itemVariants}>
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Timer size={16} className="text-warning" />
+              <p className="text-sm font-bold">Time Entries</p>
             </div>
-          )) : <p className="text-sm text-text-muted">No time entries yet</p>}
-        </div>
-      </Card>
-
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            <FolderKanban size={16} className="text-success" />
-            <p className="text-sm font-bold">Linked Notes & Journal</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Note</Button>
-            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Journal</Button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <input
+              value={timeMinutes}
+              onChange={(e) => setTimeMinutes(e.target.value)}
+              type="number"
+              min="1"
+              placeholder="Minutes"
+              className="rounded-xl border px-3 py-2 text-sm"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            />
+            <input
+              value={timeNote}
+              onChange={(e) => setTimeNote(e.target.value)}
+              placeholder="Optional note"
+              className="rounded-xl border px-3 py-2 text-sm md:col-span-2"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            />
           </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {(relatedNotes.data?.data ?? []).map((note: NoteDTO) => (
-            <div key={note.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <p className="text-sm font-semibold text-text-primary truncate">{note.title ?? 'Untitled'}</p>
-                <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">{note.isJournal ? 'Journal' : 'Note'}</Badge>
+          <Button size="sm" disabled={!timeMinutes || timeMutation.isPending} onClick={() => timeMutation.mutate()}>
+            Log time
+          </Button>
+          <div className="mt-4 space-y-2">
+            {task.timeEntries.length ? task.timeEntries.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">{item.minutes} min</p>
+                  {item.note && <p className="text-xs text-text-muted">{item.note}</p>}
+                </div>
+                <p className="text-[10px] text-text-muted">{new Date(item.createdAt).toLocaleString()}</p>
               </div>
-              <p className="text-xs text-text-secondary line-clamp-3">{note.content}</p>
-            </div>
-          ))}
-          {(relatedNotes.data?.data ?? []).length === 0 && (
-            <p className="text-sm text-text-muted">No linked notes yet</p>
-          )}
-        </div>
-      </Card>
+            )) : <p className="text-sm text-text-muted">No time entries yet</p>}
+          </div>
+        </Card>
+      </motion.div>
 
-      <TaskTimeAnalysis task={task as TaskDTO} />
+      <motion.div variants={itemVariants}>
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <FolderKanban size={16} className="text-success" />
+              <p className="text-sm font-bold">Linked Notes & Journal</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Note</Button>
+              <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Journal</Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(relatedNotes.data?.data ?? []).map((note: NoteDTO) => (
+              <div key={note.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <p className="text-sm font-semibold text-text-primary truncate">{note.title ?? 'Untitled'}</p>
+                  <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">{note.isJournal ? 'Journal' : 'Note'}</Badge>
+                </div>
+                <p className="text-xs text-text-secondary line-clamp-3">{note.content}</p>
+              </div>
+            ))}
+            {(relatedNotes.data?.data ?? []).length === 0 && (
+              <p className="text-sm text-text-muted">No linked notes yet</p>
+            )}
+          </div>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <TaskTimeAnalysis task={task as TaskDTO} />
+      </motion.div>
 
       {noteOpen && (
         <EntryFormModal
@@ -316,7 +328,7 @@ export function TaskDetailPage() {
           onClose={() => setNoteOpen(null)}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 

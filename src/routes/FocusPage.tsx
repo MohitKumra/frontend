@@ -1579,12 +1579,6 @@ export function FocusPage() {
               >
                 <Maximize2 size={14} /> Focus Mode
               </button>
-              <button className="w-9 h-9 rounded-xl flex items-center justify-center border border-border text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all" aria-label="Settings">
-                <Settings size={15} />
-              </button>
-              <button className="w-9 h-9 rounded-xl flex items-center justify-center border border-border text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all" aria-label="Toggle theme">
-                <Moon size={15} />
-              </button>
             </div>
           </motion.div>
 

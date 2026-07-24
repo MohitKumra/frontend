@@ -243,21 +243,8 @@ export function TaskCard({
         <div className="h-[3px] w-full" style={{ background: accent }} />
 
         <div className="p-3 sm:p-3.5">
-          {/* Row 1 — select, complete toggle, title, menu */}
+          {/* Row 1 — complete toggle (circle), title, menu */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onToggleSelect(task.id)}
-              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border-2 transition-all"
-              style={{
-                borderColor: isSelected ? 'var(--color-accent)' : 'var(--color-border)',
-                background: isSelected ? 'var(--color-accent)' : 'transparent',
-              }}
-              aria-label="Select task"
-            >
-              {isSelected && <CheckCircle2 size={11} className="text-white" />}
-            </button>
-
             <button
               type="button"
               onClick={() => onToggleStatus(task)}
@@ -265,9 +252,9 @@ export function TaskCard({
               title={done ? 'Mark as To Do' : 'Mark as Done'}
             >
               {done ? (
-                <CheckCircle2 size={19} style={{ color: 'var(--color-success)' }} />
+                <CheckCircle2 size={20} style={{ color: 'var(--color-success)' }} />
               ) : (
-                <Circle size={19} style={{ color: 'var(--color-border)' }} />
+                <Circle size={20} style={{ color: 'var(--color-border-subtle)' }} strokeWidth={1.5} />
               )}
             </button>
 
@@ -366,13 +353,13 @@ export function TaskCard({
 
           {/* Row 2 — description, one line max */}
           {task.description && (
-            <p className="mt-1 line-clamp-1 pl-[50px] text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="mt-1 line-clamp-1 pl-[34px] text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               {task.description}
             </p>
           )}
 
           {/* Row 3 — compact meta chips */}
-          <div className="mt-2 flex flex-wrap items-center gap-1 pl-[50px]">
+          <div className="mt-2 flex flex-wrap items-center gap-1 pl-[34px]">
             {task.project && (
               <Chip color="var(--color-success)" icon={<FolderKanban size={9} />}>{task.project.name}</Chip>
             )}

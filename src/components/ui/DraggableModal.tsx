@@ -170,12 +170,16 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
               onClick={onClose}
             >
               <motion.div
-                className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+                className="w-full max-w-md rounded-2xl shadow-2xl"
                 style={{
                   background: 'var(--color-surface)',
                   border: '1px solid var(--color-border)',
                   willChange: 'transform',
                   transform: 'translateZ(0)',
+                  maxHeight: '85vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
                 }}
                 initial={{ scale: 0.94, y: 16, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -185,7 +189,7 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
               >
                 {title && (
                   <div
-                    className="px-5 py-4 border-b flex items-center justify-between"
+                    className="px-5 py-4 border-b flex items-center justify-between shrink-0"
                     style={{ borderColor: 'var(--color-border-subtle)' }}
                   >
                     <h3 className="text-sm font-bold text-text-primary">{title}</h3>
@@ -199,7 +203,7 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
                     </button>
                   </div>
                 )}
-                <div className="p-5">{children}</div>
+                <div className="p-5 overflow-y-auto min-h-0">{children}</div>
               </motion.div>
             </motion.div>
           )}
