@@ -14,6 +14,8 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [duration, setDuration] = useState(0);
   const [key, setKey] = useState(0); // Force re-mount of audio element when src changes
 
+  console.log('[VoiceNotePlayer] Initializing with src:', src);
+
   // Calculate bars based on container size
   const numBars = compact ? 30 : 50;
 
@@ -26,54 +28,125 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
 
   // Toggle play/pause
   const togglePlay = () => {
+    console.log('[VoiceNotePlayer] togglePlay called. isPlaying:', isPlaying);
     if (audioRef.current) {
+      console.log('[VoiceNotePlayer] audio element current:', audioRef.current);
       if (isPlaying) {
         audioRef.current.pause();
       } else {
         audioRef.current.play();
       }
       setIsPlaying(!isPlaying);
+    } else {
+      console.error('[VoiceNotePlayer] No audioRef.current');
     }
   };
 
   // Handle audio time update
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+      const currTime = audioRef.current.currentTime;
+      const dur = audioRef.current.duration;
+      console.log('[VoiceNotePlayer] handleTimeUpdate:', { currentTime: currTime, duration: dur });
+      setCurrentTime(currTime);
       // Also check duration here in case metadata wasn't loaded yet
-      if (audioRef.current.duration > 0 && duration === 0) {
-        setDuration(audioRef.current.duration);
+      if (dur > 0 && duration === 0) {
+        console.log('[VoiceNotePlayer] Setting duration from handleTimeUpdate:', dur);
+        setDuration(dur);
       }
     }
   };
 
   // Handle audio ended
   const handleEnded = () => {
+    console.log('[VoiceNotePlayer] Audio ended');
     setIsPlaying(false);
     setCurrentTime(0);
   };
 
   // Load metadata
   const handleLoadedMetadata = () => {
-    if (audioRef.current && audioRef.current.duration > 0) {
-      setDuration(audioRef.current.duration);
+    if (audioRef.current) {
+      const dur = audioRef.current.duration;
+      console.log('[VoiceNotePlayer] handleLoadedMetadata:', { duration: dur });
+      if (dur > 0) {
+        console.log('[VoiceNotePlayer] Setting duration from handleLoadedMetadata:', dur);
+        setDuration(dur);
+      }
     }
   };
 
   // Canplay event as fallback
   const handleCanPlay = () => {
-    if (audioRef.current && audioRef.current.duration > 0) {
-      setDuration(audioRef.current.duration);
+    if (audioRef.current) {
+      const dur = audioRef.current.duration;
+      console.log('[VoiceNotePlayer] handleCanPlay:', { duration: dur });
+      if (dur > 0) {
+        console.log('[VoiceNotePlayer] Setting duration from handleCanPlay:', dur);
+        setDuration(dur);
+      }
     }
+  };
+
+  // Handle audio loadstart
+  const handleLoadStart = () => {
+    console.log('[VoiceNotePlayer] handleLoadStart');
+  };
+
+  // Handle audio loadeddata
+  const handleLoadedData = () => {
+    console.log('[VoiceNotePlayer] handleLoadedData');
+    if (audioRef.current) {
+      const dur = audioRef.current.duration;
+      if (dur > 0 && duration === 0) {
+        console.log('[VoiceNotePlayer] Setting duration from handleLoadedData:', dur);
+        setDuration(dur);
+      }
+    }
+  };
+
+  // Handle audio error
+  const handleError = (e: any) => {
+    console.error('[VoiceNotePlayer] handleError:', e);
+    console.error('[VoiceNotePlayer] Audio element error:', audioRef.current?.error);
   };
 
   // Reset when src changes
   useEffect(() => {
+    console.log('[VoiceNotePlayer] src changed. Resetting state and incrementing key. src:', src);
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
     setKey(prev => prev + 1); // Force re-mount to reload src
   }, [src]);
+
+  // Polling fallback: check duration every 100ms until we get it
+  useEffect(() => {
+    if (duration > 0) return;
+    console.log('[VoiceNotePlayer] Starting duration polling fallback');
+    const interval = setInterval(() => {
+      if (audioRef.current) {
+        const dur = audioRef.current.duration;
+        console.log('[VoiceNotePlayer] Polling duration:', dur);
+        if (dur > 0 && isFinite(dur)) {
+          console.log('[VoiceNotePlayer] Setting duration from polling:', dur);
+          setDuration(dur);
+          clearInterval(interval);
+        }
+      }
+    }, 100);
+
+    // Clear interval after 5 seconds (give up after that)
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      console.log('[VoiceNotePlayer] Duration polling timeout');
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [key, duration]);
 
   // Calculate progress percentage
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -84,11 +157,14 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
         key={key}
         ref={audioRef}
         src={src}
-        preload="metadata"
+        preload="auto"
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
         onLoadedMetadata={handleLoadedMetadata}
         onCanPlay={handleCanPlay}
+        onLoadStart={handleLoadStart}
+        onLoadedData={handleLoadedData}
+        onError={handleError}
       />
       
       <div 
@@ -118,7 +194,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
             const isActive = (i / numBars) * 100 <= progress;
             
             // Create random heights for wave effect when playing, or static heights
-            let height;
+            let height:number;
             if (isPlaying) {
               // Dynamic heights when playing
               const baseHeight = 8 + (Math.sin(i * 0.5 + Date.now() * 0.005) * 8);
