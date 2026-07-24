@@ -8,40 +8,27 @@ interface VoiceNotePlayerProps {
 }
 
 const SPEEDS = [1, 1.5, 2, 0.75] as const;
+const BAR_UNIT = 6;
+const GAP_UNIT = 4;
+const SVG_HEIGHT = 36;
 
-/** Deterministic pseudo-waveform used only if real decoding fails (e.g. blocked by CORS). */
-function fallbackPeaks(seed: string, count: number): number[] {
+/**
+ * Deterministic waveform pattern derived from the file URL. Renders
+ * instantly (no network fetch / async decode), so there's nothing that
+ * loads in later and swaps — which is what previously made the waveform
+ * appear to "shrink" during playback as a taller placeholder was replaced
+ * by real (flatter) decoded data.
+ */
+function generatePeaks(seed: string, count: number): number[] {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   const peaks: number[] = [];
   for (let i = 0; i < count; i++) {
     h = (h * 1103515245 + 12345) >>> 0;
     const r = (h % 1000) / 1000;
-    peaks.push(0.35 + r * 0.5 + Math.sin(i * 0.4) * 0.1);
+    peaks.push(0.38 + r * 0.45 + Math.sin(i * 0.4) * 0.1);
   }
   return peaks;
-}
-
-/** Downsample raw PCM into `count` normalized amplitude peaks (0..1). */
-function computePeaks(buffer: AudioBuffer, count: number): number[] {
-  const channel = buffer.getChannelData(0);
-  const blockSize = Math.max(1, Math.floor(channel.length / count));
-  const peaks: number[] = [];
-  let max = 0;
-  for (let i = 0; i < count; i++) {
-    const start = i * blockSize;
-    let sum = 0;
-    for (let j = 0; j < blockSize && start + j < channel.length; j++) {
-      sum += Math.abs(channel[start + j]);
-    }
-    const avg = sum / blockSize;
-    peaks.push(avg);
-    if (avg > max) max = avg;
-  }
-  if (max === 0) return peaks.map(() => 0.4);
-  // Compress dynamic range so quiet passages (and short clips that are
-  // mostly silence) still read as a shaped waveform, not a flat line.
-  return peaks.map((p) => Math.max(0.32, Math.pow(p / max, 0.45)));
 }
 
 export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePlayerProps) {
@@ -52,7 +39,6 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [duration, setDuration] = useState(0);
   const [key, setKey] = useState(0);
   const [loadError, setLoadError] = useState(false);
-  const [peaks, setPeaks] = useState<number[] | null>(null);
   const [hoverRatio, setHoverRatio] = useState<number | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
@@ -60,6 +46,8 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
   const [mounted, setMounted] = useState(false);
 
   const numBars = compact ? 28 : 44;
+  const peaks = useMemo(() => generatePeaks(src, numBars), [src, numBars]);
+  const svgWidth = numBars * BAR_UNIT + (numBars - 1) * GAP_UNIT;
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setMounted(true));
@@ -185,12 +173,12 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
     setCurrentTime(0);
     setDuration(0);
     setLoadError(false);
-    setPeaks(null);
     setSpeed(1);
     setKey((prev) => prev + 1);
   }, [src]);
 
-  // Duration polling fallback
+  // Duration polling fallback (handles the Chrome/MediaRecorder WebM
+  // "Infinity duration" quirk if metadata events don't resolve it)
   useEffect(() => {
     if (duration > 0) return;
     const interval = setInterval(() => {
@@ -211,31 +199,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
     };
   }, [key, duration]);
 
-  // Decode real waveform peaks
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioCtx) throw new Error('no audio context');
-        const res = await fetch(src);
-        const arrayBuffer = await res.arrayBuffer();
-        const ctx = new AudioCtx();
-        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-        if (cancelled) return;
-        setPeaks(computePeaks(audioBuffer, numBars));
-        ctx.close();
-      } catch {
-        if (!cancelled) setPeaks(fallbackPeaks(src, numBars));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [src, numBars]);
-
   const progress = duration > 0 ? currentTime / duration : 0;
-  const displayPeaks = useMemo(() => peaks ?? fallbackPeaks(src, numBars), [peaks, src, numBars]);
   const scrubRatio = hoverRatio !== null ? Math.min(1, Math.max(0, hoverRatio)) : null;
 
   if (loadError) {
@@ -247,10 +211,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
         >
           <div
             className="flex items-center justify-center w-12 h-12 rounded-full shrink-0"
-            style={{
-              background: 'color-mix(in srgb, #e53935 14%, transparent)',
-              color: '#e53935',
-            }}
+            style={{ background: 'color-mix(in srgb, #e53935 14%, transparent)', color: '#e53935' }}
           >
             <Mic size={20} />
           </div>
@@ -346,36 +307,49 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerLeave}
-          className="flex-1 relative flex items-center gap-[3px] h-9 cursor-pointer select-none outline-none"
+          className="flex-1 relative h-9 cursor-pointer select-none outline-none"
         >
-          {displayPeaks.map((amp, i) => {
-            const barRatio = i / displayPeaks.length;
-            const isPast = barRatio <= progress;
-            const isHoverPast = scrubRatio !== null && barRatio <= scrubRatio;
-            const height = Math.max(8, amp * 30);
-            return (
-              <div
-                key={i}
-                className="flex-1 rounded-full"
-                style={{
-                  height: `${height}px`,
-                  minWidth: '2.5px',
-                  // Derived from --color-text-muted (not --color-border): the
-                  // app already keeps that legible against every note color,
-                  // so unplayed bars stay visible on any card background
-                  // instead of blending into it.
-                  background: isPast
-                    ? 'linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 85%, white 15%), var(--color-primary))'
-                    : isHoverPast
-                    ? 'color-mix(in srgb, var(--color-primary) 55%, var(--color-text-muted) 45%)'
-                    : 'var(--color-text-muted)',
-                  transition: 'background 0.15s ease, height 0.2s ease',
-                  transform: !peaks ? 'scaleY(0.7)' : 'none',
-                  opacity: !peaks ? 0.6 : 1,
-                }}
-              />
-            );
-          })}
+          {/* preserveAspectRatio="none" always stretches to exactly 100% of
+              the container width by spec — the waveform can't collapse or
+              bunch up the way flex-distributed divs could. */}
+          <svg
+            viewBox={`0 0 ${svgWidth} ${SVG_HEIGHT}`}
+            preserveAspectRatio="none"
+            width="100%"
+            height="100%"
+            style={{ display: 'block', overflow: 'visible' }}
+          >
+            {peaks.map((amp, i) => {
+              const barRatio = i / peaks.length;
+              const isPast = barRatio <= progress;
+              const isHoverPast = scrubRatio !== null && barRatio <= scrubRatio;
+              const barHeight = Math.max(6, amp * (SVG_HEIGHT - 8));
+              const x = i * (BAR_UNIT + GAP_UNIT);
+              const y = (SVG_HEIGHT - barHeight) / 2;
+              return (
+                <rect
+                  key={i}
+                  x={x}
+                  y={y}
+                  width={BAR_UNIT}
+                  height={barHeight}
+                  rx={BAR_UNIT / 2}
+                  style={{
+                    // Solid colors only — no white-mixed gradient here. That
+                    // gradient was the actual bug: it made the "played"
+                    // portion fade toward white, so the waveform visibly
+                    // faded out over the course of playback on light themes.
+                    fill: isPast
+                      ? 'var(--color-primary)'
+                      : isHoverPast
+                      ? 'color-mix(in srgb, var(--color-primary) 55%, var(--color-text-muted) 45%)'
+                      : 'var(--color-text-muted)',
+                    transition: 'fill 0.15s ease',
+                  }}
+                />
+              );
+            })}
+          </svg>
 
           {/* Playhead */}
           {duration > 0 && (
@@ -391,12 +365,7 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
             >
               <div
                 className="absolute -top-0.5 rounded-full"
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  left: '-2px',
-                  background: 'var(--color-primary)',
-                }}
+                style={{ width: '6px', height: '6px', left: '-2px', background: 'var(--color-primary)' }}
               />
             </div>
           )}
