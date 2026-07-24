@@ -80,9 +80,21 @@ export function MediaAttachmentsField({
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         stream.getTracks().forEach((t) => t.stop());
-        const file = new File([blob], `voice-note-${Date.now()}.webm`, { type: blob.type });
+        // Determine correct extension based on mimeType
+        let ext = '.webm';
+        if (mimeType.includes('mp4') || mimeType.includes('mpeg')) {
+          ext = '.mp4';
+        } else if (mimeType.includes('ogg')) {
+          ext = '.ogg';
+        } else if (mimeType.includes('mp3')) {
+          ext = '.mp3';
+        } else if (mimeType.includes('wav')) {
+          ext = '.wav';
+        }
+        const file = new File([blob], `voice-note-${Date.now()}${ext}`, { type: blob.type });
         await uploadFile(file, 'voice-notes');
       };
       mediaRecorderRef.current = recorder;
