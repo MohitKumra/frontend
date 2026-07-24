@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Paperclip, Mic, Square, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { uploadMediaFile } from '../../lib/mediaUpload';
 import { VoiceNotePlayer } from './VoiceNotePlayer';
@@ -30,6 +30,13 @@ function shortName(url: string, max = 18): string {
   }
 }
 
+/** Format seconds as mm:ss */
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export function MediaAttachmentsField({
   attachmentUrl,
   onAttachmentUrlChange,
@@ -40,9 +47,23 @@ export function MediaAttachmentsField({
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const recordingStartRef = useRef<number>(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingElapsed, setRecordingElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Live elapsed timer during recording
+  useEffect(() => {
+    if (!isRecording) {
+      setRecordingElapsed(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setRecordingElapsed(Math.floor((Date.now() - recordingStartRef.current) / 1000));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isRecording]);
 
   const uploadFile = async (file: File, folder: 'attachments' | 'voice-notes' = 'attachments') => {
     if (file.size > MAX_BYTES) {
@@ -76,6 +97,7 @@ export function MediaAttachmentsField({
         ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
       const recorder = preferredMime ? new MediaRecorder(stream, { mimeType: preferredMime }) : new MediaRecorder(stream);
       chunksRef.current = [];
+      recordingStartRef.current = Date.now();
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
@@ -98,7 +120,7 @@ export function MediaAttachmentsField({
         await uploadFile(file, 'voice-notes');
       };
       mediaRecorderRef.current = recorder;
-      recorder.start();
+      recorder.start(1000); // timeslice every 1s to ensure audio data is captured
       setIsRecording(true);
     } catch (err: any) {
       // Distinguish between different types of errors
@@ -141,7 +163,7 @@ export function MediaAttachmentsField({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={isUploading}
+        disabled={isUploading || isRecording}
         className="inline-flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 disabled:opacity-40"
         style={{ color: 'var(--color-text-muted)' }}
         title="Attach a file"
@@ -149,18 +171,48 @@ export function MediaAttachmentsField({
         <Paperclip size={15} />
       </button>
 
-      {/* Voice note button */}
-      {allowVoiceRecording && (
+      {/* Voice note button — switches to stop during recording */}
+      {allowVoiceRecording && !isRecording && (
         <button
           type="button"
-          onClick={isRecording ? stopRecording : startRecording}
+          onClick={startRecording}
           disabled={isUploading}
           className="inline-flex items-center justify-center w-7 h-7 rounded-full transition-all hover:scale-110 disabled:opacity-40"
-          style={{ color: isRecording ? '#e53935' : 'var(--color-text-muted)' }}
-          title={isRecording ? 'Stop recording' : 'Record voice note'}
+          style={{ color: 'var(--color-text-muted)' }}
+          title="Record voice note"
         >
-          {isRecording ? <Square size={15} /> : <Mic size={15} />}
+          <Mic size={15} />
         </button>
+      )}
+
+      {/* Recording status bar */}
+      {isRecording && (
+        <div
+          className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold"
+          style={{
+            color: '#e53935',
+            background: 'rgba(229, 57, 53, 0.08)',
+            border: '1px solid rgba(229, 57, 53, 0.25)',
+          }}
+        >
+          {/* Pulsing red dot */}
+          <span
+            className="inline-block w-2 h-2 rounded-full"
+            style={{
+              backgroundColor: '#e53935',
+              animation: 'recording-pulse 1.2s ease-in-out infinite',
+            }}
+          />
+          <span>REC {formatDuration(recordingElapsed)}</span>
+          <button
+            type="button"
+            onClick={stopRecording}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-red-100 transition-colors"
+            title="Stop recording"
+          >
+            <Square size={10} fill="#e53935" />
+          </button>
+        </div>
       )}
 
       {/* Upload spinner */}
@@ -193,6 +245,14 @@ export function MediaAttachmentsField({
 
       {/* Error message */}
       {error && <span className="text-xs font-bold text-danger">{error}</span>}
+
+      {/* Recording pulse animation keyframes */}
+      <style>{`
+        @keyframes recording-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.7); }
+        }
+      `}</style>
     </div>
   );
 }
