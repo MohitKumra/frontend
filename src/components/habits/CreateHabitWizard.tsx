@@ -12,14 +12,16 @@ const STEP_ICONS = ['📝', '⏰', '🎯', '📅'];
 interface CreateHabitWizardProps {
   open: boolean;
   onClose: () => void;
+  initialTitle?: string;
+  initialReminderTime?: string;
 }
 
-export function CreateHabitWizard({ open, onClose }: CreateHabitWizardProps) {
+export function CreateHabitWizard({ open, onClose, initialTitle = '', initialReminderTime = '' }: CreateHabitWizardProps) {
   const createHabit = useCreateHabit();
 
   const [step, setStep] = useState(0);
-  const [title, setTitle] = useState('');
-  const [reminderTime, setReminderTime] = useState('');
+  const [title, setTitle] = useState(initialTitle);
+  const [reminderTime, setReminderTime] = useState(initialReminderTime);
   const [reminderMessage, setReminderMessage] = useState('');
   const [durationDays, setDurationDays] = useState<number | null>(null);
   const [durationMode, setDurationMode] = useState<'days' | 'forever'>('forever');

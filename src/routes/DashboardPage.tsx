@@ -640,7 +640,7 @@ export function DashboardPage() {
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center gap-1.5">
                     <Sparkles size={16} className="text-accent" />
-                    <span className="text-sm font-extrabold text-text-primary">AI Insights</span>
+                    <span className="text-sm font-extrabold text-text-primary">Smart Insights</span>
                   </div>
                   <button className="text-xs font-bold text-accent hover:underline">See all</button>
                 </div>
@@ -717,7 +717,7 @@ export function DashboardPage() {
                     color: 'var(--color-accent)',
                   }}
                 >
-                  ⚡ Powered by AI
+                  ⚡ Intelligence Engine
                 </span>
               </div>
             </div>

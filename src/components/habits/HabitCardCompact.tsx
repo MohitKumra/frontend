@@ -241,7 +241,7 @@ function DeleteHabitModal({
   );
 }
 
-export function HabitCardCompact({ habit }: { habit: HabitDTO }) {
+export function HabitCardCompact({ habit, isFocused }: { habit: HabitDTO; isFocused?: boolean }) {
   const toggle = useToggleHabit();
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -277,17 +277,35 @@ export function HabitCardCompact({ habit }: { habit: HabitDTO }) {
 
       return (
     <>
-      <Card
-        variant="default"
-        className="relative overflow-hidden p-4"
+      <motion.div
+        id={`habit-card-${habit.id}`}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
         style={{
+          boxShadow: isFocused
+            ? `0 0 0 2px ${category.color}, 0 0 20px color-mix(in srgb, ${category.color} 50%, transparent)`
+            : undefined,
           borderRadius: '20px',
-          border: habit.completedToday
-            ? `1.5px solid color-mix(in srgb, ${category.color} 45%, var(--color-border))`
-            : '1px solid var(--color-border)',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
+          transition: 'box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
+        <Card
+          variant="default"
+          className="relative overflow-hidden p-4"
+          style={{
+            borderRadius: '20px',
+            border: isFocused
+              ? `1.5px solid ${category.color}`
+              : habit.completedToday
+                ? `1.5px solid color-mix(in srgb, ${category.color} 45%, var(--color-border))`
+                : '1px solid var(--color-border)',
+            boxShadow: isFocused
+              ? undefined
+              : '0 2px 10px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
+            transition: 'border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
         {/* Left accent bar */}
         <div
           className="absolute left-0 top-0 bottom-0 w-1"
@@ -406,7 +424,8 @@ export function HabitCardCompact({ habit }: { habit: HabitDTO }) {
             </div>
           </div>
         </div>
-      </Card>
+        </Card>
+      </motion.div>
 
       {/* Edit modal */}
       <EditHabitModal

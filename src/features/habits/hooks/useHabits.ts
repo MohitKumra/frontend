@@ -27,6 +27,7 @@ export function useToggleHabit() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },
   });
 }
@@ -49,6 +50,7 @@ export function useDeleteHabit() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },
   });
 }

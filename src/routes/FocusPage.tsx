@@ -1237,6 +1237,7 @@ export function FocusPage() {
       qc.invalidateQueries({ queryKey: ['focus'] });
       qc.invalidateQueries({ queryKey: ['focus', 'time-logs'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
       qc.invalidateQueries({ queryKey: ['analytics'] });
       clearTimerState('focus');
       clearTimerState('short_break');

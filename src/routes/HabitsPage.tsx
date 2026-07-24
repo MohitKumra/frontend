@@ -1,24 +1,24 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus,
   Search,
   Grid3x3,
   List,
 } from 'lucide-react';
 import { useHabits, useCreateHabit, useStreakStatus } from '../features/habits/hooks/useHabits';
+import { useTasks } from '../features/tasks/hooks/useTasks';
+import { useFocusSessions } from '../features/habits/hooks/useFocusSessions';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { Modal } from '../components/ui/Modal';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
 import { HabitList } from '../components/habits/HabitList';
 import { HabitHero } from '../components/habits/HabitHero';
 import { WeekOverview } from '../components/habits/WeekOverview';
 import { LongestStreakCard } from '../components/habits/LongestStreakCard';
-import { AICoachPanel } from '../components/habits/AICoachPanel';
+import { ProductivityEngine } from '../components/habits/ProductivityEngine';
+import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { QuoteCard } from '../components/habits/QuoteCard';
 import { getDailyQuotes } from '../data/quotes';
 import { WeatherWidget } from '../components/habits/WeatherWidget';
@@ -37,9 +37,15 @@ type ViewMode = 'grid' | 'list';
 export function HabitsPage() {
   const { data, isLoading } = useHabits();
   const { data: gamification } = useGamificationProfile();
+  const { data: tasksData } = useTasks();
+  const { data: focusSessionsData } = useFocusSessions();
   const createHabit = useCreateHabit();
   const user = useAuthStore((s) => s.user);
   const [showCreate, setShowCreate] = useState(false);
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [taskPrefill, setTaskPrefill] = useState<{ title: string; duration: number }>({ title: '', duration: 30 });
+  const [habitPrefill, setHabitPrefill] = useState<{ title: string; time: string }>({ title: '', time: '' });
+  const [focusedHabitId, setFocusedHabitId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<HabitFilter>('all');
@@ -56,6 +62,8 @@ export function HabitsPage() {
   const showStreakPopup = !!(!streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen);
 
   const habits = data?.data ?? [];
+  const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
+  const focusSessions = focusSessionsData?.data ?? [];
   const completedToday = habits.filter((h) => h.completedToday).length;
   const totalHabits = habits.length;
 
@@ -102,7 +110,7 @@ export function HabitsPage() {
     completed: habits.filter((h) => h.completedToday).length,
   };
 
-  if (isLoading) return <LoadingScreen />;
+  // ─── All hooks and callbacks must be defined BEFORE the early return ───
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -112,6 +120,29 @@ export function HabitsPage() {
   };
 
   const userName = user?.name?.split(' ')[0] || 'there';
+
+  const handleFocusHabit = useCallback((habitId: string) => {
+    setFocusedHabitId(habitId);
+    // Scroll the card into view after a small delay for the DOM to be ready
+    setTimeout(() => {
+      const el = document.getElementById(`habit-card-${habitId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+    // Clear focus after 3 seconds
+    setTimeout(() => setFocusedHabitId(null), 3000);
+  }, []);
+
+  const handleOpenCreateTask = (title?: string, duration?: number) => {
+    setTaskPrefill({ title: title || '', duration: duration || 30 });
+    setShowCreateTask(true);
+  };
+
+  const handleOpenCreateHabit = (title?: string, time?: string) => {
+    setHabitPrefill({ title: title || '', time: time || '' });
+    setShowCreate(true);
+  };
 
   const heroProps = {
     userName,
@@ -125,6 +156,22 @@ export function HabitsPage() {
     successRate,
     onCreateHabit: () => setShowCreate(true),
   };
+
+  const engineProps = {
+    context: 'habits' as const,
+    completedToday,
+    totalHabits,
+    habits,
+    tasks,
+    focusSessions,
+    onOpenCreateTask: handleOpenCreateTask,
+    onOpenCreateHabit: handleOpenCreateHabit,
+    onNavigateFocus: () => window.location.href = '/focus',
+    onFocusHabit: handleFocusHabit,
+  };
+
+  // Early return AFTER all hooks/callbacks — this ensures hook count never changes between renders
+  if (isLoading) return <LoadingScreen />;
 
   return (
     <motion.div
@@ -153,8 +200,8 @@ export function HabitsPage() {
               <QuoteCard quotes={getDailyQuotes()} />
               <HabitHeatmapCombined habits={habits} compact />
             </div>
-            <HabitList habits={filteredHabits} viewMode="list" />
-            <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+            <HabitList habits={filteredHabits} viewMode="list" focusedHabitId={focusedHabitId} />
+            <ProductivityEngine {...engineProps} />
             <AchievementsPanel />
           </>
         )}
@@ -181,7 +228,7 @@ export function HabitsPage() {
               <HabitHeatmapCombined habits={habits} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+              <ProductivityEngine {...engineProps} />
               <QuoteCard quotes={getDailyQuotes()} />
               <WeatherWidget />
             </div>
@@ -200,7 +247,7 @@ export function HabitsPage() {
               <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
             </div>
             <div className="flex flex-col gap-4 sticky top-6 self-start">
-              <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+              <ProductivityEngine {...engineProps} />
               <QuoteCard quotes={getDailyQuotes()} />
               <WeatherWidget />
             </div>
@@ -241,7 +288,7 @@ export function HabitsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6, duration: 0.6 }}
               >
-                <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
+                <ProductivityEngine {...engineProps} />
                 <QuoteCard quotes={getDailyQuotes()} />
                 <WeatherWidget />
               </motion.div>
@@ -253,11 +300,22 @@ export function HabitsPage() {
       {/* Create Habit Wizard Modal */}
       <AnimatePresence>
         {showCreate && (
-          <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Habit" maxWidth="max-w-md">
-            <CreateHabitWizard open={showCreate} onClose={() => setShowCreate(false)} />
+          <Modal open={showCreate} onClose={() => { setShowCreate(false); setHabitPrefill({ title: '', time: '' }); }} title="New Habit" maxWidth="max-w-md">
+            <CreateHabitWizard open={showCreate} onClose={() => { setShowCreate(false); setHabitPrefill({ title: '', time: '' }); }} initialTitle={habitPrefill.title} initialReminderTime={habitPrefill.time} />
           </Modal>
         )}
       </AnimatePresence>
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={showCreateTask}
+        onClose={() => {
+          setShowCreateTask(false);
+          setTaskPrefill({ title: '', duration: 30 });
+        }}
+        initialTitle={taskPrefill.title}
+        initialDuration={taskPrefill.duration}
+      />
 
       {/* Streak Break Popup */}
       <StreakBreakModal
@@ -347,7 +405,7 @@ export function HabitsPage() {
           </Card>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.6 }}>
-            <HabitList habits={filteredHabits} viewMode={viewMode} />
+            <HabitList habits={filteredHabits} viewMode={viewMode} focusedHabitId={focusedHabitId} />
           </motion.div>
         )}
       </>

@@ -38,6 +38,7 @@ import { EditTaskModal } from '../components/tasks/EditTaskModal';
 import { TaskBoardView } from '../components/tasks/TaskBoardView';
 import { TaskCard, isOverdue, isToday } from '../components/tasks/TaskCard';
 import { TasksEmptyState } from '../components/tasks/TasksEmptyState';
+import { ProductivityEngine } from '../components/habits/ProductivityEngine';
 import { useTaskKeyboardShortcuts } from '../hooks/useTaskKeyboardShortcuts';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
@@ -826,6 +827,11 @@ export function TasksPage() {
           )}
 
           {/* Capacity + Productivity summary — one merged row */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-3 rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+              <ProductivityEngine context="tasks" tasks={tasks} focusSessions={[]} onOpenCreateTask={(t, d) => {}} />
+            </div>
+          </div>
           <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2 rounded-2xl border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
               <div className="flex items-center justify-between mb-1">

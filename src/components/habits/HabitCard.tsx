@@ -308,7 +308,7 @@ function DeleteHabitModal({
   );
 }
 
-export function HabitCard({ habit }: { habit: HabitDTO }) {
+export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: boolean }) {
   const toggle = useToggleHabit();
   const [showCelebration, setShowCelebration] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -356,12 +356,15 @@ export function HabitCard({ habit }: { habit: HabitDTO }) {
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
         className="relative h-full rounded-2xl"
+        id={`habit-card-${habit.id}`}
         style={{
           // A quiet ambient shadow rather than a colored glow — the wrapper carries
           // it so it's never clipped by the Card's own border radius.
-          boxShadow: isHovered
-            ? '0 12px 28px rgba(15, 15, 15, 0.09), 0 2px 6px rgba(15, 15, 15, 0.05)'
-            : '0 2px 10px rgba(15, 15, 15, 0.045)',
+          boxShadow: isFocused
+            ? `0 0 0 2px ${category.color}, 0 0 20px color-mix(in srgb, ${category.color} 50%, transparent)`
+            : isHovered
+              ? '0 12px 28px rgba(15, 15, 15, 0.09), 0 2px 6px rgba(15, 15, 15, 0.05)'
+              : '0 2px 10px rgba(15, 15, 15, 0.045)',
           transition: 'box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >

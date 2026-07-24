@@ -60,7 +60,7 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
           </div>
           <div>
             <h3 className="text-sm font-bold text-text-primary">Productivity Insights</h3>
-            <p className="text-xs text-text-secondary">AI-powered patterns</p>
+            <p className="text-xs text-text-secondary">Pattern detection</p>
           </div>
         </div>
 
@@ -105,7 +105,7 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
           </div>
         )}
 
-        {/* Powered by AI Badge */}
+        {/* Intelligence Engine Badge */}
         <div className="mt-5 text-center">
           <span 
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
@@ -115,7 +115,7 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
             }}
           >
             <Lightbulb size={10} />
-            Powered by AI
+            Intelligence Engine
           </span>
         </div>
       </div>

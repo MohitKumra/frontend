@@ -20,7 +20,6 @@ import {
   Check,
   ListTodo,
   Zap,
-  Brain,
   Loader2,
 } from 'lucide-react';
 import {

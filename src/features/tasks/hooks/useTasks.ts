@@ -40,6 +40,7 @@ export function useUpdateTask() {
       qc.invalidateQueries({ queryKey: TASKS_KEY });
       qc.invalidateQueries({ queryKey: ['projects'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },
   });
 }
@@ -52,6 +53,7 @@ export function useDeleteTask() {
       qc.invalidateQueries({ queryKey: TASKS_KEY });
       qc.invalidateQueries({ queryKey: ['projects'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },
   });
 }

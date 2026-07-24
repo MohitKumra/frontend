@@ -25,6 +25,8 @@ interface CreateTaskModalProps {
   onClose: () => void;
   initialProjectId?: string | null;
   lockProject?: boolean;
+  initialTitle?: string;
+  initialDuration?: number | null;
 }
 
 type RecurrenceOption = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
@@ -70,7 +72,7 @@ function suggestedDueDate(recurrence: RecurrenceOption): string {
   }
 }
 
-export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lockProject = false }: CreateTaskModalProps) {
+export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lockProject = false, initialTitle = '', initialDuration = null }: CreateTaskModalProps) {
   const createTask = useCreateTask();
   const { data: projectsData } = useProjects();
   const isMobile = useMediaQuery('(max-width: 640px)');
@@ -99,8 +101,10 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
   useEffect(() => {
     if (isOpen) {
       setSelectedProjectId(initialProjectId ?? '');
+      if (initialTitle) setTitle(initialTitle);
+      if (initialDuration) setEstimatedDuration(initialDuration);
     }
-  }, [initialProjectId, isOpen]);
+  }, [initialProjectId, isOpen, initialTitle, initialDuration]);
 
   const handleRecurrenceChange = (option: RecurrenceOption) => {
     setRecurrence(option);
