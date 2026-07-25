@@ -71,6 +71,7 @@ interface TaskBoardViewProps {
   formatDueDate: (dateStr: string | null) => string | null;
   isOverdue: (date: string | null, status: string) => boolean;
   getRecurrenceLabel: (rule: string | null) => string | null;
+  highlightedTaskId?: string | null;
 }
 
 function progressFor(task: TaskDTO) {
@@ -150,6 +151,7 @@ function DraggableTaskCard({
   formatDueDate,
   isOverdue,
   getRecurrenceLabel,
+  isHighlighted,
 }: {
   task: TaskDTO;
   accent: string;
@@ -163,6 +165,7 @@ function DraggableTaskCard({
   formatDueDate: (dateStr: string | null) => string | null;
   isOverdue: (date: string | null, status: string) => boolean;
   getRecurrenceLabel: (rule: string | null) => string | null;
+  isHighlighted?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.id });
 
@@ -185,6 +188,7 @@ function DraggableTaskCard({
         formatDueDate={formatDueDate}
         isOverdue={isOverdue}
         getRecurrenceLabel={getRecurrenceLabel}
+        isHighlighted={isHighlighted}
       />
     </div>
   );
@@ -235,6 +239,7 @@ function TaskBoardCard({
   formatDueDate,
   isOverdue,
   getRecurrenceLabel,
+  isHighlighted,
 }: {
   task: TaskDTO;
   accent: string;
@@ -248,6 +253,7 @@ function TaskBoardCard({
   formatDueDate: (dateStr: string | null) => string | null;
   isOverdue: (date: string | null, status: string) => boolean;
   getRecurrenceLabel: (rule: string | null) => string | null;
+  isHighlighted?: boolean;
 }) {
   const isDone = task.status === 'DONE';
   const dueDate = formatDueDate(task.dueDate);
@@ -299,13 +305,18 @@ function TaskBoardCard({
     <div
       className="group relative overflow-hidden rounded-xl border bg-[var(--color-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-20px_rgba(15,23,42,0.4)]"
       style={{
-        borderColor: isDone
+        borderColor: isHighlighted
+          ? 'var(--color-accent)'
+          : isDone
           ? 'color-mix(in srgb, var(--color-success) 24%, var(--color-border))'
           : overdue
           ? 'color-mix(in srgb, var(--color-danger) 30%, var(--color-border))'
           : 'var(--color-border)',
-        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.05)',
+        boxShadow: isHighlighted
+          ? '0 8px 30px color-mix(in srgb, var(--color-accent) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent)'
+          : '0 1px 2px rgba(15, 23, 42, 0.05)',
         opacity: dragging ? 0.45 : 1,
+        transform: isHighlighted ? 'translateY(-4px)' : 'none',
         touchAction: 'none',
       }}
     >
@@ -754,6 +765,7 @@ export function TaskBoardView({
   formatDueDate,
   isOverdue,
   getRecurrenceLabel,
+  highlightedTaskId,
 }: TaskBoardViewProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
@@ -865,6 +877,7 @@ export function TaskBoardView({
                     formatDueDate={formatDueDate}
                     isOverdue={isOverdue}
                     getRecurrenceLabel={getRecurrenceLabel}
+                    isHighlighted={highlightedTaskId === task.id}
                   />
                 ))}
 
@@ -946,6 +959,7 @@ export function TaskBoardView({
                         formatDueDate={formatDueDate}
                         isOverdue={isOverdue}
                         getRecurrenceLabel={getRecurrenceLabel}
+                        isHighlighted={highlightedTaskId === task.id}
                       />
                     ))}
 

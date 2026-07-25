@@ -749,6 +749,7 @@ export function TasksPage() {
                     onDelete={handleDeleteTask}
                     onViewDetails={(task) => navigate(`/tasks/${task.id}`)}
                     onAddTask={() => setCreateModalOpen(true)}
+                    highlightedTaskId={highlightedTaskId}
                     formatDueDate={(d) => {
                       if (!d) return null;
                       const date = new Date(d);

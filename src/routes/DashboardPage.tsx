@@ -20,7 +20,6 @@ import {
   Flame,
   FileText,
   Settings,
-  CheckCircle2,
 } from 'lucide-react';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
@@ -40,6 +39,7 @@ import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { FloatingCalendarEmpty } from '../components/ui/FloatingCalendarEmpty';
 import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
 import { Avatar } from '../components/ui/Avatar';
+import { AchievementsPanel } from '../components/habits/AchievementsPanel';
 import type { FocusSessionDTO, ListResponse, TaskStatus } from '../types';
 
 function toUtcDateKey(value: string | Date): string {
@@ -131,28 +131,6 @@ const DASHBOARD_RESPONSIVE_CSS = `
   }
 `;
 
-function BadgeChip({
-  icon, label, tier, color,
-}: { icon: React.ReactNode; label: string; tier: string; color: string }) {
-  return (
-    <div
-      className="flex items-center gap-2.5 p-2.5 rounded-xl border"
-      style={{ background: `color-mix(in srgb, ${color} 8%, var(--color-surface))`, borderColor: `color-mix(in srgb, ${color} 20%, transparent)` }}
-    >
-      <span
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
-      >
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold text-text-primary truncate">{label}</p>
-        <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">{tier}</p>
-      </div>
-    </div>
-  );
-}
-
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: dashboard, isLoading } = useEnhancedDashboard();
@@ -239,7 +217,6 @@ export function DashboardPage() {
   const avatarInitial = (user.name ?? user.email)[0]?.toUpperCase() ?? '?';
   const xpInCurrentBar = dashboard.gamification.totalPoints % XP_PER_LEVEL_BAR;
   const xpBarPct = Math.round((xpInCurrentBar / XP_PER_LEVEL_BAR) * 100);
-  const hasBadges = dashboard.gamification.totalPoints > 0;
 
   // Decorative weekly consistency dots for the Habit Streak card — filled
   // for each day of the current streak (capped at 5 slots), matching the
@@ -642,83 +619,53 @@ export function DashboardPage() {
                     <Sparkles size={16} className="text-accent" />
                     <span className="text-sm font-extrabold text-text-primary">Smart Insights</span>
                   </div>
-                  <button className="text-xs font-bold text-accent hover:underline">See all</button>
                 </div>
 
                 <div className="space-y-3.5">
-                  <div
-                    className="rounded-xl p-3 flex gap-3 border"
-                    style={{
-                      background: 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))',
-                      borderColor: 'color-mix(in srgb, var(--color-success) 20%, transparent)',
-                    }}
-                  >
-                    <div className="w-6 h-6 rounded bg-success/15 flex items-center justify-center shrink-0">
-                      <CheckSquare size={13} className="text-success" />
+              {dashboard.insights && dashboard.insights.length > 0 ? (
+                dashboard.insights.map((insight) => {
+                  const iconMap: Record<string, React.ReactNode> = {
+                    trend: <TrendingUp size={13} />,
+                    clock: <Timer size={13} />,
+                    calendar: <CheckSquare size={13} />,
+                    alert: <MapPin size={13} />,
+                  };
+                  const isPositive = insight.type === 'positive';
+                  const isWarning = insight.type === 'warning';
+                  const bgColor = isPositive
+                    ? 'var(--color-success)'
+                    : isWarning
+                      ? 'var(--color-warning)'
+                      : 'var(--color-info)';
+                  return (
+                    <div
+                      key={insight.id}
+                      className="rounded-xl p-3 flex gap-3 border"
+                      style={{
+                        background: `color-mix(in srgb, ${bgColor} 8%, var(--color-surface))`,
+                        borderColor: `color-mix(in srgb, ${bgColor} 20%, transparent)`,
+                      }}
+                    >
+                      <div
+                        className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+                        style={{ background: `color-mix(in srgb, ${bgColor} 15%, transparent)`, color: bgColor }}
+                      >
+                        {iconMap[insight.icon] ?? <Sparkles size={13} />}
+                      </div>
+                      <p className="text-xs font-medium text-text-primary leading-relaxed">
+                        {insight.text}
+                      </p>
                     </div>
-                    <p className="text-xs font-medium text-text-primary leading-relaxed">
-                      You've completed <span className="font-bold">{taskCompletion}%</span> of your tasks today. High momentum!
-                    </p>
-                  </div>
-
-                  <div
-                    className="rounded-xl p-3 flex gap-3 border"
-                    style={{
-                      background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
-                      borderColor: 'color-mix(in srgb, var(--color-warning) 20%, transparent)',
-                    }}
-                  >
-                    <div className="w-6 h-6 rounded bg-warning/15 flex items-center justify-center shrink-0">
-                      <Timer size={13} className="text-warning" />
-                    </div>
-                    <p className="text-xs font-medium text-text-primary leading-relaxed">
-                      Focus limit alert: Start a focus session to hit your daily goal.
-                    </p>
-                  </div>
-
-                  <div
-                    className="rounded-xl p-3 flex gap-3 border"
-                    style={{
-                      background: 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))',
-                      borderColor: 'color-mix(in srgb, var(--color-success) 20%, transparent)',
-                    }}
-                  >
-                    <div className="w-6 h-6 rounded bg-success/15 flex items-center justify-center shrink-0">
-                      <TrendingUp size={13} className="text-success" />
-                    </div>
-                    <p className="text-xs font-medium text-text-primary leading-relaxed">
-                      Your deepest focus occurred between <span className="font-bold">9:00 AM - 11:00 AM</span>.
-                    </p>
-                  </div>
-
-                  <div
-                    className="rounded-xl p-3 flex gap-3 border"
-                    style={{
-                      background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
-                      borderColor: 'color-mix(in srgb, var(--color-warning) 20%, transparent)',
-                    }}
-                  >
-                    <div className="w-6 h-6 rounded bg-warning/15 flex items-center justify-center shrink-0">
-                      <MapPin size={13} className="text-warning" />
-                    </div>
-                    <p className="text-xs font-medium text-text-primary leading-relaxed">
-                      You have 2 upcoming deadlines in the next 24 hours.
-                    </p>
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-xl p-4 text-center border border-dashed" style={{ borderColor: 'var(--color-border)' }}>
+                  <p className="text-xs font-semibold text-text-secondary">
+                    No insights yet. Keep using tasks, habits, and focus sessions to unlock personalized patterns.
+                  </p>
                 </div>
-              </div>
-
-              <div className="mt-5 flex justify-center">
-                <span
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border"
-                  style={{
-                    background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))',
-                    borderColor: 'var(--color-accent-border)',
-                    color: 'var(--color-accent)',
-                  }}
-                >
-                  ⚡ Intelligence Engine
-                </span>
+              )}
+                </div>
               </div>
             </div>
           </div>
@@ -852,40 +799,8 @@ export function DashboardPage() {
               </div>
             </div>
 
-            {/* Rewards / XP + badges card */}
-            <div
-              className="rounded-2xl border p-5 flex flex-col gap-3"
-              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-extrabold text-text-primary">Rewards</span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-black text-accent">
-                  <Sparkles size={12} /> {dashboard.gamification.totalPoints} XP
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-text-secondary">Level {dashboard.gamification.level}</span>
-                <span className="text-[10px] text-text-muted font-semibold">
-                  {xpInCurrentBar}/{XP_PER_LEVEL_BAR}
-                </span>
-              </div>
-              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${xpBarPct}%`, background: 'var(--gradient-accent)' }} />
-              </div>
-
-              {hasBadges ? (
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <BadgeChip icon={<Flame size={15} />} label="Habit Spark" tier="Bronze" color="var(--color-warning)" />
-                  <BadgeChip icon={<CheckCircle2 size={15} />} label="Start Win" tier="Bronze" color="var(--color-accent)" />
-                </div>
-              ) : (
-                <div className="mt-1 rounded-xl border border-dashed p-3 text-center" style={{ borderColor: 'var(--color-border)' }}>
-                  <p className="text-[11px] font-semibold text-text-secondary">No badges yet</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">Complete a task, habit, or focus session to unlock your first one.</p>
-                </div>
-              )}
-            </div>
+            {/* Achievements — same panel used in Habits page */}
+            <AchievementsPanel />
 
             {/* Recent Activity — real data from backend */}
             <div className="col-span-2">

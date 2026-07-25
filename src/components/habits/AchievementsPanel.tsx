@@ -119,6 +119,29 @@ export function AchievementsPanel() {
                     />
                   )}
 
+                  {/* Full-card lock overlay for locked achievements */}
+                  {isLocked && (
+                    <div
+                      className="absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none z-10"
+                      style={{
+                        background: `linear-gradient(135deg, ${tierColor}08 0%, ${tierColor}18 50%, ${tierColor}08 100%)`,
+                        backdropFilter: 'blur(1px)',
+                      }}
+                    >
+                      <div
+                        className="flex items-center justify-center rounded-full"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          background: `${tierColor}25`,
+                          backdropFilter: 'blur(4px)',
+                        }}
+                      >
+                        <Lock size={18} className="text-text-muted" style={{ opacity: 0.85 }} />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Icon container */}
                   <div className="relative">
                     <motion.div
@@ -198,6 +221,14 @@ export function AchievementsPanel() {
                             animate={{ x: ['-120%', '140%'] }}
                             transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 2.4, ease: 'easeInOut', delay: idx * 0.3 }}
                           />
+
+                          {/* Lock overlay — semi-transparent backdrop */}
+                          <div
+                            className="absolute inset-0 flex items-center justify-center rounded-xl"
+                            style={{ background: `${tierColor}20` }}
+                          >
+                            <Lock size={18} className="text-text-muted" style={{ opacity: 0.7 }} />
+                          </div>
                         </>
                       )}
                     </motion.div>

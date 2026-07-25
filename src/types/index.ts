@@ -667,6 +667,16 @@ export interface ProjectAnalyticsDTO {
   }>;
 }
 
+export type InsightType = 'positive' | 'neutral' | 'warning';
+export type InsightIcon = 'trend' | 'clock' | 'calendar' | 'alert';
+
+export interface InsightDTO {
+  id: string;
+  type: InsightType;
+  icon: InsightIcon;
+  text: string;
+}
+
 export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
   gamification: GamificationProfileDTO;
   activeProjects: ProjectDTO[];
@@ -689,6 +699,7 @@ export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
     dueDate: string;
     daysUntilDue: number;
   }>;
+  insights: InsightDTO[];
 }
 
 export interface SearchResult {

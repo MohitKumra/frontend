@@ -17,115 +17,132 @@ type Tab = 'achievements' | 'trophies';
 const tierOrder = ['bronze', 'silver', 'gold', 'platinum'] as const;
 
 /**
- * Locked card — "scratch card" treatment.
- * A crisp, single-tone silhouette of the real trophy sits underneath a slow
- * shimmer sweep (so it reads as alive, not broken). Hovering lets the true
- * colors bleed through faintly, like scratching a lottery ticket — enough
- * to tease the reward without giving it away. In-progress achievements get
- * a live percentage badge instead of a plain lock, so "almost there" items
- * read as almost-mine rather than simply closed off.
+ * Locked card — "frosted vault" treatment.
+ * The real icon is always rendered fully desaturated and dim underneath a
+ * frosted pane, so hovering never lets true color leak through — a locked
+ * card should never look like it might already be unlocked. A centered lock
+ * badge and an explicit status line ("Locked" / "3 / 10") make the state
+ * unambiguous at a glance, not just implied by dimness. In-progress items
+ * get a live percentage badge and a filled progress bar, so "almost there"
+ * reads as almost-mine rather than simply closed off. Motion is limited to
+ * a slow ambient glow, a slow diagonal shimmer, and a small hover lift —
+ * all continuous and gentle, nothing that fires on interaction and jars.
  */
 function LockedCard({ achievement }: { achievement: AchievementWithStatusDTO }) {
   const tierColor = tierColors[achievement.tier] ?? '#FFD700';
-  const [isHovered, setIsHovered] = useState(false);
   const hasProgress = achievement.progress > 0;
 
   return (
     <motion.div
       className="relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ y: -3 }}
-      transition={{ duration: 0.2 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
     >
       <div
         className="relative flex flex-col items-center text-center gap-2 p-3 rounded-xl overflow-hidden"
         style={{
           background: 'var(--color-surface)',
-          border: `1px dashed ${tierColor}40`,
+          border: `1px dashed ${tierColor}35`,
         }}
       >
         {/* Ambient breathing glow — signals "not dead, just waiting" */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(circle at 50% 25%, ${tierColor}12, transparent 65%)` }}
-          animate={{ opacity: [0.35, 0.85, 0.35] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ background: `radial-gradient(circle at 50% 20%, ${tierColor}10, transparent 65%)` }}
+          animate={{ opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
         />
 
         {/* Icon area */}
         <div className="relative">
           <div
             className="relative w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden"
-            style={{ background: `${tierColor}12` }}
+            style={{ background: `${tierColor}0d` }}
           >
-            {/* Silhouette — sharp, single-tone shape of the real icon. No blur. */}
+            {/* Silhouette — fixed, muted, never brightens. This is the whole
+                point: no interaction should make a locked icon look earned. */}
             <div
               className="absolute inset-0 flex items-center justify-center"
-              style={{ filter: 'grayscale(1) brightness(0) opacity(0.3)' }}
+              style={{ filter: 'grayscale(1) brightness(0)', opacity: 0.22 }}
             >
               {getAchievementIcon(achievement.key, achievement.tier)}
             </div>
 
-            {/* True-color peek — fades in on hover, "scratching" the card */}
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center"
-              animate={{ opacity: isHovered ? 0.55 : 0 }}
-              transition={{ duration: 0.35 }}
-            >
-              {getAchievementIcon(achievement.key, achievement.tier)}
-            </motion.div>
+            {/* Frosted glass pane — the "behind glass" cue */}
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(150deg, ${tierColor}16 0%, transparent 55%)` }}
+            />
 
-            {/* Shimmer sweep — polishes across the silhouette periodically */}
+            {/* Slow diagonal shimmer — reads as "waiting", not "peeking" */}
             <motion.div
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: `linear-gradient(115deg, transparent 30%, ${tierColor}40 48%, transparent 66%)`,
+                background: `linear-gradient(115deg, transparent 35%, ${tierColor}2e 50%, transparent 65%)`,
               }}
-              animate={{ x: ['-120%', '140%'] }}
-              transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 2.4, ease: 'easeInOut' }}
+              animate={{ x: ['-130%', '150%'] }}
+              transition={{ duration: 2.8, repeat: Infinity, repeatDelay: 2.6, ease: 'easeInOut' }}
             />
+
+            {/* Lock badge, centered and always visible — the one unambiguous signal */}
+            <div
+              className="relative z-10 flex items-center justify-center rounded-full"
+              style={{
+                width: 26,
+                height: 26,
+                background: 'var(--color-surface-raised)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                border: `1px solid ${tierColor}30`,
+              }}
+            >
+              <Lock size={13} style={{ color: tierColor, opacity: 0.85 }} />
+            </div>
           </div>
 
-          {/* Badge — live percentage while in progress, lock while untouched */}
-          <div
-            className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2"
-            style={{
-              width: hasProgress ? 20 : 18,
-              height: hasProgress ? 20 : 18,
-              background: 'var(--color-surface-raised)',
-              borderColor: tierColor,
-            }}
-          >
-            {hasProgress ? (
+          {/* Live percentage badge, only while in progress */}
+          {hasProgress && (
+            <div
+              className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2"
+              style={{
+                width: 20,
+                height: 20,
+                background: 'var(--color-surface-raised)',
+                borderColor: tierColor,
+              }}
+            >
               <span className="text-[7px] font-black leading-none" style={{ color: tierColor }}>
                 {Math.round(achievement.progress)}
               </span>
-            ) : (
-              <Lock size={9} style={{ color: tierColor }} />
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Title — clearly visible */}
+        {/* Title — muted so hierarchy still favors unlocked cards */}
         <div className="relative">
-          <p className="text-[12px] font-bold leading-tight text-text-primary">
+          <p className="text-[12px] font-bold leading-tight text-text-muted">
             {achievement.title}
           </p>
-          <p className="text-[9px] font-medium text-text-muted leading-tight mt-0.5">
+          <p className="text-[9px] font-medium text-text-muted leading-tight mt-0.5 opacity-70">
             {achievement.description}
           </p>
         </div>
 
-        {/* XP badge */}
+        {/* Status line — explicit, always reads "not yet earned" */}
+        <div
+          className="relative flex items-center gap-1 px-2 py-0.5 rounded-full"
+          style={{ background: `${tierColor}12` }}
+        >
+          <Lock size={8} style={{ color: tierColor, opacity: 0.7 }} />
+          <span className="text-[9px] font-bold tracking-wide" style={{ color: tierColor, opacity: 0.75 }}>
+            {hasProgress ? `${achievement.progressCurrent} / ${achievement.progressTarget}` : 'Locked'}
+          </span>
+        </div>
+
+        {/* XP reward — visible but clearly secondary to the lock state */}
         <div className="relative">
           <span
             className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-            style={{
-              background: `${tierColor}10`,
-              color: tierColor,
-              opacity: 0.6,
-            }}
+            style={{ background: `${tierColor}0a`, color: tierColor, opacity: 0.45 }}
           >
             +{achievement.pointsAwarded} XP
           </span>
@@ -134,17 +151,13 @@ function LockedCard({ achievement }: { achievement: AchievementWithStatusDTO }) 
         {/* Progress bar */}
         {hasProgress && (
           <div className="w-full relative">
-            <div className="flex justify-between text-[8px] text-text-muted opacity-70 mb-0.5">
-              <span>{achievement.progressCurrent}</span>
-              <span>{achievement.progressTarget}</span>
-            </div>
-            <div className="w-full h-1 bg-border rounded-full overflow-hidden">
+            <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: tierColor, opacity: 0.5 }}
+                style={{ background: tierColor }}
                 initial={{ width: 0 }}
                 animate={{ width: `${achievement.progress}%` }}
-                transition={{ duration: 1 }}
+                transition={{ duration: 1, ease: 'easeOut' }}
               />
             </div>
           </div>

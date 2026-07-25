@@ -60,143 +60,66 @@ export function AchievementsTestPage() {
               </span>
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="flex flex-col gap-6">
               {items.map((achievement) => {
-                const isHovered = hoveredKey === achievement.key;
                 const tierColor = tierColors[achievement.tier] ?? '#FFD700';
-
                 return (
-                  <motion.div
-                    key={achievement.key}
-                    className="relative"
-                    onMouseEnter={() => setHoveredKey(achievement.key)}
-                    onMouseLeave={() => setHoveredKey(null)}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <motion.div
-                      className="relative flex flex-col items-center text-center gap-3 p-5 rounded-2xl"
-                      style={{
-                        background: achievement.isUnlocked
-                          ? 'var(--color-surface-raised)'
-                          : 'var(--color-surface)',
-                        border: achievement.isUnlocked
-                          ? `2px solid ${tierColor}40`
-                          : '1px solid var(--color-border)',
-                      }}
-                      whileHover={{ y: -6, scale: 1.03 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {/* Glow */}
-                      {achievement.isUnlocked && (
-                        <motion.div
-                          className="absolute inset-0 rounded-2xl pointer-events-none"
-                          style={{
-                            background: `radial-gradient(circle at center, ${tierColor}20, transparent 70%)`,
-                            opacity: isHovered ? 1 : 0.5,
-                          }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      )}
-
-                      {/* Icon */}
-                      <div className="relative">
-                        <motion.div
-                          className="w-20 h-20 rounded-2xl flex items-center justify-center relative overflow-hidden"
-                          style={{
-                            background: achievement.isUnlocked
-                              ? `${tierColor}20`
-                              : 'var(--color-border)',
-                          }}
-                          animate={{
-                            rotate: achievement.isUnlocked && isHovered ? [0, -8, 8, -8, 0] : 0,
-                            scale: achievement.isUnlocked && isHovered ? [1, 1.1, 1] : 1,
-                          }}
-                          transition={{ duration: 0.6 }}
-                        >
-                          <div style={{ width: 40, height: 40 }}>
+                  <div key={achievement.key} className="flex flex-col gap-2">
+                    <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: tierColor }} />
+                      {achievement.title}
+                      <code className="text-[9px] text-text-muted opacity-50 font-mono">({achievement.key})</code>
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Locked version */}
+                      <div className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border border-dashed" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+                        <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-border)' }}>
+                          <div style={{ filter: 'grayscale(1) brightness(0) opacity(0.3)', width: 36, height: 36 }}>
                             {getAchievementIcon(achievement.key, achievement.tier)}
                           </div>
-
-                          {!achievement.isUnlocked && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-surface/80 rounded-2xl">
-                              <Lock size={22} className="text-text-muted" />
-                            </div>
-                          )}
-                        </motion.div>
-
-                        {/* Unlocked badge */}
-                        {achievement.isUnlocked && (
-                          <motion.div
-                            className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{
-                              background: tierGradients[achievement.tier] ?? tierColor,
-                              boxShadow: `0 2px 10px ${tierColor}60`,
-                            }}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', stiffness: 200 }}
-                          >
-                            <Sparkles size={12} className="text-white" fill="white" />
-                          </motion.div>
-                        )}
-                      </div>
-
-                      {/* Title & Description */}
-                      <div className="relative">
-                        <p
-                          className={`text-sm font-bold mb-1 ${
-                            achievement.isUnlocked ? 'text-text-primary' : 'text-text-muted'
-                          }`}
-                        >
-                          {achievement.title}
-                        </p>
-                        <p className="text-[11px] font-medium text-text-muted leading-tight">
-                          {achievement.description}
-                        </p>
-                      </div>
-
-                      {/* Points */}
-                      <div className="relative">
-                        <span
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                          style={{
-                            background: achievement.isUnlocked ? `${tierColor}20` : 'var(--color-border)',
-                            color: achievement.isUnlocked ? tierColor : 'var(--color-text-muted)',
-                          }}
-                        >
+                        </div>
+                        <p className="text-xs font-bold text-text-muted">{achievement.title}</p>
+                        <p className="text-[10px] text-text-muted">{achievement.description}</p>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
                           +{achievement.pointsAwarded} XP
                         </span>
-                      </div>
-
-                      {/* Progress */}
-                      {!achievement.isUnlocked && (
-                        <div className="w-full relative">
-                          <div className="flex justify-between text-[10px] text-text-muted mb-1">
+                        <div className="w-full">
+                          <div className="flex justify-between text-[9px] text-text-muted mb-0.5">
                             <span>{achievement.progressCurrent}</span>
                             <span>{achievement.progressTarget}</span>
                           </div>
-                          <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
-                            <motion.div
-                              className="h-full rounded-full"
-                              style={{ background: tierColor }}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${achievement.progress}%` }}
-                              transition={{ duration: 1, delay: 0.2 }}
-                            />
+                          <div className="w-full h-1 bg-border rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ background: tierColor, width: `${achievement.progress}%`, opacity: 0.4 }} />
                           </div>
                         </div>
-                      )}
-
-                      {/* Key identifier */}
-                      <div className="relative mt-1">
-                        <code className="text-[9px] text-text-muted opacity-50">
-                          {achievement.key}
-                        </code>
+                        <span className="text-[8px] font-bold uppercase tracking-wider text-text-muted">LOCKED</span>
                       </div>
-                    </motion.div>
-                  </motion.div>
+
+                      {/* Unlocked version */}
+                      <div className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border" style={{ background: 'var(--color-surface-raised)', borderColor: `${tierColor}40` }}>
+                        <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: `${tierColor}20` }}>
+                          <div style={{ width: 36, height: 36 }}>
+                            {getAchievementIcon(achievement.key, achievement.tier)}
+                          </div>
+                        </div>
+                        <p className="text-xs font-bold text-text-primary">{achievement.title}</p>
+                        <p className="text-[10px] text-text-muted">{achievement.description}</p>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${tierColor}20`, color: tierColor }}>
+                          +{achievement.pointsAwarded} XP
+                        </span>
+                        <div className="w-full">
+                          <div className="flex justify-between text-[9px] text-text-muted mb-0.5">
+                            <span>{achievement.progressCurrent}</span>
+                            <span>{achievement.progressTarget}</span>
+                          </div>
+                          <div className="w-full h-1 bg-border rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ background: tierColor, width: `${achievement.progress}%` }} />
+                          </div>
+                        </div>
+                        <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: tierColor }}>UNLOCKED</span>
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
