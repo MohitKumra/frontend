@@ -19,6 +19,7 @@ interface ProductivityEngineProps {
   onOpenCreateProject?: () => void;
   onNavigateFocus?: () => void;
   onFocusHabit?: (habitId: string) => void;
+  onHighlightTask?: (taskId: string) => void;
 }
 
 interface GapSuggestion {
@@ -52,6 +53,7 @@ export function ProductivityEngine({
   onOpenCreateProject,
   onNavigateFocus,
   onFocusHabit,
+  onHighlightTask,
 }: ProductivityEngineProps) {
   const percentage = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
 
@@ -90,8 +92,8 @@ export function ProductivityEngine({
         icon: <Clock size={14} />,
         title: `${tasksWithoutDuration.length} task${tasksWithoutDuration.length > 1 ? 's' : ''} missing time estimates`,
         description: 'Add estimated durations so the engine can plan your day better.',
-        actionLabel: 'Set Duration',
-        onAction: () => onOpenCreateTask?.('', 30),
+        actionLabel: 'Highlight',
+        onAction: () => onHighlightTask?.(tasksWithoutDuration[0].id),
         type: 'task',
       });
     }
@@ -103,8 +105,8 @@ export function ProductivityEngine({
         icon: <Calendar size={14} />,
         title: `${tasksWithoutDueDate.length} task${tasksWithoutDueDate.length > 1 ? 's' : ''} without due dates`,
         description: 'Set deadlines to stay on track and prioritize effectively.',
-        actionLabel: 'Add Due Date',
-        onAction: () => onOpenCreateTask?.('', 30),
+        actionLabel: 'Highlight',
+        onAction: () => onHighlightTask?.(tasksWithoutDueDate[0].id),
         type: 'task',
       });
     }

@@ -130,6 +130,7 @@ export interface TaskCardProps {
   isMenuOpen: boolean;
   subExpanded: boolean;
   subtaskDraft: string;
+  isHighlighted?: boolean;
   onToggleStatus: (task: TaskDTO) => void;
   onToggleSelect: (taskId: string) => void;
   onToggleMenu: (taskId: string | null) => void;
@@ -154,6 +155,7 @@ export function TaskCard({
   isMenuOpen,
   subExpanded,
   subtaskDraft,
+  isHighlighted,
   onToggleStatus,
   onToggleSelect,
   onToggleMenu,
@@ -228,13 +230,18 @@ export function TaskCard({
       <div
         className="relative overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
         style={{
-          borderColor: isSelected
+          borderColor: isHighlighted
+            ? 'var(--color-accent)'
+            : isSelected
             ? 'var(--color-accent)'
             : overdue
             ? 'color-mix(in srgb, var(--color-danger) 40%, var(--color-border))'
             : 'var(--color-border)',
           background: 'var(--color-surface)',
-          boxShadow: isSelected
+          transform: isHighlighted ? 'translateY(-4px)' : 'none',
+          boxShadow: isHighlighted
+            ? '0 8px 30px color-mix(in srgb, var(--color-accent) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent)'
+            : isSelected
             ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent)'
             : '0 1px 2px rgba(0,0,0,0.04)',
         }}
