@@ -283,18 +283,50 @@ export function TasksPage() {
 
   const allVisibleSelected = filteredTasks.length > 0 && visibleSelectedTasks.length === filteredTasks.length;
 
-  // Handle taskId from URL query parameter (for notification clicks)
+  // Handle taskId from URL query parameter (for notification clicks).
+  // SELECT the task, SCROLL it into view, and HIGHLIGHT it for a few seconds.
+  // This must NOT open the edit modal — users want to locate and view the task.
   useEffect(() => {
     const taskId = searchParams.get('taskId');
-    if (taskId && tasks && !editingTask) {
-      const task = tasks.find((t) => t.id === taskId);
-      if (task) {
-        setEditingTask(task);
-        // Clear the query parameter after opening the task
-        setSearchParams({});
-      }
+    if (!taskId || !tasks) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    // 1. Select the task card so it's visually marked
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      next.add(taskId);
+      return next;
+    });
+
+    // 2. Mark as highlighted (card gets accent border + raised shadow)
+    setHighlightedTaskId(taskId);
+
+    // 3. Scroll into view (smooth, centered), try both getElementById + ref via data attr
+    const scrollTarget = document.getElementById(`task-card-${taskId}`);
+    if (scrollTarget) {
+      // Use rAF + short delay to let React paint before scrolling
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
     }
-  }, [searchParams, tasks, editingTask, setSearchParams]);
+
+    // 4. Clear the URL query param so refreshes don't re-focus, and clear highlight after a beat
+    const timeoutId = window.setTimeout(() => {
+      setSearchParams({}, { replace: true });
+    }, 300);
+
+    const highlightTimeoutId = window.setTimeout(() => {
+      setHighlightedTaskId((current) => (current === taskId ? null : current));
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearTimeout(highlightTimeoutId);
+    };
+  }, [searchParams, tasks, setSearchParams]);
 
   useEffect(() => { clearSelection(); }, [filter, view, searchQuery, clearSelection]);
 

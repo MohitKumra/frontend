@@ -9,6 +9,7 @@ interface CardProps {
   hoverable?: boolean;
   onClick?: () => void;
   style?: React.CSSProperties;
+  id?: string;
 }
 
 const variantStyles: Record<CardVariant, string> = {
@@ -31,9 +32,11 @@ export function Card({
   hoverable = false,
   onClick,
   style,
+  id,
 }: CardProps) {
   return (
     <div
+      id={id}
       onClick={onClick}
       className={[
         'rounded-2xl transition-all duration-200 ease-out',

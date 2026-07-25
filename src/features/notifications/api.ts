@@ -26,7 +26,7 @@ export const notificationsApi = {
   sendTestNotification: (channels?: ('BROWSER_PUSH' | 'EMAIL' | 'NATIVE_LOCAL')[]) =>
     apiClient.post<{ success: boolean }>('/notifications/test', { channels }).then((r) => r.data),
 
-  getActivityFeed: (page: number = 1, pageSize: number = 20) =>
+  getActivityFeed: (page: number = 1, pageSize: number = 15) =>
     apiClient
       .get<ActivityFeedResponse>(`/notifications/activity-feed?page=${page}&pageSize=${pageSize}`)
       .then((r) => r.data),

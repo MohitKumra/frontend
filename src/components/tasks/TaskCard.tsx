@@ -149,27 +149,30 @@ export interface TaskCardProps {
 
 // ── component ──────────────────────────────────────────────────────────────
 
-export function TaskCard({
-  task,
-  isSelected,
-  isMenuOpen,
-  subExpanded,
-  subtaskDraft,
-  isHighlighted,
-  onToggleStatus,
-  onToggleSelect,
-  onToggleMenu,
-  onToggleSubtasks,
-  onEdit,
-  onDelete,
-  onChangeStatus,
-  onSubtaskDraftChange,
-  onAddSubtask,
-  onToggleSubtask,
-  onDeleteSubtask,
-  onFocus,
-  onOpen,
-}: TaskCardProps) {
+export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
+  {
+    task,
+    isSelected,
+    isMenuOpen,
+    subExpanded,
+    subtaskDraft,
+    isHighlighted,
+    onToggleStatus,
+    onToggleSelect,
+    onToggleMenu,
+    onToggleSubtasks,
+    onEdit,
+    onDelete,
+    onChangeStatus,
+    onSubtaskDraftChange,
+    onAddSubtask,
+    onToggleSubtask,
+    onDeleteSubtask,
+    onFocus,
+    onOpen,
+  },
+  forwardedRef
+) {
   const done = task.status === 'DONE';
   const cancelled = task.status === 'CANCELLED';
   const overdue = isOverdue(task.dueDate, task.status);
@@ -226,7 +229,13 @@ export function TaskCard({
   }, [isMenuOpen, onToggleMenu]);
 
   return (
-    <motion.div className="relative" style={{ zIndex: isMenuOpen ? 9997 : 1 }}>
+    <motion.div
+      ref={forwardedRef}
+      id={`task-card-${task.id}`}
+      className="relative"
+      style={{ zIndex: isMenuOpen ? 9997 : 1 }}
+      data-task-id={task.id}
+    >
       <div
         className="relative overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
         style={{
@@ -514,4 +523,4 @@ export function TaskCard({
       </div>
     </motion.div>
   );
-}
+});

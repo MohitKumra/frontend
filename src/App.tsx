@@ -15,6 +15,8 @@ import { ResetPasswordPage }  from './routes/ResetPasswordPage';
 import { GoogleAuthCallbackPage } from './routes/GoogleAuthCallbackPage';
 import { AnimationTestPage } from './routes/AnimationTestPage';
 import { AchievementsTestPage } from './routes/AchievementsTestPage';
+import { PrivacyPolicyPage } from './routes/PrivacyPolicyPage';
+import { TermsConditionsPage } from './routes/TermsConditionsPage';
 
 // Protected pages
 import { DashboardPage }  from './routes/DashboardPage';
@@ -79,6 +81,8 @@ export default function App() {
         <Route path="/forgot-password" element={<PageTransition className="min-h-dvh"><ForgotPasswordPage /></PageTransition>} />
         <Route path="/reset-password"  element={<PageTransition className="min-h-dvh"><ResetPasswordPage /></PageTransition>} />
         <Route path="/google/callback" element={<PageTransition className="min-h-dvh"><GoogleAuthCallbackPage /></PageTransition>} />
+        <Route path="/privacy"         element={<PageTransition className="min-h-dvh"><PrivacyPolicyPage /></PageTransition>} />
+        <Route path="/terms"           element={<PageTransition className="min-h-dvh"><TermsConditionsPage /></PageTransition>} />
         <Route path="/animation-test"  element={<PageTransition className="min-h-dvh"><AnimationTestPage /></PageTransition>} />
         <Route path="/achievements-test" element={<PageTransition className="min-h-dvh"><AchievementsTestPage /></PageTransition>} />
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Meta } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLogin } from '../hooks/useAuth';
@@ -20,7 +20,7 @@ export function LoginForm() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { url } = await authApi.googleStart('signin' , `${import.meta.env.VITE_APP_BASE_URL}/google/callback` || 'http://localhost:5173/google/callback');
+      const { url } = await authApi.googleStart('signin', `${import.meta.env.VITE_APP_BASE_URL}/google/callback` || 'http://localhost:5173/google/callback');
       window.location.href = url;
     } catch (err) {
       toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-in is not available right now.');
@@ -28,9 +28,9 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {login.error && (
-        <div className="p-3 rounded-md bg-danger/10 border border-danger/20 text-sm text-danger">
+        <div className="p-2.5 rounded-md bg-danger/10 border border-danger/20 text-sm text-danger">
           {(login.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Login failed. Please try again.'}
         </div>
       )}
@@ -64,8 +64,8 @@ export function LoginForm() {
         autoComplete="current-password"
       />
 
-      <div className="flex justify-end">
-        <Link to="/forgot-password" className="text-sm text-accent hover:underline">
+      <div className="flex justify-end -mt-1">
+        <Link to="/forgot-password" className="text-xs text-accent hover:underline">
           Forgot password?
         </Link>
       </div>
@@ -74,7 +74,7 @@ export function LoginForm() {
         Sign In
       </Button>
 
-      <div className="relative py-1">
+      <div className="relative py-0.5">
         <div className="h-px bg-border" />
         <span className="absolute inset-x-0 -top-2 text-center text-[10px] font-bold uppercase tracking-wider text-text-muted">
           Or continue with
@@ -91,16 +91,25 @@ export function LoginForm() {
         Continue with Google
       </Button>
 
-      <p className="text-center text-xs text-text-muted leading-snug">
-        Google sign-in links the account automatically. Calendar sync stays separate in Settings.
-      </p>
-
-      <p className="text-center text-sm text-text-muted">
-        Don't have an account?{' '}
-        <Link to="/signup" className="text-accent hover:underline font-medium">
-          Sign up
-        </Link>
-      </p>
+      <div className="text-center space-y-1.5">
+        <p className="text-xs text-text-muted">
+          Don't have an account?{' '}
+          <Link to="/signup" className="text-accent hover:underline font-medium">
+            Sign up
+          </Link>
+        </p>
+        <p className="text-[10px] text-text-muted leading-relaxed">
+          By signing in, you agree to our{' '}
+          <Link to="/terms" className="text-accent hover:underline font-medium">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link to="/privacy" className="text-accent hover:underline font-medium">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      </div>
     </form>
   );
 }

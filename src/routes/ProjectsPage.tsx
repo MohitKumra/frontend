@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
@@ -47,6 +47,7 @@ const statusConfig = {
 
 export function ProjectsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -56,6 +57,7 @@ export function ProjectsPage() {
   const [sortBy, setSortBy] = useState<SortBy>('default');
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [highlightedProjectId, setHighlightedProjectId] = useState<string | null>(null);
 
   const { data: projectsData, isLoading } = useProjects();
   const deleteProject = useDeleteProject();
@@ -159,6 +161,51 @@ export function ProjectsPage() {
     }
     return sorted;
   }, [projects, filterStatus, searchQuery, sortBy]);
+
+  // Handle projectId from URL query parameter (for notification clicks).
+  // AUTO-SELECT a filter that will show the project, HIGHLIGHT the card, SCROLL to it.
+  // Never opens the create/edit modal from this URL-based trigger.
+  useEffect(() => {
+    const projectId = searchParams.get('projectId');
+    if (!projectId || !projects) return;
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    // 1. If a filter is applied that hides this project, reset to ALL so it's visible.
+    if (filterStatus !== 'ALL' && filterStatus !== project.status) {
+      setFilterStatus('ALL');
+    }
+    // 2. If search query hides it, clear search.
+    if (searchQuery.trim()) {
+      setSearchQuery('');
+    }
+
+    // 3. Highlight for a short beat (card gets accent ring)
+    setHighlightedProjectId(projectId);
+
+    // 4. Scroll into view, wrapped in rAF to allow state changes (filter/search reset) to re-render first
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`project-card-${projectId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+
+    // 5. Clear query param after navigation + drop highlight
+    const clearParamId = window.setTimeout(() => {
+      setSearchParams({}, { replace: true });
+    }, 350);
+    const clearHighlightId = window.setTimeout(() => {
+      setHighlightedProjectId((current) => (current === projectId ? null : current));
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(clearParamId);
+      window.clearTimeout(clearHighlightId);
+    };
+  }, [searchParams, projects, setSearchParams, filterStatus, searchQuery]);
 
   if (isLoading) {
     return <ProjectsSkeleton />;
@@ -360,6 +407,7 @@ export function ProjectsPage() {
                   <ProjectCard
                     project={project}
                     isFavorite={favorites.has(project.id)}
+                    isHighlighted={highlightedProjectId === project.id}
                     onToggleFavorite={() => toggleFavorite(project.id)}
                     menuOpen={projectMenuOpen === project.id}
                     onToggleMenu={() =>
@@ -396,6 +444,7 @@ export function ProjectsPage() {
 function ProjectCard({
   project,
   isFavorite,
+  isHighlighted,
   onToggleFavorite,
   menuOpen,
   onToggleMenu,
@@ -407,6 +456,7 @@ function ProjectCard({
 }: {
   project: ProjectDTO;
   isFavorite: boolean;
+  isHighlighted?: boolean;
   onToggleFavorite: () => void;
   menuOpen: boolean;
   onToggleMenu: () => void;
@@ -428,9 +478,21 @@ function ProjectCard({
 
   return (
     <Card
+      id={`project-card-${project.id}`}
       variant="default"
       className="relative overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
       onClick={onOpen}
+      style={
+        isHighlighted
+          ? {
+              boxShadow:
+                '0 0 0 3px var(--color-accent), 0 10px 40px -15px rgba(0,0,0,0.35)',
+              borderColor: 'var(--color-accent)',
+              transform: 'translateY(-3px) scale(1.01)',
+              transition: 'all 0.35s cubic-bezier(0.2, 0.9, 0.25, 1)',
+            }
+          : undefined
+      }
     >
       {/* Top progress strip */}
       <div className="h-1.5 w-full" style={{ background: 'var(--color-border-subtle)' }}>

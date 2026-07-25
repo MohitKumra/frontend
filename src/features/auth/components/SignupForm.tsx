@@ -12,10 +12,15 @@ export function SignupForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const signup = useSignup();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreeTerms) {
+      toast.error('Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
     signup.mutate({ email, password, name: name || undefined });
   };
 
@@ -29,9 +34,9 @@ export function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       {signup.error && (
-        <div className="p-3 rounded-md bg-danger/10 border border-danger/20 text-sm text-danger">
+        <div className="p-2.5 rounded-md bg-danger/10 border border-danger/20 text-sm text-danger">
           {(signup.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Signup failed. Please try again.'}
         </div>
       )}
@@ -77,11 +82,32 @@ export function SignupForm() {
         autoComplete="new-password"
       />
 
+      {/* Terms agreement checkbox */}
+      <label className="flex items-start gap-2.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={agreeTerms}
+          onChange={(e) => setAgreeTerms(e.target.checked)}
+          className="mt-0.5 w-4 h-4 rounded-md border-border text-accent focus:ring-2 focus:ring-accent/40 cursor-pointer accent-[var(--color-accent)]"
+        />
+        <span className="text-[11px] text-text-muted leading-snug">
+          I agree to the{' '}
+          <Link to="/terms" className="text-accent hover:underline font-medium">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link to="/privacy" className="text-accent hover:underline font-medium">
+            Privacy Policy
+          </Link>
+          .
+        </span>
+      </label>
+
       <Button type="submit" fullWidth loading={signup.isPending}>
         Create Account
       </Button>
 
-      <div className="relative py-1">
+      <div className="relative py-0.5">
         <div className="h-px bg-border" />
         <span className="absolute inset-x-0 -top-2 text-center text-[10px] font-bold uppercase tracking-wider text-text-muted">
           Or continue with
@@ -93,16 +119,18 @@ export function SignupForm() {
         variant="secondary"
         fullWidth
         leftIcon={<Globe size={15} />}
-        onClick={handleGoogleSignUp}
+        onClick={() => {
+          if (!agreeTerms) {
+            toast.error('Please accept the Terms and Privacy Policy first.');
+            return;
+          }
+          handleGoogleSignUp();
+        }}
       >
         Continue with Google
       </Button>
 
-      <p className="text-center text-xs text-text-muted leading-snug">
-        Google will link the account automatically. Calendar integration remains a separate step in Settings.
-      </p>
-
-      <p className="text-center text-sm text-text-muted">
+      <p className="text-center text-xs text-text-muted">
         Already have an account?{' '}
         <Link to="/login" className="text-accent hover:underline font-medium">
           Sign in

@@ -7,7 +7,7 @@ import { notificationsApi } from '../api';
 import type { InAppNotificationDTO } from '../../../types';
 
 const LAST_SEEN_KEY = 'activity-feed-last-seen';
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 15;
 
 /**
  * Get the last seen timestamp from localStorage
@@ -105,6 +105,17 @@ export function useActivityFeed() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Server-reported grand totals from page 0 meta (known immediately, never incremented page-by-page)
+  const serverTotals = useMemo(() => {
+    const firstPageMeta = data?.pages?.[0]?.meta;
+    if (!firstPageMeta) return { total: 0, totalActionable: 0, totalActivity: 0 };
+    return {
+      total: firstPageMeta.total ?? 0,
+      totalActionable: firstPageMeta.totalActionable ?? 0,
+      totalActivity: firstPageMeta.totalActivity ?? 0,
+    };
+  }, [data]);
+
   // Group notifications by actionable vs activity
   const groupedNotifications = useMemo(() => {
     const actionable: InAppNotificationDTO[] = [];
@@ -125,6 +136,11 @@ export function useActivityFeed() {
     // Data
     notifications,
     groupedNotifications,
+    
+    // Server-known totals (available immediately from page 1 response)
+    totalCount: serverTotals.total,
+    totalActionable: serverTotals.totalActionable,
+    totalActivity: serverTotals.totalActivity,
     
     // Pagination
     hasNextPage,
