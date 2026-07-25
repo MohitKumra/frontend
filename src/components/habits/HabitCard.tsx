@@ -87,11 +87,11 @@ function MiniHeatmapStrip({ completionDates, color, skipDays }: { completionDate
               title={`${c.dateStr} — Rest day`}
               className="absolute inset-0 rounded-full flex items-center justify-center"
               style={{
-                background: 'color-mix(in srgb, #8B5CF6 15%, transparent)',
+                background: 'color-mix(in srgb, #8B5CF6 35%, transparent)',
                 opacity: 0.7,
               }}
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 0.8 }}
               transition={{ delay: i * 0.05, duration: 0.3 }}
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
