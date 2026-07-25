@@ -8,6 +8,7 @@ import {
   Trophy,
   Zap,
   Star,
+  Moon,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -21,9 +22,7 @@ import { Button } from '../ui/Button';
 import { getAchievement, getCategory } from '../../features/habits/Habitpresentation';
 import type { HabitDTO } from '../../types';
 
-const RING_SIZE = 88; // fixed — the card lives in a narrow grid column, so we don't
-                        // switch sizes on viewport breakpoints (those don't reflect
-                        // the actual space this card has).
+const RING_SIZE = 88; 
 
 function MiniRing({ value, color, completed = false }: { value: number; color: string; completed?: boolean }) {
   const size = RING_SIZE;
@@ -55,7 +54,7 @@ function MiniRing({ value, color, completed = false }: { value: number; color: s
 }
 
 /** Micro heatmap — small, quiet, refined pips */
-function MiniHeatmapStrip({ completionDates, color }: { completionDates: string[]; color: string }) {
+function MiniHeatmapStrip({ completionDates, color, skipDays }: { completionDates: string[]; color: string; skipDays?: number[] }) {
   const cells = useMemo(() => {
     const completedSet = new Set(completionDates || []);
     const now = new Date();
@@ -64,9 +63,11 @@ function MiniHeatmapStrip({ completionDates, color }: { completionDates: string[
       const d = new Date(today);
       d.setUTCDate(d.getUTCDate() - (6 - i));
       const dateStr = d.toISOString().split('T')[0];
-      return { dateStr, done: completedSet.has(dateStr), isToday: i === 6 };
+      const dow = (d.getUTCDay() + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
+      const isSkip = skipDays ? skipDays.includes(dow) : false;
+      return { dateStr, done: completedSet.has(dateStr), isToday: i === 6, isSkip };
     });
-  }, [completionDates]);
+  }, [completionDates, skipDays]);
 
   return (
     <div className="flex items-center gap-2" role="img" aria-label="Last 7 days activity">
@@ -81,19 +82,37 @@ function MiniHeatmapStrip({ completionDates, color }: { completionDates: string[
               transition={{ delay: i * 0.05 + 0.1, duration: 0.3 }}
             />
           )}
-          <motion.div
-            title={c.dateStr}
-            className="absolute inset-0 rounded-full flex items-center justify-center"
-            style={{
-              background: c.done ? `color-mix(in srgb, ${color} 88%, transparent)` : 'var(--color-border)',
-              opacity: c.done ? 1 : 0.45,
-            }}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: c.done ? 1 : 0.45 }}
-            transition={{ delay: i * 0.05, duration: 0.3 }}
-          >
-            {c.done && <Check size={9} color="#fff" strokeWidth={3} />}
-          </motion.div>
+          {c.isSkip ? (
+            <motion.div
+              title={`${c.dateStr} — Rest day`}
+              className="absolute inset-0 rounded-full flex items-center justify-center"
+              style={{
+                background: 'color-mix(in srgb, #8B5CF6 15%, transparent)',
+                opacity: 0.7,
+              }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.5 }}
+              transition={{ delay: i * 0.05, duration: 0.3 }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </motion.div>
+          ) : (
+            <motion.div
+              title={c.dateStr}
+              className="absolute inset-0 rounded-full flex items-center justify-center"
+              style={{
+                background: c.done ? `color-mix(in srgb, ${color} 88%, transparent)` : 'var(--color-border)',
+                opacity: c.done ? 1 : 0.45,
+              }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: c.done ? 1 : 0.45 }}
+              transition={{ delay: i * 0.05, duration: 0.3 }}
+            >
+              {c.done && <Check size={9} color="#fff" strokeWidth={3} />}
+            </motion.div>
+          )}
         </div>
       ))}
     </div>
@@ -334,6 +353,14 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
 
   const xpValue = 50;
 
+  // Check if today is a skip day
+  const isSkipDay = useMemo(() => {
+    if (!habit.skipDays || habit.skipDays.length === 0) return false;
+    const today = new Date();
+    const dow = (today.getDay() + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
+    return habit.skipDays.includes(dow);
+  }, [habit.skipDays]);
+
   const handleToggle = () => {
     const wasCompleted = habit.completedToday;
     toggle.mutate(habit.id, {
@@ -533,7 +560,7 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
             <p className="text-[9px] font-medium text-text-muted uppercase tracking-wider mb-2">
               Last 7 Days
             </p>
-            <MiniHeatmapStrip completionDates={habit.completionDates || []} color={category.color} />
+            <MiniHeatmapStrip completionDates={habit.completionDates || []} color={category.color} skipDays={habit.skipDays} />
           </div>
 
           {/* Footer: Achievement + Complete button */}
@@ -553,39 +580,55 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
               )}
             </div>
 
-            {/* Mark Done / Completed — subtle, no gradients or heavy shadow */}
-            <motion.button
-              onClick={handleToggle}
-              disabled={toggle.isPending}
-              className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all tap-target flex items-center justify-center gap-2"
-              style={{
-                color: habit.completedToday ? 'var(--color-success, #16A34A)' : 'var(--color-text-primary)',
-                background: habit.completedToday
-                  ? 'color-mix(in srgb, var(--color-success, #22C55E) 10%, transparent)'
-                  : 'transparent',
-                border: habit.completedToday
-                  ? '1px solid color-mix(in srgb, var(--color-success, #22C55E) 30%, transparent)'
-                  : '1px solid var(--color-border)',
-              }}
-              whileHover={{ y: -1 }}
-              whileTap={{ scale: 0.985 }}
-              transition={{ duration: 0.2 }}
-            >
-              {habit.completedToday ? (
-                <>
-                  <Check size={14} strokeWidth={2.5} />
-                  Completed Today
-                </>
-              ) : (
-                <>
-                  <span
-                    className="w-3.5 h-3.5 rounded-full shrink-0"
-                    style={{ border: '1.5px solid var(--color-text-muted)' }}
-                  />
-                  Mark Done
-                </>
-              )}
-            </motion.button>
+            {/* Mark Done / Rest Day / Completed */}
+            {isSkipDay ? (
+              <motion.button
+                disabled
+                className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-default"
+                style={{
+                  color: 'var(--color-text-muted)',
+                  background: 'color-mix(in srgb, var(--color-text-muted) 6%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-text-muted) 15%, transparent)',
+                  opacity: 0.7,
+                }}
+              >
+                <Moon size={14} strokeWidth={1.5} />
+                Rest Day
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={handleToggle}
+                disabled={toggle.isPending}
+                className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all tap-target flex items-center justify-center gap-2"
+                style={{
+                  color: habit.completedToday ? 'var(--color-success, #16A34A)' : 'var(--color-text-primary)',
+                  background: habit.completedToday
+                    ? 'color-mix(in srgb, var(--color-success, #22C55E) 10%, transparent)'
+                    : 'transparent',
+                  border: habit.completedToday
+                    ? '1px solid color-mix(in srgb, var(--color-success, #22C55E) 30%, transparent)'
+                    : '1px solid var(--color-border)',
+                }}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.985 }}
+                transition={{ duration: 0.2 }}
+              >
+                {habit.completedToday ? (
+                  <>
+                    <Check size={14} strokeWidth={2.5} />
+                    Completed Today
+                  </>
+                ) : (
+                  <>
+                    <span
+                      className="w-3.5 h-3.5 rounded-full shrink-0"
+                      style={{ border: '1.5px solid var(--color-text-muted)' }}
+                    />
+                    Mark Done
+                  </>
+                )}
+              </motion.button>
+            )}
           </div>
         </Card>
       </motion.div>

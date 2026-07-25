@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, Circle, Flame, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Flame, Clock, Moon, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToggleHabit, useUpdateHabit, useDeleteHabit } from '../../features/habits/hooks/useHabits';
 import { Card } from '../ui/Card';
@@ -263,6 +263,14 @@ export function HabitCardCompact({ habit, isFocused }: { habit: HabitDTO; isFocu
     return Math.round((habit.completionsThisWeek / target) * 100);
   }, [habit.completionsThisWeek, habit.completionDates.length, habit.durationDays, habit.targetPerWeek, habit.skipDays]);
 
+  // Check if today is a skip day
+  const isSkipDay = useMemo(() => {
+    if (!habit.skipDays || habit.skipDays.length === 0) return false;
+    const today = new Date();
+    const dow = (today.getDay() + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
+    return habit.skipDays.includes(dow);
+  }, [habit.skipDays]);
+
   const handleToggle = () => {
     const wasCompleted = habit.completedToday;
     toggle.mutate(habit.id, {
@@ -318,19 +326,25 @@ export function HabitCardCompact({ habit, isFocused }: { habit: HabitDTO; isFocu
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 pl-1.5 pr-12">
-          {/* Checkbox */}
-          <button
-            onClick={handleToggle}
-            disabled={toggle.isPending}
-            className="shrink-0 transition-colors duration-150 tap-target"
-            aria-label={habit.completedToday ? 'Unmark today' : 'Mark done today'}
-          >
-            {habit.completedToday ? (
-              <CheckCircle2 size={26} style={{ color: 'var(--color-success)' }} fill="var(--color-success)" fillOpacity={0.16} />
-            ) : (
-              <Circle size={26} className="text-text-muted" />
-            )}
-          </button>
+          {/* Checkbox / Rest Day indicator */}
+          {isSkipDay ? (
+            <div className="shrink-0 flex items-center justify-center w-[26px] h-[26px] rounded-full" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' }}>
+              <Moon size={16} style={{ color: 'var(--color-text-muted)', opacity: 0.6 }} strokeWidth={1.5} />
+            </div>
+          ) : (
+            <button
+              onClick={handleToggle}
+              disabled={toggle.isPending}
+              className="shrink-0 transition-colors duration-150 tap-target"
+              aria-label={habit.completedToday ? 'Unmark today' : 'Mark done today'}
+            >
+              {habit.completedToday ? (
+                <CheckCircle2 size={26} style={{ color: 'var(--color-success)' }} fill="var(--color-success)" fillOpacity={0.16} />
+              ) : (
+                <Circle size={26} className="text-text-muted" />
+              )}
+            </button>
+          )}
 
           {/* Icon */}
           <div
