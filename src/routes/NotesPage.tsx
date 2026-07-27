@@ -25,6 +25,7 @@ import {
   RotateCcw,
   ArrowUpDown,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { useNotes, useDeleteNote, useUpdateNote, useTogglePin, useArchiveNote, useUnarchiveNote } from '../features/notes/hooks/useNotes';
 import { Card } from '../components/ui/Card';
@@ -911,35 +912,49 @@ export function NotesPage() {
               const menuKey = `featured-${entry.id}`;
 
               return (
-                <div className="np-featured">
-                  <div className="np-featured-header">
-                    <div className="flex items-center gap-2.5">
-                      <BookOpen size={16} style={{ color: 'var(--color-accent)' }} />
-                      <span className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>
-                        Journal Entry
-                      </span>
-                      {moodEmoji && <span className="text-base">{moodEmoji}</span>}
+                <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                  {/* Differentiating Section Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-accent">
+                      <Sparkles size={14} className="text-amber-500 fill-amber-500/20" />
+                      <span>Journal Spotlight</span>
                     </div>
-                    <div className="relative flex items-center gap-2">
-                      <button
-                        onClick={() => setFeaturedIndex((i) => (i + 1) % journalNotes.length)}
-                        className="np-featured-date-btn"
-                        disabled={journalNotes.length < 2}
-                      >
-                        <Calendar size={13} />
-                        {entry.createdAt ? formatFullDate(entry.createdAt) : 'Undated'}
-                        {journalNotes.length > 1 && <ChevronDown size={12} />}
-                      </button>
-                      <button
-                        onClick={() => setNoteMenuOpen(noteMenuOpen === menuKey ? null : menuKey)}
-                        className="np-card-action-btn"
-                        style={{ opacity: 1, position: 'static' }}
-                      >
-                        <MoreVertical size={15} />
-                      </button>
-                      {noteMenuOpen === menuKey && <EntryMenu note={entry} />}
-                    </div>
+                    <span className="text-[11px] font-bold text-text-muted">
+                      {featuredIndex + 1} of {journalNotes.length} reflections
+                    </span>
                   </div>
+
+                  <div className="np-featured">
+                    <div className="np-featured-header">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                          <BookOpen size={14} />
+                        </div>
+                        <span className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md">
+                          Featured Reflection
+                        </span>
+                        {moodEmoji && <span className="text-base">{moodEmoji}</span>}
+                      </div>
+                      <div className="relative flex items-center gap-2">
+                        <button
+                          onClick={() => setFeaturedIndex((i) => (i + 1) % journalNotes.length)}
+                          className="np-featured-date-btn"
+                          disabled={journalNotes.length < 2}
+                        >
+                          <Calendar size={13} />
+                          {entry.createdAt ? formatFullDate(entry.createdAt) : 'Undated'}
+                          {journalNotes.length > 1 && <ChevronDown size={12} />}
+                        </button>
+                        <button
+                          onClick={() => setNoteMenuOpen(noteMenuOpen === menuKey ? null : menuKey)}
+                          className="np-card-action-btn"
+                          style={{ opacity: 1, position: 'static' }}
+                        >
+                          <MoreVertical size={15} />
+                        </button>
+                        {noteMenuOpen === menuKey && <EntryMenu note={entry} />}
+                      </div>
+                    </div>
 
                   <div
                     className="np-featured-body cursor-pointer"
@@ -948,12 +963,12 @@ export function NotesPage() {
                       setViewingNote(entry);
                     }}
                   >
-                    <h3 className="text-xl sm:text-2xl font-black mb-3" style={{ color: 'var(--color-text-primary)' }}>
+                    <h3 className="relative z-10 text-xl sm:text-2xl font-black mb-3" style={{ color: 'var(--color-text-primary)' }}>
                       {entry.title && !entry.title.startsWith('Journal Entry —')
                         ? entry.title
                         : 'Daily Reflection'}
                     </h3>
-                    <p className="text-sm leading-relaxed max-w-xl" style={{ color: 'var(--color-text-secondary)' }}>
+                    <p className="relative z-10 text-sm leading-relaxed max-w-xl" style={{ color: 'var(--color-text-secondary)' }}>
                       {entry.content.length > 200
                         ? entry.content.slice(0, 200) + '…'
                         : entry.content}
@@ -961,7 +976,7 @@ export function NotesPage() {
 
                     {/* Tags */}
                     {entry.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
+                      <div className="relative z-10 flex flex-wrap gap-1.5 mt-3">
                         {entry.tags.map((tag) => (
                           <span key={tag} className="np-list-tag">{tag}</span>
                         ))}
@@ -1085,6 +1100,7 @@ export function NotesPage() {
                       </g>
                     </svg>
                   </div>
+                </div>
                 </div>
               );
             })()}

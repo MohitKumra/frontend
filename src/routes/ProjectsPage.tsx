@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   Paperclip,
   Mic,
+  Eye,
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
@@ -400,10 +401,10 @@ export function ProjectsPage() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 xl:grid-cols-2 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
             >
               {filteredProjects.map((project) => (
-                <motion.div key={project.id} variants={itemVariants}>
+                <motion.div key={project.id} variants={itemVariants} className="h-full">
                   <ProjectCard
                     project={project}
                     isFavorite={favorites.has(project.id)}
@@ -488,7 +489,7 @@ export function ProjectsPage() {
 }
 
 // ============================================================================
-// Project Card — detailed card with circular progress ring (GRID view)
+// Project Card — detailed vertical card with circular progress ring (GRID view)
 // ============================================================================
 function ProjectCard({
   project,
@@ -517,19 +518,20 @@ function ProjectCard({
 }) {
   const StatusIcon = statusConfig[project.status].icon;
   const daysRemaining = getDaysRemaining(project.dueDate);
-  const isOverdue = daysRemaining !== null && daysRemaining < 0 && project.status !== 'COMPLETED' && project.status !== 'CANCELLED';
+  const isOverdue =
+    daysRemaining !== null &&
+    daysRemaining < 0 &&
+    project.status !== 'COMPLETED' &&
+    project.status !== 'CANCELLED';
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 3;
 
-  // Circular progress ring math
-  const radius = 34;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(Math.max(project.progress, 0), 100) / 100) * circumference;
+  const color = project.color || 'var(--color-accent)';
 
   return (
     <Card
       id={`project-card-${project.id}`}
       variant="default"
-      className="relative overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
+      className="relative flex flex-col justify-between h-full overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer border rounded-2xl"
       onClick={onOpen}
       style={
         isHighlighted
@@ -537,159 +539,169 @@ function ProjectCard({
               boxShadow:
                 '0 0 0 3px var(--color-accent), 0 10px 40px -15px rgba(0,0,0,0.35)',
               borderColor: 'var(--color-accent)',
-              transform: 'translateY(-3px) scale(1.01)',
+              transform: 'translateY(-4px) scale(1.01)',
               transition: 'all 0.35s cubic-bezier(0.2, 0.9, 0.25, 1)',
             }
           : undefined
       }
     >
-      {/* Top progress strip */}
-      <div className="h-1.5 w-full" style={{ background: 'var(--color-border-subtle)' }}>
-        <motion.div
-          className="h-full rounded-r-full"
-          style={{ background: project.color || 'var(--color-accent)' }}
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.min(Math.max(project.progress, 0), 100)}%` }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-        />
-      </div>
-
-      {/* Menu */}
-      <div className="absolute right-3 top-4 z-10" onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={onToggleMenu}
-          className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg text-text-muted transition-colors"
-        >
-          <MoreVertical size={16} />
-        </button>
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.15 }}
-              className="absolute right-0 top-full mt-1 w-40 rounded-xl shadow-lg z-10 py-1"
-              style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-            >
-              <button
-                onClick={onEdit}
-                className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
-              >
-                <Edit2 size={12} />
-                Edit
-              </button>
-              <button
-                onClick={onDelete}
-                className="w-full px-3 py-2 text-left text-xs font-bold text-danger hover:bg-danger/10 transition-colors flex items-center gap-2"
-              >
-                <Trash2 size={12} />
-                Delete
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-5">
-        {/* Left: icon + info */}
-        <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: `color-mix(in srgb, ${project.color || '#6366f1'} 16%, transparent)`, color: project.color || 'var(--color-accent)' }}
-          >
-            <Folder size={24} />
-          </div>
-
-          <div className="flex-1 min-w-0 pr-6">
-            <h3 className="text-base sm:text-lg font-black text-text-primary truncate group-hover:text-accent transition-colors">
-              {project.name}
-            </h3>
-            <div className="mt-1.5">
-              <Badge variant={statusConfig[project.status].color} size="sm" className="inline-flex items-center gap-1">
-                <StatusIcon size={10} />
-                {statusConfig[project.status].label}
-              </Badge>
-            </div>
-            {project.description && (
-              <p className="text-xs sm:text-sm text-text-muted mt-2 line-clamp-2">{project.description}</p>
-            )}
-
-            {/* Footer info row */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
-              <div className="flex items-center gap-1.5 text-text-muted">
-                <TrendingUp size={13} />
-                <span className="text-xs font-bold">
-                  {project.completedTaskCount ?? 0}/{project.taskCount ?? 0} tasks
-                </span>
-              </div>
-
-              {project.attachmentUrl && (
-                <div className="flex items-center gap-1.5 text-text-muted">
-                  <Paperclip size={13} />
-                  <span className="text-xs font-bold">Attachment</span>
-                </div>
-              )}
-
-              {project.voiceNoteUrl && (
-                <div className="flex items-center gap-1.5 text-text-muted">
-                  <Mic size={13} />
-                  <span className="text-xs font-bold">Voice note</span>
-                </div>
-              )}
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFavorite();
-                }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
-                  isFavorite ? 'text-accent' : 'text-text-muted hover:text-text-primary'
-                }`}
-                style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-              >
-                <Star size={12} className={isFavorite ? 'fill-current' : ''} />
-                {isFavorite ? 'Favorited' : 'Favorite'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: progress ring + due date */}
-        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 sm:gap-2 shrink-0 sm:pl-2 sm:border-l" style={{ borderColor: 'var(--color-border-subtle)' }}>
-          <div className="relative w-20 h-20 shrink-0">
-            <svg viewBox="0 0 80 80" className="w-20 h-20 -rotate-90">
-              <circle cx="40" cy="40" r={radius} fill="none" stroke="var(--color-border-subtle)" strokeWidth="7" />
-              <motion.circle
-                cx="40"
-                cy="40"
-                r={radius}
-                fill="none"
-                stroke={project.color || 'var(--color-accent)'}
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                initial={{ strokeDashoffset: circumference }}
-                animate={{ strokeDashoffset: offset }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-base font-black text-text-primary">{project.progress}%</span>
-            </div>
-          </div>
-
-          {project.dueDate && (
+      <div className="p-5 flex flex-col flex-1 gap-4">
+        {/* Card Top Row: Icon + Badges + Actions */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className={`flex items-center gap-1.5 text-xs font-bold whitespace-nowrap ${
-                isOverdue ? 'text-danger' : isUrgent ? 'text-warning' : 'text-text-muted'
-              }`}
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+              style={{
+                background: `color-mix(in srgb, ${color} 16%, transparent)`,
+                color: color,
+              }}
             >
-              <Calendar size={13} />
-              <span>{formatDate(project.dueDate)}</span>
+              <Folder size={20} />
             </div>
-          )}
+            <Badge
+              variant={statusConfig[project.status].color}
+              size="sm"
+              className="inline-flex items-center gap-1 shrink-0"
+            >
+              <StatusIcon size={11} />
+              {statusConfig[project.status].label}
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={onToggleFavorite}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isFavorite
+                  ? 'text-amber-500 bg-amber-500/10'
+                  : 'text-text-muted hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
+              title={isFavorite ? 'Remove Favorite' : 'Mark Favorite'}
+            >
+              <Star size={16} className={isFavorite ? 'fill-amber-500' : ''} />
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={onToggleMenu}
+                className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg text-text-muted transition-colors"
+              >
+                <MoreVertical size={16} />
+              </button>
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-1 w-40 rounded-xl shadow-lg z-20 py-1"
+                    style={{
+                      background: 'var(--color-surface-raised)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpen();
+                      }}
+                      className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+                    >
+                      <Eye size={12} />
+                      View details
+                    </button>
+                    <button
+                      onClick={onEdit}
+                      className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+                    >
+                      <Edit2 size={12} />
+                      Edit
+                    </button>
+                    <button
+                      onClick={onDelete}
+                      className="w-full px-3 py-2 text-left text-xs font-bold text-danger hover:bg-danger/10 transition-colors flex items-center gap-2"
+                    >
+                      <Trash2 size={12} />
+                      Delete
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
+
+        {/* Title & Description */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-extrabold text-text-primary truncate group-hover:text-accent transition-colors">
+            {project.name}
+          </h3>
+          <p className="text-xs text-text-muted mt-1.5 line-clamp-2 leading-relaxed">
+            {project.description || 'No description provided.'}
+          </p>
+        </div>
+
+        {/* Media / Attachment Chips if any */}
+        {(project.attachmentUrl || project.voiceNoteUrl) && (
+          <div className="flex items-center gap-2">
+            {project.attachmentUrl && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold text-text-muted bg-neutral-100 dark:bg-neutral-800">
+                <Paperclip size={11} /> Attachment
+              </span>
+            )}
+            {project.voiceNoteUrl && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold text-text-muted bg-neutral-100 dark:bg-neutral-800">
+                <Mic size={11} /> Voice Note
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Centered Progress Bar Section */}
+        <div
+          className="flex flex-col gap-2 p-3.5 rounded-xl"
+          style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border-subtle)' }}
+        >
+          <div className="flex items-center justify-between text-xs font-bold">
+            <div className="flex items-center gap-1.5 text-text-primary">
+              <TrendingUp size={13} className="text-accent shrink-0" />
+              <span>
+                {project.completedTaskCount ?? 0}/{project.taskCount ?? 0} tasks
+              </span>
+            </div>
+            <span className="font-extrabold text-accent">{project.progress}%</span>
+          </div>
+
+          <div className="w-full h-2 rounded-full overflow-hidden bg-neutral-200/70 dark:bg-neutral-800">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: color }}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(Math.max(project.progress, 0), 100)}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Card Footer: Due Date */}
+      <div
+        className="px-5 py-3 border-t flex items-center justify-between text-xs font-bold text-text-muted"
+        style={{ borderColor: 'var(--color-border-subtle)', background: 'var(--color-surface-raised)' }}
+      >
+        <div className="flex items-center gap-1.5">
+          <Calendar size={13} className={isOverdue ? 'text-danger' : isUrgent ? 'text-warning' : 'text-text-muted'} />
+          <span className={isOverdue ? 'text-danger font-extrabold' : isUrgent ? 'text-warning font-extrabold' : ''}>
+            {formatDate(project.dueDate)}
+          </span>
+        </div>
+
+        {isOverdue && (
+          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-danger/10 text-danger">
+            Overdue
+          </span>
+        )}
       </div>
     </Card>
   );
@@ -839,6 +851,16 @@ function ProjectListRow({
               className="absolute right-0 top-full mt-1 w-40 rounded-xl shadow-lg z-10 py-1"
               style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
             >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen();
+                }}
+                className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+              >
+                <Eye size={12} />
+                View details
+              </button>
               <button
                 onClick={onEdit}
                 className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"

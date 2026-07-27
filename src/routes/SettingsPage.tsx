@@ -396,31 +396,6 @@ export function SettingsPage() {
         subtitle="Appearance, notifications, integrations, and account security"
         />
         </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <Card className="p-4 sm:p-5 lg:p-6" variant="default">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <div className="text-sm font-bold text-text-primary">Smart settings layout</div>
-            <p className="mt-1 text-xs text-text-muted leading-snug">
-              Appearance and notification changes apply instantly. Google Calendar stays separate from Google sign-in,
-              so you can link the account first and connect the calendar later.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-text-muted">
-            <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1" style={{ borderColor: 'var(--color-border)' }}>
-              <CheckCircle2 size={12} className="text-success" />
-              Auto-save where it fits
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1" style={{ borderColor: 'var(--color-border)' }}>
-              <CalendarClock size={12} className="text-accent" />
-              Calendar is separate
-            </span>
-          </div>
-        </div>
-          </Card>
-        </motion.div>
-
         <motion.div variants={itemVariants}>
           <div 
             className="overflow-x-auto -mx-4 sm:mx-0"
