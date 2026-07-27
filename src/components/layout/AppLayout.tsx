@@ -419,7 +419,7 @@ export function AppLayout() {
             </div>
 
             <div className="hidden md:block">
-              <span className="text-sm font-bold text-text-muted uppercase tracking-wider">Workspace</span>
+              <span className="text-sm font-bold text-text-muted uppercase tracking-wider">Finamite</span>
             </div>
           </div>
 

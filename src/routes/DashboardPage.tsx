@@ -240,7 +240,7 @@ export function DashboardPage() {
 
       {/* Background gradients */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] -z-10 opacity-60"
+        className="pointer-events-none absolute rounded-xl inset-x-0 top-0 h-[28rem] -z-10 opacity-60"
         style={{
           background:
             'radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 28%), radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--color-info) 8%, transparent), transparent 24%), linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 50%, transparent) 0%, transparent 100%)',
@@ -251,17 +251,13 @@ export function DashboardPage() {
       <motion.div variants={itemVariants} className="flex items-center gap-4 flex-wrap">
         <div className="flex flex-col gap-1.5 select-none min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-text-primary">
-            Good morning, {displayName} 👋
+            Good morning, {displayName} 
           </h1>
           <p className="text-sm font-medium text-text-muted">Let's make today productive</p>
         </div>
       </motion.div>
 
-      {/* Main content (left) + sidebar (right) — this split only covers
-          the top three rows (stats/weather, plan/insights, priority
-          tasks/projects), matching the reference: Weekly Progress and
-          Productivity Breakdown further down run the full page width
-          with no sidebar beside them. */}
+
       <motion.div variants={itemVariants} className="grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
         <div className="dash-cq flex flex-col gap-6 sm:gap-8 min-w-0">
           {/* Stats + Weather */}

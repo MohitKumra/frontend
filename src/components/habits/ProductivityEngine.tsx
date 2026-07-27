@@ -139,7 +139,7 @@ export function ProductivityEngine({
     { keywords: ['walk', 'nature', 'outdoor', 'fresh'], title: 'Evening Walk', time: '19:00', desc: 'Get fresh air and clear your mind.' },
   ];
 
-  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   // ── Habit gap analysis ──────────────────────────────────────────────
   const habitGaps = useMemo((): GapSuggestion[] => {
@@ -303,9 +303,9 @@ export function ProductivityEngine({
 
     // ── 8. Weekend balance ────────────────────────────────────────────
     const weekdayHabits = habits.filter((h) => {
-      // Check if habit is mostly done on weekdays via weekPattern
-      const weekdays = h.weekPattern.slice(1, 6); // Mon-Fri
-      const weekend = [h.weekPattern[0], h.weekPattern[6]]; // Sun, Sat
+      // Check if habit is mostly done on weekdays via weekPattern (0=Mon..6=Sun)
+      const weekdays = h.weekPattern.slice(0, 5); // Mon-Fri (indices 0-4)
+      const weekend = [h.weekPattern[5], h.weekPattern[6]]; // Sat, Sun (indices 5-6)
       const weekdayCompletions = weekdays.filter(Boolean).length;
       const weekendCompletions = weekend.filter(Boolean).length;
       return weekdayCompletions > 0 && weekendCompletions === 0;

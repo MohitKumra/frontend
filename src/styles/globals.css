@@ -222,7 +222,7 @@
     width: min(1465px, 100%);
     min-height: min(760px, calc(100dvh - 50px));
     display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(520px, 0.95fr);
+    grid-template-columns: minmax(0, 1.5fr) minmax(400px, 1fr);
     overflow: hidden;
     border-radius: 17px;
     background: var(--color-surface);
@@ -255,7 +255,7 @@
   }
 
   .auth-form-inner {
-    width: min(460px, calc(100% - 48px));
+    width: min(380px, calc(100% - 48px));
     min-height: auto;
   }
 

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Calendar, CheckCircle2, ChevronDown, FolderKanban, Plus, Timer } from 'lucide-react';
+import { ArrowLeft, Calendar, CheckCircle2, ChevronDown, FolderKanban, Paperclip, Mic, Square, Trash2, Loader2, Image as ImageIcon, ExternalLink, Plus, Timer } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -11,13 +11,57 @@ import { Button } from '../components/ui/Button';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
-import { MediaAttachmentsField } from '../components/media/MediaAttachmentsField';
+import { VoiceNotePlayer } from '../components/media/VoiceNotePlayer';
+import { uploadMediaFile } from '../lib/mediaUpload';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { useProject, useUpdateProject } from '../features/projects/hooks/useProjects';
 import { useDeleteNote } from '../features/notes/hooks/useNotes';
 import { notesApi } from '../features/notes/api';
 import apiClient from '../lib/apiClient';
-import type { ListResponse, NoteDTO, ProjectStatus, TaskDTO } from '../types';
+import type { ListResponse, MediaItemDTO, NoteDTO, ProjectStatus, TaskDTO } from '../types';
+
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif', '.svg'];
+
+function isImageUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    return IMAGE_EXTENSIONS.some((ext) => path.endsWith(ext));
+  } catch {
+    return false;
+  }
+}
+
+function shortName(url: string, max = 18): string {
+  try {
+    const segs = new URL(url).pathname.split('/').filter(Boolean);
+    const name = decodeURIComponent(segs[segs.length - 1] || 'file');
+    return name.length > max ? name.slice(0, max - 3) + '…' : name;
+  } catch {
+    return 'file';
+  }
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function MediaThumb({ url }: { url: string }) {
+  const isImage = isImageUrl(url);
+  if (isImage) {
+    return (
+      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border" style={{ borderColor: 'var(--color-border)' }}>
+        <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
+      <Paperclip size={16} />
+    </div>
+  );
+}
 
 export function ProjectDetailPage() {
   const { id = '' } = useParams();
@@ -28,6 +72,127 @@ export function ProjectDetailPage() {
   const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const deleteNote = useDeleteNote();
+
+  // Media upload state
+  const attachInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const recordingStartRef = useRef<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingElapsed, setRecordingElapsed] = useState(0);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const MAX_BYTES = 4 * 1024 * 1024;
+
+  // Live elapsed timer during recording
+  useEffect(() => {
+    if (!isRecording) {
+      setRecordingElapsed(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setRecordingElapsed(Math.floor((Date.now() - recordingStartRef.current) / 1000));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
+  const uploadFile = async (file: File, folder: 'attachments' | 'voice-notes' = 'attachments') => {
+    if (file.size > MAX_BYTES) {
+      if (folder === 'voice-notes') {
+        setVoiceError('Files must be 4MB or smaller.');
+      } else {
+        setAttachError('Files must be 4MB or smaller.');
+      }
+      return;
+    }
+    if (folder === 'voice-notes') {
+      setVoiceError(null);
+    } else {
+      setAttachError(null);
+    }
+    setIsUploading(true);
+    try {
+      const uploaded = await uploadMediaFile(file, folder);
+      // Add media via API
+      const type = folder === 'voice-notes' ? 'voice_note' : 'attachment';
+      await apiClient.post(`/projects/${id}/media`, {
+        url: uploaded.url,
+        type,
+        fileName: file.name,
+        mimeType: file.type,
+        size: file.size,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['projects', id] });
+    } catch {
+      if (folder === 'voice-notes') {
+        setVoiceError('Upload failed.');
+      } else {
+        setAttachError('Upload failed.');
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeMedia = async (mediaId: string) => {
+    try {
+      await apiClient.delete(`/projects/${id}/media/${mediaId}`);
+      await queryClient.invalidateQueries({ queryKey: ['projects', id] });
+    } catch {
+      setAttachError('Failed to remove media.');
+      setVoiceError('Failed to remove media.');
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setVoiceError('Mic not supported in this browser.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredMime =
+        ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
+      const recorder = preferredMime ? new MediaRecorder(stream, { mimeType: preferredMime }) : new MediaRecorder(stream);
+      chunksRef.current = [];
+      recordingStartRef.current = Date.now();
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        stream.getTracks().forEach((t) => t.stop());
+        let ext = '.webm';
+        if (mimeType.includes('mp4') || mimeType.includes('mpeg')) ext = '.m4a';
+        else if (mimeType.includes('ogg')) ext = '.ogg';
+        else if (mimeType.includes('mp3')) ext = '.mp3';
+        else if (mimeType.includes('wav')) ext = '.wav';
+        const file = new File([blob], `voice-note-${Date.now()}${ext}`, { type: blob.type });
+        setVoiceError(null);
+        await uploadFile(file, 'voice-notes');
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start(1000);
+      setIsRecording(true);
+    } catch (err: any) {
+      if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setVoiceError('No microphone detected. Please connect a microphone.');
+      } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setVoiceError('Microphone access denied. Please allow microphone permission.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        setVoiceError('Microphone is being used by another app.');
+      } else {
+        setVoiceError('Could not access microphone. Please try again.');
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
 
   const { data: project, isLoading } = useProject(id);
   const updateProject = useUpdateProject(id);
@@ -64,6 +229,20 @@ export function ProjectDetailPage() {
       </Card>
     );
   }
+
+  // Combine new ProjectMedia items with legacy attachmentUrl/voiceNoteUrl
+  const attachments = [
+    ...(project.attachments ?? []),
+    ...(project.attachmentUrl && !(project.attachments ?? []).some((m) => m.url === project.attachmentUrl)
+      ? [{ id: 'legacy-attachment', url: project.attachmentUrl, type: 'attachment' as const, fileName: null, mimeType: null, size: null, createdAt: '' }]
+      : []),
+  ];
+  const voiceNotes = [
+    ...(project.voiceNotes ?? []),
+    ...(project.voiceNoteUrl && !(project.voiceNotes ?? []).some((m) => m.url === project.voiceNoteUrl)
+      ? [{ id: 'legacy-voice', url: project.voiceNoteUrl, type: 'voice_note' as const, fileName: null, mimeType: null, size: null, createdAt: '' }]
+      : []),
+  ];
 
   return (
     <motion.div
@@ -138,16 +317,125 @@ export function ProjectDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border p-4 mt-5" style={{ borderColor: 'var(--color-border)' }}>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-2">Attachments & Voice Notes</p>
-            <MediaAttachmentsField
-              attachmentUrl={project.attachmentUrl ?? ''}
-              onAttachmentUrlChange={(url) => updateProject.mutate({ attachmentUrl: url })}
-              voiceNoteUrl={project.voiceNoteUrl ?? ''}
-              onVoiceNoteUrlChange={(url) => updateProject.mutate({ voiceNoteUrl: url })}
-              allowVoiceRecording
-            />
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* ──────────── Attachment Section ──────────── */}
+            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                  Attachments {attachments.length > 0 && <span className="text-accent">({attachments.length})</span>}
+                </p>
+              </div>
+              {attachments.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {attachments.map((media: MediaItemDTO) => (
+                    <div key={media.id} className="flex items-center gap-3 rounded-lg border p-2" style={{ borderColor: 'var(--color-border)' }}>
+                      <MediaThumb url={media.url} />
+                      <a
+                        href={media.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 min-w-0 text-xs font-semibold truncate hover:underline"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {media.fileName || shortName(media.url)}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(media.id)}
+                        className="text-danger hover:underline shrink-0"
+                        title="Remove"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  ref={attachInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.currentTarget.value = '';
+                    if (file) void uploadFile(file, 'attachments');
+                  }}
+                />
+                {isUploading ? (
+                  <Loader2 size={16} className="animate-spin" style={{ color: 'var(--color-text-muted)' }} />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => attachInputRef.current?.click()}
+                    disabled={isRecording}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:border-accent"
+                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                  >
+                    <Plus size={12} />
+                    Add
+                  </button>
+                )}
+                {attachError && <span className="text-xs font-bold text-danger">{attachError}</span>}
+              </div>
+            </div>
+
+            {/* ──────────── Voice Note Section ──────────── */}
+            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                  Voice Notes {voiceNotes.length > 0 && <span className="text-accent">({voiceNotes.length})</span>}
+                </p>
+              </div>
+              {voiceNotes.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {voiceNotes.map((media: MediaItemDTO) => (
+                    <div key={media.id} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <VoiceNotePlayer src={media.url} compact onDelete={() => removeMedia(media.id)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                {isRecording ? (
+                  <div className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold" style={{ color: '#e53935', background: 'rgba(229, 57, 53, 0.08)', border: '1px solid rgba(229, 57, 53, 0.25)' }}>
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#e53935', animation: 'recording-pulse 1.2s ease-in-out infinite' }} />
+                    <span>REC {formatDuration(recordingElapsed)}</span>
+                    <button type="button" onClick={stopRecording} className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-red-100 transition-colors" title="Stop recording">
+                      <Square size={10} fill="#e53935" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {isUploading ? (
+                      <Loader2 size={16} className="animate-spin" style={{ color: 'var(--color-text-muted)' }} />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={startRecording}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors hover:border-accent"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                      >
+                        <Mic size={12} />
+                        Record
+                      </button>
+                    )}
+                  </>
+                )}
+                {voiceError && <span className="text-xs font-bold text-danger">{voiceError}</span>}
+              </div>
+            </div>
           </div>
+
+          {/* Recording pulse animation keyframes */}
+          <style>{`
+            @keyframes recording-pulse {
+              0%, 100% { opacity: 1; transform: scale(1); }
+              50% { opacity: 0.5; transform: scale(0.7); }
+            }
+          `}</style>
         </Card>
       </motion.div>
 
