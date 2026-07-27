@@ -5,6 +5,8 @@ interface HabitHeatmapProps {
   /** Date -> ratio 0..1 of habits completed on that day */
   dayFrequency: Map<string, number>;
   color?: string;
+  /** Dates where ALL habits are on rest/skip day */
+  restDays?: Set<string>;
 }
 
 const CELL_MIN = 8; // minimum cell size when squeezed
@@ -39,7 +41,7 @@ const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
  * CELL_MAX), and shrink down to CELL_MIN only when space is tight — so the
  * grid reads clearly whether it sits in a narrow sidebar or a wide card.
  */
-export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)' }: HabitHeatmapProps) {
+export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', restDays }: HabitHeatmapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState(CELL_DEFAULT);
 
@@ -203,6 +205,7 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)' }: Ha
         >
           {cells.map((cell) => {
             const opacity = intensityOpacity(cell.intensity);
+            const isRestDay = restDays?.has(cell.dateStr);
 
             if (!cell.inMonth) {
               return (
@@ -219,25 +222,37 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)' }: Ha
             return (
               <div
                 key={cell.dateStr}
-                title={cellTooltip(cell.dateStr, cell.intensity)}
-                className="rounded-[5px] transition-all duration-150 hover:scale-[1.15] hover:z-10 relative"
+                title={isRestDay ? `${cell.dateStr} — Rest day` : cellTooltip(cell.dateStr, cell.intensity)}
+                className="rounded-[5px] transition-all duration-150 hover:scale-[1.15] hover:z-10 relative flex items-center justify-center"
                 style={{
                   gridColumn: cell.dayIdx + 1,
                   gridRow: cell.weekIdx + 1,
-                  background: cell.done
-                    ? `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
-                    : 'color-mix(in srgb, var(--color-text-muted) 14%, transparent)',
-                  border: cell.done
-                    ? 'none'
-                    : '1px solid color-mix(in srgb, var(--color-text-muted) 22%, transparent)',
+                  background: isRestDay
+                    ? 'color-mix(in srgb, #8B5CF6 30%, transparent)'
+                    : cell.done
+                      ? `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
+                      : 'color-mix(in srgb, var(--color-text-muted) 14%, transparent)',
+                  border: isRestDay
+                    ? '1px solid color-mix(in srgb, #8B5CF6 25%, transparent)'
+                    : cell.done
+                      ? 'none'
+                      : '1px solid color-mix(in srgb, var(--color-text-muted) 22%, transparent)',
                   opacity: cell.isFuture ? 0.35 : 1,
                   outline: cell.isToday ? `2px solid ${color}` : 'none',
                   outlineOffset: '1.5px',
                   boxShadow: cell.done
                     ? `0 1px 3px color-mix(in srgb, ${color} 35%, transparent)`
-                    : 'none',
+                    : isRestDay
+                      ? '0 1px 3px color-mix(in srgb, #8B5CF6 25%, transparent)'
+                      : 'none',
                 }}
-              />
+              >
+                {isRestDay && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                )}
+              </div>
             );
           })}
         </div>

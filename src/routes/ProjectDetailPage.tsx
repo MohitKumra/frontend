@@ -3,19 +3,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Calendar, CheckCircle2, FolderKanban, Plus, Timer } from 'lucide-react';
+import { ArrowLeft, Calendar, CheckCircle2, ChevronDown, FolderKanban, Plus, Timer } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
+import { NoteViewModal } from '../components/notes/NoteViewModal';
 import { MediaPreview } from '../components/media/MediaPreview';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
-import { useProject } from '../features/projects/hooks/useProjects';
+import { useProject, useUpdateProject } from '../features/projects/hooks/useProjects';
+import { useDeleteNote } from '../features/notes/hooks/useNotes';
 import { notesApi } from '../features/notes/api';
 import apiClient from '../lib/apiClient';
-import type { ListResponse, NoteDTO, TaskDTO } from '../types';
+import type { ListResponse, NoteDTO, ProjectStatus, TaskDTO } from '../types';
 
 export function ProjectDetailPage() {
   const { id = '' } = useParams();
@@ -23,8 +25,12 @@ export function ProjectDetailPage() {
   const queryClient = useQueryClient();
   const [noteOpen, setNoteOpen] = useState<null | 'note' | 'journal'>(null);
   const [taskOpen, setTaskOpen] = useState(false);
+  const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
+  const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
+  const deleteNote = useDeleteNote();
 
   const { data: project, isLoading } = useProject(id);
+  const updateProject = useUpdateProject(id);
   const { data: linkedNotes } = useQuery({
     queryKey: ['notes', { projectId: id }],
     queryFn: () => notesApi.list({ projectId: id }),
@@ -91,7 +97,30 @@ export function ProjectDetailPage() {
             <div className="min-w-0 flex-1">
               <PageHeader icon={<FolderKanban size={24} />} title={project.name} subtitle={project.description ?? 'Project detail'} />
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <Badge variant="accent" size="sm">{project.status}</Badge>
+                <div className="relative">
+                  <select
+                    value={project.status}
+                    onChange={(e) => updateProject.mutate({ status: e.target.value as ProjectStatus })}
+                    className="text-xs font-bold px-2.5 py-1 pr-6 rounded-full border appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent"
+                    style={{
+                      background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+                      color: 'var(--color-accent)',
+                      borderColor: 'color-mix(in srgb, var(--color-accent) 30%, transparent)',
+                    }}
+                    disabled={updateProject.isPending}
+                  >
+                    <option value="PLANNING">Planning</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="ON_HOLD">On Hold</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: 'var(--color-accent)' }}
+                  />
+                </div>
                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)', color: 'var(--color-info)' }}>
                   <Calendar size={12} />
                   {project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No deadline'}
@@ -177,13 +206,19 @@ export function ProjectDetailPage() {
           </div>
           <div className="space-y-2">
             {linkedNotes?.data?.map((note: NoteDTO) => (
-              <div key={note.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
+              <button
+                key={note.id}
+                type="button"
+                onClick={() => setViewingNote(note)}
+                className="w-full text-left rounded-xl border p-3 transition-colors hover:bg-surface-secondary"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-text-primary truncate">{note.title ?? 'Untitled'}</p>
                   <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">{note.isJournal ? 'Journal' : 'Note'}</Badge>
                 </div>
                 <p className="text-xs text-text-secondary line-clamp-3 mt-2">{note.content}</p>
-              </div>
+              </button>
             ))}
             {(linkedNotes?.data?.length ?? 0) === 0 && <p className="text-sm text-text-muted">No linked notes yet</p>}
           </div>
@@ -211,6 +246,39 @@ export function ProjectDetailPage() {
           defaultIsJournal={noteOpen === 'journal'}
           projectId={project.id}
           onClose={() => setNoteOpen(null)}
+        />
+      )}
+      {viewingNote && (
+        <NoteViewModal
+          isOpen
+          note={viewingNote}
+          onClose={() => {
+            setViewingNote(null);
+            queryClient.invalidateQueries({ queryKey: ['notes', { projectId: id }] });
+          }}
+          onEdit={() => {
+            setEditingNote(viewingNote);
+            setViewingNote(null);
+          }}
+          onDelete={() => {
+            deleteNote.mutate(viewingNote.id, {
+              onSuccess: () => {
+                setViewingNote(null);
+                queryClient.invalidateQueries({ queryKey: ['notes', { projectId: id }] });
+              },
+            });
+          }}
+        />
+      )}
+      {editingNote && (
+        <EntryFormModal
+          isOpen
+          mode="edit"
+          note={editingNote}
+          onClose={() => {
+            setEditingNote(null);
+            queryClient.invalidateQueries({ queryKey: ['notes', { projectId: id }] });
+          }}
         />
       )}
       <CreateTaskModal

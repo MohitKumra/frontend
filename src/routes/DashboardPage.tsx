@@ -1,28 +1,20 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
-  ArrowRight,
-  Calendar,
   CheckSquare,
   FolderKanban,
   Timer,
   TrendingUp,
-  Plus,
-  Play,
-  Briefcase,
-  ChevronDown,
   Sparkles,
   MapPin,
   ChevronRight,
   Flame,
   FileText,
-  Settings,
 } from 'lucide-react';
 import { LoadingScreen } from '../components/ui/Spinner';
-import { Card } from '../components/ui/Card';
 import apiClient from '../lib/apiClient';
 import { useEnhancedDashboard, useActivityFeed } from '../features/dashboard/hooks/useDashboard';
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
@@ -46,21 +38,9 @@ function toUtcDateKey(value: string | Date): string {
   return new Date(value).toISOString().split('T')[0];
 }
 
-// Simple, honest XP-progress stand-in: every 500 points is a "level bar"
-// filling up. There's no real next-level-threshold field on the
-// gamification payload yet — swap this for a real field (e.g.
-// dashboard.gamification.pointsToNextLevel) once the backend exposes one.
+
 const XP_PER_LEVEL_BAR = 500;
 
-/**
- * Container-query based responsive grids — see prior notes: Tailwind's
- * md:/lg: prefixes respond to the browser viewport, not to the actual
- * rendered width of an element's own box. This page has a two-column
- * region (main content + sidebar) for its top rows, so grids inside that
- * region need to reflow based on the *column's* width, not the viewport,
- * or they crush/truncate as soon as the sidebar appears. `@container`
- * queries fix that at the root instead of guessing viewport breakpoints.
- */
 const DASHBOARD_RESPONSIVE_CSS = `
   .dash-cq { container-type: inline-size; container-name: dash; }
 
@@ -196,10 +176,36 @@ export function DashboardPage() {
   const habitCompletion = habitTotal > 0 ? Math.round((habitCompletedToday / habitTotal) * 100) : 0;
   const plannerScore = projectStats.totalProjects > 0 ? Math.round((projectStats.completedProjectsCount / projectStats.totalProjects) * 100) : 0;
 
-  // Static Sparkline Data for mock styling/depth
-  const sparklineTasks = [30, 45, 35, 60, 50, 70, 66];
-  const sparklineFocus = [45, 60, 90, 80, 110, 120, 135];
-  const sparklineScore = [55, 62, 58, 67, 72, 70, 72];
+  // Compute real sparkline data from weekly progress
+  const sparklineFocus = weeklyProgress.length > 0
+    ? weeklyProgress.slice(-7).map(w => Math.max(w.focusMinutes, 5))
+    : [45, 60, 90, 80, 110, 120, 135];
+
+  // Score trend uses tasks + habits combined as a proxy
+  const sparklineScore = weeklyProgress.length > 0
+    ? weeklyProgress.slice(-7).map(w => {
+        const taskVal = Math.min(w.tasksCompleted * 12, 50);
+        const habitVal = Math.min(w.habitsCompleted * 8, 40);
+        return Math.max(taskVal + habitVal + 10, 20);
+      })
+    : [55, 62, 58, 67, 72, 70, 72];
+
+  // Compute real "vs yesterday" using focus session data
+  const yesterdayKey = toUtcDateKey(new Date(Date.now() - 86400000));
+  const yesterdayFocusMinutes = completedFocusSessions
+    .filter((session) => toUtcDateKey(session.startedAt) === yesterdayKey)
+    .reduce((sum, session) => sum + session.durationMin, 0);
+  const focusDiff = todayFocusMinutes - yesterdayFocusMinutes;
+  const focusDiffStr = focusDiff >= 0 ? `+${focusDiff}m` : `${focusDiff}m`;
+  const focusDiffColor = focusDiff >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+
+  // Compute real "+X% this week" for productivity score
+  const thisWeekScore = weeklyProgress.length > 0 ? (weeklyProgress[weeklyProgress.length - 1]?.tasksCompleted ?? 0) : 0;
+  const lastWeekScore = weeklyProgress.length > 1 ? (weeklyProgress[weeklyProgress.length - 2]?.tasksCompleted ?? 0) : 0;
+  const scorePctChange = lastWeekScore > 0
+    ? Math.round(((thisWeekScore - lastWeekScore) / lastWeekScore) * 100)
+    : thisWeekScore > 0 ? 100 : 0;
+  const scoreChangeStr = scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`;
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -337,8 +343,8 @@ export function DashboardPage() {
                   <span className="text-3xl font-black text-text-primary leading-none block">
                     {Math.floor(todayFocusMinutes / 60)}h {todayFocusMinutes % 60}m
                   </span>
-                  <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-success)' }}>
-                    +20m <span className="text-text-muted font-normal">vs yesterday</span>
+                  <p className="text-xs font-bold mt-1" style={{ color: focusDiffColor }}>
+                    {focusDiffStr} <span className="text-text-muted font-normal">vs yesterday</span>
                   </p>
                 </div>
 
@@ -403,8 +409,8 @@ export function DashboardPage() {
                   <span className="text-3xl font-black text-text-primary leading-none block">
                     {dashboard.productivityScore ?? 72}
                   </span>
-                  <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-success)' }}>
-                    +12% <span className="text-text-muted font-normal">this week</span>
+                  <p className="text-xs font-bold mt-1" style={{ color: scorePctChange >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                    {scoreChangeStr} <span className="text-text-muted font-normal">this week</span>
                   </p>
                 </div>
 

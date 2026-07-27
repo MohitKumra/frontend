@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Globe } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLogin } from '../hooks/useAuth';
 import { authApi } from '../api';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -28,83 +26,116 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
       {login.error && (
-        <div className="p-2.5 rounded-md bg-danger/10 border border-danger/20 text-sm text-danger">
+        <div
+          className="rounded-[10px] border p-2.5 text-[13px] font-semibold"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+            background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+            color: 'var(--color-danger)',
+          }}
+        >
           {(login.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Login failed. Please try again.'}
         </div>
       )}
 
-      <Input
-        id="login-email"
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        leftIcon={<Mail size={16} />}
-        required
-        autoComplete="email"
-      />
+      <div className="auth-field">
+        <Mail size={19} className="auth-field-icon" />
+        <input
+          id="login-email"
+          aria-label="Email"
+          className="auth-input"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+        />
+      </div>
 
-      <Input
-        id="login-password"
-        label="Password"
-        type={showPass ? 'text' : 'password'}
-        placeholder="********"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        leftIcon={<Lock size={16} />}
-        rightIcon={
-          <button type="button" onClick={() => setShowPass((v) => !v)} className="tap-target flex items-center" tabIndex={-1}>
-            {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        }
-        required
-        autoComplete="current-password"
-      />
+      <div className="auth-field">
+        <Lock size={19} className="auth-field-icon" />
+        <input
+          id="login-password"
+          aria-label="Password"
+          className="auth-input"
+          type={showPass ? 'text' : 'password'}
+          placeholder="Enter your password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPass((v) => !v)}
+          className="auth-field-action"
+          aria-label={showPass ? 'Hide password' : 'Show password'}
+        >
+          {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
 
-      <div className="flex justify-end -mt-1">
-        <Link to="/forgot-password" className="text-xs text-accent hover:underline">
+      <div className="-mt-1 flex justify-end">
+        <Link
+          to="/forgot-password"
+          className="text-[12px] font-bold transition-opacity hover:opacity-80"
+          style={{ color: 'var(--color-accent)' }}
+        >
           Forgot password?
         </Link>
       </div>
 
-      <Button type="submit" fullWidth loading={login.isPending}>
-        Sign In
-      </Button>
+      <button type="submit" className="auth-primary-button flex w-full items-center justify-center" disabled={login.isPending}>
+        {login.isPending ? (
+          <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+        ) : (
+          <>
+            Sign In
+            <ArrowRight size={20} className="absolute right-6" />
+          </>
+        )}
+      </button>
 
-      <div className="relative py-0.5">
-        <div className="h-px bg-border" />
-        <span className="absolute inset-x-0 -top-2 text-center text-[10px] font-bold uppercase tracking-wider text-text-muted">
-          Or continue with
-        </span>
-      </div>
+      <div className="auth-divider my-1">Or continue with</div>
 
-      <Button
+      <button
         type="button"
-        variant="secondary"
-        fullWidth
-        leftIcon={<Globe size={15} />}
+        className="auth-secondary-button flex w-full items-center justify-center gap-3"
         onClick={handleGoogleSignIn}
       >
+        <span className="text-[19px] font-black" style={{ color: '#4285f4' }}>G</span>
         Continue with Google
-      </Button>
+      </button>
 
-      <div className="text-center space-y-1.5">
-        <p className="text-xs text-text-muted">
+      <div className="text-center">
+        <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
           Don't have an account?{' '}
-          <Link to="/signup" className="text-accent hover:underline font-medium">
+          <Link
+            to="/signup"
+            className="font-bold transition-opacity hover:opacity-80"
+            style={{ color: 'var(--color-accent)' }}
+          >
             Sign up
           </Link>
         </p>
-        <p className="text-[10px] text-text-muted leading-relaxed">
+        <p className="mt-2 text-[10px] font-medium leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           By signing in, you agree to our{' '}
-          <Link to="/terms" className="text-accent hover:underline font-medium">
+          <Link
+            to="/terms"
+            className="font-bold transition-opacity hover:opacity-80"
+            style={{ color: 'var(--color-accent)' }}
+          >
             Terms
           </Link>{' '}
           and{' '}
-          <Link to="/privacy" className="text-accent hover:underline font-medium">
+          <Link
+            to="/privacy"
+            className="font-bold transition-opacity hover:opacity-80"
+            style={{ color: 'var(--color-accent)' }}
+          >
             Privacy Policy
           </Link>
           .

@@ -8,8 +8,7 @@ import { useOnboarding } from './features/onboarding/hooks/useOnboarding';
 import { hasCompletedOnboarding } from './features/onboarding/utils/storage';
 
 // Auth pages (public)
-import { LoginPage }          from './routes/LoginPage';
-import { SignupPage }         from './routes/SignupPage';
+import { AuthPage }           from './routes/AuthPage';
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
 import { ResetPasswordPage }  from './routes/ResetPasswordPage';
 import { GoogleAuthCallbackPage } from './routes/GoogleAuthCallbackPage';
@@ -76,8 +75,8 @@ export default function App() {
 
       <Routes>
         {/* Public routes */}
-        <Route path="/login"           element={<PageTransition className="min-h-dvh"><LoginPage /></PageTransition>} />
-        <Route path="/signup"          element={<PageTransition className="min-h-dvh"><SignupPage /></PageTransition>} />
+        <Route path="/login"           element={<AuthPage />} />
+        <Route path="/signup"          element={<AuthPage />} />
         <Route path="/forgot-password" element={<PageTransition className="min-h-dvh"><ForgotPasswordPage /></PageTransition>} />
         <Route path="/reset-password"  element={<PageTransition className="min-h-dvh"><ResetPasswordPage /></PageTransition>} />
         <Route path="/google/callback" element={<PageTransition className="min-h-dvh"><GoogleAuthCallbackPage /></PageTransition>} />

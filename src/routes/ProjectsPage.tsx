@@ -395,12 +395,12 @@ export function ProjectsPage() {
                 showCtaHint={false}
               />
             </Card>
-          ) : (
+          ) : viewMode === 'grid' ? (
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className={viewMode === 'grid' ? 'grid grid-cols-1 xl:grid-cols-2 gap-4' : 'flex flex-col gap-4'}
+              className="grid grid-cols-1 xl:grid-cols-2 gap-4"
             >
               {filteredProjects.map((project) => (
                 <motion.div key={project.id} variants={itemVariants}>
@@ -408,6 +408,55 @@ export function ProjectsPage() {
                     project={project}
                     isFavorite={favorites.has(project.id)}
                     isHighlighted={highlightedProjectId === project.id}
+                    onToggleFavorite={() => toggleFavorite(project.id)}
+                    menuOpen={projectMenuOpen === project.id}
+                    onToggleMenu={() =>
+                      setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)
+                    }
+                    onEdit={() => {
+                      setEditingProject(project);
+                      setProjectMenuOpen(null);
+                    }}
+                    onDelete={() => handleDeleteProject(project.id)}
+                    onOpen={() => navigate(`/projects/${project.id}`)}
+                    formatDate={formatDate}
+                    getDaysRemaining={getDaysRemaining}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col rounded-2xl overflow-hidden"
+              style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
+            >
+              {/* List header row (desktop only) */}
+              <div
+                className="hidden sm:grid items-center gap-4 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-text-muted"
+                style={{
+                  gridTemplateColumns: 'minmax(0,1fr) 110px 130px 90px 110px 40px',
+                  background: 'var(--color-surface-raised)',
+                  borderBottom: '1px solid var(--color-border)',
+                }}
+              >
+                <span>Project</span>
+                <span>Status</span>
+                <span>Progress</span>
+                <span>Tasks</span>
+                <span>Due date</span>
+                <span />
+              </div>
+
+              {filteredProjects.map((project, idx) => (
+                <motion.div key={project.id} variants={itemVariants}>
+                  <ProjectListRow
+                    project={project}
+                    isFavorite={favorites.has(project.id)}
+                    isHighlighted={highlightedProjectId === project.id}
+                    isLast={idx === filteredProjects.length - 1}
                     onToggleFavorite={() => toggleFavorite(project.id)}
                     menuOpen={projectMenuOpen === project.id}
                     onToggleMenu={() =>
@@ -439,7 +488,7 @@ export function ProjectsPage() {
 }
 
 // ============================================================================
-// Project Card — detailed card with circular progress ring
+// Project Card — detailed card with circular progress ring (GRID view)
 // ============================================================================
 function ProjectCard({
   project,
@@ -643,6 +692,172 @@ function ProjectCard({
         </div>
       </div>
     </Card>
+  );
+}
+
+// ============================================================================
+// Project List Row — dense, scannable table-style row (LIST view)
+// ============================================================================
+function ProjectListRow({
+  project,
+  isFavorite,
+  isHighlighted,
+  isLast,
+  onToggleFavorite,
+  menuOpen,
+  onToggleMenu,
+  onEdit,
+  onDelete,
+  onOpen,
+  formatDate,
+  getDaysRemaining,
+}: {
+  project: ProjectDTO;
+  isFavorite: boolean;
+  isHighlighted?: boolean;
+  isLast: boolean;
+  onToggleFavorite: () => void;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onOpen: () => void;
+  formatDate: (d: string | null) => string;
+  getDaysRemaining: (d: string | null) => number | null;
+}) {
+  const StatusIcon = statusConfig[project.status].icon;
+  const daysRemaining = getDaysRemaining(project.dueDate);
+  const isOverdue = daysRemaining !== null && daysRemaining < 0 && project.status !== 'COMPLETED' && project.status !== 'CANCELLED';
+  const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 3;
+  const progress = Math.min(Math.max(project.progress, 0), 100);
+
+  return (
+    <div
+      id={`project-card-${project.id}`}
+      onClick={onOpen}
+      className="relative grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_110px_130px_90px_110px_40px] items-center gap-x-4 gap-y-2 px-5 py-3.5 cursor-pointer group transition-colors hover:bg-[var(--color-surface-raised)]"
+      style={{
+        borderBottom: isLast ? 'none' : '1px solid var(--color-border-subtle)',
+        ...(isHighlighted
+          ? {
+              boxShadow: 'inset 3px 0 0 var(--color-accent)',
+              background: 'var(--color-surface-raised)',
+              transition: 'all 0.35s cubic-bezier(0.2, 0.9, 0.25, 1)',
+            }
+          : undefined),
+      }}
+    >
+      {/* Project name + icon + favorite */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: `color-mix(in srgb, ${project.color || '#6366f1'} 16%, transparent)`, color: project.color || 'var(--color-accent)' }}
+        >
+          <Folder size={16} />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className="text-sm font-black text-text-primary truncate group-hover:text-accent transition-colors">
+              {project.name}
+            </h3>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite();
+              }}
+              className={`shrink-0 ${isFavorite ? 'text-accent' : 'text-text-muted/50 hover:text-text-muted'}`}
+              aria-label={isFavorite ? 'Unfavorite' : 'Favorite'}
+            >
+              <Star size={12} className={isFavorite ? 'fill-current' : ''} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2.5 mt-0.5">
+            {project.description && (
+              <p className="text-xs text-text-muted truncate max-w-[280px]">{project.description}</p>
+            )}
+            {project.attachmentUrl && <Paperclip size={11} className="text-text-muted shrink-0" />}
+            {project.voiceNoteUrl && <Mic size={11} className="text-text-muted shrink-0" />}
+          </div>
+        </div>
+      </div>
+
+      {/* Status */}
+      <div>
+        <Badge variant={statusConfig[project.status].color} size="sm" className="inline-flex items-center gap-1">
+          <StatusIcon size={10} />
+          {statusConfig[project.status].label}
+        </Badge>
+      </div>
+
+      {/* Progress bar */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: project.color || 'var(--color-accent)' }}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        </div>
+        <span className="text-[11px] font-black text-text-primary w-8 text-right shrink-0">{progress}%</span>
+      </div>
+
+      {/* Tasks */}
+      <div className="flex items-center gap-1.5 text-text-muted">
+        <TrendingUp size={12} />
+        <span className="text-xs font-bold">
+          {project.completedTaskCount ?? 0}/{project.taskCount ?? 0}
+        </span>
+      </div>
+
+      {/* Due date */}
+      <div
+        className={`flex items-center gap-1.5 text-xs font-bold whitespace-nowrap ${
+          isOverdue ? 'text-danger' : isUrgent ? 'text-warning' : 'text-text-muted'
+        }`}
+      >
+        <Calendar size={12} />
+        <span>{project.dueDate ? formatDate(project.dueDate) : '—'}</span>
+      </div>
+
+      {/* Menu */}
+      <div className="absolute right-3 top-3 sm:static sm:justify-self-end" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={onToggleMenu}
+          className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg text-text-muted transition-colors"
+        >
+          <MoreVertical size={16} />
+        </button>
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-full mt-1 w-40 rounded-xl shadow-lg z-10 py-1"
+              style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
+            >
+              <button
+                onClick={onEdit}
+                className="w-full px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-2"
+              >
+                <Edit2 size={12} />
+                Edit
+              </button>
+              <button
+                onClick={onDelete}
+                className="w-full px-3 py-2 text-left text-xs font-bold text-danger hover:bg-danger/10 transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={12} />
+                Delete
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
 

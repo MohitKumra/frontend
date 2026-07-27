@@ -270,6 +270,7 @@ export interface HabitDTO {
   weekPattern: boolean[];
   completionDates: string[];
   streakSafeDays: string[];
+  totalXp: number;
 }
 
 export interface HabitsListResponse {
@@ -284,6 +285,7 @@ export interface HabitStreakBreakDTO {
   habitId: string;
   title: string;
   previousStreak: number;
+  xpLost: number;
 }
 
 // ─── Week Overview ────────────────────────────────────────────────────────────

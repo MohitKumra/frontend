@@ -21,12 +21,14 @@ interface HabitHeatmapCombinedProps {
  * past days' completion rates.
  */
 export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCombinedProps) {
-  const { dayFrequency, consistencyPct, streakDays } = useMemo(() => {
+  const { dayFrequency, consistencyPct, streakDays, restDays } = useMemo(() => {
     const frequency = new Map<string, number>(); // date -> ratio 0–1
+    const restSet = new Set<string>(); // dates where ALL habits are on skip/rest
 
+    // Map day-of-week indices (Mon=0..Sun=6) for each habit
     const habitMeta = habits.map((h) => ({
       completionSet: new Set(h.completionDates ?? []),
-      safeSet: new Set(h.streakSafeDays ?? []),
+      skipDaySet: new Set(h.skipDays ?? []), // 0=Mon..6=Sun
       createdDate: h.createdAt ? h.createdAt.split('T')[0] : null,
     }));
 
@@ -44,12 +46,17 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
     allDates.add(todayStr);
 
     // Add a bit of history so the current week/month never looks sparse
-    // even before any real completions have been recorded.
     for (let i = 1; i <= 60; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       allDates.add(d.toISOString().split('T')[0]);
     }
+
+    // Helper: get day-of-week (Mon=0..Sun=6) from a YYYY-MM-DD string
+    const getDow = (dateStr: string): number => {
+      const d = new Date(`${dateStr}T00:00:00.000Z`);
+      return (d.getUTCDay() + 6) % 7;
+    };
 
     let sumCompleted = 0;
     let sumTotal = 0;
@@ -57,15 +64,29 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
     for (const dateStr of allDates) {
       let completed = 0;
       let total = 0;
+      let hadAnyHabit = false;
+      let allSkipped = true;
 
       for (let i = 0; i < habits.length; i++) {
         const meta = habitMeta[i];
         if (meta.createdDate && meta.createdDate <= dateStr) {
+          hadAnyHabit = true;
+          const dow = getDow(dateStr);
+          // If this habit skips this day-of-week, don't count it in total
+          if (meta.skipDaySet.has(dow)) {
+            continue;
+          }
           total++;
-          if (meta.completionSet.has(dateStr) || meta.safeSet.has(dateStr)) {
+          allSkipped = false;
+          if (meta.completionSet.has(dateStr)) {
             completed++;
           }
         }
+      }
+
+      // Only mark as rest day if at least one habit existed on this date
+      if (hadAnyHabit && allSkipped) {
+        restSet.add(dateStr);
       }
 
       frequency.set(dateStr, total > 0 ? completed / total : 0);
@@ -81,7 +102,7 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
     const consistencyPct = sumTotal > 0 ? Math.round((sumCompleted / sumTotal) * 100) : 0;
     const streakDays = habits.length > 0 ? Math.max(...habits.map((h) => h.currentStreak), 0) : 0;
 
-    return { dayFrequency: frequency, consistencyPct, streakDays };
+    return { dayFrequency: frequency, consistencyPct, streakDays, restDays: restSet };
   }, [habits]);
 
   const encouragement =
@@ -90,17 +111,6 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
       : consistencyPct >= 40
       ? { title: 'Keep it going!', body: 'Every completion moves your streak forward.' }
       : { title: 'Let\u2019s build momentum', body: 'Small, consistent steps add up fast.' };
-
-  // Collect all safe/skipped dates for the tooltip in the heatmap
-  const allSafeDates = useMemo(() => {
-    const safe = new Set<string>();
-    for (const h of habits) {
-      if (h.streakSafeDays) {
-        for (const d of h.streakSafeDays) safe.add(d);
-      }
-    }
-    return safe;
-  }, [habits]);
 
   return (
     <Card
@@ -190,7 +200,7 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
         className="flex-1 flex items-center justify-center overflow-x-auto py-0.5"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        <HabitHeatmap dayFrequency={dayFrequency} color="var(--color-accent)" />
+        <HabitHeatmap dayFrequency={dayFrequency} color="var(--color-accent)" restDays={restDays} />
       </div>
 
       {/* Legend — gradient strip with a swatch on each end for clearer contrast */}

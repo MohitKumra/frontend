@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarCheck2, BarChart3 } from 'lucide-react';
 import { Card } from '../ui/Card';
-import { habitsApi } from '../../features/habits/api';
-import type { WeekDayDTO } from '../../types';
+import type { HabitDTO, WeekDayDTO } from '../../types';
 
 interface WeekOverviewProps {
+  habits: HabitDTO[];
   onViewDetails?: () => void;
 }
 
@@ -14,13 +14,7 @@ const DANGER = 'var(--color-danger, #EF4444)';
 const SUCCESS = '#10B981';
 
 /** Ring with an optional two-tone remainder (used for "today", so the
- *  unfinished portion of the day reads as an active prompt, not a dead track).
- *  Built with a conic-gradient + masked center — far more reliable for a
- *  two-color ring than hand-rotated SVG arcs.
- *
- *  Sized with clamp(...cqw...) instead of a fixed pixel value, so the ring
- *  shrinks together with the rest of the card as its container narrows,
- *  instead of forcing the row to overflow. */
+ *  unfinished portion of the day reads as an active prompt, not a dead track). */
 function DayRing({
   score,
   isFuture,
@@ -52,7 +46,6 @@ function DayRing({
         className="absolute inset-0 rounded-full"
         style={{ background: gradient, opacity: isFuture ? 0.4 : 1 }}
       />
-      {/* Mask out the center to turn the filled disc into a ring */}
       <div
         className="absolute rounded-full"
         style={{
@@ -75,11 +68,10 @@ function DayRing({
   );
 }
 
-/** Small ascending trend bars beneath each day — decorative confirmation of activity level */
+/** Small ascending trend bars beneath each day */
 function TrendBars({ score, isFuture, isToday }: { score: number; isFuture: boolean; isToday: boolean }) {
   const active = !isFuture && score > 0;
   const color = isToday ? ACCENT : SUCCESS;
-  // Four bars with a gentle ascending profile, scaled a little by the day's score
   const heights = [0.35, 0.55, 0.75, 1].map((h) => h * (0.55 + (Math.min(score, 100) / 100) * 0.45));
 
   return (
@@ -100,24 +92,71 @@ function TrendBars({ score, isFuture, isToday }: { score: number; isFuture: bool
   );
 }
 
-export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const [dayScores, setDayScores] = useState<WeekDayDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+function toDateStr(d: Date): string {
+  return d.toISOString().split('T')[0];
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    habitsApi.weekOverview().then((data) => {
-      if (!cancelled) {
-        setDayScores(data.days);
-        setLoading(false);
-      }
-    }).catch(() => {
-      if (!cancelled) setLoading(false);
+function utcToday(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+function getDayOfWeek(dateStr: string): number {
+  const d = new Date(`${dateStr}T00:00:00.000Z`);
+  return (d.getUTCDay() + 6) % 7;
+}
+
+function parseSkipDays(raw: number[]): number[] {
+  return raw || [];
+}
+
+function utcMondayOfThisWeek(): Date {
+  const today = utcToday();
+  const dow = today.getUTCDay();
+  const offset = (dow + 6) % 7;
+  const monday = new Date(today);
+  monday.setUTCDate(monday.getUTCDate() - offset);
+  return monday;
+}
+
+export function WeekOverview({ habits, onViewDetails }: WeekOverviewProps) {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const dayScores: WeekDayDTO[] = useMemo(() => {
+    const monday = utcMondayOfThisWeek();
+    const today = utcToday();
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setUTCDate(monday.getUTCDate() + i);
+      const dateStr = toDateStr(d);
+
+      const eligibleHabits = habits.filter((h) => {
+        const createdDate = h.createdAt ? h.createdAt.split('T')[0] : null;
+        return createdDate && createdDate <= dateStr;
+      });
+
+      const completed = eligibleHabits.filter((h) => {
+        const skipDayIndices = parseSkipDays(h.skipDays);
+        const dow = getDayOfWeek(dateStr);
+        // Skip days count as automatically completed
+        if (skipDayIndices.includes(dow)) return true;
+        return (h.completionDates || []).some((c) => c === dateStr);
+      }).length;
+
+      const total = eligibleHabits.length;
+      const score = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      return {
+        date: dateStr,
+        score,
+        completed,
+        total,
+        isFuture: d > today,
+        isToday: toDateStr(d) === toDateStr(today),
+      };
     });
-    return () => { cancelled = true; };
-  }, []);
+  }, [habits]);
 
   const getStatusLabel = (d: WeekDayDTO) => {
     if (d.isFuture) return 'Upcoming';
@@ -136,15 +175,7 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
 
   const completedThisWeek = dayScores.reduce((sum, day) => sum + (day.isFuture ? 0 : day.completed), 0);
   const totalThisWeek = dayScores.reduce((sum, day) => sum + (day.isFuture ? 0 : day.total), 0);
-  const averageScore =
-    dayScores.filter((day) => !day.isFuture).length > 0
-      ? Math.round(
-          dayScores
-            .filter((day) => !day.isFuture)
-            .reduce((sum, day) => sum + day.score, 0) /
-            dayScores.filter((day) => !day.isFuture).length
-        )
-      : 0;
+  const averageScore = totalThisWeek > 0 ? Math.round((completedThisWeek / totalThisWeek) * 100) : 0;
 
   return (
     <Card
@@ -191,98 +222,70 @@ export function WeekOverview({ onViewDetails }: WeekOverviewProps) {
       <div className="mt-4 grid grid-cols-3 gap-2">
         <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Average</p>
-          <p className="mt-1 text-lg font-black text-text-primary">{loading ? '--' : `${averageScore}%`}</p>
+          <p className="mt-1 text-lg font-black text-text-primary">{averageScore}%</p>
         </div>
         <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Done</p>
-          <p className="mt-1 text-lg font-black text-text-primary">{loading ? '--' : completedThisWeek}</p>
+          <p className="mt-1 text-lg font-black text-text-primary">{completedThisWeek}</p>
         </div>
         <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
           <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total</p>
-          <p className="mt-1 text-lg font-black text-text-primary">{loading ? '--' : totalThisWeek}</p>
+          <p className="mt-1 text-lg font-black text-text-primary">{totalThisWeek}</p>
         </div>
       </div>
 
-      {/*
-        Days row — scales down as a whole instead of overflowing.
-        No fixed min-width, no horizontal scroll: every size below (ring,
-        gaps, padding, min-height, font) is a clamp() driven by the card's
-        own inline-size (cqw), so all 7 days always stay visible and just
-        get smaller together on narrower containers.
-      */}
       <div
         className="mt-4 grid grid-cols-7"
         style={{ gap: 'clamp(3px, 1.2cqw, 8px)' }}
       >
-        {loading ? (
-          Array.from({ length: 7 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col items-center gap-2 rounded-2xl border"
-              style={{
-                minHeight: 'clamp(92px, 30cqw, 128px)',
-                padding: 'clamp(4px, 1.6cqw, 10px) clamp(2px, 1cqw, 8px)',
-                borderColor: 'var(--color-border)',
-                background: 'var(--color-surface)',
-              }}
-            >
-              <p className="font-extrabold uppercase tracking-wider" style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: 'var(--color-text-muted)' }}>
-                {days[idx]}
-              </p>
-              <div className="rounded-full" style={{ width: 'clamp(34px, 11cqw, 56px)', height: 'clamp(34px, 11cqw, 56px)', background: 'var(--color-border)' }} />
-            </div>
-          ))
-        ) : (
-          dayScores.map((d, idx) => {
-            const isToday = d.isToday;
-            const label = getStatusLabel(d);
-            const labelColor = getStatusColor(d);
+        {dayScores.map((d, idx) => {
+          const isToday = d.isToday;
+          const label = getStatusLabel(d);
+          const labelColor = getStatusColor(d);
 
-            return (
-              <div key={days[idx]} className="relative flex justify-center min-w-0">
-                {/* Highlight panel behind today's column */}
-                {isToday && (
-                  <motion.div
-                    layoutId="week-today-highlight"
-                    className="absolute -inset-y-2 -inset-x-0.5 rounded-2xl -z-[1]"
-                    style={{ background: 'color-mix(in srgb, ' + ACCENT + ' 6%, transparent)' }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
+          return (
+            <div key={days[idx]} className="relative flex justify-center min-w-0">
+              {isToday && (
+                <motion.div
+                  layoutId="week-today-highlight"
+                  className="absolute -inset-y-2 -inset-x-0.5 rounded-2xl -z-[1]"
+                  style={{ background: 'color-mix(in srgb, ' + ACCENT + ' 6%, transparent)' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              )}
 
-                <div
-                  className="flex w-full flex-col items-center gap-1.5 rounded-2xl border min-w-0"
-                  style={{
-                    minHeight: 'clamp(92px, 30cqw, 128px)',
-                    padding: 'clamp(4px, 1.6cqw, 10px) clamp(2px, 1cqw, 8px)',
-                    borderColor: isToday ? 'color-mix(in srgb, var(--color-accent) 34%, var(--color-border))' : 'var(--color-border)',
-                    background: isToday ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))' : 'var(--color-surface)',
-                  }}
+              <div
+                className="flex w-full flex-col items-center gap-1.5 rounded-2xl border min-w-0"
+                style={{
+                  minHeight: 'clamp(92px, 30cqw, 128px)',
+                  padding: 'clamp(4px, 1.6cqw, 10px) clamp(2px, 1cqw, 8px)',
+                  borderColor: isToday ? 'color-mix(in srgb, var(--color-accent) 34%, var(--color-border))' : 'var(--color-border)',
+                  background: isToday ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))' : 'var(--color-surface)',
+                }}
+              >
+                <p
+                  className="font-extrabold uppercase tracking-wider"
+                  style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: isToday ? ACCENT : 'var(--color-text-muted)' }}
                 >
-                  <p
-                    className="font-extrabold uppercase tracking-wider"
-                    style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: isToday ? ACCENT : 'var(--color-text-muted)' }}
-                  >
-                    {days[idx]}
-                  </p>
+                  {days[idx]}
+                </p>
 
-                  <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} />
+                <DayRing score={d.score} isFuture={d.isFuture} isToday={isToday} />
 
-                  <p
-                    className="font-bold text-center line-clamp-1 w-full"
-                    style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: labelColor }}
-                  >
-                    {label}
-                  </p>
+                <p
+                  className="font-bold text-center line-clamp-1 w-full"
+                  style={{ fontSize: 'clamp(8px, 2.4cqw, 10px)', color: labelColor }}
+                >
+                  {label}
+                </p>
 
-                  <TrendBars score={d.score} isFuture={d.isFuture} isToday={isToday} />
-                </div>
+                <TrendBars score={d.score} isFuture={d.isFuture} isToday={isToday} />
               </div>
-            );
-          })
-        )}
+            </div>
+          );
+        })}
       </div>
     </Card>
   );

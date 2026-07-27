@@ -217,7 +217,7 @@ export function HabitsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_320px] items-stretch gap-4 sm:gap-6">
-              <WeekOverview />
+                  <WeekOverview habits={habits} />
               {longestStreakHabit && (
                 <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
               )}
@@ -263,7 +263,7 @@ export function HabitsPage() {
                   transition={{ delay: 0.2, duration: 0.6 }}
                   className="grid min-w-0 grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
                 >
-                  <WeekOverview />
+                  <WeekOverview habits={habits} />
                   {longestStreakHabit && (
                     <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
                   )}

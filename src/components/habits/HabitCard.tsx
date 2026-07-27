@@ -351,8 +351,6 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
     return Math.round((habit.completionsThisWeek / target) * 100);
   }, [habit.completionsThisWeek, habit.completionDates.length, habit.durationDays, habit.targetPerWeek, habit.skipDays]);
 
-  const xpValue = 50;
-
   // Check if today is a skip day
   const isSkipDay = useMemo(() => {
     if (!habit.skipDays || habit.skipDays.length === 0) return false;
@@ -533,13 +531,15 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-muted text-[10px] font-medium shrink-0">Duration</span>
-                <span className="font-medium text-text-primary text-[11px] truncate">{habit.targetPerWeek * 5} min</span>
+                <span className="font-medium text-text-primary text-[11px] truncate">
+                  {habit.durationDays ? `${habit.completionDates.length}/${habit.durationDays}d` : 'Forever'}
+                </span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-muted flex items-center gap-1 text-[10px] font-medium shrink-0">
                   <Zap size={10} strokeWidth={2} /> XP
                 </span>
-                <span className="font-medium text-[11px] truncate text-text-primary">{xpValue}</span>
+                <span className="font-medium text-[11px] truncate text-text-primary">{habit.totalXp}</span>
               </div>
             </div>
           </div>
