@@ -127,17 +127,6 @@ function LockedCard({ achievement }: { achievement: AchievementWithStatusDTO }) 
           </p>
         </div>
 
-        {/* Status line — explicit, always reads "not yet earned" */}
-        <div
-          className="relative flex items-center gap-1 px-2 py-0.5 rounded-full"
-          style={{ background: `${tierColor}12` }}
-        >
-          <Lock size={8} style={{ color: tierColor, opacity: 0.7 }} />
-          <span className="text-[9px] font-bold tracking-wide" style={{ color: tierColor, opacity: 0.75 }}>
-            {hasProgress ? `${achievement.progressCurrent} / ${achievement.progressTarget}` : 'Locked'}
-          </span>
-        </div>
-
         {/* XP reward — visible but clearly secondary to the lock state */}
         <div className="relative">
           <span

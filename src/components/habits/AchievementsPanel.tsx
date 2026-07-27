@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Sparkles, Lock, ChevronUp } from 'lucide-react';
+import { Trophy, Sparkles, ChevronUp } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { useAchievements } from '../../features/dashboard/hooks/useDashboard';
 import { getAchievementIcon, tierColors, tierGradients } from '../achievements/SVGTrophies';
@@ -119,29 +119,6 @@ export function AchievementsPanel() {
                     />
                   )}
 
-                  {/* Full-card lock overlay for locked achievements */}
-                  {isLocked && (
-                    <div
-                      className="absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none z-10"
-                      style={{
-                        background: `linear-gradient(135deg, ${tierColor}08 0%, ${tierColor}18 50%, ${tierColor}08 100%)`,
-                        backdropFilter: 'blur(1px)',
-                      }}
-                    >
-                      <div
-                        className="flex items-center justify-center rounded-full"
-                        style={{
-                          width: 32,
-                          height: 32,
-                          background: `${tierColor}25`,
-                          backdropFilter: 'blur(4px)',
-                        }}
-                      >
-                        <Lock size={18} className="text-text-muted" style={{ opacity: 0.85 }} />
-                      </div>
-                    </div>
-                  )}
-
                   {/* Icon container */}
                   <div className="relative">
                     <motion.div
@@ -221,14 +198,6 @@ export function AchievementsPanel() {
                             animate={{ x: ['-120%', '140%'] }}
                             transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 2.4, ease: 'easeInOut', delay: idx * 0.3 }}
                           />
-
-                          {/* Lock overlay — semi-transparent backdrop */}
-                          <div
-                            className="absolute inset-0 flex items-center justify-center rounded-xl"
-                            style={{ background: `${tierColor}20` }}
-                          >
-                            <Lock size={18} className="text-text-muted" style={{ opacity: 0.7 }} />
-                          </div>
                         </>
                       )}
                     </motion.div>
@@ -246,26 +215,22 @@ export function AchievementsPanel() {
                       >
                         <Sparkles size={8} className="text-white" fill="white" />
                       </motion.div>
-                    ) : (
-                      /* Badge — live percentage while in progress, lock while untouched */
+                    ) : hasProgress ? (
+                      /* Badge — live percentage while in progress */
                       <div
                         className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2"
                         style={{
-                          width: hasProgress ? 20 : 18,
-                          height: hasProgress ? 20 : 18,
+                          width: 20,
+                          height: 20,
                           background: 'var(--color-surface-raised)',
                           borderColor: tierColor,
                         }}
                       >
-                        {hasProgress ? (
-                          <span className="text-[7px] font-black leading-none" style={{ color: tierColor }}>
-                            {Math.round(achievement.progress)}
-                          </span>
-                        ) : (
-                          <Lock size={9} style={{ color: tierColor }} />
-                        )}
+                        <span className="text-[7px] font-black leading-none" style={{ color: tierColor }}>
+                          {Math.round(achievement.progress)}
+                        </span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Label */}
