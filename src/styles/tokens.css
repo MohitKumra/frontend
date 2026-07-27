@@ -351,6 +351,52 @@ html.theme-sweeping *::after,
   animation-play-state: paused !important;
 }
 
+/* ---------- View Transition directional sweep ---------- */
+/* Disable default crossfade on old/new snapshots */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Light → Dark: new (dark) layer sweeps in from top-right corner */
+html[data-theme-target="dark"]::view-transition-old(root) {
+  z-index: 1;
+}
+html[data-theme-target="dark"]::view-transition-new(root) {
+  z-index: 9999;
+  animation: sweep-from-top-right 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Dark → Light: new (light) layer sweeps in from bottom-left corner */
+html[data-theme-target="light"]::view-transition-old(root) {
+  z-index: 1;
+}
+html[data-theme-target="light"]::view-transition-new(root) {
+  z-index: 9999;
+  animation: sweep-from-bottom-left 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Circle expands from top-right corner */
+@keyframes sweep-from-top-right {
+  from {
+    clip-path: circle(0% at 100% 0%);
+  }
+  to {
+    clip-path: circle(150% at 100% 0%);
+  }
+}
+
+/* Circle expands from bottom-left corner */
+@keyframes sweep-from-bottom-left {
+  from {
+    clip-path: circle(0% at 0% 100%);
+  }
+  to {
+    clip-path: circle(150% at 0% 100%);
+  }
+}
+
 /* ====== UTILITY CLASSES ====== */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

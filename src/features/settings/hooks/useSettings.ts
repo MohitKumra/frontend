@@ -32,17 +32,23 @@ export function useUpdateAppearance() {
     onSuccess: async (data) => {
       await setTheme(
         data.themePreference === 'SYSTEM' ? 'system' : data.themePreference === 'DARK' ? 'dark' : 'light',
-        { animate: true },
+        {
+          animate: true,
+          onMutate: () => {
+            // These run INSIDE the view transition callback so the old
+            // snapshot captures the previous state, not the new one.
+            if (data.layoutPreference) {
+              setLayoutPreference(data.layoutPreference);
+            }
+            if (data.calendarView) {
+              setCalendarViewPreference(data.calendarView);
+            }
+            if (data.taskView) {
+              setTaskViewPreference(data.taskView as TaskViewPreference);
+            }
+          },
+        },
       );
-      if (data.layoutPreference) {
-        setLayoutPreference(data.layoutPreference);
-      }
-      if (data.calendarView) {
-        setCalendarViewPreference(data.calendarView);
-      }
-      if (data.taskView) {
-        setTaskViewPreference(data.taskView as TaskViewPreference);
-      }
       qc.invalidateQueries({ queryKey: SETTINGS_KEY });
       toast.success('Appearance updated');
     },

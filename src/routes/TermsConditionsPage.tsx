@@ -95,7 +95,7 @@ Finamite is a productivity tool, not professional advice. If you need financial,
     icon: Scale,
     content: `To the extent allowed by law, Finamite isn't liable for indirect or unforeseeable damages — like lost profits or lost data — that might result from using the app.
 
-If something does go wrong and we are found liable, our total responsibility is capped at whatever you've paid us in the past 12 months, or $50, whichever is greater. This limit doesn't apply where local law says it can't.`
+If something does go wrong and we are found liable, our total responsibility is capped at whatever you've paid us in the past 12 months. This limit doesn't apply where local law says it can't.`
   },
   {
     id: 'indemnification',

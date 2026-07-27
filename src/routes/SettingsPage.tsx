@@ -308,8 +308,21 @@ export function SettingsPage() {
 
   const applyAppearance = (next: Partial<typeof appearance>) => {
     const merged = { ...appearance, ...next };
-    setAppearance(merged);
-    appearanceMutation.mutate(merged);
+    const isThemeChanging = next.themePreference && next.themePreference !== appearance.themePreference;
+    if (!isThemeChanging) {
+      // Non-theme changes update local state immediately for snappy feedback.
+      setAppearance(merged);
+    }
+    // The mutation's onSuccess/onMutate will apply all state updates
+    // inside the view transition callback when a theme change is involved.
+    appearanceMutation.mutate(merged, {
+      onSuccess: () => {
+        // Sync local state after the transition is done
+        if (isThemeChanging) {
+          setAppearance(merged);
+        }
+      },
+    });
   };
 
   const saveNotifications = (next: typeof notifications) => {
@@ -536,200 +549,366 @@ export function SettingsPage() {
             </Card>
           </div>
 
-            <Card className="p-4 sm:p-5 lg:p-6" variant="default">
+            <Card className="p-4 sm:p-5 lg:p-6" variant="default" style={{ overflow: 'hidden' }}>
               <SectionHeader
                 icon={<Cloud size={20} />}
                 title="Workspace preview"
-                subtitle="A realistic preview of how the current theme and layout density look."
+                subtitle="See how your theme and density choices come to life."
               />
 
               <div
-                className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl overflow-hidden border"
+                className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl overflow-hidden border relative"
                 style={{
                   borderColor: 'var(--color-border)',
-                  background: 'var(--color-bg)',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)',
+                  background: appearance.themePreference === 'DARK'
+                    ? 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+                    : 'linear-gradient(145deg, #f0f4ff 0%, #e8eeff 40%, #dde6ff 100%)',
+                  minHeight: appearance.layoutPreference === 'COMPACT' ? '280px' : appearance.layoutPreference === 'EXPANDED' ? '340px' : '310px',
                 }}
               >
-                {/* ── Mini app preview ─────────────────────────────────── */}
-                <div className="flex" style={{ minHeight: appearance.layoutPreference === 'COMPACT' ? '200px' : appearance.layoutPreference === 'EXPANDED' ? '260px' : '230px' }}>
-                  {/* Mini sidebar */}
-                  <div
-                    className="flex flex-col shrink-0 border-r"
-                    style={{
-                      width: appearance.layoutPreference === 'COMPACT' ? '56px' : appearance.layoutPreference === 'EXPANDED' ? '72px' : '64px',
-                      background: 'var(--sidebar-bg)',
-                      borderColor: 'var(--sidebar-border)',
-                    }}
-                  >
-                    {/* Logo */}
-                    <div
-                      className="flex items-center justify-center border-b"
-                      style={{
-                        height: appearance.layoutPreference === 'COMPACT' ? '32px' : appearance.layoutPreference === 'EXPANDED' ? '44px' : '38px',
-                        borderColor: 'var(--sidebar-border)',
-                      }}
-                    >
-                      <div
-                        className="rounded-lg flex items-center justify-center"
-                        style={{ width: '22px', height: '22px', background: 'var(--gradient-accent)' }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><path d="M12 3v18M3 12h18"/></svg>
-                      </div>
-                    </div>
+                {/* Animated gradient orbs */}
+                <motion.div
+                  animate={{ x: [0, 15, 0], y: [0, -10, 0], scale: [1, 1.1, 1] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    position: 'absolute',
+                    top: '-20%',
+                    right: '-10%',
+                    width: '180px',
+                    height: '180px',
+                    borderRadius: '50%',
+                    background: 'var(--gradient-accent)',
+                    opacity: appearance.themePreference === 'DARK' ? 0.12 : 0.18,
+                    filter: 'blur(50px)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <motion.div
+                  animate={{ x: [0, -12, 0], y: [0, 15, 0], scale: [1, 1.15, 1] }}
+                  transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                  style={{
+                    position: 'absolute',
+                    bottom: '-15%',
+                    left: '-5%',
+                    width: '150px',
+                    height: '150px',
+                    borderRadius: '50%',
+                    background: appearance.themePreference === 'DARK'
+                      ? 'linear-gradient(135deg, #6366f1, #a855f7)'
+                      : 'linear-gradient(135deg, #818cf8, #c084fc)',
+                    opacity: appearance.themePreference === 'DARK' ? 0.15 : 0.2,
+                    filter: 'blur(45px)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <motion.div
+                  animate={{ x: [0, 8, 0], y: [0, -8, 0] }}
+                  transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                  style={{
+                    position: 'absolute',
+                    top: '40%',
+                    left: '50%',
+                    width: '100px',
+                    height: '100px',
+                    borderRadius: '50%',
+                    background: appearance.themePreference === 'DARK'
+                      ? 'linear-gradient(135deg, #06b6d4, #3b82f6)'
+                      : 'linear-gradient(135deg, #67e8f9, #93c5fd)',
+                    opacity: appearance.themePreference === 'DARK' ? 0.1 : 0.15,
+                    filter: 'blur(40px)',
+                    pointerEvents: 'none',
+                  }}
+                />
 
-                    {/* Nav items */}
-                    <div
-                      className="flex-1 flex flex-col gap-0.5 px-2"
+                {/* Content layer */}
+                <div className="relative z-10 flex flex-col items-center justify-center h-full p-4 sm:p-6" style={{ minHeight: 'inherit' }}>
+                  
+                  {/* Central workspace illustration */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative"
+                  >
+                    {/* Main floating window */}
+                    <motion.div
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                       style={{
-                        paddingTop: appearance.layoutPreference === 'COMPACT' ? '6px' : appearance.layoutPreference === 'EXPANDED' ? '14px' : '10px',
+                        width: appearance.layoutPreference === 'COMPACT' ? '220px' : appearance.layoutPreference === 'EXPANDED' ? '280px' : '250px',
+                        borderRadius: '16px',
+                        background: appearance.themePreference === 'DARK'
+                          ? 'rgba(255,255,255,0.08)'
+                          : 'rgba(255,255,255,0.75)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)'}`,
+                        boxShadow: appearance.themePreference === 'DARK'
+                          ? '0 20px 60px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2)'
+                          : '0 20px 60px rgba(99,102,241,0.12), 0 4px 16px rgba(99,102,241,0.06)',
+                        padding: appearance.layoutPreference === 'COMPACT' ? '12px' : appearance.layoutPreference === 'EXPANDED' ? '18px' : '15px',
                       }}
                     >
-                      {[
-                        { active: true, color: 'var(--color-accent)' },
-                        { active: false, color: '' },
-                        { active: false, color: '' },
-                        { active: false, color: '' },
-                      ].map((item, i) => (
+                      {/* Window titlebar */}
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f57' }} />
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#febc2e' }} />
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#28c840' }} />
                         <div
-                          key={i}
-                          className="flex items-center justify-center rounded-md"
+                          className="ml-2 rounded-full"
                           style={{
-                            height: appearance.layoutPreference === 'COMPACT' ? '24px' : appearance.layoutPreference === 'EXPANDED' ? '32px' : '28px',
-                            background: item.active ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                            flex: 1,
+                            height: 6,
+                            background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                            maxWidth: '80px',
                           }}
-                        >
+                        />
+                      </div>
+
+                      {/* Simulated content lines */}
+                      <div className="flex flex-col" style={{ gap: appearance.layoutPreference === 'COMPACT' ? '6px' : appearance.layoutPreference === 'EXPANDED' ? '10px' : '8px' }}>
+                        <div className="flex items-center gap-2">
                           <div
-                            className="rounded-md"
                             style={{
-                              width: '14px',
-                              height: '14px',
-                              background: item.active ? 'var(--color-accent)' : 'var(--color-border-subtle)',
-                              opacity: item.active ? 1 : 0.5,
+                              width: 18,
+                              height: 18,
+                              borderRadius: '6px',
+                              background: 'var(--gradient-accent)',
+                              flexShrink: 0,
+                            }}
+                          />
+                          <div
+                            className="rounded-full"
+                            style={{
+                              height: 6,
+                              width: '70%',
+                              background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
                             }}
                           />
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Bottom avatar */}
-                    <div className="flex items-center justify-center py-2 border-t" style={{ borderColor: 'var(--sidebar-border)' }}>
-                      <div
-                        className="rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                        style={{ width: '20px', height: '20px', background: 'var(--gradient-accent)' }}
-                      >
-                        {user?.name ? user.name[0].toUpperCase() : user?.email?.[0]?.toUpperCase() ?? 'U'}
+                        <div className="flex gap-2">
+                          <div
+                            className="rounded-lg flex-1"
+                            style={{
+                              height: appearance.layoutPreference === 'COMPACT' ? '28px' : appearance.layoutPreference === 'EXPANDED' ? '40px' : '34px',
+                              background: appearance.themePreference === 'DARK'
+                                ? 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.15))'
+                                : 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08))',
+                              border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.15)'}`,
+                            }}
+                          />
+                          <div
+                            className="rounded-lg flex-1"
+                            style={{
+                              height: appearance.layoutPreference === 'COMPACT' ? '28px' : appearance.layoutPreference === 'EXPANDED' ? '40px' : '34px',
+                              background: appearance.themePreference === 'DARK'
+                                ? 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(59,130,246,0.15))'
+                                : 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(59,130,246,0.08))',
+                              border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(6,182,212,0.25)' : 'rgba(6,182,212,0.15)'}`,
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <div
+                            className="rounded-full"
+                            style={{
+                              height: 5,
+                              width: '90%',
+                              background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                            }}
+                          />
+                          <div
+                            className="rounded-full"
+                            style={{
+                              height: 5,
+                              width: '65%',
+                              background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </motion.div>
 
-                  {/* Mini content area */}
-                  <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-                    {/* Mini topbar */}
-                    <div
-                      className="flex items-center justify-between border-b px-3"
+                    {/* Floating accent card - top right */}
+                    <motion.div
+                      animate={{ y: [0, -6, 0], x: [0, 3, 0] }}
+                      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                       style={{
-                        height: appearance.layoutPreference === 'COMPACT' ? '32px' : appearance.layoutPreference === 'EXPANDED' ? '44px' : '38px',
-                        background: 'var(--topbar-bg)',
-                        borderColor: 'var(--topbar-border)',
+                        position: 'absolute',
+                        top: '-12px',
+                        right: '-28px',
+                        width: appearance.layoutPreference === 'COMPACT' ? '64px' : '76px',
+                        padding: '8px',
+                        borderRadius: '12px',
+                        background: appearance.themePreference === 'DARK'
+                          ? 'rgba(99,102,241,0.2)'
+                          : 'rgba(99,102,241,0.1)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)'}`,
+                        boxShadow: '0 8px 24px rgba(99,102,241,0.15)',
                       }}
                     >
+                      <svg width="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="14" r="8" fill="var(--color-accent)" opacity="0.3" />
+                        <path d="M12 28c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                        <circle cx="20" cy="14" r="4" fill="var(--color-accent)" opacity="0.7" />
+                      </svg>
+                    </motion.div>
+
+                    {/* Floating status pill - bottom left */}
+                    <motion.div
+                      animate={{ y: [0, 5, 0], x: [0, -4, 0] }}
+                      transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+                      style={{
+                        position: 'absolute',
+                        bottom: '-8px',
+                        left: '-24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        background: appearance.themePreference === 'DARK'
+                          ? 'rgba(34,197,94,0.15)'
+                          : 'rgba(34,197,94,0.1)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(34,197,94,0.3)' : 'rgba(34,197,94,0.2)'}`,
+                        boxShadow: '0 6px 20px rgba(34,197,94,0.12)',
+                      }}
+                    >
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
                       <div
                         className="rounded-full"
                         style={{
-                          width: '48px',
-                          height: '6px',
-                          background: 'var(--color-border-subtle)',
+                          width: '32px',
+                          height: 4,
+                          background: appearance.themePreference === 'DARK' ? 'rgba(34,197,94,0.5)' : 'rgba(34,197,94,0.35)',
                         }}
                       />
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="rounded-full"
-                          style={{
-                            width: '12px',
-                            height: '12px',
-                            background: appearance.themePreference === 'DARK' ? 'var(--color-warning)' : 'var(--color-border-subtle)',
-                          }}
-                        />
-                        <div
-                          className="rounded-lg flex items-center justify-center text-[6px] font-bold text-white"
-                          style={{ width: '18px', height: '18px', background: 'var(--gradient-accent)' }}
-                        >
-                          {user?.name ? user.name[0].toUpperCase() : user?.email?.[0]?.toUpperCase() ?? 'U'}
-                        </div>
-                      </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Mini page content */}
-                    <div
-                      className="flex-1"
+                    {/* Floating chart card - middle right */}
+                    <motion.div
+                      animate={{ y: [0, 4, 0], x: [0, -2, 0] }}
+                      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
                       style={{
-                        padding: appearance.layoutPreference === 'COMPACT' ? '6px' : appearance.layoutPreference === 'EXPANDED' ? '16px' : '10px',
-                        background: 'var(--color-bg)',
+                        position: 'absolute',
+                        top: '50%',
+                        right: '-36px',
+                        transform: 'translateY(-50%)',
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        background: appearance.themePreference === 'DARK'
+                          ? 'rgba(255,255,255,0.06)'
+                          : 'rgba(255,255,255,0.7)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'}`,
+                        boxShadow: appearance.themePreference === 'DARK'
+                          ? '0 6px 20px rgba(0,0,0,0.3)'
+                          : '0 6px 20px rgba(0,0,0,0.06)',
                       }}
                     >
-                      {/* Simulated dashboard cards */}
-                      <div className="flex flex-col gap-2 h-full">
-                        <div
-                          className="rounded-lg"
-                          style={{
-                            height: appearance.layoutPreference === 'COMPACT' ? '50px' : appearance.layoutPreference === 'EXPANDED' ? '75px' : '62px',
-                            background: appearance.themePreference === 'DARK'
-                              ? 'rgba(255,255,255,0.04)'
-                              : 'rgba(0,0,0,0.03)',
-                            border: '1px solid var(--color-border-subtle)',
-                          }}
+                      <svg width="48" height="28" viewBox="0 0 48 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                          d="M2 22 L10 16 L18 20 L26 8 L34 12 L42 4 L46 6"
+                          stroke="var(--color-accent)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
                         />
-                        <div className="flex gap-2 flex-1">
-                          <div
-                            className="flex-1 rounded-lg"
-                            style={{
-                              background: appearance.themePreference === 'DARK'
-                                ? 'rgba(255,255,255,0.04)'
-                                : 'rgba(0,0,0,0.03)',
-                              border: '1px solid var(--color-border-subtle)',
-                            }}
-                          />
-                          <div
-                            className="flex-1 rounded-lg"
-                            style={{
-                              background: appearance.themePreference === 'DARK'
-                                ? 'rgba(255,255,255,0.04)'
-                                : 'rgba(0,0,0,0.03)',
-                              border: '1px solid var(--color-border-subtle)',
-                            }}
-                          />
-                        </div>
-                        <div
-                          className="rounded-lg"
-                          style={{
-                            height: appearance.layoutPreference === 'COMPACT' ? '30px' : appearance.layoutPreference === 'EXPANDED' ? '48px' : '40px',
-                            background: appearance.themePreference === 'DARK'
-                              ? 'rgba(255,255,255,0.04)'
-                              : 'rgba(0,0,0,0.03)',
-                            border: '1px solid var(--color-border-subtle)',
-                          }}
+                        <path
+                          d="M2 22 L10 16 L18 20 L26 8 L34 12 L42 4 L46 6 L46 28 L2 28Z"
+                          fill="var(--color-accent)"
+                          opacity="0.1"
                         />
-                      </div>
-                    </div>
+                      </svg>
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Decorative dots pattern */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: '12px',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '8px',
+                      opacity: appearance.themePreference === 'DARK' ? 0.15 : 0.12,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          width: 3,
+                          height: 3,
+                          borderRadius: '50%',
+                          background: appearance.themePreference === 'DARK' ? 'white' : 'var(--color-accent)',
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Decorative ring - bottom right */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '8px',
+                      right: '8px',
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      border: `2px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.08)'}`,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '6px',
+                        left: '6px',
+                        right: '6px',
+                        bottom: '6px',
+                        borderRadius: '50%',
+                        border: `1.5px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.04)' : 'rgba(99,102,241,0.05)'}`,
+                      }}
+                    />
                   </div>
                 </div>
 
                 {/* Preview info footer */}
                 <div
-                  className="flex items-center justify-between px-3 py-2 border-t text-[10px] font-semibold"
+                  className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-t text-[10px] sm:text-[11px] font-semibold relative z-10"
                   style={{
-                    borderColor: 'var(--color-border-subtle)',
-                    background: 'var(--color-surface)',
-                    color: 'var(--color-text-muted)',
+                    borderColor: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    background: appearance.themePreference === 'DARK'
+                      ? 'rgba(0,0,0,0.3)'
+                      : 'rgba(255,255,255,0.6)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    color: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)',
                   }}
                 >
-                  <span>
-                    {appearance.themePreference === 'DARK' ? '🌙 Dark' : appearance.themePreference === 'LIGHT' ? '☀️ Light' : '💻 System'}
+                  <span className="flex items-center gap-1.5">
+                    <span style={{
+                      display: 'inline-block',
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: 'var(--color-accent)',
+                      boxShadow: '0 0 6px var(--color-accent)',
+                    }} />
+                    {appearance.themePreference === 'DARK' ? 'Dark' : appearance.themePreference === 'LIGHT' ? 'Light' : 'System'}
                     {' · '}
                     {appearance.layoutPreference === 'COMPACT' ? 'Compact' : appearance.layoutPreference === 'EXPANDED' ? 'Expanded' : 'Comfortable'}
                   </span>
-                  <span>{'Preview'}</span>
+                  <span style={{ opacity: 0.7 }}>Live Preview</span>
                 </div>
               </div>
             </Card>

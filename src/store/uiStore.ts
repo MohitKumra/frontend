@@ -22,11 +22,11 @@ interface UIState {
   sidebarOpen: boolean;
   focusMode: boolean;
   streakPopupDismissed: boolean;
-  setTheme: (theme: ThemePreference, options?: { animate?: boolean }) => Promise<Theme>;
+  setTheme: (theme: ThemePreference, options?: { animate?: boolean; onMutate?: () => void }) => Promise<Theme>;
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
   setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
   setTaskViewPreference: (view: TaskViewPreference) => void;
-  toggleTheme: (options?: { animate?: boolean }) => Promise<Theme>;
+  toggleTheme: (options?: { animate?: boolean; onMutate?: () => void }) => Promise<Theme>;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setFocusMode: (open: boolean) => void;
@@ -48,7 +48,10 @@ export const useUIStore = create<UIState>()(
       streakPopupDismissed: false,
 
       setTheme: async (theme, options) => {
-        const resolved = await applyTheme(theme, options);
+        const resolved = await applyTheme(theme, {
+          animate: options?.animate,
+          onMutate: options?.onMutate,
+        });
         set({ theme: resolved, themePreference: theme });
         return resolved;
       },
@@ -61,7 +64,10 @@ export const useUIStore = create<UIState>()(
       toggleTheme: async (options) => {
         const current = document.documentElement.getAttribute('data-theme') as Theme | null;
         const next = current === 'dark' ? 'light' : 'dark';
-        const resolved = await applyTheme(next, options);
+        const resolved = await applyTheme(next, {
+          animate: options?.animate,
+          onMutate: options?.onMutate,
+        });
         set({ theme: resolved, themePreference: next });
         return resolved;
       },

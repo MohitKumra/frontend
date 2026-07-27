@@ -42,15 +42,20 @@ function prefersReducedMotion(): boolean {
     && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 }
 
-async function animatedThemeSwitch(newTheme: Theme): Promise<void> {
+async function animatedThemeSwitch(
+  newTheme: Theme,
+  onMutate?: () => void,
+): Promise<void> {
   if (isTransitioning) {
     applyThemeToDocument(newTheme);
+    onMutate?.();
     return;
   }
   isTransitioning = true;
 
   if (prefersReducedMotion()) {
     applyThemeToDocument(newTheme);
+    onMutate?.();
     isTransitioning = false;
     return;
   }
@@ -58,9 +63,15 @@ async function animatedThemeSwitch(newTheme: Theme): Promise<void> {
   const root = document.documentElement;
 
   if (typeof document.startViewTransition === 'function') {
+    // Tell CSS which direction to sweep BEFORE the transition starts.
+    root.setAttribute('data-theme-target', newTheme);
     root.classList.add('theme-sweeping');
+
     const transition = document.startViewTransition(() => {
       applyThemeToDocument(newTheme);
+      // Fire onMutate inside the callback so React state updates
+      // are captured in the "new" snapshot, not before the "old" one.
+      onMutate?.();
     });
 
     try {
@@ -69,6 +80,7 @@ async function animatedThemeSwitch(newTheme: Theme): Promise<void> {
       // Transition was skipped/aborted — nothing to do
     } finally {
       root.classList.remove('theme-sweeping');
+      root.removeAttribute('data-theme-target');
       isTransitioning = false;
     }
     return;
@@ -77,6 +89,7 @@ async function animatedThemeSwitch(newTheme: Theme): Promise<void> {
   // Fallback for Firefox and older browsers:
   // Just switch theme instantly and let CSS transition transitions on elements.
   applyThemeToDocument(newTheme);
+  onMutate?.();
   isTransitioning = false;
 }
 
@@ -86,15 +99,16 @@ async function animatedThemeSwitch(newTheme: Theme): Promise<void> {
 
 export async function setTheme(
   theme: ThemePreference,
-  options: { animate?: boolean } = {},
+  options: { animate?: boolean; onMutate?: () => void } = {},
 ): Promise<Theme> {
   await storageSet(STORAGE_KEY, theme);
   const resolved = theme === 'system' ? resolveSystemTheme() : theme;
 
   if (options.animate ?? true) {
-    await animatedThemeSwitch(resolved);
+    await animatedThemeSwitch(resolved, options.onMutate);
   } else {
     applyThemeToDocument(resolved);
+    options.onMutate?.();
   }
   return resolved;
 }
