@@ -11,7 +11,7 @@ import { Button } from '../components/ui/Button';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
-import { MediaPreview } from '../components/media/MediaPreview';
+import { MediaAttachmentsField } from '../components/media/MediaAttachmentsField';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { useProject, useUpdateProject } from '../features/projects/hooks/useProjects';
 import { useDeleteNote } from '../features/notes/hooks/useNotes';
@@ -138,27 +138,15 @@ export function ProjectDetailPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
-            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Attachment</p>
-              <div className="mt-2">
-                {project.attachmentUrl ? (
-                  <MediaPreview attachmentUrl={project.attachmentUrl} compact />
-                ) : (
-                  <p className="text-sm font-bold text-text-primary">None</p>
-                )}
-              </div>
-            </div>
-            <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Voice Note</p>
-              <div className="mt-2">
-                {project.voiceNoteUrl ? (
-                  <MediaPreview voiceNoteUrl={project.voiceNoteUrl} compact />
-                ) : (
-                  <p className="text-sm font-bold text-text-primary">None</p>
-                )}
-              </div>
-            </div>
+          <div className="rounded-xl border p-4 mt-5" style={{ borderColor: 'var(--color-border)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-2">Attachments & Voice Notes</p>
+            <MediaAttachmentsField
+              attachmentUrl={project.attachmentUrl ?? ''}
+              onAttachmentUrlChange={(url) => updateProject.mutate({ attachmentUrl: url })}
+              voiceNoteUrl={project.voiceNoteUrl ?? ''}
+              onVoiceNoteUrlChange={(url) => updateProject.mutate({ voiceNoteUrl: url })}
+              allowVoiceRecording
+            />
           </div>
         </Card>
       </motion.div>

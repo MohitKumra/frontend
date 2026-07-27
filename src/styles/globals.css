@@ -491,20 +491,73 @@
 
   @media (max-width: 720px) {
     .auth-stage {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh !important;
+      height: auto;
       padding: 0;
-      background: var(--color-bg);
+      overflow: visible !important;
+      background:
+        radial-gradient(620px 360px at 50% 22%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 70%),
+        var(--color-bg);
     }
 
     .auth-shell {
-      width: 100%;
+      width: 100% !important;
+      max-width: none !important;
+      min-height: auto !important;
+      height: auto;
+      display: block;
       border-radius: 0;
       box-shadow: none;
+      background: transparent;
     }
 
     .auth-brand-side {
-      min-height: 460px;
-      padding: 24px 20px 20px;
+      display: none;
+    }
+
+    .auth-form-side {
+      height: auto !important;
+      min-height: auto !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 0;
+      border-top: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    .auth-form-inner {
+      width: min(420px, calc(100% - 28px));
+      min-height: auto !important;
+      margin: 24px auto;
+      padding: 28px 24px 24px;
+      border-radius: 18px;
+      background: var(--color-surface);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.02),
+        0 8px 24px rgba(0,0,0,0.06),
+        0 24px 56px rgba(0,0,0,0.04);
+      border: 1px solid var(--color-border);
+    }
+
+    .auth-tabs {
+      height: 48px;
+    }
+
+    .auth-tab {
+      font-size: 14px;
+    }
+
+    .auth-form-inner h2 {
+      font-size: 20px !important;
+    }
+
+    .auth-form-inner > div:first-child {
+      margin-top: 0;
     }
 
     .auth-preview-card {
@@ -515,10 +568,6 @@
     .auth-brand-side .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 18px;
-    }
-
-    .auth-form-inner {
-      width: min(460px, calc(100% - 32px));
     }
   }
 

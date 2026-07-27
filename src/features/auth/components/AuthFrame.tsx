@@ -75,8 +75,8 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
   const isSignup = mode === 'signup';
 
   return (
-    <main className="auth-stage h-screen max-h-screen overflow-hidden">
-      <section className="auth-shell h-full max-w-[75vw] max-h-full">
+    <main className="auth-stage">
+      <section className="auth-shell max-w-[75vw]">
         <div className="auth-brand-side !py-6 overflow-hidden">
           <div className="auth-stars" />
           <div className="auth-aurora" />
@@ -175,7 +175,8 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
               </Link>
             </nav>
 
-            <div className="mt-6">
+
+            <div className="mt-6 max-[720px]:mt-2">
               <h2 className="text-[22px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
               <p className="mt-1 text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{subtitle}</p>
             </div>
