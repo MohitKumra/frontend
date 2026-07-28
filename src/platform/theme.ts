@@ -6,6 +6,7 @@
 // with native hardware-accelerated animations. Falls back to standard CSS
 // transitions on non-supported browsers.
 
+import { flushSync } from 'react-dom';
 import { storageGet, storageSet } from './storage';
 
 export type Theme = 'light' | 'dark';
@@ -48,14 +49,22 @@ async function animatedThemeSwitch(
 ): Promise<void> {
   if (isTransitioning) {
     applyThemeToDocument(newTheme);
-    onMutate?.();
+    if (onMutate) {
+      flushSync(() => {
+        onMutate();
+      });
+    }
     return;
   }
   isTransitioning = true;
 
   if (prefersReducedMotion()) {
     applyThemeToDocument(newTheme);
-    onMutate?.();
+    if (onMutate) {
+      flushSync(() => {
+        onMutate();
+      });
+    }
     isTransitioning = false;
     return;
   }
@@ -71,7 +80,11 @@ async function animatedThemeSwitch(
       applyThemeToDocument(newTheme);
       // Fire onMutate inside the callback so React state updates
       // are captured in the "new" snapshot, not before the "old" one.
-      onMutate?.();
+      if (onMutate) {
+        flushSync(() => {
+          onMutate();
+        });
+      }
     });
 
     try {

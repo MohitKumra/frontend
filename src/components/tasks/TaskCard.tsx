@@ -48,7 +48,11 @@ export function getRecurrenceLabel(rule: string | null): string | null {
 
 export function isOverdue(dueDate: string | null, status: string): boolean {
   if (!dueDate || status === 'DONE' || status === 'CANCELLED') return false;
-  return new Date(dueDate) < new Date();
+  if (isToday(dueDate)) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dueDate);
+  return d < today;
 }
 
 export function isToday(dateStr: string | null): boolean {

@@ -191,14 +191,29 @@ export function CalendarPage() {
 
   // Tasks with due dates, deduplicated
   const plannerTasks = useMemo(() => {
+    const doneKeys = new Set<string>();
+    for (const task of tasks) {
+      if (task.dueDate && task.status === 'DONE') {
+        const rootId = task.parentTaskId ?? task.id;
+        const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
+        doneKeys.add(`${rootId}_${dateStr}`);
+      }
+    }
+
     const seen = new Set<string>();
     return tasks.filter((task: TaskDTO) => {
-      if (task.dueDate && task.status !== 'CANCELLED') {
-        if (seen.has(task.id)) return false;
-        seen.add(task.id);
-        return true;
+      if (!task.dueDate || task.status === 'CANCELLED') return false;
+      if (seen.has(task.id)) return false;
+
+      const rootId = task.parentTaskId ?? task.id;
+      const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
+
+      if (task.status !== 'DONE' && doneKeys.has(`${rootId}_${dateStr}`)) {
+        return false;
       }
-      return false;
+
+      seen.add(task.id);
+      return true;
     });
   }, [tasks]);
 

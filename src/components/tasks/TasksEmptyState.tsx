@@ -3,7 +3,7 @@ import { Plus, Calendar, ArrowRight, List } from 'lucide-react';
 import { FloatingTasksEmpty } from '../ui/FloatingTasksEmpty';
 import { Card } from '../ui/Card';
 
-type TaskFilter = 'all' | 'today' | 'upcoming' | 'completed' | 'overdue';
+type TaskFilter = 'pending' | 'today' | 'upcoming' | 'completed' | 'overdue' | 'all';
 
 interface TasksEmptyStateProps {
   filter: TaskFilter;
@@ -19,6 +19,14 @@ interface EmptyConfig {
 
 export function TasksEmptyState({ filter, onCreateTask, onChangeFilter }: TasksEmptyStateProps) {
   const configs: Record<TaskFilter, EmptyConfig> = {
+    pending: {
+      title: 'No pending tasks',
+      subtitle: 'You have no active pending tasks right now. Add a new task or check upcoming work.',
+      suggestions: [
+        { label: 'Create a new task', icon: <Plus size={13} />, action: onCreateTask },
+        { label: 'View upcoming work', icon: <Calendar size={13} />, action: () => onChangeFilter('upcoming') },
+      ],
+    },
     all: {
       title: 'No tasks yet',
       subtitle: 'Start by adding your first task — title, due date, and priority is all you need.',
@@ -40,23 +48,23 @@ export function TasksEmptyState({ filter, onCreateTask, onChangeFilter }: TasksE
       subtitle: 'Nothing is scheduled for the next 7 days. Plan ahead to avoid last-minute pressure.',
       suggestions: [
         { label: 'Plan your week', icon: <Plus size={13} />, action: onCreateTask },
-        { label: 'View all tasks', icon: <List size={13} />, action: () => onChangeFilter('all') },
+        { label: 'View pending tasks', icon: <List size={13} />, action: () => onChangeFilter('pending') },
       ],
     },
     completed: {
       title: 'No completed tasks',
       subtitle: 'Complete a task to see it here. Focus on your today and upcoming tasks to make progress.',
       suggestions: [
-        { label: 'View today\'s tasks', icon: <Calendar size={13} />, action: () => onChangeFilter('today') },
-        { label: 'View all tasks', icon: <List size={13} />, action: () => onChangeFilter('all') },
+        { label: "View today's tasks", icon: <Calendar size={13} />, action: () => onChangeFilter('today') },
+        { label: 'View pending tasks', icon: <List size={13} />, action: () => onChangeFilter('pending') },
       ],
     },
     overdue: {
       title: 'No overdue tasks',
       subtitle: 'Great job — everything is on track. Keep it up by staying on top of your daily schedule.',
       suggestions: [
-        { label: 'View today\'s tasks', icon: <Calendar size={13} />, action: () => onChangeFilter('today') },
-        { label: 'View all tasks', icon: <List size={13} />, action: () => onChangeFilter('all') },
+        { label: "View today's tasks", icon: <Calendar size={13} />, action: () => onChangeFilter('today') },
+        { label: 'View pending tasks', icon: <List size={13} />, action: () => onChangeFilter('pending') },
       ],
     },
   };

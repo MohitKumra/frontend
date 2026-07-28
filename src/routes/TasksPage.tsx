@@ -44,18 +44,30 @@ import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import type { DailyAnalyticsDTO, TaskDTO, TaskStatus } from '../types';
 
-type TaskFilter = 'all' | 'today' | 'upcoming' | 'completed' | 'overdue';
+type TaskFilter = 'pending' | 'today' | 'upcoming' | 'completed' | 'overdue' | 'all';
 type ViewMode = 'list' | 'board';
 type SortKey = 'priority' | 'dueDate' | 'created';
 
 const PRIORITY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
+function isFutureTask(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  if (isToday(dateStr)) return false;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const d = new Date(dateStr);
+  return d > today;
+}
+
 function isUpcoming(dateStr: string | null): boolean {
   if (!dateStr) return false;
+  if (isToday(dateStr)) return false;
   const d = new Date(dateStr);
   const today = new Date();
+  today.setHours(23, 59, 59, 999);
   const weekFromNow = new Date();
   weekFromNow.setDate(today.getDate() + 7);
+  weekFromNow.setHours(23, 59, 59, 999);
   return d > today && d <= weekFromNow;
 }
 
@@ -112,7 +124,7 @@ export function TasksPage() {
   const searchRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore((s) => s.user);
 
-  const [filter, setFilter] = useState<TaskFilter>('all');
+  const [filter, setFilter] = useState<TaskFilter>('pending');
   const [sortBy, setSortBy] = useState<SortKey>('priority');
   const savedTaskView = useUIStore((s) => s.taskViewPreference);
   const setTaskViewPreference = useUIStore((s) => s.setTaskViewPreference);
@@ -197,11 +209,12 @@ export function TasksPage() {
   // ── filter + sort helpers ────────────────────────────────────────────────
 
   const counts = useMemo(() => ({
-    all:       tasks.length,
+    pending:   tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED' && !isFutureTask(t.dueDate)).length,
     today:     tasks.filter((t) => isToday(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
     upcoming:  tasks.filter((t) => isUpcoming(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
     completed: tasks.filter((t) => t.status === 'DONE').length,
     overdue:   tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
+    all:       tasks.length,
   }), [tasks]);
 
   const analyticsWindow = useMemo(() => {
@@ -229,10 +242,12 @@ export function TasksPage() {
     const query = searchQuery.trim().toLowerCase();
     const base = tasks.filter((task) => {
       switch (filter) {
+        case 'pending':   if (task.status === 'DONE' || task.status === 'CANCELLED' || isFutureTask(task.dueDate)) return false; break;
         case 'today':     if (!(isToday(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false; break;
         case 'upcoming':  if (!(isUpcoming(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false; break;
         case 'completed': if (task.status !== 'DONE') return false; break;
         case 'overdue':   if (!isOverdue(task.dueDate, task.status)) return false; break;
+        case 'all':       break;
         default: break;
       }
       if (!query) return true;
@@ -546,20 +561,21 @@ export function TasksPage() {
             </div>
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                {(['all', 'today', 'upcoming', 'completed', 'overdue'] as TaskFilter[]).map((f) => {
+              <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
+                {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
                   const icons = {
-                    all: <CheckSquare size={14} />,
+                    pending: <CheckSquare size={14} />,
                     today: <Zap size={14} />,
                     upcoming: <Calendar size={14} />,
                     completed: <CheckCircle2 size={14} />,
                     overdue: <TrendingUp size={14} />,
+                    all: <ListChecks size={14} />,
                   };
                   return (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
-                      className="flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black transition-all"
+                      className="flex shrink-0 items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-black transition-all"
                       style={
                         filter === f
                           ? { background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised))', color: 'var(--color-accent)', boxShadow: '0 10px 22px -18px var(--color-accent)' }

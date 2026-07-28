@@ -20,9 +20,10 @@ import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { getAchievement, getCategory } from '../../features/habits/Habitpresentation';
+import { SkipDaysPicker } from './SkipDaysPicker';
 import type { HabitDTO } from '../../types';
 
-const RING_SIZE = 88; 
+const RING_SIZE = 88;
 
 function MiniRing({ value, color, completed = false }: { value: number; color: string; completed?: boolean }) {
   const size = RING_SIZE;
@@ -224,12 +225,16 @@ function EditHabitModal({
   const updateHabit = useUpdateHabit();
   const [title, setTitle] = useState('');
   const [reminderTime, setReminderTime] = useState('');
+  const [reminderMessage, setReminderMessage] = useState('');
+  const [skipDays, setSkipDays] = useState<number[]>([]);
 
   // Sync state when habit changes
   useEffect(() => {
     if (habit) {
       setTitle(habit.title);
       setReminderTime(habit.reminderTime || '');
+      setReminderMessage(habit.reminderMessage || '');
+      setSkipDays(habit.skipDays || []);
     }
   }, [habit]);
 
@@ -239,7 +244,15 @@ function EditHabitModal({
     e.preventDefault();
     if (!habit) return;
     updateHabit.mutate(
-      { id: habit.id, data: { title, reminderTime: reminderTime || undefined } },
+      {
+        id: habit.id,
+        data: {
+          title,
+          reminderTime: reminderTime || null,
+          reminderMessage: reminderMessage.trim() || null,
+          skipDays,
+        },
+      },
       { onSuccess: onClose }
     );
   };
@@ -275,13 +288,25 @@ function EditHabitModal({
           )}
         </div>
 
-        <Input
-          id="edit-habit-reminder"
-          label="Reminder (optional)"
-          type="time"
-          value={reminderTime}
-          onChange={(e) => setReminderTime(e.target.value)}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            id="edit-habit-reminder"
+            label="Reminder Time (optional)"
+            type="time"
+            value={reminderTime}
+            onChange={(e) => setReminderTime(e.target.value)}
+          />
+
+          <Input
+            id="edit-habit-message"
+            label="Reminder Message (optional)"
+            value={reminderMessage}
+            onChange={(e) => setReminderMessage(e.target.value)}
+            placeholder="e.g. Time for your daily read!"
+          />
+        </div>
+
+        <SkipDaysPicker value={skipDays} onChange={setSkipDays} />
 
         <Button type="submit" fullWidth loading={updateHabit.isPending}>
           Save Changes
@@ -462,7 +487,7 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
                     }}
                     title="Intentionally skipped days"
                   >
-                    Skip: {habit.skipDays.map((d) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][d]).join(', ')}
+                    Skip: {habit.skipDays.map((d) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d]).join(', ')}
                   </span>
                 )}
 
@@ -525,9 +550,9 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
             <div className="flex-1 min-w-0 flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-muted flex items-center gap-1 text-[10px] font-medium shrink-0">
-                  <Clock size={10} strokeWidth={2} /> Next
+                  <Clock size={10} strokeWidth={2} /> Reminder
                 </span>
-                <span className="font-medium text-text-primary text-[11px] truncate">{habit.reminderTime || '8:00 PM'}</span>
+                <span className="font-medium text-text-primary text-[11px] truncate">{habit.reminderTime ? habit.reminderTime : 'Not Set'}</span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-muted text-[10px] font-medium shrink-0">Duration</span>

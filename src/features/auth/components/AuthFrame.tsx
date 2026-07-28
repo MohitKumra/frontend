@@ -18,6 +18,13 @@ const features = [
   { icon: Trophy, title: 'Achievements', desc: 'Earn trophies as you get things done' },
 ];
 
+const mobileFeatures = [
+  { icon: Target, label: 'Tasks' },
+  { icon: Flame, label: 'Habits' },
+  { icon: CalendarDays, label: 'Calendar' },
+  { icon: Trophy, label: 'Rewards' },
+];
+
 function ProductPreview() {
   return (
     <div className="auth-preview-card">
@@ -66,6 +73,45 @@ function ProductPreview() {
         <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--color-border)' }}>
           <div className="h-full w-[54%] rounded-full" style={{ background: 'var(--gradient-accent)' }} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Compact branded header — shown only on mobile when the full brand panel is hidden */
+function MobileBrandHeader() {
+  return (
+    <div className="auth-mobile-header">
+      {/* Animated glow orbs */}
+      <div className="auth-mobile-glow auth-mobile-glow-1" />
+      <div className="auth-mobile-glow auth-mobile-glow-2" />
+
+      {/* Logo + name */}
+      <div className="auth-mobile-logo-row">
+        <div className="auth-mobile-logo-icon">
+          <Zap size={18} className="text-white" fill="none" />
+        </div>
+        <div>
+          <p className="auth-mobile-logo-name">Finamite</p>
+          <p className="auth-mobile-logo-tagline">Personal Management System</p>
+        </div>
+      </div>
+
+      {/* Headline */}
+      <h1 className="auth-mobile-headline">
+        One system.{' '}
+        <span className="auth-mobile-headline-accent">Everything</span>{' '}
+        you do.
+      </h1>
+
+      {/* Feature pills */}
+      <div className="auth-mobile-features">
+        {mobileFeatures.map(({ icon: Icon, label }) => (
+          <div key={label} className="auth-mobile-feature-pill">
+            <Icon size={13} />
+            <span>{label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -166,6 +212,9 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
 
         <div className="auth-form-side h-full overflow-y-auto">
           <div className="auth-form-inner !py-6">
+            {/* Mobile brand header — visible only ≤720px */}
+            <MobileBrandHeader />
+
             <nav className="auth-tabs" aria-label="Authentication">
               <Link to="/login" className={isSignup ? 'auth-tab' : 'auth-tab auth-tab-active'}>
                 Sign In
@@ -175,8 +224,7 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
               </Link>
             </nav>
 
-
-            <div className="mt-6 max-[720px]:mt-2">
+            <div className="mt-6 max-[720px]:mt-3">
               <h2 className="text-[22px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
               <p className="mt-1 text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{subtitle}</p>
             </div>
