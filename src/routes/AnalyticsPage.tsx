@@ -373,9 +373,6 @@ function InsightCard({ insight, index }: { insight: InsightDTO; index: number })
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-[9px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--color-text-muted)' }}>
-              AI recommendation
-            </div>
             <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]" style={{ background: tone.bg, color: tone.fg }}>
               {label}
             </span>
