@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronDown, Check, X, SlidersHorizontal } from 'lucide-react';
 
@@ -151,10 +152,16 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
     : `${formatReadableDate(value.startDate)} – ${formatReadableDate(value.endDate)}`;
 
   return (
-    <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2 sm:p-2.5 rounded-2xl border bg-surface/80 backdrop-blur-md shadow-sm border-border">
+    <div
+      className="relative flex flex-col items-stretch justify-between gap-3 rounded-[22px] border px-3 py-3 shadow-[0_20px_60px_rgba(2,6,23,0.16)] backdrop-blur-xl sm:flex-row sm:items-center sm:px-3.5 sm:py-3.5"
+      style={{
+        background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 94%, white), var(--color-surface-elevated))',
+        borderColor: 'var(--color-border-subtle)',
+      }}
+    >
       {/* Scrollable preset pills container */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-0.5 max-w-full">
-        <div className="flex items-center gap-1 text-xs font-bold px-2 py-1.5 rounded-lg text-text-muted shrink-0 mr-1 hidden md:flex">
+        <div className="hidden shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-black text-text-muted md:flex">
           <SlidersHorizontal size={14} className="text-accent" />
           <span>Filter:</span>
         </div>
@@ -164,13 +171,13 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
             <button
               key={preset.id}
               onClick={() => handlePresetSelect(preset.id)}
-              className={`relative flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all duration-200 shrink-0 ${
+              className={`relative flex shrink-0 items-center gap-1 rounded-xl px-3.5 py-2 text-[11px] font-extrabold whitespace-nowrap transition-all duration-200 ${
                 isActive
                   ? 'text-white shadow-md'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-raised/80'
               }`}
               style={{
-                background: isActive ? 'var(--gradient-accent)' : 'transparent',
+                background: isActive ? 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 80%, var(--color-accent)))' : 'transparent',
               }}
             >
               {preset.id === 'custom' && <Calendar size={12} className={isActive ? 'text-white' : 'text-accent'} />}
@@ -188,7 +195,13 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
       </div>
 
       {/* Range badge + indicator */}
-      <div className="flex items-center justify-between sm:justify-end gap-2 px-2.5 py-1.5 rounded-xl bg-surface-raised/60 border border-border/50 shrink-0 text-xs font-bold text-text-primary">
+      <div
+        className="flex shrink-0 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-bold text-text-primary sm:justify-end"
+        style={{
+          background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 92%, white), var(--color-surface-elevated))',
+          borderColor: 'var(--color-border-subtle)',
+        }}
+      >
         <div className="flex items-center gap-1.5">
           <Calendar size={13} className="text-accent" />
           <span className="text-[11px] font-black tracking-wide text-text-secondary">
@@ -205,84 +218,88 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         )}
       </div>
 
-      {/* Custom Date Modal */}
-      <AnimatePresence>
-        {isCustomModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-sm p-6 rounded-2xl bg-surface border border-border shadow-2xl space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent">
-                    <Calendar size={18} />
+      {/* Custom Date Modal - portal to body to avoid stacking context issues with parent transforms */}
+      {createPortal(
+        <AnimatePresence>
+          {isCustomModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="w-full max-w-sm p-6 rounded-2xl bg-surface border border-border shadow-2xl space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-accent-subtle flex items-center justify-center text-accent">
+                      <Calendar size={18} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold text-text-primary">Custom Date Range</h3>
+                      <p className="text-xs text-text-muted">Select start and end dates</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-text-primary">Custom Date Range</h3>
-                    <p className="text-xs text-text-muted">Select start and end dates</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsCustomModalOpen(false)}
-                  className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-raised"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <form onSubmit={handleApplyCustom} className="space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-text-secondary mb-1">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={tempStart}
-                      onChange={(e) => setTempStart(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-bg text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-text-secondary mb-1">
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={tempEnd}
-                      onChange={(e) => setTempEnd(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-bg text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2">
                   <button
-                    type="button"
                     onClick={() => setIsCustomModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-text-secondary hover:bg-surface-raised"
+                    className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-raised"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-accent shadow-md hover:opacity-90 flex items-center gap-1.5"
-                  >
-                    <Check size={14} />
-                    Apply Filter
+                    <X size={18} />
                   </button>
                 </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+
+                <form onSubmit={handleApplyCustom} className="space-y-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        type="date"
+                        value={tempStart}
+                        onChange={(e) => setTempStart(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-border bg-bg text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">
+                        End Date
+                      </label>
+                      <input
+                        type="date"
+                        value={tempEnd}
+                        onChange={(e) => setTempEnd(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-border bg-bg text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-text-secondary hover:bg-surface-raised"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl text-xs font-extrabold text-white shadow-md hover:opacity-90 flex items-center gap-1.5"
+                      style={{ background: 'var(--gradient-accent)' }}
+                    >
+                      <Check size={14} />
+                      Apply Filter
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
