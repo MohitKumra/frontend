@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { AnalyticsPage } from './AnalyticsPage';
 import {
   CheckSquare,
   FolderKanban,
@@ -132,6 +133,10 @@ export function DashboardPage() {
   const [streakModalOpen, setStreakModalOpen] = useState(true);
   const showStreakPopup = !!(!streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen);
 
+  // View toggle: dashboard widgets vs analytics
+  const [view, setView] = useState<'dashboard' | 'analytics'>('dashboard');
+  const reducedMotion = useReducedMotion();
+
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const habits = habitsData?.data ?? [];
   const focusSessions = focusSessionsData?.data ?? [];
@@ -247,19 +252,75 @@ export function DashboardPage() {
         }}
       />
 
-      {/* Header: greeting + search + notifications + avatar */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4 flex-wrap">
+      {/* Header: greeting on the left + pill toggle on the right */}
+      <motion.div variants={itemVariants} className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex flex-col gap-1.5 select-none min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-text-primary">
             Good morning, {displayName} 
           </h1>
           <p className="text-sm font-medium text-text-muted">Let's make today productive</p>
         </div>
+
+        {/* Pill-shaped sliding toggle */}
+        <div
+          className="relative inline-flex items-center h-10 px-1 rounded-full border"
+          style={{
+            background: 'var(--color-surface-raised)',
+            borderColor: 'var(--color-border)',
+          }}
+        >
+          {/* Sliding pill background */}
+          <motion.div
+            className="absolute top-1 bottom-1 rounded-full shadow-md"
+            initial={false}
+            animate={{
+              transform: view === 'dashboard' ? 'translateX(0%)' : 'translateX(100%)',
+            }}
+            transition={reducedMotion ? { duration: 0.15 } : { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
+            style={{
+              width: 'calc(50% - 4px)',
+              left: '4px',
+              background: view === 'dashboard'
+                ? 'var(--gradient-accent)'
+                : 'linear-gradient(135deg, var(--color-info), var(--color-accent))',
+            }}
+          />
+          <button
+            onClick={() => setView('dashboard')}
+            className={`relative z-10 flex-1 px-4 py-2 text-sm font-bold rounded-full transition-colors ${
+              view === 'dashboard'
+                ? 'text-white'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setView('analytics')}
+            className={`relative z-10 flex-1 px-4 py-2 text-sm font-bold rounded-full transition-colors ${
+              view === 'analytics'
+                ? 'text-white'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Analytics
+          </button>
+        </div>
       </motion.div>
 
-
-      <motion.div variants={itemVariants} className="grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start">
-        <div className="dash-cq flex flex-col gap-6 sm:gap-8 min-w-0">
+      {/* Animated view switcher — crossfade between dashboard widgets and analytics */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={view}
+          variants={itemVariants}
+          initial={reducedMotion ? undefined : "hidden"}
+          animate={reducedMotion ? undefined : "visible"}
+          exit={reducedMotion ? undefined : "hidden"}
+          className="grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start"
+        >
+          {view === 'dashboard' ? (
+            <>
+              <div className="dash-cq flex flex-col gap-6 sm:gap-8 min-w-0">
           {/* Stats + Weather */}
           <div className="cq-top-row">
             <div className="cq-stats items-stretch">
@@ -814,7 +875,12 @@ export function DashboardPage() {
             </div>
           </div>
         </aside>
-      </motion.div>
+      </>
+    ) : (
+      <AnalyticsPage embedded={true} />
+    )}
+  </motion.div>
+</AnimatePresence>
 
       {/* Quick Actions — inline row, always available regardless of where
           the sidebar currently sits */}
