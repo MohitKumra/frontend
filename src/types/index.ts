@@ -36,6 +36,15 @@ export interface AuthResponse {
   user: UserDTO;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword?: string;
+  newPassword: string;
+}
+
+export interface SetPasswordRequest {
+  newPassword: string;
+}
+
 export type ThemePreference = 'LIGHT' | 'DARK' | 'SYSTEM';
 export type LayoutPreference = 'COMFORTABLE' | 'COMPACT' | 'EXPANDED';
 export type TaskViewPreference = 'list' | 'board';

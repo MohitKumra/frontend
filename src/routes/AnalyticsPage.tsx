@@ -1,13 +1,14 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BarChart2, TrendingUp, CheckCircle2, Flame, Timer, Target, Folder, 
-  Calendar, Award, Zap, Activity, TrendingDown, ArrowUp, ArrowDown 
+  Calendar, Award, Zap, Activity, ArrowUp, ArrowDown 
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, LineChart, Line, Legend, PieChart, Pie, Cell, RadialBarChart, RadialBar
+  BarChart, Bar, LineChart, Line, Legend, PieChart, Pie, Cell
 } from 'recharts';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -18,6 +19,7 @@ import { FloatingAnalyticsEmpty } from '../components/ui/FloatingAnalyticsEmpty'
 import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import type { AnalyticsSummaryDTO, DailyAnalyticsDTO, ProjectAnalyticsDTO } from '../types';
+import { DateRangePicker, computePresetDates, formatReadableDate, type DateRange } from '../components/analytics/DateRangePicker';
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6'];
 const CHART_COLORS = {
@@ -103,36 +105,45 @@ function EnhancedStatCard({
 }
 
 export function AnalyticsPage() {
+  const initialDates = computePresetDates('this_week');
+  const [dateRange, setDateRange] = useState<DateRange>({
+    preset: 'this_week',
+    startDate: initialDates.startDate,
+    endDate: initialDates.endDate,
+  });
+
+  const queryParams = { startDate: dateRange.startDate, endDate: dateRange.endDate };
+
   const { data: summary, isLoading: loadingSummary } = useQuery({
-    queryKey: ['analytics', 'summary'],
-    queryFn: () => apiClient.get<AnalyticsSummaryDTO>('/analytics/summary').then((r) => r.data),
+    queryKey: ['analytics', 'summary', dateRange.startDate, dateRange.endDate],
+    queryFn: () => apiClient.get<AnalyticsSummaryDTO>('/analytics/summary', { params: queryParams }).then((r) => r.data),
   });
 
   const { data: daily, isLoading: loadingDaily } = useQuery({
-    queryKey: ['analytics', 'daily'],
-    queryFn: () => apiClient.get<DailyAnalyticsDTO[]>('/analytics/daily').then((r) => r.data),
+    queryKey: ['analytics', 'daily', dateRange.startDate, dateRange.endDate],
+    queryFn: () => apiClient.get<DailyAnalyticsDTO[]>('/analytics/daily', { params: queryParams }).then((r) => r.data),
   });
 
   const { data: projects, isLoading: loadingProjects } = useQuery({
-    queryKey: ['analytics', 'projects'],
-    queryFn: () => apiClient.get<ProjectAnalyticsDTO[]>('/analytics/projects').then((r) => r.data),
+    queryKey: ['analytics', 'projects', dateRange.startDate, dateRange.endDate],
+    queryFn: () => apiClient.get<ProjectAnalyticsDTO[]>('/analytics/projects', { params: queryParams }).then((r) => r.data),
   });
 
   const { data: weekly, isLoading: loadingWeekly } = useQuery({
-    queryKey: ['analytics', 'weekly'],
-    queryFn: () => apiClient.get<any[]>('/analytics/weekly').then((r) => r.data),
+    queryKey: ['analytics', 'weekly', dateRange.startDate, dateRange.endDate],
+    queryFn: () => apiClient.get<any[]>('/analytics/weekly', { params: queryParams }).then((r) => r.data),
   });
 
   if (loadingSummary || loadingDaily || loadingProjects || loadingWeekly) return <LoadingScreen />;
 
-  const chartData = (daily ?? []).slice(-14).map((d) => ({
+  const chartData = (daily ?? []).map((d) => ({
     date: d.date.slice(5), // "MM-DD"
     Tasks: d.tasksCompleted,
     Habits: d.habitsCompleted,
     Focus: d.focusMinutes,
   }));
 
-  const weeklyData = (weekly ?? []).slice(-8).map((w) => ({
+  const weeklyData = (weekly ?? []).map((w) => ({
     week: w.week.split('-W')[1] ? `W${w.week.split('-W')[1]}` : w.week,
     Tasks: w.tasksCompleted,
     Focus: w.focusMinutes,
@@ -151,23 +162,9 @@ export function AnalyticsPage() {
     value,
   }));
 
-  // Completion rate radial data
-  const completionData = [
-    { 
-      name: 'Tasks', 
-      value: summary?.taskCompletionRate ?? 0, 
-      fill: CHART_COLORS.tasks 
-    },
-    { 
-      name: 'Habits', 
-      value: (summary?.habitsTotal ?? 0) > 0 
-        ? Math.round((summary?.habitsCompletedToday ?? 0) / (summary?.habitsTotal ?? 1) * 100)
-        : 0, 
-      fill: CHART_COLORS.habits 
-    },
-  ];
-
-  const hasData = (daily && daily.length > 0) || (projects && projects.length > 0);
+  const formattedSubtitleText = dateRange.startDate === dateRange.endDate
+    ? formatReadableDate(dateRange.startDate)
+    : `${formatReadableDate(dateRange.startDate)} – ${formatReadableDate(dateRange.endDate)}`;
 
   return (
     <motion.div
@@ -177,12 +174,15 @@ export function AnalyticsPage() {
       className="max-w-[1400px] mx-auto flex flex-col gap-6 sm:gap-8"
     >
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} className="flex flex-col gap-4">
         <PageHeader
           icon={<BarChart2 size={24} />}
           title="Analytics Dashboard"
           subtitle="Visual insights and performance metrics at a glance"
         />
+
+        {/* Responsive Date Range Picker Bar */}
+        <DateRangePicker value={dateRange} onChange={setDateRange} />
       </motion.div>
 
       {/* Enhanced Summary Cards */}
@@ -196,7 +196,7 @@ export function AnalyticsPage() {
         />
         <EnhancedStatCard 
           icon={<Target size={20} />} 
-          label="Habits Today" 
+          label="Habits Done" 
           value={`${summary?.habitsCompletedToday ?? 0}/${summary?.habitsTotal ?? 0}`} 
           color="accent" 
         />
@@ -216,7 +216,7 @@ export function AnalyticsPage() {
         <EnhancedStatCard 
           icon={<Timer size={20} />} 
           label="Focus Time" 
-          value={`${Math.round((summary?.focusMinutesTotal ?? 0) / 60 * 10) / 10}h`} 
+          value={(summary?.focusMinutesTotal ?? 0) < 60 ? `${summary?.focusMinutesTotal ?? 0}m` : `${Math.round((summary?.focusMinutesTotal ?? 0) / 60 * 10) / 10}h`} 
           sub={`${summary?.focusSessionsTotal ?? 0} sessions`} 
           color="info" 
         />
@@ -243,7 +243,7 @@ export function AnalyticsPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Daily Activity</h3>
-                <p className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Last 14 days</p>
+                <p className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>{formattedSubtitleText}</p>
               </div>
             </div>
             {/* Legend pills */}

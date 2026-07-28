@@ -34,7 +34,7 @@ export function SignupForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
       {signup.error && (
-        <div className="rounded-[10px] border border-red-400/25 bg-red-500/10 p-2.5 text-[13px] font-semibold text-red-200">
+        <div className="rounded-[10px] border border-red-400/25 bg-red-500/10 p-2.5 text-[13px] font-semibold text-red-500">
           {(signup.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Signup failed. Please try again.'}
         </div>
       )}
