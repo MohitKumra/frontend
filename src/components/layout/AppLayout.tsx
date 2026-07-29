@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
   LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
   Timer, BarChart2, LogOut, X ,Sparkles, Moon, Sun,
-  Search, MoreHorizontal, Settings2, FolderKanban, User
+  Search, MoreHorizontal, Settings2, FolderKanban, User,
+  Keyboard
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -30,7 +31,7 @@ import { settingsApi } from '../../features/settings/api';
 import apiClient from '../../lib/apiClient';
 import { AchievementCelebrationModal } from '../achievements/AchievementCelebrationModal';
 import type { AchievementWithStatusDTO } from '../../types';
-
+import { createPortal } from 'react-dom';
 type TaskListPage = Awaited<ReturnType<typeof tasksApi.list>>;
 
 function fetchTasksPage(pageParam?: string): Promise<TaskListPage> {
@@ -49,6 +50,8 @@ const navItems = [
   { to: '/projects',  icon: FolderKanban,    label: 'Projects',  onboarding: 'projects' },
   { to: '/settings',  icon: Settings2,       label: 'Settings',  onboarding: 'settings' },
 ];
+
+
 
 function warmRouteData(route: string): void {
   switch (route) {
@@ -129,6 +132,7 @@ const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ');
 
 export function AppLayout() {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const location = useLocation();
@@ -141,6 +145,8 @@ export function AppLayout() {
   const { data: achievements } = useAchievements();
   const { data: settings } = useSettings();
   const seenAchievementKeysRef = useRef<Set<string> | null>(null);
+    const [showShortcuts, setShowShortcuts] = useState(false);
+
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -225,6 +231,89 @@ export function AppLayout() {
     setUser,
     user,
   ]);
+
+  // ── Global keyboard shortcuts ──────────────────────────────────────────────
+  //
+  // The AppLayout is always mounted, so we register shortcuts here that should
+  // work *across* every page.  Task-level shortcuts (Q, E, Space, /, F) are
+  // registered inside TasksPage so they have access to task-list state.
+  //
+  // Global keys:
+  //   ?               → Toggle shortcuts help modal
+  //   Escape           → Close modals (shortcuts, search, mobile-more)
+  //   G then D         → Navigate to Dashboard
+  //   G then T         → Navigate to Tasks
+  //   G then C         → Navigate to Calendar
+  //   G then H         → Navigate to Habits
+  //   G then N         → Navigate to Notes
+  //   G then F         → Navigate to Focus
+  //   G then P         → Navigate to Projects
+  //   G then S         → Navigate to Settings
+  //
+  useEffect(() => {
+    let gPressed = false;
+    let gTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const tag = target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable) return;
+
+      // ? → toggle shortcuts modal
+      if (e.key === '?' && !e.shiftKey === false) {
+        // Shift+/ produces '?' key
+        setShowShortcuts((prev) => !prev);
+        e.preventDefault();
+        return;
+      }
+
+      // Escape → close open modals
+      if (e.key === 'Escape') {
+        if (showShortcuts) { setShowShortcuts(false); return; }
+        if (searchOpen) { setSearchOpen(false); return; }
+        if (mobileMoreOpen) { setMobileMoreOpen(false); return; }
+        return;
+      }
+
+      // G-prefix navigation (G then another key within 500 ms)
+      if (e.key === 'g' || e.key === 'G') {
+        gPressed = true;
+        if (gTimeout) clearTimeout(gTimeout);
+        gTimeout = setTimeout(() => { gPressed = false; }, 500);
+        e.preventDefault();
+        return;
+      }
+
+      if (gPressed) {
+        if (gTimeout) clearTimeout(gTimeout);
+        gPressed = false;
+
+        const navMap: Record<string, string> = {
+          d: '/',       // Dashboard
+          t: '/tasks',  // Tasks
+          c: '/calendar', // Calendar
+          h: '/habits', // Habits
+          n: '/notes',  // Notes
+          f: '/focus',  // Focus
+          p: '/projects', // Projects
+          s: '/settings', // Settings
+        };
+
+        const route = navMap[e.key.toLowerCase()];
+        if (route) {
+          e.preventDefault();
+          navigate(route);
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (gTimeout) clearTimeout(gTimeout);
+    };
+  }, [navigate, showShortcuts, searchOpen, mobileMoreOpen]);
 
   const contentPaddingClass =
     layoutPreference === 'COMPACT'
@@ -467,6 +556,16 @@ export function AppLayout() {
           </button>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
+              <button
+                  type="button"
+                  onClick={() => setShowShortcuts(true)}
+                  className="hidden items-center gap-1.5 rounded-2xl border px-3 py-2.5 text-xs font-black sm:flex"
+                  style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                >
+                  <Keyboard size={14} />
+                  Shortcuts
+                </button>
+
              <button
             onClick={() => setSearchOpen(true)}
             className="hidden sm:flex relative items-center max-w-md w-64 md:w-80 transition-all duration-300"
@@ -735,6 +834,53 @@ export function AppLayout() {
         achievement={activeAchievement}
         onClose={closeAchievementCelebration}
       />
+
+       {showShortcuts && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowShortcuts(false)}>
+          <div
+            className="w-full max-w-sm rounded-2xl border p-5"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>Keyboard shortcuts</h3>
+              <button onClick={() => setShowShortcuts(false)} style={{ color: 'var(--color-text-muted)' }}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="space-y-2.5 text-xs">
+               {[
+                ['Q', 'New task'],
+                ['E', 'Edit selected task'],
+                ['Space', 'Toggle complete'],
+                ['/', 'Focus search'],
+                ['F', 'Start focus mode'],
+                ['?', 'Show this help'],
+                ['Esc', 'Close modals'],
+                ['G + D', 'Go to Dashboard'],
+                ['G + T', 'Go to Tasks'],
+                ['G + C', 'Go to Calendar'],
+                ['G + H', 'Go to Habits'],
+                ['G + N', 'Go to Notes'],
+                ['G + F', 'Go to Focus'],
+                ['G + P', 'Go to Projects'],
+                ['G + S', 'Go to Settings'],
+              ].map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+                  <kbd
+                    className="px-2 py-1 rounded-md text-[10px] font-bold border"
+                    style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                  >
+                    {key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       {/* Search Modal */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

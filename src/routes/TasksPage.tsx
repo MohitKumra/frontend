@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTasks, useUpdateTask, useDeleteTask } from '../features/tasks/hooks/useTasks';
+import { useTaskKeyboardShortcuts } from '../hooks/useTaskKeyboardShortcuts';
 import { useDashboardSummary } from '../features/dashboard/hooks/useDashboard';
 import { tasksApi } from '../features/tasks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,7 +40,6 @@ import { TaskBoardView } from '../components/tasks/TaskBoardView';
 import { TaskCard, isOverdue, isToday } from '../components/tasks/TaskCard';
 import { TasksEmptyState } from '../components/tasks/TasksEmptyState';
 import { ProductivityEngine } from '../components/habits/ProductivityEngine';
-import { useTaskKeyboardShortcuts } from '../hooks/useTaskKeyboardShortcuts';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import type { DailyAnalyticsDTO, TaskDTO, TaskStatus } from '../types';
@@ -139,7 +139,6 @@ export function TasksPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set<string>());
   const [bulkAction, setBulkAction] = useState<'done' | 'todo' | 'delete' | null>(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
   const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({});
@@ -454,7 +453,7 @@ export function TasksPage() {
     onEditSelected:     () => { if (firstSelected) setEditingTask(firstSelected); },
     onCompleteSelected: () => { if (firstSelected) toggleTaskStatus(firstSelected); },
     onFocusSearch:      () => searchRef.current?.focus(),
-    onFocusMode:        () => { if (firstSelected) navigate(`/focus?taskId=${firstSelected.id}`); else navigate('/focus'); },
+    onFocusMode:        () => { if (firstSelected) navigate(`/focus?taskId=${firstSelected.id}&autostart=1`); else navigate('/focus?autostart=1'); },
     isBlocked:          () => createModalOpen || editingTask !== null,
   });
 
@@ -561,45 +560,43 @@ export function TasksPage() {
             </div>
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
+              <div className="np-pill-segmented">
                 {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
-                  const icons = {
-                    pending: <CheckSquare size={14} />,
-                    today: <Zap size={14} />,
-                    upcoming: <Calendar size={14} />,
-                    completed: <CheckCircle2 size={14} />,
-                    overdue: <TrendingUp size={14} />,
-                    all: <ListChecks size={14} />,
+                  const isActive = filter === f;
+                  const icons: Record<TaskFilter, React.ReactNode> = {
+                    pending: <CheckSquare size={12} />,
+                    today: <Zap size={12} />,
+                    upcoming: <Calendar size={12} />,
+                    completed: <CheckCircle2 size={12} />,
+                    overdue: <TrendingUp size={12} />,
+                    all: <ListChecks size={12} />,
                   };
                   return (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
-                      className="flex shrink-0 items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-black transition-all"
-                      style={
-                        filter === f
-                          ? { background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-raised))', color: 'var(--color-accent)', boxShadow: '0 10px 22px -18px var(--color-accent)' }
-                          : { background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
-                      }
+                      className={`np-pill ${isActive ? 'is-active' : ''}`}
                     >
-                      {icons[f]}
-                      <span>{f.charAt(0).toUpperCase() + f.slice(1)}</span>
-                      <span className="font-black">{counts[f]}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="task-pill-indicator"
+                          className="np-pill-indicator"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                        />
+                      )}
+                      <span className="relative z-[1] flex items-center gap-[5px]">
+                        {icons[f]}
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                        <span className="np-pill-count">{counts[f]}</span>
+                      </span>
                     </button>
                   );
                 })}
               </div>
+            </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowShortcuts(true)}
-                  className="hidden items-center gap-1.5 rounded-2xl border px-3 py-2.5 text-xs font-black sm:flex"
-                  style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                >
-                  <Keyboard size={14} />
-                  Shortcuts
-                </button>
 
                 <div className="relative shrink-0">
                   <button
@@ -1149,43 +1146,6 @@ export function TasksPage() {
           task={editingTask}
           onClose={() => setEditingTask(null)}
         />
-      )}
-
-      {showShortcuts && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowShortcuts(false)}>
-          <div
-            className="w-full max-w-sm rounded-2xl border p-5"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>Keyboard shortcuts</h3>
-              <button onClick={() => setShowShortcuts(false)} style={{ color: 'var(--color-text-muted)' }}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className="space-y-2.5 text-xs">
-              {[
-                ['N', 'New task'],
-                ['E', 'Edit selected task'],
-                ['Space', 'Toggle complete'],
-                ['/', 'Focus search'],
-                ['F', 'Start focus mode'],
-              ].map(([key, label]) => (
-                <div key={key} className="flex items-center justify-between">
-                  <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-                  <kbd
-                    className="px-2 py-1 rounded-md text-[10px] font-bold border"
-                    style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                  >
-                    {key}
-                  </kbd>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>,
-        document.body,
       )}
 
       {/* Delete confirmation modal */}

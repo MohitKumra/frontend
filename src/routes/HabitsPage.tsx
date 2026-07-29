@@ -4,6 +4,10 @@ import {
   Search,
   Grid3x3,
   List,
+  LayoutList,
+  Zap,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import { useHabits, useCreateHabit, useStreakStatus } from '../features/habits/hooks/useHabits';
 import { useTasks } from '../features/tasks/hooks/useTasks';
@@ -391,17 +395,38 @@ export function HabitsPage() {
             </select>
           </div>
 
-          <div className="flex overflow-x-auto gap-2 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {(['all', 'active', 'pending', 'completed'] as HabitFilter[]).map((f) => (
-              <motion.button
-                key={f} onClick={() => setFilter(f)}
-                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${filter === f ? 'text-white shadow-lg' : 'text-text-muted'}`}
-                style={filter === f ? { background: 'var(--gradient-accent)' } : { background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-                whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)} ({filterCounts[f]})
-              </motion.button>
-            ))}
+          <div className="flex overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="np-pill-segmented">
+              {(['all', 'active', 'pending', 'completed'] as HabitFilter[]).map((f) => {
+                const isActive = filter === f;
+                const iconMap: Record<HabitFilter, React.ReactNode> = {
+                  all: <LayoutList size={12} />,
+                  active: <Zap size={12} />,
+                  pending: <Clock size={12} />,
+                  completed: <CheckCircle2 size={12} />,
+                };
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`np-pill ${isActive ? 'is-active' : ''}`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="habit-pill-indicator"
+                        className="np-pill-indicator"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                      />
+                    )}
+                    <span className="relative z-[1] flex items-center gap-[5px]">
+                      {iconMap[f]}
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                      <span className="np-pill-count">{filterCounts[f]}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </motion.div>
 

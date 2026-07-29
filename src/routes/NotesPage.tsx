@@ -30,6 +30,8 @@ import {
 import { useNotes, useDeleteNote, useUpdateNote, useTogglePin, useArchiveNote, useUnarchiveNote } from '../features/notes/hooks/useNotes';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 import { FloatingNotesEmpty } from '../components/ui/FloatingNotesEmpty';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
@@ -76,6 +78,7 @@ export function NotesPage() {
   const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const [noteMenuOpen, setNoteMenuOpen] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [originRect, setOriginRect] = useState<DOMRect | null>(null);
   const [featuredIndex, setFeaturedIndex] = useState(0);
 
@@ -213,12 +216,16 @@ export function NotesPage() {
     new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
   const handleDeleteNote = (id: string) => {
-    if (confirm('Are you sure you want to delete this note?')) {
-      deleteNote.mutate(id);
-      setNoteMenuOpen(null);
-      setViewingNote((current) => (current?.id === id ? null : current));
-    }
+    setDeleteConfirmation(id);
+    setNoteMenuOpen(null);
   };
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!deleteConfirmation) return;
+    deleteNote.mutate(deleteConfirmation);
+    setViewingNote((current) => (current?.id === deleteConfirmation ? null : current));
+    setDeleteConfirmation(null);
+  }, [deleteConfirmation, deleteNote]);
 
   const handleTogglePin = (id: string, currentPinned: boolean) => {
     togglePin.mutate({ id, isPinned: !currentPinned });
@@ -563,21 +570,42 @@ export function NotesPage() {
 
             {/* Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-              {(['all', 'notes', 'journal', 'archived'] as NoteFilter[]).map((f) => {
-                const isActive = filter === f;
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`np-pill ${isActive ? 'is-active' : ''}`}
-                  >
-                    {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
-                  </button>
-                );
-              })}
+              {/* Segmented control for main filters */}
+              <div className="np-pill-segmented">
+                {(['all', 'notes', 'journal', 'archived'] as NoteFilter[]).map((f) => {
+                  const isActive = filter === f;
+                  const iconMap: Record<NoteFilter, React.ReactNode> = {
+                    all: <FileText size={12} />,
+                    notes: <StickyNote size={12} />,
+                    journal: <BookOpen size={12} />,
+                    archived: <Archive size={12} />,
+                  };
+                  return (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`np-pill ${isActive ? 'is-active' : ''}`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="pill-indicator"
+                          className="np-pill-indicator"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                        />
+                      )}
+                      <span className="relative z-[1] flex items-center gap-[5px]">
+                        {iconMap[f]}
+                        {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Standalone pills */}
               <button
                 onClick={() => setAttachmentsOnly((v) => !v)}
-                className={`np-pill ${attachmentsOnly ? 'is-active' : ''}`}
+                className={`np-pill-standalone ${attachmentsOnly ? 'is-active' : ''}`}
                 title="Show only notes with attachments"
               >
                 <Filter size={13} />
@@ -585,7 +613,7 @@ export function NotesPage() {
               </button>
               <button
                 onClick={() => setShowFilters((v) => !v)}
-                className={`np-pill ${showFilters ? 'is-active' : ''}`}
+                className={`np-pill-standalone ${showFilters ? 'is-active' : ''}`}
                 title="Advanced filters"
               >
                 <ArrowUpDown size={13} />
@@ -1150,6 +1178,34 @@ export function NotesPage() {
           onClose={() => setEditingNote(null)}
         />
       )}
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteConfirmation !== null}
+        onClose={() => setDeleteConfirmation(null)}
+        title="Confirm Deletion"
+      >
+        <div className="flex flex-col gap-5 pt-2">
+          <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
+            {(() => {
+              const note = allNotes.find((n) => n.id === deleteConfirmation);
+              return note ? (
+                <>Are you sure you want to delete <strong>{ note.title || (note.isJournal  ? 'This Journal' : 'This Note') }</strong>? This action cannot be undone.</>
+              ) : (
+                <>Are you sure you want to delete this? This action cannot be undone.</>
+              );
+            })()}
+          </p>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setDeleteConfirmation(null)} className="flex-1">
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleConfirmDelete} className="flex-1">
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

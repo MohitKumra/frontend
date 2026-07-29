@@ -31,7 +31,6 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { TabBar } from '../components/ui/TabBar';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import {
@@ -437,13 +436,37 @@ export function SettingsPage() {
           }
         `}</style>
             <div className="px-4 sm:px-0 hide-scrollbar">
-              <TabBar
-                tabs={SETTINGS_TABS}
-                activeTab={activeTab}
-                onTabChange={handleTabChange}
-                variant="underline"
-                className="min-w-max"
-              />
+              <div
+                className="flex items-center gap-1 w-fit min-w-max border-b"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                {SETTINGS_TABS.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => handleTabChange(tab.id)}
+                      className={[
+                        'relative px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center gap-1.5 sm:gap-2 tap-target whitespace-nowrap',
+                        isActive
+                          ? 'text-accent'
+                          : 'text-text-secondary hover:text-text-primary',
+                      ].join(' ')}
+                    >
+                      <span className="shrink-0">{tab.icon}</span>
+                      <span>{tab.label}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="settings-tab-indicator"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                          style={{ background: 'var(--color-accent)' }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </motion.div>

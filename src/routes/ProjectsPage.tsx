@@ -295,22 +295,31 @@ export function ProjectsPage() {
         {/* Status Filter Tabs + Search + Filters */}
         <motion.div variants={itemVariants} className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0 lg:flex-1 lg:min-w-0">
-            {(['ALL', 'PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as FilterStatus[]).map((status) => {
-              const count = status === 'ALL' ? projects.length : projects.filter((p) => p.status === status).length;
-              return (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                    filterStatus === status ? 'text-white shadow-sm' : 'text-text-muted hover:text-text-primary'
-                  }`}
-                  style={filterStatus === status ? { background: 'var(--gradient-accent)' } : { background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-                >
-                  {status === 'ALL' ? 'All' : statusConfig[status].label}
-                  <span className="ml-1.5 opacity-75">({count})</span>
-                </button>
-              );
-            })}
+            <div className="np-pill-segmented">
+              {(['ALL', 'PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as FilterStatus[]).map((status) => {
+                const count = status === 'ALL' ? projects.length : projects.filter((p) => p.status === status).length;
+                const isActive = filterStatus === status;
+                return (
+                  <button
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    className={`np-pill ${isActive ? 'is-active' : ''}`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="project-filter-indicator"
+                        className="np-pill-indicator"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                      />
+                    )}
+                    <span className="relative z-[1] flex items-center gap-[5px]">
+                      {status === 'ALL' ? 'All' : statusConfig[status].label}
+                      <span className="np-pill-count">{count}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">

@@ -40,7 +40,6 @@ import { useCalendarOverview } from '../features/calendar/hooks/useCalendar';
 import { useSettings, useSyncGoogleCalendar } from '../features/settings/hooks/useSettings';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { PageHeader } from '../components/ui/PageHeader';
-import { TabBar } from '../components/ui/TabBar';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { AgendaTaskRow } from '../components/planner/AgendaTaskRow';
@@ -334,7 +333,29 @@ export function CalendarPage() {
                 >
                   Today
                 </button>
-                <TabBar tabs={viewTabs} activeTab={view} onTabChange={(tab) => setView(tab as CalendarView)} variant="pill" />
+                <div className="np-pill-segmented">
+                  {(['day', 'week', 'month'] as CalendarView[]).map((v) => {
+                    const isActive = view === v;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setView(v)}
+                        className={`np-pill ${isActive ? 'is-active' : ''}`}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="calendar-view-indicator"
+                            className="np-pill-indicator"
+                            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                          />
+                        )}
+                        <span className="relative z-[1] flex items-center gap-[5px]">
+                          {v.charAt(0).toUpperCase() + v.slice(1)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
                   <div className="relative">
                     <button
                       type="button"

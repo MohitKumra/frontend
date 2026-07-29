@@ -163,14 +163,14 @@ function UnlockedCard({ achievement, compact = false }: { achievement: Achieveme
 
   return (
     <motion.div
-      className="relative"
+      className="relative "
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       whileHover={{ y: -3, scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
       <motion.div
-        className={`relative flex flex-col items-center text-center ${compact ? 'gap-1 p-2' : 'gap-2 p-3'} rounded-xl`}
+        className={`relative flex flex-col items-center  text-center ${compact ? 'gap-1 p-2' : 'gap-2 p-3'} rounded-xl`}
         style={{
           background: 'var(--color-surface-raised)',
           border: `1px solid ${tierColor}30`,
@@ -396,7 +396,7 @@ export function AchievementsGallery({ onClose, onBack, inline }: {
                     return (
                       <span
                         key={tier}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
+                        className="flex items-center  gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
                         style={{
                           background: `${tierColors[tier]}10`,
                           border: `1px solid ${tierColors[tier]}20`,
@@ -414,11 +414,11 @@ export function AchievementsGallery({ onClose, onBack, inline }: {
                 {/* Same card used in All Achievements, wrapped instead of stretched into a
                     fixed-column grid — a handful of trophies cluster naturally instead of
                     floating in empty columns */}
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {unlocked.map((achievement, idx) => (
                     <motion.div
                       key={achievement.key}
-                      className="w-[104px] sm:w-[116px]"
+                      className="w-[104px] sm:w-[116px] "
                       initial={{ opacity: 0, scale: 0.85 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: idx * 0.05, type: 'spring', stiffness: 200 }}

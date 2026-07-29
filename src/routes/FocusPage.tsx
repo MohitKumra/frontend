@@ -441,7 +441,7 @@ function FocusModeFullScreen({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
+          <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-3 w-full ">
             <button
               onClick={onSkipBack}
               aria-label="Previous mode"
@@ -459,7 +459,7 @@ function FocusModeFullScreen({
 
             <button
               onClick={onReset}
-              className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-2.5 sm:py-4 rounded-full text-xs sm:text-sm font-bold border shadow-sm shrink-0"
+              className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-6 py-2.5 sm:py-4 rounded-full text-[10px] sm:text-sm font-bold border shadow-sm shrink-0"
               style={{
                 background: mixBg(22),
                 borderColor: mixBorder(35),
@@ -474,7 +474,7 @@ function FocusModeFullScreen({
 
             <button
               onClick={onStartPause}
-              className="flex items-center justify-center gap-1.5 sm:gap-2.5 px-5 sm:px-10 h-11 sm:h-14 md:h-16 text-sm sm:text-base md:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
+              className="flex items-center justify-center gap-1 sm:gap-2.5 px-3 sm:px-10 h-11 sm:h-14 md:h-16 text-xs sm:text-base md:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
               style={{
                 background: mixBg(30),
                 borderColor: mixBorder(45),
@@ -498,7 +498,7 @@ function FocusModeFullScreen({
                 <>
                   <Play size={17} className="sm:hidden" />
                   <Play size={20} className="hidden sm:block" />
-                  Start
+                  Start Break
                 </>
               )}
             </button>
@@ -1027,6 +1027,7 @@ export function FocusPage() {
   const elapsedRef = useRef(0);
   const qc = useQueryClient();
   const { focusMode, setFocusMode } = useUIStore();
+  const [isRestored, setIsRestored] = useState(false);
   const restoredRef = useRef(false);
   const completionLoggedRef = useRef(false);
   const lastLoggedElapsedRef = useRef(0);
@@ -1088,6 +1089,7 @@ export function FocusPage() {
           } else {
             setRunning(true);
           }
+          setIsRestored(true);
           restoredRef.current = true;
           return;
         }
@@ -1113,8 +1115,9 @@ export function FocusPage() {
             setSelectedTaskId(null);
             setSelectedProjectId(null);
             clearTimerState(mode);
-            restoredRef.current = true;
-            return;
+          setIsRestored(true);
+          restoredRef.current = true;
+          return;
           }
         }
         setSecondsLeft(newSecondsLeft);
@@ -1132,14 +1135,28 @@ export function FocusPage() {
       } else if (searchParams.get('projectId')) {
         setSelectedProjectId(searchParams.get('projectId'));
       }
-      restoredRef.current = true;
+      setIsRestored(true);
     };
     restore();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── Auto-start timer when ?autostart=1 is present ──────────────────────
+  const autostartTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (!isRestored || autostartTriggeredRef.current) return;
+    const autoStart = searchParams.get('autostart');
+    if (autoStart !== '1') return;
+    autostartTriggeredRef.current = true;
+    // Small delay to let the component fully settle after restoration
+    const timer = setTimeout(() => {
+      handleStartPause();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [isRestored, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Persist to localStorage ──────────────────────────────────────────
   useEffect(() => {
-    if (!restoredRef.current) return;
+    if (!isRestored) return;
     if (startedAt) {
       saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId });
     }
@@ -1310,7 +1327,7 @@ export function FocusPage() {
 
   // ─── Completion detection ──────────────────────────────────────────────
   useEffect(() => {
-    if (!restoredRef.current) return;
+    if (!isRestored) return;
     if (running && secondsLeft === 0 && startedAt && !completionLoggedRef.current) {
       completionLoggedRef.current = true;
       setRunning(false);
@@ -1691,7 +1708,7 @@ export function FocusPage() {
                   <RotateCcw size={16} />
                 </button>
                 <Button onClick={handleStartPause} size="lg" className="w-48 shadow-lg font-bold" leftIcon={running ? <Pause size={18} /> : <Play size={18} />}>
-                  {running ? 'Pause' : mode === 'focus' ? 'Start Focus' : 'Start'}
+                  {running ? 'Pause' : mode === 'focus' ? 'Start Focus' : 'Start Break'}
                 </Button>
               </div>
 
