@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { SkipDaysPicker } from './SkipDaysPicker';
 import { getCategory } from '../../features/habits/Habitpresentation';
 import { useCreateHabit } from '../../features/habits/hooks/useHabits';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const STEPS = ['Name', 'Reminder', 'Duration', 'Skip Days'];
 const STEP_ICONS = ['📝', '⏰', '🎯', '📅'];
@@ -18,6 +19,7 @@ interface CreateHabitWizardProps {
 
 export function CreateHabitWizard({ open, onClose, initialTitle = '', initialReminderTime = '' }: CreateHabitWizardProps) {
   const createHabit = useCreateHabit();
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState(initialTitle);
@@ -135,7 +137,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="e.g. Read 30 minutes"
-                autoFocus
+                autoFocus={!isMobile}
               />
               {previewCategory && (
                 <motion.div

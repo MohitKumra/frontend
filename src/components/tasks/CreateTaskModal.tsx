@@ -486,7 +486,7 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to be done?"
               required
-              autoFocus
+              autoFocus={!isMobile}
               className={inputCls}
               style={inputStyle}
             />
