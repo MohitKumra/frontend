@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
+import { AnimatePresence, motion, type PanInfo, useDragControls } from 'framer-motion';
 import { useModalRoot } from './ModalRoot';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 
@@ -17,6 +17,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
   const isMobile = useMediaQuery('(max-width: 640px)');
   const dialogRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
   const modalRoot = useModalRoot();
 
@@ -98,7 +99,23 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
     }
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragControls.start(e);
+  };
+
   if (!modalRoot) return null;
+
+  const sheetSpring = {
+    type: 'spring' as const,
+    stiffness: 420,
+    damping: 36,
+    mass: 0.86,
+  };
+
+  const sheetBounce = {
+    top: 0.06,
+    bottom: 0.5,
+  };
 
   return createPortal(
     <AnimatePresence>
@@ -128,21 +145,29 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
               style={{
                 background: 'var(--modal-bg)',
                 borderTop: '1px solid var(--modal-border)',
-                touchAction: 'none',
+                willChange: 'transform',
+                transform: 'translateZ(0)',
+                contain: 'layout style paint',
                 maxHeight: '90dvh',
               }}
-              initial={{ y: '100%', opacity: 0.98 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0.98 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ y: '100%', opacity: 0.96, scale: 0.985 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: '100%', opacity: 0.96, scale: 0.985 }}
+              transition={sheetSpring}
               drag="y"
+              dragControls={dragControls}
+              dragListener={false}
               dragDirectionLock
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.55 }}
+              dragElastic={sheetBounce}
               onDragEnd={handleDragEnd}
             >
               {/* Drag handle */}
-              <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing shrink-0">
+              <div
+                className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing shrink-0"
+                onPointerDown={handlePointerDown}
+                style={{ touchAction: 'none' }}
+              >
                 <div
                   className="w-10 h-1.5 rounded-full"
                   style={{ background: 'var(--color-border-strong, var(--color-border))' }}
@@ -171,7 +196,8 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
               {/* Content */}
               <div
                 ref={contentRef}
-                className="overflow-y-auto overscroll-contain px-5 pb-8 flex-1"
+                className="overflow-y-auto overscroll-contain touch-pan-y px-5 pb-8 flex-1"
+                style={{ WebkitOverflowScrolling: 'touch' }}
               >
                 {children}
               </div>

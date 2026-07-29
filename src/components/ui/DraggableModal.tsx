@@ -76,16 +76,16 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
   /** Shared spring config for a snappy, over-damped, app-like feel */
   const springConfig = {
     type: 'spring' as const,
-    stiffness: 400,
-    damping: 38,
-    mass: 0.85,
+    stiffness: 420,
+    damping: 36,
+    mass: 0.86,
   };
 
   /** Even tighter spring for the backdrop */
   const backdropSpring = {
     type: 'spring' as const,
-    stiffness: 500,
-    damping: 40,
+    stiffness: 520,
+    damping: 42,
     mass: 0.7,
   };
 
@@ -112,15 +112,15 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
                 transform: 'translateZ(0)',
                 contain: 'layout style paint',
               }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              initial={{ y: '100%', opacity: 0.96, scale: 0.985 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: '100%', opacity: 0.96, scale: 0.985 }}
               transition={springConfig}
               drag="y"
               dragControls={dragControls}
               dragListener={false}
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0.05, bottom: 0.55 }}
+              dragElastic={{ top: 0.06, bottom: 0.5 }}
               onDragEnd={handleDragEnd}
             >
               {/* Drag handle – touches here control the entire sheet drag */}
