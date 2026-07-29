@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
@@ -7,7 +7,6 @@ import {
   ArrowDown,
   ArrowUp,
   Award,
-  BarChart2,
   Brain,
   Calendar,
   CheckCircle2,
@@ -38,7 +37,7 @@ import {
   YAxis,
 } from 'recharts';
 import apiClient from '../lib/apiClient';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { containerVariants, itemVariants, filterContainerVariants } from '../lib/motionVariants';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { FloatingAnalyticsEmpty } from '../components/ui/FloatingAnalyticsEmpty';
@@ -668,6 +667,11 @@ export function AnalyticsPage({ embedded = false }: AnalyticsPageProps) {
     endDate: initialDates.endDate,
   });
 
+  const reducedMotion = useReducedMotion();
+  // Key changes whenever the date filter changes — drives the AnimatePresence
+  // re-mount so the staggered fade+slide replays while queries refetch.
+  const rangeKey = `${dateRange.startDate}-${dateRange.endDate}`;
+
   const queryParams = useMemo(() => ({ startDate: dateRange.startDate, endDate: dateRange.endDate }), [dateRange.startDate, dateRange.endDate]);
   const rangeDays = useMemo(() => {
     const start = parseUtcDate(dateRange.startDate);
@@ -824,9 +828,6 @@ export function AnalyticsPage({ embedded = false }: AnalyticsPageProps) {
     <RootWrapper {...rootProps}>
       <div
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[26rem] opacity-80"
-        style={{
-          background: 'radial-gradient(circle at 8% 10%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 28%), radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--color-info) 14%, transparent), transparent 26%), radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-success) 8%, transparent), transparent 30%), linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 82%, transparent) 0%, transparent 100%)',
-        }}
       />
 
       {/* Header */}
@@ -877,6 +878,18 @@ export function AnalyticsPage({ embedded = false }: AnalyticsPageProps) {
         </div>
       </motion.div>
 
+      {/* Animated content — re-triggers staggered fade+slide on filter change.
+          The header + DateRangePicker above stay static so the filter bar
+          remains interactive while the content below transitions. */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={rangeKey}
+          variants={reducedMotion ? undefined : filterContainerVariants}
+          initial={reducedMotion ? false : 'hidden'}
+          animate="visible"
+          exit={reducedMotion ? undefined : 'exit'}
+          className="flex flex-col gap-5"
+        >
       {/* Hero productivity score */}
       <motion.div variants={itemVariants}>
         <Card
@@ -1287,6 +1300,8 @@ export function AnalyticsPage({ embedded = false }: AnalyticsPageProps) {
           )}
         </SectionCard>
       </motion.div>
+        </motion.div>
+      </AnimatePresence>
     </RootWrapper>
   );
 }

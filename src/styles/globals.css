@@ -77,7 +77,7 @@
     --transition-normal: 280ms;
     --transition-slow: 350ms;
     --transition-page: 350ms;
-    --transition-theme: 550ms;
+    --transition-theme: 850ms;
 
     /* Premium easing functions */
     --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);

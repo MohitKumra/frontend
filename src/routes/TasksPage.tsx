@@ -893,12 +893,12 @@ export function TasksPage() {
         <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:w-[320px] 2xl:w-[360px] xl:shrink-0 xl:pt-5 xl:pr-8">
 
           {/* Productivity Engine */}
-          <div className="rounded-2xl border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div variants={itemVariants} className="rounded-2xl border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <ProductivityEngine context="tasks" tasks={tasks} focusSessions={[]} onOpenCreateTask={(t, d) => { setCreateModalOpen(true); }} onHighlightTask={(id) => { setHighlightedTaskId(id); setTimeout(() => setHighlightedTaskId(null), 3000); }} />
-          </div>
+          </motion.div>
 
           {/* Today's Capacity */}
-          <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div variants={itemVariants} className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Zap size={14} style={{ color: 'var(--color-accent)' }} />
@@ -931,10 +931,10 @@ export function TasksPage() {
                 <div className="h-full rounded-full" style={{ width: `${capacityUsedPct}%`, background: 'var(--gradient-accent)' }} />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Productivity Score */}
-          <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div variants={itemVariants} className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Productivity Score</h3>
               <span className="text-[9px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>This Week</span>
@@ -1002,7 +1002,7 @@ export function TasksPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
         </aside>
         {/* ── End right: Sidebar ───────────────────────────────────────── */}

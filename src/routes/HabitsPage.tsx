@@ -54,12 +54,15 @@ export function HabitsPage() {
 
   // Streak break popup
   const { data: brokenStreaks } = useStreakStatus();
-  const streakPopupDismissed = useUIStore((s) => s.streakPopupDismissed);
+  const streakPopupDismissedAt = useUIStore((s) => s.streakPopupDismissedAt);
   const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
-  const resetStreakPopup = useUIStore((s) => s.resetStreakPopup);
   const [streakModalOpen, setStreakModalOpen] = useState(true);
-
-  const showStreakPopup = !!(!streakPopupDismissed && brokenStreaks && brokenStreaks.length > 0 && streakModalOpen);
+  const latestBrokenAt = brokenStreaks?.[0]?.brokenAt ?? null;
+  const showStreakPopup = !!(
+    latestBrokenAt &&
+    streakModalOpen &&
+    (!streakPopupDismissedAt || latestBrokenAt > streakPopupDismissedAt)
+  );
 
   const habits = data?.data ?? [];
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
@@ -323,11 +326,15 @@ export function HabitsPage() {
         brokenStreaks={brokenStreaks || []}
         onClose={() => {
           setStreakModalOpen(false);
-          resetStreakPopup();
+          if (latestBrokenAt) {
+            dismissStreakPopup(latestBrokenAt);
+          }
         }}
         onDismiss={() => {
           setStreakModalOpen(false);
-          dismissStreakPopup();
+          if (latestBrokenAt) {
+            dismissStreakPopup(latestBrokenAt);
+          }
         }}
       />
     </motion.div>

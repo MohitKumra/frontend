@@ -26,6 +26,7 @@ export function useToggleHabit() {
     mutationFn: (id: string) => habitsApi.toggle(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: [...HABITS_KEY, 'streak-status'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },

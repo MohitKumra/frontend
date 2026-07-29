@@ -365,7 +365,7 @@ html[data-theme-target="dark"]::view-transition-old(root) {
 }
 html[data-theme-target="dark"]::view-transition-new(root) {
   z-index: 9999;
-  animation: sweep-from-top-right 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: sweep-from-top-right 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 /* Dark → Light: new (light) layer sweeps in from bottom-left corner */
@@ -374,27 +374,19 @@ html[data-theme-target="light"]::view-transition-old(root) {
 }
 html[data-theme-target="light"]::view-transition-new(root) {
   z-index: 9999;
-  animation: sweep-from-bottom-left 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: sweep-from-bottom-left 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 /* Circle expands from top-right corner */
 @keyframes sweep-from-top-right {
-  from {
-    clip-path: circle(0% at 100% 0%);
-  }
-  to {
-    clip-path: circle(150% at 100% 0%);
-  }
+  from { clip-path: circle(0% at 100% 0%); }
+  to { clip-path: circle(150% at 100% 0%); }
 }
 
 /* Circle expands from bottom-left corner */
 @keyframes sweep-from-bottom-left {
-  from {
-    clip-path: circle(0% at 0% 100%);
-  }
-  to {
-    clip-path: circle(150% at 0% 100%);
-  }
+  from { clip-path: circle(0% at 0% 100%); }
+  to { clip-path: circle(150% at 0% 100%); }
 }
 
 /* ====== UTILITY CLASSES ====== */

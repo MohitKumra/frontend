@@ -2,12 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { settingsApi } from '../api';
 import { useAuthStore } from '../../../store/authStore';
-import { useUIStore } from '../../../store/uiStore';
 import type {
   UpdateAppearanceRequest,
   UpdateNotificationPreferencesRequest,
 } from '../../../types';
-import type { TaskViewPreference } from '../../../types';
 
 const SETTINGS_KEY = ['settings'] as const;
 
@@ -22,35 +20,14 @@ export function useSettings() {
 
 export function useUpdateAppearance() {
   const qc = useQueryClient();
-  const setTheme = useUIStore((s) => s.setTheme);
-  const setLayoutPreference = useUIStore((s) => s.setLayoutPreference);
-  const setCalendarViewPreference = useUIStore((s) => s.setCalendarViewPreference);
-  const setTaskViewPreference = useUIStore((s) => s.setTaskViewPreference);
-
   return useMutation({
     mutationFn: (data: UpdateAppearanceRequest) => settingsApi.updateAppearance(data),
-    onSuccess: async (data) => {
-      await setTheme(
-        data.themePreference === 'SYSTEM' ? 'system' : data.themePreference === 'DARK' ? 'dark' : 'light',
-        {
-          animate: true,
-          onMutate: () => {
-            // These run INSIDE the view transition callback so the old
-            // snapshot captures the previous state, not the new one.
-            if (data.layoutPreference) {
-              setLayoutPreference(data.layoutPreference);
-            }
-            if (data.calendarView) {
-              setCalendarViewPreference(data.calendarView);
-            }
-            if (data.taskView) {
-              setTaskViewPreference(data.taskView as TaskViewPreference);
-            }
-          },
-        },
-      );
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: SETTINGS_KEY });
       toast.success('Appearance updated');
+    },
+    onError: () => {
+      toast.error('Could not update appearance');
     },
   });
 }

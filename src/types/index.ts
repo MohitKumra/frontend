@@ -297,6 +297,7 @@ export interface HabitStreakBreakDTO {
   title: string;
   previousStreak: number;
   xpLost: number;
+  brokenAt: string;
 }
 
 // ─── Week Overview ────────────────────────────────────────────────────────────

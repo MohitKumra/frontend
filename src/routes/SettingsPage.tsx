@@ -45,7 +45,7 @@ import {
 } from '../features/settings';
 import { useChangePassword, useSetPassword } from '../features/auth';
 import { usePushNotifications } from '../features/notifications';
-import type { LayoutPreference, ThemePreference } from '../types';
+import type { LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
 
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
@@ -244,6 +244,7 @@ export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const uiTheme = useUIStore((s) => s.themePreference);
   const uiLayout = useUIStore((s) => s.layoutPreference);
+  const setTheme = useUIStore((s) => s.setTheme);
   const [searchParams] = useSearchParams();
   const searchParamsString = searchParams.toString();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => getInitialTab(searchParams));
@@ -309,20 +310,45 @@ export function SettingsPage() {
   const applyAppearance = (next: Partial<typeof appearance>) => {
     const merged = { ...appearance, ...next };
     const isThemeChanging = next.themePreference && next.themePreference !== appearance.themePreference;
-    if (!isThemeChanging) {
-      // Non-theme changes update local state immediately for snappy feedback.
-      setAppearance(merged);
+    // Update local previews immediately so the selected card and preview
+    // match the sweep as it starts rather than after the network request.
+    setAppearance(merged);
+
+    if (isThemeChanging) {
+      void setTheme(
+        next.themePreference === 'SYSTEM'
+          ? 'system'
+          : next.themePreference === 'DARK'
+            ? 'dark'
+            : 'light',
+        {
+          animate: true,
+          onMutate: () => {
+            if (next.layoutPreference) {
+              useUIStore.getState().setLayoutPreference(next.layoutPreference);
+            }
+            if (next.calendarView) {
+              useUIStore.getState().setCalendarViewPreference(next.calendarView);
+            }
+            if (next.taskView) {
+              useUIStore.getState().setTaskViewPreference(next.taskView as TaskViewPreference);
+            }
+          },
+        },
+      );
+    } else {
+      if (next.layoutPreference) {
+        useUIStore.getState().setLayoutPreference(next.layoutPreference);
+      }
+      if (next.calendarView) {
+        useUIStore.getState().setCalendarViewPreference(next.calendarView);
+      }
+      if (next.taskView) {
+        useUIStore.getState().setTaskViewPreference(next.taskView as TaskViewPreference);
+      }
     }
-    // The mutation's onSuccess/onMutate will apply all state updates
-    // inside the view transition callback when a theme change is involved.
-    appearanceMutation.mutate(merged, {
-      onSuccess: () => {
-        // Sync local state after the transition is done
-        if (isThemeChanging) {
-          setAppearance(merged);
-        }
-      },
-    });
+
+    appearanceMutation.mutate(merged);
   };
 
   const saveNotifications = (next: typeof notifications) => {
@@ -535,9 +561,7 @@ export function SettingsPage() {
                     className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl overflow-hidden border relative"
                     style={{
                       borderColor: 'var(--color-border)',
-                      background: appearance.themePreference === 'DARK'
-                        ? 'linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
-                        : 'linear-gradient(145deg, #f0f4ff 0%, #e8eeff 40%, #dde6ff 100%)',
+                      background: 'linear-gradient(145deg, color-mix(in srgb, var(--color-surface) 92%, var(--color-accent) 8%) 0%, color-mix(in srgb, var(--color-surface) 86%, var(--color-info) 14%) 50%, color-mix(in srgb, var(--color-surface) 80%, var(--color-accent) 20%) 100%)',
                       minHeight: appearance.layoutPreference === 'COMPACT' ? '280px' : appearance.layoutPreference === 'EXPANDED' ? '340px' : '310px',
                     }}
                   >
@@ -545,55 +569,51 @@ export function SettingsPage() {
                     <motion.div
                       animate={{ x: [0, 15, 0], y: [0, -10, 0], scale: [1, 1.1, 1] }}
                       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{
-                        position: 'absolute',
-                        top: '-20%',
-                        right: '-10%',
-                        width: '180px',
-                        height: '180px',
-                        borderRadius: '50%',
-                        background: 'var(--gradient-accent)',
-                        opacity: appearance.themePreference === 'DARK' ? 0.12 : 0.18,
-                        filter: 'blur(50px)',
-                        pointerEvents: 'none',
-                      }}
-                    />
+                        style={{
+                          position: 'absolute',
+                          top: '-20%',
+                          right: '-10%',
+                          width: '180px',
+                          height: '180px',
+                          borderRadius: '50%',
+                          background: 'color-mix(in srgb, var(--color-accent) 60%, var(--color-info) 40%)',
+                          opacity: 0.18,
+                          filter: 'blur(50px)',
+                          pointerEvents: 'none',
+                        }}
+                      />
                     <motion.div
                       animate={{ x: [0, -12, 0], y: [0, 15, 0], scale: [1, 1.15, 1] }}
                       transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                      style={{
-                        position: 'absolute',
-                        bottom: '-15%',
-                        left: '-5%',
-                        width: '150px',
-                        height: '150px',
-                        borderRadius: '50%',
-                        background: appearance.themePreference === 'DARK'
-                          ? 'linear-gradient(135deg, #6366f1, #a855f7)'
-                          : 'linear-gradient(135deg, #818cf8, #c084fc)',
-                        opacity: appearance.themePreference === 'DARK' ? 0.15 : 0.2,
-                        filter: 'blur(45px)',
-                        pointerEvents: 'none',
-                      }}
-                    />
+                        style={{
+                          position: 'absolute',
+                          bottom: '-15%',
+                          left: '-5%',
+                          width: '150px',
+                          height: '150px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 72%, white 28%), color-mix(in srgb, var(--color-info) 68%, white 32%))',
+                          opacity: 0.18,
+                          filter: 'blur(45px)',
+                          pointerEvents: 'none',
+                        }}
+                      />
                     <motion.div
                       animate={{ x: [0, 8, 0], y: [0, -8, 0] }}
                       transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-                      style={{
-                        position: 'absolute',
-                        top: '40%',
-                        left: '50%',
-                        width: '100px',
-                        height: '100px',
-                        borderRadius: '50%',
-                        background: appearance.themePreference === 'DARK'
-                          ? 'linear-gradient(135deg, #06b6d4, #3b82f6)'
-                          : 'linear-gradient(135deg, #67e8f9, #93c5fd)',
-                        opacity: appearance.themePreference === 'DARK' ? 0.1 : 0.15,
-                        filter: 'blur(40px)',
-                        pointerEvents: 'none',
-                      }}
-                    />
+                        style={{
+                          position: 'absolute',
+                          top: '40%',
+                          left: '50%',
+                          width: '100px',
+                          height: '100px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 78%, white 22%), color-mix(in srgb, var(--color-accent) 72%, white 28%))',
+                          opacity: 0.14,
+                          filter: 'blur(40px)',
+                          pointerEvents: 'none',
+                        }}
+                      />
 
                     {/* Content layer */}
                     <div className="relative z-10 flex flex-col items-center justify-center h-full p-4 sm:p-6" style={{ minHeight: 'inherit' }}>
@@ -609,21 +629,17 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, -4, 0] }}
                           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                          style={{
-                            width: appearance.layoutPreference === 'COMPACT' ? '220px' : appearance.layoutPreference === 'EXPANDED' ? '280px' : '250px',
-                            borderRadius: '16px',
-                            background: appearance.themePreference === 'DARK'
-                              ? 'rgba(255,255,255,0.08)'
-                              : 'rgba(255,255,255,0.75)',
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.9)'}`,
-                            boxShadow: appearance.themePreference === 'DARK'
-                              ? '0 20px 60px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2)'
-                              : '0 20px 60px rgba(99,102,241,0.12), 0 4px 16px rgba(99,102,241,0.06)',
-                            padding: appearance.layoutPreference === 'COMPACT' ? '12px' : appearance.layoutPreference === 'EXPANDED' ? '18px' : '15px',
-                          }}
-                        >
+                        style={{
+                          width: appearance.layoutPreference === 'COMPACT' ? '220px' : appearance.layoutPreference === 'EXPANDED' ? '280px' : '250px',
+                          borderRadius: '16px',
+                          background: 'color-mix(in srgb, var(--color-surface-raised) 86%, transparent)',
+                          backdropFilter: 'blur(20px)',
+                          WebkitBackdropFilter: 'blur(20px)',
+                          border: '1px solid color-mix(in srgb, var(--color-border) 75%, transparent)',
+                          boxShadow: '0 20px 60px color-mix(in srgb, var(--color-accent) 10%, transparent), 0 4px 16px color-mix(in srgb, var(--color-info) 8%, transparent)',
+                          padding: appearance.layoutPreference === 'COMPACT' ? '12px' : appearance.layoutPreference === 'EXPANDED' ? '18px' : '15px',
+                        }}
+                      >
                           {/* Window titlebar */}
                           <div className="flex items-center gap-1.5 mb-3">
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f57' }} />
@@ -634,7 +650,7 @@ export function SettingsPage() {
                               style={{
                                 flex: 1,
                                 height: 6,
-                                background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                background: 'color-mix(in srgb, var(--color-border) 45%, transparent)',
                                 maxWidth: '80px',
                               }}
                             />
@@ -657,29 +673,25 @@ export function SettingsPage() {
                                 style={{
                                   height: 6,
                                   width: '70%',
-                                  background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)',
+                                  background: 'color-mix(in srgb, var(--color-border) 65%, transparent)',
                                 }}
                               />
                             </div>
                             <div className="flex gap-2">
                               <div
-                                className="rounded-lg flex-1"
-                                style={{
+                              className="rounded-lg flex-1"
+                              style={{
                                   height: appearance.layoutPreference === 'COMPACT' ? '28px' : appearance.layoutPreference === 'EXPANDED' ? '40px' : '34px',
-                                  background: appearance.themePreference === 'DARK'
-                                    ? 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.15))'
-                                    : 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08))',
-                                  border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(99,102,241,0.25)' : 'rgba(99,102,241,0.15)'}`,
+                                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 18%, transparent), color-mix(in srgb, var(--color-info) 12%, transparent))',
+                                  border: '1px solid color-mix(in srgb, var(--color-accent) 24%, transparent)',
                                 }}
                               />
                               <div
                                 className="rounded-lg flex-1"
                                 style={{
                                   height: appearance.layoutPreference === 'COMPACT' ? '28px' : appearance.layoutPreference === 'EXPANDED' ? '40px' : '34px',
-                                  background: appearance.themePreference === 'DARK'
-                                    ? 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(59,130,246,0.15))'
-                                    : 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(59,130,246,0.08))',
-                                  border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(6,182,212,0.25)' : 'rgba(6,182,212,0.15)'}`,
+                                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 18%, transparent), color-mix(in srgb, var(--color-accent) 12%, transparent))',
+                                  border: '1px solid color-mix(in srgb, var(--color-info) 24%, transparent)',
                                 }}
                               />
                             </div>
@@ -689,7 +701,7 @@ export function SettingsPage() {
                                 style={{
                                   height: 5,
                                   width: '90%',
-                                  background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                  background: 'color-mix(in srgb, var(--color-border) 42%, transparent)',
                                 }}
                               />
                               <div
@@ -697,7 +709,7 @@ export function SettingsPage() {
                                 style={{
                                   height: 5,
                                   width: '65%',
-                                  background: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                  background: 'color-mix(in srgb, var(--color-border) 32%, transparent)',
                                 }}
                               />
                             </div>
@@ -708,21 +720,19 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, -6, 0], x: [0, 3, 0] }}
                           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                          style={{
-                            position: 'absolute',
-                            top: '-12px',
-                            right: '-28px',
-                            width: appearance.layoutPreference === 'COMPACT' ? '64px' : '76px',
-                            padding: '8px',
-                            borderRadius: '12px',
-                            background: appearance.themePreference === 'DARK'
-                              ? 'rgba(99,102,241,0.2)'
-                              : 'rgba(99,102,241,0.1)',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)'}`,
-                            boxShadow: '0 8px 24px rgba(99,102,241,0.15)',
-                          }}
+                            style={{
+                              position: 'absolute',
+                              top: '-12px',
+                              right: '-28px',
+                              width: appearance.layoutPreference === 'COMPACT' ? '64px' : '76px',
+                              padding: '8px',
+                              borderRadius: '12px',
+                              background: 'color-mix(in srgb, var(--color-accent) 16%, transparent)',
+                              backdropFilter: 'blur(16px)',
+                              WebkitBackdropFilter: 'blur(16px)',
+                              border: '1px solid color-mix(in srgb, var(--color-accent) 26%, transparent)',
+                              boxShadow: '0 8px 24px color-mix(in srgb, var(--color-accent) 14%, transparent)',
+                            }}
                         >
                           <svg width="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="20" cy="14" r="8" fill="var(--color-accent)" opacity="0.3" />
@@ -735,31 +745,29 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, 5, 0], x: [0, -4, 0] }}
                           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-                          style={{
-                            position: 'absolute',
-                            bottom: '-8px',
-                            left: '-24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '6px 12px',
-                            borderRadius: '20px',
-                            background: appearance.themePreference === 'DARK'
-                              ? 'rgba(34,197,94,0.15)'
-                              : 'rgba(34,197,94,0.1)',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(34,197,94,0.3)' : 'rgba(34,197,94,0.2)'}`,
-                            boxShadow: '0 6px 20px rgba(34,197,94,0.12)',
-                          }}
-                        >
+                            style={{
+                              position: 'absolute',
+                              bottom: '-8px',
+                              left: '-24px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
+                              backdropFilter: 'blur(16px)',
+                              WebkitBackdropFilter: 'blur(16px)',
+                              border: '1px solid color-mix(in srgb, var(--color-success) 24%, transparent)',
+                              boxShadow: '0 6px 20px color-mix(in srgb, var(--color-success) 12%, transparent)',
+                            }}
+                          >
                           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
                           <div
                             className="rounded-full"
                             style={{
                               width: '32px',
                               height: 4,
-                              background: appearance.themePreference === 'DARK' ? 'rgba(34,197,94,0.5)' : 'rgba(34,197,94,0.35)',
+                              background: 'color-mix(in srgb, var(--color-success) 55%, transparent)',
                             }}
                           />
                         </motion.div>
@@ -768,23 +776,19 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, 4, 0], x: [0, -2, 0] }}
                           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
-                          style={{
-                            position: 'absolute',
-                            top: '50%',
-                            right: '-36px',
-                            transform: 'translateY(-50%)',
-                            padding: '8px 10px',
-                            borderRadius: '10px',
-                            background: appearance.themePreference === 'DARK'
-                              ? 'rgba(255,255,255,0.06)'
-                              : 'rgba(255,255,255,0.7)',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
-                            border: `1px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'}`,
-                            boxShadow: appearance.themePreference === 'DARK'
-                              ? '0 6px 20px rgba(0,0,0,0.3)'
-                              : '0 6px 20px rgba(0,0,0,0.06)',
-                          }}
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              right: '-36px',
+                              transform: 'translateY(-50%)',
+                              padding: '8px 10px',
+                              borderRadius: '10px',
+                              background: 'color-mix(in srgb, var(--color-surface-raised) 76%, transparent)',
+                              backdropFilter: 'blur(16px)',
+                              WebkitBackdropFilter: 'blur(16px)',
+                              border: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
+                              boxShadow: '0 6px 20px color-mix(in srgb, var(--color-text-primary) 8%, transparent)',
+                            }}
                         >
                           <svg width="48" height="28" viewBox="0 0 48 28" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path
@@ -813,7 +817,7 @@ export function SettingsPage() {
                           display: 'grid',
                           gridTemplateColumns: 'repeat(4, 1fr)',
                           gap: '8px',
-                          opacity: appearance.themePreference === 'DARK' ? 0.15 : 0.12,
+                          opacity: 0.12,
                           pointerEvents: 'none',
                         }}
                       >
@@ -824,7 +828,7 @@ export function SettingsPage() {
                               width: 3,
                               height: 3,
                               borderRadius: '50%',
-                              background: appearance.themePreference === 'DARK' ? 'white' : 'var(--color-accent)',
+                              background: i % 2 === 0 ? 'var(--color-accent)' : 'var(--color-info)',
                             }}
                           />
                         ))}
@@ -839,7 +843,7 @@ export function SettingsPage() {
                           width: '48px',
                           height: '48px',
                           borderRadius: '50%',
-                          border: `2px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.08)'}`,
+                          border: '2px solid color-mix(in srgb, var(--color-border) 70%, transparent)',
                           pointerEvents: 'none',
                         }}
                       >
@@ -851,7 +855,7 @@ export function SettingsPage() {
                             right: '6px',
                             bottom: '6px',
                             borderRadius: '50%',
-                            border: `1.5px solid ${appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.04)' : 'rgba(99,102,241,0.05)'}`,
+                            border: '1.5px solid color-mix(in srgb, var(--color-border) 55%, transparent)',
                           }}
                         />
                       </div>
@@ -861,13 +865,11 @@ export function SettingsPage() {
                     <div
                       className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-t text-[10px] sm:text-[11px] font-semibold relative z-10"
                       style={{
-                        borderColor: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                        background: appearance.themePreference === 'DARK'
-                          ? 'rgba(0,0,0,0.3)'
-                          : 'rgba(255,255,255,0.6)',
+                        borderColor: 'color-mix(in srgb, var(--color-border) 75%, transparent)',
+                        background: 'color-mix(in srgb, var(--color-surface-raised) 78%, transparent)',
                         backdropFilter: 'blur(12px)',
                         WebkitBackdropFilter: 'blur(12px)',
-                        color: appearance.themePreference === 'DARK' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.45)',
+                        color: 'var(--color-text-muted)',
                       }}
                     >
                       <span className="flex items-center gap-1.5">
@@ -879,7 +881,7 @@ export function SettingsPage() {
                           background: 'var(--color-accent)',
                           boxShadow: '0 0 6px var(--color-accent)',
                         }} />
-                        {appearance.themePreference === 'DARK' ? 'Dark' : appearance.themePreference === 'LIGHT' ? 'Light' : 'System'}
+                        Live Preview
                         {' · '}
                         {appearance.layoutPreference === 'COMPACT' ? 'Compact' : appearance.layoutPreference === 'EXPANDED' ? 'Expanded' : 'Comfortable'}
                       </span>

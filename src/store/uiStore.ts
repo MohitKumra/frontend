@@ -22,6 +22,7 @@ interface UIState {
   sidebarOpen: boolean;
   focusMode: boolean;
   streakPopupDismissed: boolean;
+  streakPopupDismissedAt: string | null;
   setTheme: (theme: ThemePreference, options?: { animate?: boolean; onMutate?: () => void }) => Promise<Theme>;
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
   setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
@@ -31,7 +32,7 @@ interface UIState {
   toggleSidebar: () => void;
   setFocusMode: (open: boolean) => void;
   toggleFocusMode: () => void;
-  dismissStreakPopup: () => void;
+  dismissStreakPopup: (brokenAt?: string) => void;
   resetStreakPopup: () => void;
 }
 
@@ -46,6 +47,7 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: true,
       focusMode: false,
       streakPopupDismissed: false,
+      streakPopupDismissedAt: null,
 
       setTheme: async (theme, options) => {
         const resolved = await applyTheme(theme, {
@@ -75,8 +77,14 @@ export const useUIStore = create<UIState>()(
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setFocusMode: (open) => set({ focusMode: open }),
       toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
-      dismissStreakPopup: () => set({ streakPopupDismissed: true }),
-      resetStreakPopup: () => set({ streakPopupDismissed: false }),
+      dismissStreakPopup: (brokenAt) => set({
+        streakPopupDismissed: true,
+        streakPopupDismissedAt: brokenAt ?? new Date().toISOString(),
+      }),
+      resetStreakPopup: () => set({
+        streakPopupDismissed: false,
+        streakPopupDismissedAt: null,
+      }),
     }),
     { name: 'ui-store' },
   ),

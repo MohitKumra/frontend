@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
@@ -18,7 +18,7 @@ import { Avatar } from '../ui/Avatar';
 import { DraggableModal } from '../ui/DraggableModal';
 import { Badge } from '../ui/Badge';
 import { PageTransition } from './PageTransition';
-import { useDashboardToday } from '../../features/dashboard/hooks/useDashboard';
+import { useDashboardToday, useAchievements } from '../../features/dashboard/hooks/useDashboard';
 import { applyLayoutPreference } from '../../platform/layout';
 import { queryClient } from '../../lib/queryClient';
 import { dashboardApi } from '../../features/dashboard/api';
@@ -28,6 +28,8 @@ import { habitsApi } from '../../features/habits/api';
 import { calendarApi } from '../../features/calendar/api';
 import { settingsApi } from '../../features/settings/api';
 import apiClient from '../../lib/apiClient';
+import { AchievementCelebrationModal } from '../achievements/AchievementCelebrationModal';
+import type { AchievementWithStatusDTO } from '../../types';
 
 type TaskListPage = Awaited<ReturnType<typeof tasksApi.list>>;
 
@@ -135,8 +137,11 @@ export function AppLayout() {
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [achievementQueue, setAchievementQueue] = useState<AchievementWithStatusDTO[]>([]);
   const { data: todayData } = useDashboardToday();
+  const { data: achievements } = useAchievements();
   const { data: settings } = useSettings();
+  const seenAchievementKeysRef = useRef<Set<string> | null>(null);
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -163,6 +168,36 @@ export function AppLayout() {
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!achievements) return;
+
+    const unlocked = achievements
+      .filter((achievement) => achievement.isUnlocked)
+      .sort((a, b) => {
+        const timeA = a.unlockedAt ? new Date(a.unlockedAt).getTime() : 0;
+        const timeB = b.unlockedAt ? new Date(b.unlockedAt).getTime() : 0;
+        return timeA - timeB;
+      });
+
+    if (!seenAchievementKeysRef.current) {
+      seenAchievementKeysRef.current = new Set(unlocked.map((achievement) => achievement.key));
+      return;
+    }
+
+    const newlyUnlocked = unlocked.filter((achievement) => !seenAchievementKeysRef.current?.has(achievement.key));
+
+    if (newlyUnlocked.length > 0) {
+      setAchievementQueue((current) => [...current, ...newlyUnlocked]);
+      newlyUnlocked.forEach((achievement) => seenAchievementKeysRef.current?.add(achievement.key));
+    }
+  }, [achievements]);
+
+  const activeAchievement = useMemo(() => achievementQueue[0] ?? null, [achievementQueue]);
+
+  const closeAchievementCelebration = () => {
+    setAchievementQueue((current) => current.slice(1));
+  };
 
   useEffect(() => {
     if (!settings) return;
@@ -695,6 +730,12 @@ export function AppLayout() {
           </button>
         </div>
       </DraggableModal>
+
+      <AchievementCelebrationModal
+        open={!!activeAchievement}
+        achievement={activeAchievement}
+        onClose={closeAchievementCelebration}
+      />
 
       {/* Search Modal */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
