@@ -440,7 +440,7 @@ export function NotesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col gap-6 sm:gap-8">
+    <div className="flex flex-col gap-6 sm:gap-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"

@@ -1585,7 +1585,7 @@ export function FocusPage() {
         />
       )}
 
-      <div className="w-full max-w-[1500px] mx-auto flex flex-col gap-4 sm:gap-5">
+      <div className="w-full flex flex-col gap-4 sm:gap-5">
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4 sm:gap-5">
           {/* Header */}
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

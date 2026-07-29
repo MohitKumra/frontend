@@ -699,7 +699,7 @@ export function TasksPage() {
 
           {/* Main content area (tasks) */}
           <motion.div variants={itemVariants} className="flex-1 overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-5 px-4 py-5 sm:px-6 xl:px-8">
+            <div className="flex w-full flex-col gap-5 p-4 sm:p-6 xl:p-8">
 
               {/* Select all */}
               {view === 'list' && filteredTasks.length > 0 && (

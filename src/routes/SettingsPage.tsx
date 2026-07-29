@@ -24,10 +24,10 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   SunMedium,
   Unplug,
 } from 'lucide-react';
-import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -49,6 +49,15 @@ import type { LayoutPreference, ThemePreference, TaskViewPreference } from '../t
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
 type TaskView = 'list' | 'board';
+
+// Each module gets one color that threads through the whole page: hero
+// satellite, tab LED, and section badge all share this token.
+const TAB_COLOR: Record<SettingsTab, string> = {
+  appearance: '--color-accent',
+  notifications: '--color-info',
+  integrations: '--color-success',
+  security: '--color-warning',
+};
 
 const SETTINGS_TABS: Array<{
   id: SettingsTab;
@@ -129,24 +138,201 @@ function getInitialTab(searchParams: URLSearchParams): SettingsTab {
   return 'appearance';
 }
 
+/**
+ * The signature visual motif for this page: a pair of stacked, slightly
+ * rotated glass tiles behind a solid gradient tile carrying the icon. Used
+ * for the hero hub, hero satellites, and every section badge so the whole
+ * page reads as one system rather than a stack of separate cards.
+ */
+function Badge3D({
+  icon,
+  size = 44,
+  colorVar = '--color-accent',
+  rotation = 8,
+  className,
+}: {
+  icon: ReactNode;
+  size?: number;
+  colorVar?: string;
+  rotation?: number;
+  className?: string;
+}) {
+  const isAccent = colorVar === '--color-accent';
+  return (
+    <div
+      className={['relative shrink-0', className].filter(Boolean).join(' ')}
+      style={className ? undefined : { width: size, height: size }}
+    >
+      <div
+        className="absolute inset-0 rounded-[30%]"
+        style={{
+          background: `color-mix(in srgb, var(${colorVar}) 22%, var(--color-surface))`,
+          transform: `rotate(-${rotation}deg)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 rounded-[30%] flex items-center justify-center text-white"
+        style={{
+          background: isAccent
+            ? 'var(--gradient-accent)'
+            : `linear-gradient(135deg, var(${colorVar}), color-mix(in srgb, var(${colorVar}) 55%, white))`,
+          transform: `rotate(${rotation / 2}deg)`,
+          boxShadow: `0 8px 18px color-mix(in srgb, var(${colorVar}) 35%, transparent)`,
+        }}
+      >
+        {icon}
+      </div>
+    </div>
+  );
+}
+
+function StatChip({ label, value, colorVar }: { label: string; value: string; colorVar: string }) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-xl border px-3 py-2 min-w-0"
+      style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ background: `var(${colorVar})`, boxShadow: `0 0 6px var(${colorVar})` }}
+      />
+      <div className="min-w-0">
+        <div className="text-[9px] font-mono uppercase tracking-wider text-text-muted leading-none">{label}</div>
+        <div className="text-xs font-bold text-text-primary mt-1 truncate">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Orbit illustration: a central "sliders" hub with four satellite tiles —
+ * one per settings module — wired by animated signal lines on an elliptical
+ * (pseudo-isometric) orbit ring. Colors map 1:1 to TAB_COLOR so the hero
+ * visually previews the tab strip below it.
+ */
+function HeroOrbit() {
+  const satellites: Array<{ icon: ReactNode; colorVar: string; angle: number }> = [
+    { icon: <Palette size={14} />, colorVar: TAB_COLOR.appearance, angle: -90 },
+    { icon: <BellRing size={14} />, colorVar: TAB_COLOR.notifications, angle: 0 },
+    { icon: <Cloud size={14} />, colorVar: TAB_COLOR.integrations, angle: 90 },
+    { icon: <ShieldCheck size={14} />, colorVar: TAB_COLOR.security, angle: 180 },
+  ];
+  // Everything below is expressed as a percentage of the container (0-100),
+  // and the SVG uses a matching 0-100 viewBox. That way hub, satellites, and
+  // the connecting lines always line up exactly, at any container size —
+  // nothing is pinned to a fixed pixel canvas that could drift out of sync.
+  const cx = 50;
+  const cy = 50;
+  const rx = 39;
+  const ry = 28;
+
+  return (
+    <div className="relative w-[190px] h-[190px] sm:w-[260px] sm:h-[260px] md:w-[280px] md:h-[280px] shrink-0 mx-auto">
+      <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="settingsOrbitGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.16" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <circle cx={cx} cy={cy} r="46" fill="url(#settingsOrbitGlow)" />
+
+        <motion.ellipse
+          cx={cx}
+          cy={cy}
+          rx={rx}
+          ry={ry}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth="0.5"
+          strokeDasharray="1 2.2"
+          style={{ transformOrigin: `${cx}px ${cy}px` }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 44, repeat: Infinity, ease: 'linear' }}
+        />
+
+        {satellites.map((s, i) => {
+          const rad = (s.angle * Math.PI) / 180;
+          const x = cx + rx * Math.cos(rad);
+          const y = cy + ry * Math.sin(rad);
+          return (
+            <motion.line
+              key={`line-${i}`}
+              x1={cx}
+              y1={cy}
+              x2={x}
+              y2={y}
+              stroke={`var(${s.colorVar})`}
+              strokeWidth="0.5"
+              strokeDasharray="1.2 1.8"
+              opacity={0.4}
+              animate={{ strokeDashoffset: [0, -6] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', delay: i * 0.2 }}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Hub */}
+      <motion.div
+        className="absolute"
+        style={{ left: `${cx}%`, top: `${cy}%`, transform: 'translate(-50%, -50%)' }}
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <Badge3D
+          icon={<SlidersHorizontal size={22} className="sm:w-[26px] sm:h-[26px]" />}
+          size={56}
+          colorVar="--color-accent"
+          rotation={8}
+          className="w-12 h-12 sm:w-[68px] sm:h-[68px]"
+        />
+      </motion.div>
+
+      {/* Satellites */}
+      {satellites.map((s, i) => {
+        const rad = (s.angle * Math.PI) / 180;
+        const x = cx + rx * Math.cos(rad);
+        const y = cy + ry * Math.sin(rad);
+        return (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+            animate={{ y: [0, i % 2 === 0 ? -6 : 6, 0] }}
+            transition={{ duration: 4.5 + i * 0.6, repeat: Infinity, ease: 'easeInOut', delay: i * 0.35 }}
+          >
+            <Badge3D icon={s.icon} size={32} colorVar={s.colorVar} rotation={6} className="w-8 h-8 sm:w-10 sm:h-10" />
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
 function SectionHeader({
   icon,
   title,
   subtitle,
+  code,
+  colorVar = '--color-accent',
 }: {
   icon: ReactNode;
   title: string;
   subtitle: string;
+  code?: string;
+  colorVar?: string;
 }) {
   return (
     <div className="flex items-start gap-2.5 sm:gap-3">
-      <div
-        className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0"
-        style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
-      >
-        {icon}
-      </div>
+      <Badge3D icon={icon} size={44} colorVar={colorVar} rotation={8} />
       <div className="min-w-0 flex-1">
+        {code && (
+          <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5" style={{ color: `var(${colorVar})` }}>
+            {code}
+          </div>
+        )}
         <h2 className="text-sm sm:text-base font-extrabold text-text-primary">{title}</h2>
         <p className="text-xs text-text-muted mt-1 leading-snug">{subtitle}</p>
       </div>
@@ -239,6 +425,79 @@ function TabPanel({
   );
 }
 
+function SettingsHero({
+  isSaving,
+  stats,
+}: {
+  isSaving: boolean;
+  stats: { theme: string; density: string; alerts: string; linked: string };
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl sm:rounded-3xl border"
+      style={{
+        borderColor: 'var(--color-border)',
+        background:
+          'linear-gradient(135deg, var(--color-surface) 0%, color-mix(in srgb, var(--color-accent) 5%, var(--color-surface)) 55%, color-mix(in srgb, var(--color-info) 6%, var(--color-surface)) 100%)',
+      }}
+    >
+      {/* Dot-grid texture, faded toward the edges */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage: 'radial-gradient(var(--color-border) 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+          maskImage: 'radial-gradient(ellipse at 30% 35%, black 0%, transparent 72%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at 30% 35%, black 0%, transparent 72%)',
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col lg:flex-row items-center gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 md:p-8 lg:p-10">
+        <HeroOrbit />
+
+        <div className="flex-1 min-w-0 text-center lg:text-left w-full">
+          <div className="inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-text-muted mb-1.5 sm:mb-2">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--color-accent)' }} />
+            Control deck
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-text-primary tracking-tight">
+            Settings
+          </h1>
+          <p className="text-xs sm:text-sm text-text-muted mt-1.5 sm:mt-2 max-w-md mx-auto lg:mx-0 leading-relaxed">
+            Four modules, one console. Tune appearance, notifications, integrations, and security —
+            every change here saves the instant you make it.
+          </p>
+
+          <div className="mt-3 sm:mt-4 flex justify-center lg:justify-start">
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-3 sm:px-3.5 py-1.5"
+              style={{ background: 'var(--icon-bg-success)' }}
+            >
+              <motion.span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ background: 'var(--icon-text-success)' }}
+                animate={{ opacity: [1, 0.35, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+              />
+              <span className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap" style={{ color: 'var(--icon-text-success)' }}>
+                {isSaving ? 'Syncing…' : 'All synced'}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+            <StatChip label="Theme" value={stats.theme} colorVar={TAB_COLOR.appearance} />
+            <StatChip label="Density" value={stats.density} colorVar={TAB_COLOR.appearance} />
+            <StatChip label="Alerts on" value={stats.alerts} colorVar={TAB_COLOR.notifications} />
+            <StatChip label="Linked" value={stats.linked} colorVar={TAB_COLOR.integrations} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const uiTheme = useUIStore((s) => s.themePreference);
@@ -305,6 +564,20 @@ export function SettingsPage() {
     () => LAYOUT_OPTIONS.find((option) => option.id === appearance.layoutPreference)?.scale ?? 1,
     [appearance.layoutPreference],
   );
+
+  const heroStats = useMemo(() => {
+    const themeLabel = APPEARANCE_OPTIONS.find((o) => o.id === appearance.themePreference)?.label ?? 'System';
+    const densityLabel = LAYOUT_OPTIONS.find((o) => o.id === appearance.layoutPreference)?.label ?? 'Comfortable';
+    const notifValues = Object.values(notifications);
+    const alertsOn = notifValues.filter(Boolean).length;
+    const linkedCount = (googleCalendar?.connected ? 1 : 0) + (isSubscribed ? 1 : 0);
+    return {
+      theme: themeLabel,
+      density: densityLabel,
+      alerts: `${alertsOn}/${notifValues.length}`,
+      linked: `${linkedCount}/2`,
+    };
+  }, [appearance.themePreference, appearance.layoutPreference, notifications, googleCalendar?.connected, isSubscribed]);
 
   const applyAppearance = (next: Partial<typeof appearance>) => {
     const merged = { ...appearance, ...next };
@@ -406,6 +679,8 @@ export function SettingsPage() {
     );
   }
 
+  const isSaving = appearanceMutation.isPending || notificationsMutation.isPending;
+
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0">
       <motion.div
@@ -415,12 +690,9 @@ export function SettingsPage() {
         className="flex flex-col gap-4 sm:gap-5 lg:gap-6"
       >
         <motion.div variants={itemVariants}>
-          <PageHeader
-            icon={<ShieldCheck size={20} />}
-            title="Settings"
-            subtitle="Appearance, notifications, integrations, and account security"
-          />
+          <SettingsHero isSaving={isSaving} stats={heroStats} />
         </motion.div>
+
         <motion.div variants={itemVariants}>
           <div
             className="overflow-x-auto -mx-4 sm:mx-0"
@@ -437,35 +709,47 @@ export function SettingsPage() {
         `}</style>
             <div className="px-4 sm:px-0 hide-scrollbar">
               <div
-                className="flex items-center gap-1 w-fit min-w-max border-b"
-                style={{ borderColor: 'var(--color-border)' }}
+                className="rounded-2xl sm:rounded-3xl border p-1.5 sm:p-2 w-fit min-w-full sm:min-w-0"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
               >
-                {SETTINGS_TABS.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabChange(tab.id)}
-                      className={[
-                        'relative px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center gap-1.5 sm:gap-2 tap-target whitespace-nowrap',
-                        isActive
-                          ? 'text-accent'
-                          : 'text-text-secondary hover:text-text-primary',
-                      ].join(' ')}
-                    >
-                      <span className="shrink-0">{tab.icon}</span>
-                      <span>{tab.label}</span>
-                      {isActive && (
-                        <motion.div
-                          layoutId="settings-tab-indicator"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                          style={{ background: 'var(--color-accent)' }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                <div className="flex items-center gap-1">
+                  {SETTINGS_TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const colorVar = TAB_COLOR[tab.id];
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id)}
+                        className={[
+                          'relative px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center gap-1.5 sm:gap-2 tap-target whitespace-nowrap',
+                          isActive
+                            ? 'text-text-primary'
+                            : 'text-text-secondary hover:text-text-primary',
+                        ].join(' ')}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300"
+                          style={{
+                            background: isActive ? `var(${colorVar})` : 'var(--color-border)',
+                            boxShadow: isActive ? `0 0 6px var(${colorVar})` : 'none',
+                          }}
                         />
-                      )}
-                    </button>
-                  );
-                })}
+                        <span className="shrink-0" style={{ color: isActive ? `var(${colorVar})` : undefined }}>
+                          {tab.icon}
+                        </span>
+                        <span>{tab.label}</span>
+                        {isActive && (
+                          <motion.div
+                            layoutId="settings-tab-indicator"
+                            className="absolute -bottom-0.5 left-3 right-3 h-0.5 rounded-full"
+                            style={{ background: `var(${colorVar})` }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -481,6 +765,8 @@ export function SettingsPage() {
                       icon={<Palette size={20} />}
                       title="Appearance"
                       subtitle="Theme, density, and calendar view all save as soon as you choose them."
+                      code="MOD.01 — APPEARANCE"
+                      colorVar={TAB_COLOR.appearance}
                     />
 
                     <div className="mt-4 sm:mt-5 space-y-5 sm:space-y-6">
@@ -578,6 +864,8 @@ export function SettingsPage() {
                     icon={<Cloud size={20} />}
                     title="Workspace preview"
                     subtitle="See how your theme and density choices come to life."
+                    code="LIVE PREVIEW"
+                    colorVar={TAB_COLOR.integrations}
                   />
 
                   <div
@@ -923,6 +1211,8 @@ export function SettingsPage() {
                       icon={<BellRing size={20} />}
                       title="Notifications"
                       subtitle="Each toggle saves immediately, so you can keep moving without a separate apply button."
+                      code="MOD.02 — NOTIFICATIONS"
+                      colorVar={TAB_COLOR.notifications}
                     />
 
                     <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
@@ -967,6 +1257,8 @@ export function SettingsPage() {
                       icon={<Cloud size={20} />}
                       title="Integrations"
                       subtitle="Google Calendar is linked separately from Google sign-in, so the account connection stays clean."
+                      code="MOD.03 — INTEGRATIONS"
+                      colorVar={TAB_COLOR.integrations}
                     />
 
                     <div className="mt-4 sm:mt-5 space-y-4 sm:space-y-5">
@@ -1088,6 +1380,8 @@ export function SettingsPage() {
                     icon={<ShieldCheck size={20} />}
                     title="Google sign-in"
                     subtitle="Signing in with Google automatically links the account; you only need the calendar connector if you want sync."
+                    code="ACCOUNT LINK"
+                    colorVar={TAB_COLOR.security}
                   />
 
                   <div className="mt-4 sm:mt-5 grid gap-2.5 sm:gap-3">
@@ -1123,6 +1417,8 @@ export function SettingsPage() {
                       icon={<Lock size={20} />}
                       title="Security"
                       subtitle="Manage your password and recovery path from one place."
+                      code="MOD.04 — SECURITY"
+                      colorVar={TAB_COLOR.security}
                     />
 
                     <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
@@ -1190,6 +1486,8 @@ export function SettingsPage() {
                         ? 'Update the local password for this account.'
                         : 'Set a password so the account can recover without Google.'
                     }
+                    code="AUTH"
+                    colorVar={TAB_COLOR.security}
                   />
 
                   <form className="space-y-2.5 sm:space-y-3 mt-4 sm:mt-5" onSubmit={handlePasswordSubmit}>

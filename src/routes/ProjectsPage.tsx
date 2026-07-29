@@ -213,7 +213,7 @@ export function ProjectsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-6 max-w-[1400px] mx-auto">
+    <div className="flex flex-col gap-5 sm:gap-6">
       <motion.div
         variants={containerVariants}
         initial="hidden"

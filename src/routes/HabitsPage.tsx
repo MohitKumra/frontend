@@ -185,8 +185,7 @@ export function HabitsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="mx-auto flex w-full min-w-0 flex-col pb-6 sm:pb-8"
-      style={{ maxWidth: '1600px' }}
+      className="flex w-full min-w-0 flex-col pb-6 sm:pb-8"
     >
       {/* ================================================================
           MOBILE LAYOUT (< sm)

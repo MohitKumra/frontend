@@ -311,7 +311,7 @@ export function CalendarPage() {
   };
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto">
+    <div className="w-full">
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4">
         {/* Header */}
         <motion.div variants={itemVariants}>

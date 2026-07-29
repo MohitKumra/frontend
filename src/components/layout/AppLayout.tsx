@@ -4,8 +4,8 @@ import { AnimatePresence } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
   LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
-  Timer, BarChart2, LogOut, X ,Sparkles, Moon, Sun,
-  Search, MoreHorizontal, Settings2, FolderKanban, User,
+  Timer, LogOut, X, Sparkles,
+  Search, MoreHorizontal, Settings2, FolderKanban,
   Keyboard
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
@@ -315,12 +315,7 @@ export function AppLayout() {
     };
   }, [navigate, showShortcuts, searchOpen, mobileMoreOpen]);
 
-  const contentPaddingClass =
-    layoutPreference === 'COMPACT'
-      ? 'p-3 sm:p-4 md:p-5'
-      : layoutPreference === 'EXPANDED'
-        ? 'p-5 sm:p-7 md:p-10'
-        : 'p-4 sm:p-6 md:p-8';
+  const contentPaddingClass = 'pt-3 sm:pt-4 px-3 sm:px-4';
 
   const headerPaddingClass =
     layoutPreference === 'COMPACT'
