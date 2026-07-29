@@ -24,7 +24,6 @@ import { CalendarPage }   from './routes/CalendarPage';
 import { HabitsPage }     from './routes/HabitsPage';
 import { NotesPage }      from './routes/NotesPage';
 import { FocusPage }      from './routes/FocusPage';
-import { AnalyticsPage }  from './routes/AnalyticsPage';
 import { ProjectsPage }   from './routes/ProjectsPage';
 import { SettingsPage }   from './routes/SettingsPage';
 import { ProfilePage }    from './routes/ProfilePage';
@@ -103,7 +102,6 @@ export default function App() {
           <Route path="habits"       element={<HabitsPage />} />
           <Route path="notes"        element={<NotesPage />} />
           <Route path="focus"        element={<FocusPage />} />
-          <Route path="analytics"    element={<AnalyticsPage />} />
           <Route path="projects"     element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="profile"      element={<ProfilePage />} />

@@ -46,7 +46,6 @@ const navItems = [
   { to: '/habits',    icon: Target,          label: 'Habits',    badgeKey: 'habits', onboarding: 'habits' },
   { to: '/notes',     icon: FileText,        label: 'Notes',     onboarding: 'notes' },
   { to: '/focus',     icon: Timer,           label: 'Focus',     onboarding: 'focus' },
-  { to: '/analytics', icon: BarChart2,       label: 'Analytics', onboarding: 'analytics' },
   { to: '/projects',  icon: FolderKanban,    label: 'Projects',  onboarding: 'projects' },
   { to: '/settings',  icon: Settings2,       label: 'Settings',  onboarding: 'settings' },
 ];

@@ -82,11 +82,14 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
   // Core fields (always visible)
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
   const [priority, setPriority] = useState<Priority>('MEDIUM');
   const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId ?? '');
 
   // Extended fields (More Options)
   const [description, setDescription] = useState('');
+  const [reminderTime, setReminderTime] = useState('');
+  const [reminderMessage, setReminderMessage] = useState('');
   const [status, setStatus] = useState<TaskStatus>('TODO');
   const [recurrence, setRecurrence] = useState<RecurrenceOption>('none');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
@@ -128,9 +131,12 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
   const resetForm = () => {
     setTitle('');
     setDueDate('');
+    setDueTime('');
     setPriority('MEDIUM');
     setSelectedProjectId(initialProjectId ?? '');
     setDescription('');
+    setReminderTime('');
+    setReminderMessage('');
     setStatus('TODO');
     setRecurrence('none');
     setRecurrenceEndDate('');
@@ -170,6 +176,9 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
       if (description.trim()) body.description = description.trim();
       if (priority) body.priority = priority;
       if (dueDate) body.dueDate = dueDate;
+      if (dueTime) body.dueTime = dueTime;
+      if (reminderTime) body.reminderTime = reminderTime;
+      if (reminderMessage.trim()) body.reminderMessage = reminderMessage.trim();
       if (selectedProjectId) body.projectId = selectedProjectId;
       if (recurrenceRule) body.recurrenceRule = recurrenceRule;
       if (recurrenceEndDate) body.recurrenceEndDate = recurrenceEndDate;
@@ -200,6 +209,42 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
   // ── Extended fields — shared between inline (desktop) and sheet (mobile) ──
   const extendedFields = (
     <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+        <label className="flex items-center gap-1 text-xs font-bold mb-3" style={{ color: 'var(--color-text-primary)' }}>
+          <Clock size={12} /> Reminder
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>
+              Reminder Time <span className="opacity-60">(optional)</span>
+            </label>
+            <input
+              type="time"
+              value={reminderTime}
+              onChange={(e) => setReminderTime(e.target.value)}
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>
+              Reminder Message <span className="opacity-60">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={reminderMessage}
+              onChange={(e) => setReminderMessage(e.target.value)}
+              placeholder="This will be the notification title"
+              className={inputCls}
+              style={inputStyle}
+            />
+          </div>
+        </div>
+        <p className="text-[10px] text-text-muted mt-2">
+          Leave reminder time blank and we’ll automatically use 30 minutes before the due time.
+        </p>
+      </div>
+
       {/* Description */}
       <div>
         <label
@@ -529,6 +574,19 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                className={inputCls}
+                style={inputStyle}
+              />
+              <label
+                className="flex items-center gap-1 text-[10px] font-bold mt-2 mb-1.5"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                <Clock size={11} /> Due Time <span className="font-medium normal-case opacity-70">(optional)</span>
+              </label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
                 className={inputCls}
                 style={inputStyle}
               />

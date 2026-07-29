@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronDown, Check, X, SlidersHorizontal } from 'lucide-react';
+import { Calendar, Check, X, SlidersHorizontal } from 'lucide-react';
 
 export type DateRangePreset = 
   | 'today' 
@@ -104,10 +104,16 @@ export function formatReadableDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+const springConfig = { type: 'spring' as const, stiffness: 420, damping: 32 };
+
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [tempStart, setTempStart] = useState(value.startDate);
   const [tempEnd, setTempEnd] = useState(value.endDate);
+
+  // Track button refs for the sliding pill indicator
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const handlePresetSelect = (preset: DateRangePreset) => {
     if (preset === 'custom') {
@@ -146,75 +152,98 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
     setIsCustomModalOpen(false);
   };
 
-  const activeLabel = PRESETS.find(p => p.id === value.preset)?.label || 'Custom';
   const formattedRangeText = value.startDate === value.endDate
     ? formatReadableDate(value.startDate)
     : `${formatReadableDate(value.startDate)} – ${formatReadableDate(value.endDate)}`;
 
   return (
-    <div
-      className="relative flex flex-col items-stretch justify-between gap-3 rounded-[22px] border px-3 py-3 shadow-[0_20px_60px_rgba(2,6,23,0.16)] backdrop-blur-xl sm:flex-row sm:items-center sm:px-3.5 sm:py-3.5"
-      style={{
-        background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 94%, white), var(--color-surface-elevated))',
-        borderColor: 'var(--color-border-subtle)',
-      }}
-    >
-      {/* Scrollable preset pills container */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-0.5 max-w-full">
-        <div className="hidden shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-black text-text-muted md:flex">
-          <SlidersHorizontal size={14} className="text-accent" />
-          <span>Filter:</span>
-        </div>
-        {PRESETS.map((preset) => {
-          const isActive = value.preset === preset.id;
-          return (
-            <button
-              key={preset.id}
-              onClick={() => handlePresetSelect(preset.id)}
-              className={`relative flex shrink-0 items-center gap-1 rounded-xl px-3.5 py-2 text-[11px] font-extrabold whitespace-nowrap transition-all duration-200 ${
-                isActive
-                  ? 'text-white shadow-md'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-raised/80'
-              }`}
-              style={{
-                background: isActive ? 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 80%, var(--color-accent)))' : 'transparent',
-              }}
-            >
-              {preset.id === 'custom' && <Calendar size={12} className={isActive ? 'text-white' : 'text-accent'} />}
-              <span>{preset.label}</span>
-              {isActive && (
-                <motion.div
-                  layoutId="activeFilterGlow"
-                  className="absolute inset-0 rounded-xl bg-accent/20 -z-10 blur-sm"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Range badge + indicator */}
+    <>
+      {/* Single pill container — all-in-one filter bar */}
       <div
-        className="flex shrink-0 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-bold text-text-primary sm:justify-end"
+        ref={containerRef}
+        className="relative flex items-center gap-2 overflow-hidden rounded-full border px-2 py-1.5 shadow-[0_8px_32px_rgba(2,6,23,0.10)] backdrop-blur-xl sm:gap-3 sm:px-3 sm:py-2"
         style={{
-          background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 92%, white), var(--color-surface-elevated))',
+          background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 96%, white), var(--color-surface-elevated))',
           borderColor: 'var(--color-border-subtle)',
         }}
       >
-        <div className="flex items-center gap-1.5">
-          <Calendar size={13} className="text-accent" />
-          <span className="text-[11px] font-black tracking-wide text-text-secondary">
+        {/* Filter icon */}
+        <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1">
+          <SlidersHorizontal size={13} className="text-accent" />
+        </div>
+
+        {/* Preset pills with sliding indicator */}
+        <div className="relative flex items-center gap-1 overflow-x-auto no-scrollbar">
+          {PRESETS.map((preset) => {
+            const isActive = value.preset === preset.id;
+            return (
+              <button
+                key={preset.id}
+                ref={(el) => {
+                  if (el) buttonRefs.current.set(preset.id, el);
+                  else buttonRefs.current.delete(preset.id);
+                }}
+                onClick={() => handlePresetSelect(preset.id)}
+                className={`relative z-10 flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[10.5px] font-extrabold whitespace-nowrap transition-colors duration-200 ${
+                  isActive ? 'text-white' : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                {preset.id === 'custom' && <Calendar size={11} className={isActive ? 'text-white' : 'text-accent'} />}
+                <span>{preset.label}</span>
+
+                {/* Sliding pill indicator — only for non-custom presets */}
+                {isActive && preset.id !== 'custom' && (
+                  <motion.div
+                    layoutId="activeFilterPill"
+                    className="absolute inset-0 -z-10 rounded-full"
+                    style={{
+                      background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',
+                      boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                    }}
+                    transition={springConfig}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Separator */}
+        <div className="h-4 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
+
+        {/* Inline date range display + custom edit */}
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1" style={{ background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)' }}>
+          <Calendar size={11} className="text-accent" />
+          <span className="whitespace-nowrap text-[10px] font-bold tracking-tight" style={{ color: 'var(--color-text-secondary)' }}>
             {formattedRangeText}
           </span>
+          {value.preset === 'custom' && (
+            <button
+              onClick={() => {
+                setTempStart(value.startDate);
+                setTempEnd(value.endDate);
+                setIsCustomModalOpen(true);
+              }}
+              className="ml-0.5 text-[9px] font-black uppercase tracking-wide text-accent hover:underline"
+            >
+              Edit
+            </button>
+          )}
         </div>
+
+        {/* Active custom pill indicator (shown separately since custom opens modal) */}
         {value.preset === 'custom' && (
-          <button
-            onClick={() => setIsCustomModalOpen(true)}
-            className="ml-2 text-[10px] font-black uppercase text-accent hover:underline"
-          >
-            Edit
-          </button>
+          <motion.div
+            layoutId="activeFilterPill"
+            className="absolute rounded-full"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',
+              boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+              opacity: 0.15,
+              inset: 0,
+            }}
+            transition={springConfig}
+          />
         )}
       </div>
 
@@ -300,6 +329,6 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         </AnimatePresence>,
         document.body
       )}
-    </div>
+    </>
   );
 }

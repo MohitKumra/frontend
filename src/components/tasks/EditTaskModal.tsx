@@ -89,6 +89,9 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
   const [status, setStatus] = useState<TaskStatus>('TODO');
   const [priority, setPriority] = useState<Priority>('MEDIUM');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
+  const [reminderTime, setReminderTime] = useState('');
+  const [reminderMessage, setReminderMessage] = useState('');
   const [recurrence, setRecurrence] = useState<RecurrenceOption>('none');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
   const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
@@ -105,6 +108,9 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
     setStatus(task.status);
     setPriority(task.priority);
     setDueDate(task.dueDate?.split('T')[0] ?? '');
+    setDueTime(task.dueTime ?? '');
+    setReminderTime(task.reminderTime ?? '');
+    setReminderMessage(task.reminderMessage ?? '');
     setRecurrence(parseRecurrenceOption(task.recurrenceRule));
     setRecurrenceEndDate(task.recurrenceEndDate?.split('T')[0] ?? '');
     setAttachmentUrl(task.attachmentUrl ?? '');
@@ -171,6 +177,9 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
         status,
         priority,
         dueDate: dueDate || null,
+        dueTime: dueTime || null,
+        reminderTime: reminderTime || null,
+        reminderMessage: reminderMessage.trim() || null,
         recurrenceRule,
         recurrenceEndDate: recurrenceEndDate || null,
         attachmentUrl: cleanAttachment,
@@ -305,6 +314,16 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
           <div>
             <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>Due Date</label>
             <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} style={inputStyle} />
+            <label className="flex items-center gap-1 text-[10px] font-semibold mt-2 mb-1" style={{ color: 'var(--color-text-muted)' }}>
+              <Clock size={11} /> Due Time <span className="opacity-60">(optional)</span>
+            </label>
+            <input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
+              className={inputCls}
+              style={inputStyle}
+            />
           </div>
 
           <div>
@@ -337,6 +356,38 @@ export function EditTaskModal({ isOpen, task, onClose }: EditTaskModalProps) {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="rounded-2xl border p-4 flex flex-col gap-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+          <label className="flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>
+            <Clock size={12} /> Reminder
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>Reminder Time <span className="opacity-60">(optional)</span></label>
+              <input
+                type="time"
+                value={reminderTime}
+                onChange={(e) => setReminderTime(e.target.value)}
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>Reminder Message <span className="opacity-60">(optional)</span></label>
+              <input
+                type="text"
+                value={reminderMessage}
+                onChange={(e) => setReminderMessage(e.target.value)}
+                placeholder="This will be the notification title"
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+          <p className="text-[10px] text-text-muted">
+            Leave reminder time blank and we’ll automatically use 30 minutes before the due time.
+          </p>
         </div>
 
         {/* Estimated Duration */}
