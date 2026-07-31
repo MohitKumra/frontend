@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   RotateCcw,
   ArrowRight,
+  BookOpen,
   Settings2,
   ListChecks,
   Columns3,
@@ -35,6 +36,8 @@ import { LoadingScreen } from '../components/ui/Spinner';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
+import { NotionImportModal } from '../components/notion/NotionImportModal';
+import { useNotionStatus } from '../features/notion/hooks/useNotion';
 import { EditTaskModal } from '../components/tasks/EditTaskModal';
 import { TaskBoardView } from '../components/tasks/TaskBoardView';
 import { TaskCard, isOverdue, isToday } from '../components/tasks/TaskCard';
@@ -145,11 +148,13 @@ export function TasksPage() {
   const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'single'; task: TaskDTO } | { type: 'bulk'; count: number } | null>(null);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  const [notionImportOpen, setNotionImportOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
   const { data: tasksData, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useTasks();
   const { data: dashboardSummary } = useDashboardSummary();
+  const { data: notionStatus } = useNotionStatus();
   const { data: dailyAnalytics } = useQuery({
     queryKey: ['analytics', 'daily', 14],
     queryFn: () => apiClient.get<DailyAnalyticsDTO[]>('/analytics/daily', { params: { days: 14 } }).then((r) => r.data),
@@ -474,6 +479,8 @@ export function TasksPage() {
 
   const sortLabel: Record<SortKey, string> = { priority: 'Priority', dueDate: 'Due date', created: 'Newest' };
 
+  const greeting = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening';
+
   // ── render ───────────────────────────────────────────────────────────────
 
   if (isLoading) return <LoadingScreen />;
@@ -487,7 +494,7 @@ export function TasksPage() {
       style={{ background: 'var(--color-bg)' }}
     >
       {/* ── xl+: flex row wrapping header-left + sidebar-right ──────────── */}
-      <div className="xl:flex xl:gap-5 xl:flex-1 xl:min-h-0">
+      <div className="xl:flex xl:gap-6 xl:flex-1 xl:min-h-0">
 
         {/* ── Left column: header + task content ───────────────────────── */}
         <div className="xl:flex xl:flex-col xl:flex-1 xl:min-w-0">
@@ -495,22 +502,30 @@ export function TasksPage() {
           {/* Header */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-col gap-5 border-b px-4 py-5 sm:px-6 xl:px-8"
+            className="flex flex-col gap-6 border-b px-4 py-6 sm:px-6 xl:px-8"
             style={{ borderColor: 'var(--color-border)' }}
           >
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="min-w-0">
-                <h1 className="text-2xl font-black tracking-tight text-text-primary">Tasks</h1>
-                <p className="mt-2 text-sm font-semibold text-text-secondary">
-                  Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0] ?? 'there'}
-                </p>
-                <p className="mt-0.5 text-xs text-text-muted">
-                  {filteredTasks.length} visible task{filteredTasks.length !== 1 ? 's' : ''}. Keep the board moving.
-                </p>
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="hidden sm:flex w-11 h-11 shrink-0 items-center justify-center rounded-2xl shadow-sm"
+                  style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}
+                >
+                  <CheckSquare size={20} style={{ color: 'var(--color-accent)' }} />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-black tracking-tight text-text-primary">Tasks</h1>
+                  <p className="mt-1 text-sm font-semibold text-text-secondary">
+                    Stay focused and get more done
+                  </p>
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    Good {greeting}, {user?.name?.split(' ')[0] ?? 'there'} · {filteredTasks.length} visible task{filteredTasks.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
               </div>
 
-              <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="relative w-full lg:w-[360px]">
+              <div className="flex min-w-0 flex-wrap items-center gap-3">
+                <div className="relative flex-1 min-w-[220px] sm:w-[320px] sm:flex-none">
                   <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                   <input
                     ref={searchRef}
@@ -527,11 +542,12 @@ export function TasksPage() {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1 rounded-2xl border p-1 shadow-sm" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+                {/* Kept as one nowrap unit so it drops to its own line as a whole, never splits mid-group */}
+                <div className="flex items-center gap-2 shrink-0 whitespace-nowrap ml-auto">
+                  <div className="flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-sm shrink-0" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
                     <button
                       onClick={() => { setView('list'); setTaskViewPreference('list'); }}
-                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition-all"
+                      className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition-all whitespace-nowrap"
                       style={view === 'list' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}
                     >
                       <ListChecks size={14} />
@@ -539,7 +555,7 @@ export function TasksPage() {
                     </button>
                     <button
                       onClick={() => { setView('board'); setTaskViewPreference('board'); }}
-                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition-all"
+                      className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition-all whitespace-nowrap"
                       style={view === 'board' ? { background: 'var(--gradient-accent)', color: 'white' } : { color: 'var(--color-text-muted)' }}
                     >
                       <Columns3 size={14} />
@@ -547,9 +563,19 @@ export function TasksPage() {
                     </button>
                   </div>
 
+                  {notionStatus?.connected && (
+                    <button
+                      onClick={() => setNotionImportOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-transform hover:-translate-y-0.5 shrink-0"
+                      style={{ background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                    >
+                      <BookOpen size={18} />
+                      Import
+                    </button>
+                  )}
                   <button
                     onClick={() => setCreateModalOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-md transition-transform hover:-translate-y-0.5 shrink-0"
                     style={{ background: 'var(--gradient-accent)' }}
                   >
                     <Plus size={18} />
@@ -561,7 +587,7 @@ export function TasksPage() {
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
-              <div className="np-pill-segmented">
+              <div className="np-pill-segmented shadow-sm">
                 {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
                   const isActive = filter === f;
                   const icons: Record<TaskFilter, React.ReactNode> = {
@@ -602,7 +628,7 @@ export function TasksPage() {
                   <button
                     type="button"
                     onClick={() => setSortMenuOpen((v) => !v)}
-                    className="flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black whitespace-nowrap"
+                    className="flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black whitespace-nowrap shadow-sm"
                     style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
                   >
                     Sort by: {sortLabel[sortBy]}
@@ -640,7 +666,7 @@ export function TasksPage() {
           {overdueTasks.length > 0 && filter !== 'overdue' && (
             <motion.div
               variants={itemVariants}
-              className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-2xl border p-4 sm:p-5 mx-4 sm:mx-6 xl:mx-8 mt-4"
+              className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-3xl border p-5 sm:p-6 mx-4 sm:mx-6 xl:mx-8 mt-5 shadow-sm"
               style={{
                 background: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-surface))',
                 borderColor: 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))',
@@ -670,7 +696,7 @@ export function TasksPage() {
                   type="button"
                   onClick={handleStartHighestPriority}
                   disabled={!topOverdueTask}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-60"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-60 shadow-sm"
                   style={{ background: 'var(--color-danger)' }}
                 >
                   Start Top Task
@@ -679,7 +705,7 @@ export function TasksPage() {
                 <button
                   type="button"
                   onClick={handleRescheduleAll}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all shadow-sm"
                   style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
                 >
                   <RotateCcw size={13} />
@@ -699,7 +725,7 @@ export function TasksPage() {
 
           {/* Main content area (tasks) */}
           <motion.div variants={itemVariants} className="flex-1 overflow-y-auto">
-            <div className="flex w-full flex-col gap-5 p-4 sm:p-6 xl:p-8">
+            <div className="flex w-full flex-col gap-5 p-5 sm:p-7 xl:p-9">
 
               {/* Select all */}
               {view === 'list' && filteredTasks.length > 0 && (
@@ -729,7 +755,7 @@ export function TasksPage() {
               {view === 'list' && visibleSelectedTasks.length > 0 && (
                 <motion.div
                   variants={itemVariants}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border p-4"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-3xl border p-4 shadow-sm"
                   style={{
                     background: 'color-mix(in srgb, var(--color-accent) 6%, var(--color-surface))',
                     borderColor: 'var(--color-accent-border)',
@@ -820,7 +846,7 @@ export function TasksPage() {
                   />
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                       {filteredTasks.map((task, index) => (
                         <motion.div key={task.id} variants={itemVariants}>
                           <TaskCard
@@ -887,15 +913,15 @@ export function TasksPage() {
         {/* ── End left column ───────────────────────────────────────────── */}
 
         {/* ── Right: Sidebar (xl+) — aligned from header level ──────────── */}
-        <aside className="hidden xl:flex xl:flex-col xl:gap-4 xl:w-[320px] 2xl:w-[360px] xl:shrink-0 xl:pt-5 xl:pr-8">
+        <aside className="hidden xl:flex xl:flex-col xl:gap-5 xl:w-[320px] 2xl:w-[360px] xl:shrink-0 xl:pt-6 xl:pr-8">
 
           {/* Productivity Engine */}
-          <motion.div variants={itemVariants} className="rounded-2xl border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div variants={itemVariants} className="rounded-3xl border shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <ProductivityEngine context="tasks" tasks={tasks} focusSessions={[]} onOpenCreateTask={(t, d) => { setCreateModalOpen(true); }} onHighlightTask={(id) => { setHighlightedTaskId(id); setTimeout(() => setHighlightedTaskId(null), 3000); }} />
           </motion.div>
 
           {/* Today's Capacity */}
-          <motion.div variants={itemVariants} className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div variants={itemVariants} className="rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Zap size={14} style={{ color: 'var(--color-accent)' }} />
@@ -931,7 +957,7 @@ export function TasksPage() {
           </motion.div>
 
           {/* Productivity Score */}
-          <motion.div variants={itemVariants} className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div variants={itemVariants} className="rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Productivity Score</h3>
               <span className="text-[9px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>This Week</span>
@@ -1008,12 +1034,12 @@ export function TasksPage() {
       {/* ── End xl+ flex row ──────────────────────────────────────────────── */}
 
       {/* ── Below xl: stacked cards ───────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 px-4 py-5 sm:px-6 xl:hidden">
-        <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+      <div className="flex flex-col gap-5 px-4 py-6 sm:px-6 xl:hidden">
+        <div className="rounded-3xl border p-4 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
           <ProductivityEngine context="tasks" tasks={tasks} focusSessions={[]} onOpenCreateTask={(t, d) => {}} />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-2 rounded-2xl border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <div className="lg:col-span-2 rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Zap size={16} style={{ color: 'var(--color-accent)' }} />
@@ -1048,7 +1074,7 @@ export function TasksPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-3 rounded-2xl border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <div className="lg:col-span-3 rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>Productivity Summary</h3>
               <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>This Week</span>
@@ -1140,6 +1166,7 @@ export function TasksPage() {
 
       {/* ── Modals ────────────────────────────────────────────────────── */}
       <CreateTaskModal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} />
+      <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="tasks" />
       {editingTask && (
         <EditTaskModal
           isOpen

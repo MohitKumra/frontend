@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Camera, Flame, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { AvatarUpload } from '../ui/AvatarUpload';
@@ -46,6 +46,15 @@ function ScoreRing({ value }: { value: number }) {
 export function ProfileHero({ summary, onAvatarUpload, onAvatarRemove }: ProfileHeroProps) {
   const user = useAuthStore((s) => s.user);
   const [isAvatarOpen, setIsAvatarOpen] = useState(false);
+  const [currentHour, setCurrentHour] = useState(new Date().getHours());
+
+  // Update the hour every minute to keep the greeting current
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHour(new Date().getHours());
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   if (!user) return null;
 
@@ -95,7 +104,7 @@ export function ProfileHero({ summary, onAvatarUpload, onAvatarRemove }: Profile
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 text-white/75 text-xs font-bold mb-0.5">
                 <Sparkles size={11} />
-                <span>{greetingForHour(new Date().getHours())}</span>
+                <span>{greetingForHour(currentHour)}</span>
               </div>
               <h2 className="text-lg sm:text-xl font-extrabold text-white truncate">{userName}</h2>
               

@@ -44,6 +44,7 @@ import {
 } from '../features/settings';
 import { useChangePassword, useSetPassword } from '../features/auth';
 import { usePushNotifications } from '../features/notifications';
+import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
 import type { LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
 
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security';
@@ -227,7 +228,7 @@ function HeroOrbit() {
   const ry = 28;
 
   return (
-    <div className="relative w-[190px] h-[190px] sm:w-[260px] sm:h-[260px] md:w-[280px] md:h-[280px] shrink-0 mx-auto">
+    <div className="relative w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[300px] md:h-[300px] shrink-0 mx-auto">
       <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="xMidYMid meet">
         <defs>
           <radialGradient id="settingsOrbitGlow" cx="50%" cy="50%" r="50%">
@@ -452,7 +453,7 @@ function SettingsHero({
         }}
       />
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-center gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 md:p-8 lg:p-10">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 sm:gap-10 lg:gap-14 p-4 sm:p-6 md:p-8 lg:p-10">
         <HeroOrbit />
 
         <div className="flex-1 min-w-0 text-center lg:text-left w-full">
@@ -859,7 +860,7 @@ export function SettingsPage() {
                   </Card>
                 </div>
 
-                <Card className="p-4 sm:p-5 lg:p-6" variant="default" style={{ overflow: 'hidden' }}>
+                <Card className="p-4 sm:p-5 lg:p-6" variant="default" style={{ overflow: 'visible' }}>
                   <SectionHeader
                     icon={<Cloud size={20} />}
                     title="Workspace preview"
@@ -1033,8 +1034,8 @@ export function SettingsPage() {
                           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                             style={{
                               position: 'absolute',
-                              top: '-12px',
-                              right: '-28px',
+                              top: '-16px',
+                              right: '-20px',
                               width: appearance.layoutPreference === 'COMPACT' ? '64px' : '76px',
                               padding: '8px',
                               borderRadius: '12px',
@@ -1058,8 +1059,8 @@ export function SettingsPage() {
                           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
                             style={{
                               position: 'absolute',
-                              bottom: '-8px',
-                              left: '-24px',
+                              bottom: '-16px',
+                              left: '-20px',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px',
@@ -1083,15 +1084,14 @@ export function SettingsPage() {
                           />
                         </motion.div>
 
-                        {/* Floating chart card - middle right */}
+                        {/* Floating chart card - bottom right */}
                         <motion.div
                           animate={{ y: [0, 4, 0], x: [0, -2, 0] }}
                           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
                             style={{
                               position: 'absolute',
-                              top: '50%',
-                              right: '-36px',
-                              transform: 'translateY(-50%)',
+                              bottom: '-16px',
+                              right: '-20px',
                               padding: '8px 10px',
                               borderRadius: '10px',
                               background: 'color-mix(in srgb, var(--color-surface-raised) 76%, transparent)',
@@ -1315,6 +1315,9 @@ export function SettingsPage() {
                           </p>
                         )}
                       </div>
+
+                      {/* Notion Integration Section */}
+                      <NotionSettingsPanel />
 
                       {/* Push Notifications Section */}
                       <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>

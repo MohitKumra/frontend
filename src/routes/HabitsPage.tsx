@@ -29,6 +29,7 @@ import { WeatherWidget } from '../components/habits/WeatherWidget';
 import { HabitEmptyState } from '../components/habits/HabitEmptyState';
 import { HabitHeatmapCombined } from '../components/habits/HabitHeatmapCombined';
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
+import { AICoachPanel } from '../components/habits/AICoachPanel';
 import { CreateHabitWizard } from '../components/habits/CreateHabitWizard';
 import { StreakBreakModal } from '../components/habits/StreakBreakModal';
 import { useGamificationProfile } from '../features/dashboard/hooks/useDashboard';
@@ -207,6 +208,7 @@ export function HabitsPage() {
               <HabitHeatmapCombined habits={habits} compact />
             </div>
             <HabitList habits={filteredHabits} viewMode="list" focusedHabitId={focusedHabitId} />
+            <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
             <ProductivityEngine {...engineProps} />
             <AchievementsPanel />
           </>
@@ -234,6 +236,7 @@ export function HabitsPage() {
               <HabitHeatmapCombined habits={habits} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
               <ProductivityEngine {...engineProps} />
               <QuoteCard quotes={getDailyQuotes()} />
               <WeatherWidget />
@@ -253,6 +256,7 @@ export function HabitsPage() {
               <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
             </div>
             <div className="flex flex-col gap-4 sticky top-6 self-start">
+              <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
               <ProductivityEngine {...engineProps} />
               <QuoteCard quotes={getDailyQuotes()} />
               <WeatherWidget />
@@ -294,6 +298,7 @@ export function HabitsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6, duration: 0.6 }}
               >
+                <AICoachPanel completedToday={completedToday} totalHabits={totalHabits} />
                 <ProductivityEngine {...engineProps} />
                 <QuoteCard quotes={getDailyQuotes()} />
                 <WeatherWidget />

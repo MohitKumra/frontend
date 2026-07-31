@@ -753,6 +753,40 @@ export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
   insights: InsightDTO[];
 }
 
+// ─── Notion Integration ────────────────────────────────────────────────────────
+
+export interface NotionIntegrationDTO {
+  connected: boolean;
+  workspaceName: string | null;
+  workspaceIcon: string | null;
+  connectedAt: string | null;
+  lastSyncedAt: string | null;
+}
+
+export interface NotionDatabaseDTO {
+  id: string;
+  object: 'database' | 'data_source';
+  title: string;
+  icon: string | null;
+}
+
+export interface NotionDatabaseProperty {
+  type: string;
+  name: string;
+}
+
+export interface NotionPagePreview {
+  id: string;
+  title: string;
+  alreadyImported: boolean;
+}
+
+export interface NotionImportResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
+
 export interface SearchResult {
   type: 'task' | 'habit' | 'note' | 'project';
   id: string;

@@ -34,11 +34,14 @@ import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { FloatingNotesEmpty } from '../components/ui/FloatingNotesEmpty';
 import { EntryFormModal } from '../components/notes/EnteryFormModal';
+import { NotionImportModal } from '../components/notion/NotionImportModal';
+import { useNotionStatus } from '../features/notion/hooks/useNotion';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
 import { TagInput } from '../components/notes/TagInput';
 import { MoodPicker } from '../components/notes/MoodPicker';
 import type { NoteDTO, NoteSortField, NoteSortOrder, NoteMood } from '../types';
 import { isImageMedia } from '../components/media/MediaPreview';
+import { JournalWeeklyAnalysis } from '../components/notes/JournalAnalysis';
 import '../styles/theme-journal-notes.css';
 
 type ViewMode = 'grid' | 'list';
@@ -75,6 +78,7 @@ export function NotesPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalIsJournal, setCreateModalIsJournal] = useState(false);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [notionImportOpen, setNotionImportOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const [noteMenuOpen, setNoteMenuOpen] = useState<string | null>(null);
@@ -99,6 +103,7 @@ export function NotesPage() {
   const togglePin = useTogglePin();
   const archiveNote = useArchiveNote();
   const unarchiveNote = useUnarchiveNote();
+  const { data: notionStatus } = useNotionStatus();
 
   // Build query filters
   const queryFilters = useMemo(() => ({
@@ -490,6 +495,18 @@ export function NotesPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Import from Notion button */}
+              {notionStatus?.connected && (
+                <button
+                  onClick={() => setNotionImportOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-md transition-transform hover:-translate-y-0.5"
+                  style={{ background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                >
+                  <BookOpen size={16} />
+                  Import
+                </button>
+              )}
 
               {/* Create Note split button */}
               <div className="relative flex items-stretch rounded-xl overflow-hidden shadow-md" style={{ background: 'var(--gradient-accent)' }}>
@@ -1133,6 +1150,9 @@ export function NotesPage() {
               );
             })()}
 
+          {/* AI Weekly Journal Summary */}
+          {filter === 'journal' && <JournalWeeklyAnalysis />}
+
           {/* Infinite scroll sentinel */}
           <div ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage && (
@@ -1152,6 +1172,7 @@ export function NotesPage() {
       </motion.div>
 
       {/* ── Modals ─────────────────────────────────── */}
+      <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="notes" />
       <EntryFormModal
         isOpen={createModalOpen}
         defaultIsJournal={createModalIsJournal}

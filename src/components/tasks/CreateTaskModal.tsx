@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useCreateTask } from '../../features/tasks/hooks/useTasks';
 import { useProjects } from '../../features/projects/hooks/useProjects';
+import { NaturalTaskInput } from './NaturalTaskInput';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { CreateTaskRequest, Priority, CreateSubTaskRequest, TaskStatus } from '../../types';
 import { Modal } from '../ui/Modal';
@@ -515,6 +516,39 @@ export function CreateTaskModal({ isOpen, onClose, initialProjectId = null, lock
               {errorMessage}
             </div>
           )}
+
+          {/* ── AI Natural Language Input ────────────────────────── */}
+          <NaturalTaskInput
+            onTaskParsed={(task) => {
+              if (task.title) setTitle(task.title);
+              if (task.description) setDescription(task.description);
+              if (task.priority) setPriority(task.priority);
+              if (task.dueDate) setDueDate(task.dueDate);
+              if (task.dueTime) setDueTime(task.dueTime);
+              if (task.reminderTime) setReminderTime(task.reminderTime);
+              if (task.reminderMessage) setReminderMessage(task.reminderMessage);
+              if (task.estimatedDuration) setEstimatedDuration(task.estimatedDuration);
+              if (task.status) setStatus(task.status);
+              if (task.recurrence && task.recurrence !== 'none') {
+                setRecurrence(task.recurrence);
+                if (!task.dueDate) setDueDate(suggestedDueDate(task.recurrence));
+              }
+              if (task.subTasks && task.subTasks.length > 0) {
+                setSubTasks(task.subTasks.map((s, i) => ({ title: s.title, order: i })));
+              }
+              // Auto-open "More Options" if AI populated any extended fields
+              if (
+                task.description ||
+                task.reminderTime ||
+                task.reminderMessage ||
+                (task.recurrence && task.recurrence !== 'none') ||
+                (task.subTasks && task.subTasks.length > 0) ||
+                task.estimatedDuration
+              ) {
+                setShowMore(true);
+              }
+            }}
+          />
 
           {/* ── Core fields ─────────────────────────────────────── */}
           {/* Title */}

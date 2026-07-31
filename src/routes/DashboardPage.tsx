@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -33,6 +33,8 @@ import { FloatingCalendarEmpty } from '../components/ui/FloatingCalendarEmpty';
 import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
 import { Avatar } from '../components/ui/Avatar';
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
+import { DailyBrief } from '../components/dashboard/DailyBrief.tsx';
+import { useAIInsights } from '../features/ai/hooks/useAI';
 import type { FocusSessionDTO, ListResponse, TaskStatus } from '../types';
 
 function toUtcDateKey(value: string | Date): string {
@@ -124,6 +126,7 @@ export function DashboardPage() {
   });
   const user = useAuthStore((s) => s.user);
   const updateTask = useUpdateTask();
+  const { data: aiInsightsData } = useAIInsights();
 
   // Streak break popup — MUST be before early returns (hooks rules)
   const { data: brokenStreaks } = useStreakStatus();
@@ -140,6 +143,15 @@ export function DashboardPage() {
   // View toggle: dashboard widgets vs analytics
   const [view, setView] = useState<'dashboard' | 'analytics'>('dashboard');
   const reducedMotion = useReducedMotion();
+  const [currentHour, setCurrentHour] = useState(new Date().getHours());
+
+  // Update the hour every minute to keep the greeting current
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHour(new Date().getHours());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const habits = habitsData?.data ?? [];
@@ -260,7 +272,7 @@ export function DashboardPage() {
       <motion.div variants={itemVariants} className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex flex-col gap-1.5 select-none min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-text-primary">
-            Good morning, {displayName} 
+            {currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening'}, {displayName}
           </h1>
           <p className="text-sm font-medium text-text-muted">Let's make today productive</p>
         </div>
@@ -325,6 +337,11 @@ export function DashboardPage() {
           {view === 'dashboard' ? (
             <>
               <div className="dash-cq flex flex-col gap-6 sm:gap-8 min-w-0">
+          {/* Daily Brief — AI-powered */}
+          <div className="mb-2">
+            <DailyBrief />
+          </div>
+
           {/* Stats + Weather */}
           <div className="cq-top-row">
             <div className="cq-stats items-stretch">
@@ -689,8 +706,8 @@ export function DashboardPage() {
                 </div>
 
                 <div className="space-y-3.5">
-              {dashboard.insights && dashboard.insights.length > 0 ? (
-                dashboard.insights.map((insight) => {
+              {(aiInsightsData?.insights && aiInsightsData.insights.length > 0 ? aiInsightsData.insights : (dashboard.insights || [])).length > 0 ? (
+                (aiInsightsData?.insights && aiInsightsData.insights.length > 0 ? aiInsightsData.insights : (dashboard.insights || [])).map((insight) => {
                   const iconMap: Record<string, React.ReactNode> = {
                     trend: <TrendingUp size={13} />,
                     clock: <Timer size={13} />,

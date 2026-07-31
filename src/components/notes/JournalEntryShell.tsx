@@ -5,6 +5,7 @@ import type { EntryFormState } from './EnteryFormModal';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 import { MoodPicker } from './MoodPicker';
 import { TagInput } from './TagInput';
+import { JournalEntryAnalysis } from './JournalAnalysis';
 
 interface JournalEntryShellProps {
   mode: 'create' | 'edit';
@@ -139,6 +140,13 @@ export function JournalEntryShell({
               </div>
             </div>
           </div>
+
+          {/* AI Journal Analysis — analyze after content is written */}
+          {formData.content.trim().length > 20 && (
+            <div className="journal-media-field-wrap" style={{ flexShrink: 0, marginTop: 4 }}>
+              <JournalEntryAnalysis entryContent={formData.content} entryId={note?.id} />
+            </div>
+          )}
 
           {/* Media attachment icons — always visible at bottom */}
           <div className="journal-media-field-wrap" style={{ flexShrink: 0, marginTop: 0 }}>
