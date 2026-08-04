@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
   LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
@@ -326,12 +325,6 @@ export function AppLayout() {
 
   const contentPaddingClass = 'pt-3 sm:pt-4 px-3 sm:px-4';
 
-  // Goals routes render outside the shared AnimatePresence/PageTransition
-  // wrapper: the `mode="wait"` exit→mount handoff can get stuck when
-  // navigating to /goals, leaving the content area empty until a re-render.
-  // A plain always-visible div can never get stuck.
-  const isGoalsRoute = location.pathname === '/goals' || location.pathname.startsWith('/goals/');
-
   const headerPaddingClass =
     layoutPreference === 'COMPACT'
       ? 'px-3 sm:px-4 md:px-5'
@@ -618,20 +611,17 @@ export function AppLayout() {
         </header>
 
         <div className="flex-1 overflow-y-auto pb-28 md:pb-0 relative min-w-0">
-          {isGoalsRoute ? (
-            <div className={contentPaddingClass}>
-              <Outlet />
-            </div>
-          ) : (
-            <AnimatePresence mode="wait" initial={false}>
-              <PageTransition
-                key={location.pathname}
-                className={contentPaddingClass}
-              >
-                <Outlet />
-              </PageTransition>
-            </AnimatePresence>
-          )}
+          {/* Deliberately no AnimatePresence: exit animations can get
+              interrupted on mobile (rAF throttling during a fast tab switch),
+              leaving the content area blank until a refresh. A plain keyed
+              PageTransition unmounts the old page and mounts the new one
+              instantly — content can never get stuck or flicker. */}
+          <PageTransition
+            key={location.pathname}
+            className={contentPaddingClass}
+          >
+            <Outlet />
+          </PageTransition>
         </div>
       </main>
 
