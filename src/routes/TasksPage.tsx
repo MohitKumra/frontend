@@ -126,14 +126,14 @@ function TasksHero({
   analyticsWindow,
   dashboardSummary,
 }: {
-  user: { name?: string; email?: string } | null;
+  user: { name?: string | null; email?: string } | null;
   greeting: string;
   counts: TasksCounts;
   filter: TaskFilter;
   setFilter: (f: TaskFilter) => void;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
-  searchRef: React.RefObject<HTMLInputElement>;
+  searchRef: React.RefObject<HTMLInputElement | null>;
   view: ViewMode;
   setView: (v: ViewMode) => void;
   setTaskViewPreference: (v: ViewMode) => void;

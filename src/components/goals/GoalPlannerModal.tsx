@@ -5,7 +5,7 @@ import { Textarea } from '../ui/Input';
 import { Badge } from '../ui/Badge';
 import { Card } from '../ui/Card';
 import { goalPlannerApi } from '../../features/goals/api';
-import type { GoalPlannerPlanDTO } from '../../types';
+import type { GoalPlannerPlanDTO, GoalPlannerMilestoneItem, GoalPlannerTaskItem, GoalPlannerHabitItem, GoalPlannerProjectItem } from '../../types';
 
 type GoalPlannerModalProps = {
   open: boolean;
@@ -141,10 +141,10 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
                 </div>
               </Card>
 
-              <PlanSection title="Milestones" items={plan.milestones.map((item) => item.title)} />
-              <PlanSection title="Tasks" items={plan.tasks.map((item) => item.title)} />
-              <PlanSection title="Habits" items={plan.habits.map((item) => item.title)} />
-              <PlanSection title="Projects" items={plan.projects.map((item) => item.name)} />
+              <PlanSection title="Milestones" items={plan.milestones.map((item: GoalPlannerMilestoneItem) => item.title)} />
+              <PlanSection title="Tasks" items={plan.tasks.map((item: GoalPlannerTaskItem) => item.title)} />
+              <PlanSection title="Habits" items={plan.habits.map((item: GoalPlannerHabitItem) => item.title)} />
+              <PlanSection title="Projects" items={plan.projects.map((item: GoalPlannerProjectItem) => item.name)} />
             </>
           ) : (
             <Card className="p-5 border text-sm text-text-muted" style={{ borderColor: 'var(--color-border)' }}>

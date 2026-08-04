@@ -48,6 +48,7 @@ import type {
   EnhancedDashboardDTO,
   InsightDTO,
   ProjectAnalyticsDTO,
+  ProjectHealth,
 } from '../types';
 import {
   DateRangePicker,
@@ -554,11 +555,12 @@ function HeroStat({ label, value }: { label: string; value: string }) {
 }
 
 function ProjectHealthBadge({ health }: { health: ProjectAnalyticsDTO['health'] }) {
-  const styles = {
+  const styleMap: Record<ProjectHealth, { bg: string; fg: string; label: string }> = {
     AHEAD: { bg: 'var(--color-success-subtle)', fg: 'var(--color-success)', label: 'Ahead' },
     ON_TRACK: { bg: 'var(--color-info-subtle)', fg: 'var(--color-info)', label: 'On track' },
     BEHIND: { bg: 'var(--color-warning-subtle)', fg: 'var(--color-warning)', label: 'Behind' },
-  }[health];
+  };
+  const styles = styleMap[health];
 
   return (
     <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ background: styles.bg, color: styles.fg }}>

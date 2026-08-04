@@ -262,14 +262,14 @@ export function CalendarPage() {
       })
       .map((t) => ({ id: `task-${t.id}`, title: t.title, date: new Date(t.dueDate!), kind: 'Task' as const }));
     const fromFocusEvents = events
-      .filter((e) => e.type === 'FOCUS_SESSION' && new Date(e.startAt) >= startOfDay(now) && new Date(e.startAt) <= horizon)
-      .filter((e) => {
+      .filter((e: CalendarEventDTO) => e.type === 'FOCUS_SESSION' && new Date(e.startAt) >= startOfDay(now) && new Date(e.startAt) <= horizon)
+      .filter((e: CalendarEventDTO) => {
         const key = `event-${e.id}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .map((e) => ({ id: `event-${e.id}`, title: e.title, date: new Date(e.startAt), kind: EVENT_META[e.type].label }));
+      .map((e: CalendarEventDTO) => ({ id: `event-${e.id}`, title: e.title, date: new Date(e.startAt), kind: EVENT_META[e.type].label }));
     return [...fromTasks, ...fromFocusEvents].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 5);
   }, [plannerTasks, events]);
 

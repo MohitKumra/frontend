@@ -999,7 +999,7 @@ function ProjectsHero({
 
           {/* Right: inline stats strip */}
           <div className="flex items-center divide-x overflow-hidden rounded-2xl border lg:shrink-0"
-            style={{ borderColor: 'var(--color-border)', divideColor: 'var(--color-border)' }}>
+            style={{ borderColor: 'var(--color-border)' }}>
             {[
               { value: totalCount,      label: 'Projects',   color: 'var(--color-accent)' },
               { value: completedCount,  label: 'Completed',  color: 'var(--color-success)' },

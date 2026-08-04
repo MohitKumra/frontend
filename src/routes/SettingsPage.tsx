@@ -653,7 +653,7 @@ export function SettingsPage() {
         className="flex flex-col gap-4 sm:gap-5 lg:gap-6"
       >
         <motion.div variants={itemVariants}>
-          <SettingsHero isSaving={isSaving} stats={heroStats} />
+          <SettingsHero isSaving={isSaving} stats={heroStats} activeTab={activeTab} />
         </motion.div>
 
         <motion.div variants={itemVariants}>

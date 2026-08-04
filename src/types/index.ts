@@ -694,3 +694,316 @@ export interface GoogleCalendarSyncResponse {
   deleted: number;
   skipped: number;
 }
+
+// ─── Notifications & Activity Feed ───────────────────────────────────────────
+
+export type InAppNotificationType =
+  | 'TASK_CREATED'
+  | 'TASK_COMPLETED'
+  | 'TASK_STATUS_CHANGED'
+  | 'HABIT_COMPLETED'
+  | 'HABIT_STREAK'
+  | 'FOCUS_SESSION_COMPLETED'
+  | 'PROJECT_CREATED'
+  | 'PROJECT_COMPLETED'
+  | 'PROJECT_STATUS_CHANGED'
+  | 'TASK_OVERDUE'
+  | 'TASK_DUE_SOON'
+  | 'HABIT_PENDING';
+
+export interface InAppNotificationDTO {
+  id: string;
+  type: InAppNotificationType;
+  title: string;
+  description: string | null;
+  entityType: string;
+  entityId: string;
+  isActionable: boolean;
+  timestamp: string; // ISO 8601
+  metadata?: Record<string, any>;
+}
+
+export interface ActivityFeedMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+  totalActionable: number;
+  totalActivity: number;
+}
+
+export interface ActivityFeedResponse {
+  data: InAppNotificationDTO[];
+  meta: ActivityFeedMeta;
+}
+
+export type NotificationChannel = 'BROWSER_PUSH' | 'EMAIL' | 'NATIVE_LOCAL';
+
+export interface NotificationLogDTO {
+  id: string;
+  userId: string;
+  type: string;
+  channel: NotificationChannel;
+  title: string;
+  body: string;
+  sentAt: string;
+  isRead: boolean;
+}
+
+export interface PushSubscriptionKeys {
+  p256dh: string;
+  auth: string;
+}
+
+export interface PushSubscriptionRequest {
+  endpoint: string;
+  expirationTime?: number | null;
+  keys: PushSubscriptionKeys;
+}
+
+// ─── Habits (extended) ───────────────────────────────────────────────────────
+
+/** Shape returned by GET /habits */
+export interface HabitsListResponse {
+  data: HabitDTO[];
+  meta: { total: number };
+}
+
+/** A single day entry returned by GET /habits/week-overview */
+export interface WeekDayDTO {
+  date: string;
+  score: number;
+  completed: number;
+  total: number;
+  isFuture: boolean;
+  isToday: boolean;
+}
+
+/** Shape returned by GET /habits/week-overview */
+export interface WeekOverviewDTO {
+  days: WeekDayDTO[];
+  weekScore: number;
+}
+
+/** A habit whose streak was broken, returned by GET /habits/streak-status */
+export interface HabitStreakBreakDTO {
+  habitId: string;
+  title: string;
+  previousStreak: number;
+  brokenAt: string;
+  xpLost: number;
+}
+
+// ─── Notes (extended) ────────────────────────────────────────────────────────
+
+export interface NoteListParams {
+  search?: string;
+  isJournal?: boolean;
+  taskId?: string;
+  projectId?: string;
+  isPinned?: boolean;
+  archived?: boolean;
+  mood?: NoteMood;
+  tags?: string[];
+  sortBy?: NoteSortField;
+  sortOrder?: NoteSortOrder;
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+}
+
+// ─── Calendar ────────────────────────────────────────────────────────────────
+
+export type CalendarEventType = 'TASK_DUE' | 'FOCUS_SESSION';
+
+export interface CalendarEventDTO {
+  id: string;
+  type: CalendarEventType;
+  title: string;
+  startAt: string; // ISO 8601
+  endAt: string | null;
+  allDay: boolean;
+  entityId: string;
+  color: string | null;
+  metadata?: {
+    durationMin?: number;
+    description?: string | null;
+  };
+}
+
+export interface CalendarOverviewDTO {
+  events: CalendarEventDTO[];
+}
+
+// ─── Goals (AI Planner) ──────────────────────────────────────────────────────
+
+export interface GoalPlannerMilestoneItem {
+  title: string;
+  description?: string;
+  dueDate?: string | null;
+}
+
+export interface GoalPlannerTaskItem {
+  title: string;
+  description?: string;
+  priority?: Priority;
+  dueDate?: string | null;
+}
+
+export interface GoalPlannerHabitItem {
+  title: string;
+  reminderTime?: string;
+  durationDays?: number | null;
+}
+
+export interface GoalPlannerProjectItem {
+  name: string;
+  description?: string;
+  color?: string;
+}
+
+export interface GoalPlannerPlanDTO {
+  goal: {
+    title: string;
+    description?: string;
+    category?: string;
+    icon?: string;
+    color?: string;
+    targetDate?: string | null;
+    priority?: GoalPriority;
+  };
+  summary: string;
+  milestones: GoalPlannerMilestoneItem[];
+  tasks: GoalPlannerTaskItem[];
+  habits: GoalPlannerHabitItem[];
+  projects: GoalPlannerProjectItem[];
+  source: 'ai' | 'fallback';
+}
+
+export interface GoalWorkspaceCreateResponse {
+  goal: GoalDTO;
+  milestonesCreated: number;
+  tasksCreated: number;
+  habitsCreated: number;
+  projectsCreated: number;
+}
+
+// ─── Notion ──────────────────────────────────────────────────────────────────
+
+export interface NotionIntegrationDTO {
+  connected: boolean;
+  workspaceName: string | null;
+  workspaceIcon: string | null;
+  connectedAt: string | null;
+  botId: string | null;
+  lastSyncedAt: string | null;
+}
+
+export interface NotionDatabaseDTO {
+  id: string;
+  title: string;
+  object: 'database' | 'data_source';
+  icon: string | null;
+  url: string | null;
+}
+
+export type NotionPropertyType =
+  | 'title'
+  | 'rich_text'
+  | 'number'
+  | 'select'
+  | 'multi_select'
+  | 'date'
+  | 'checkbox'
+  | 'url'
+  | 'email'
+  | 'phone_number'
+  | 'status'
+  | string;
+
+export interface NotionDatabaseProperty {
+  id: string;
+  name: string;
+  type: NotionPropertyType;
+  options?: Array<{ id: string; name: string; color?: string }>;
+}
+
+export interface NotionImportResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+  items?: Array<{ id: string; title: string }>;
+}
+
+export interface NotionPagePreview {
+  id: string;
+  title: string;
+  properties: Record<string, unknown>;
+  url: string | null;
+  lastEdited: string | null;
+  alreadyImported: boolean;
+}
+
+// ─── Search ──────────────────────────────────────────────────────────────────
+
+export type SearchResultType = 'task' | 'habit' | 'note' | 'project';
+
+export interface SearchResult {
+  id: string;
+  type: SearchResultType;
+  title: string;
+  subtitle: string | null;
+  description?: string | null;
+  metadata?: {
+    taskId?: string;
+    projectId?: string;
+    status?: string;
+    priority?: string;
+    [key: string]: unknown;
+  };
+}
+
+// ─── Analytics (extended) ────────────────────────────────────────────────────
+
+export interface DailyAnalyticsDTO {
+  date: string; // YYYY-MM-DD
+  tasksCreated: number;
+  tasksCompleted: number;
+  tasksOverdue: number;
+  focusMinutes: number;
+  habitsCompleted: number;
+  productivityScore: number;
+}
+
+export type ProjectHealth = 'AHEAD' | 'ON_TRACK' | 'BEHIND';
+
+export interface ProjectAnalyticsDTO {
+  projectId: string;
+  projectName: string;
+  status: ProjectStatus;
+  progress: number;
+  expectedProgress: number;
+  progressDelta: number;
+  health: 'AHEAD' | 'ON_TRACK' | 'BEHIND';
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  focusMinutes: number;
+  daysRemaining: number | null;
+  expectedFinish: string | null;
+  actualFinish: string | null;
+  weeklyProgress: Array<{
+    week: string;
+    tasksCompleted: number;
+  }>;
+}

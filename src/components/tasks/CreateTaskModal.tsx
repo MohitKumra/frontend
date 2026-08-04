@@ -243,7 +243,7 @@ export function CreateTaskModal({
       if (attachmentUrl.trim()) body.attachmentUrl = attachmentUrl.trim();
       if (voiceNoteUrl.trim())  body.voiceNoteUrl  = voiceNoteUrl.trim();
       if (subTasks.length > 0)  body.subTasks = subTasks.map((s, i) => ({ title: s.title, order: s.order ?? i }));
-      await createTask.mutateAsync(body as CreateTaskRequest);
+      await createTask.mutateAsync(body as unknown as CreateTaskRequest);
       handleClose();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } }; message?: string })
