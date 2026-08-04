@@ -14,6 +14,10 @@ import {
   ChevronRight,
   Flame,
   FileText,
+  BarChart3,
+  Target,
+  Zap,
+  ArrowUpRight,
 } from 'lucide-react';
 import { LoadingScreen } from '../components/ui/Spinner';
 import apiClient from '../lib/apiClient';
@@ -268,60 +272,22 @@ export function DashboardPage() {
         }}
       />
 
-      {/* Header: greeting on the left + pill toggle on the right */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex flex-col gap-1.5 select-none min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-text-primary">
-            {currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening'}, {displayName}
-          </h1>
-          <p className="text-sm font-medium text-text-muted">Let's make today productive</p>
-        </div>
-
-        {/* Pill-shaped sliding toggle */}
-        <div
-          className="relative inline-flex items-center h-10 px-1 rounded-full border"
-          style={{
-            background: 'var(--color-surface-raised)',
-            borderColor: 'var(--color-border)',
-          }}
-        >
-          {/* Sliding pill background */}
-          <motion.div
-            className="absolute top-1 bottom-1 rounded-full shadow-md"
-            initial={false}
-            animate={{
-              transform: view === 'dashboard' ? 'translateX(0%)' : 'translateX(100%)',
-            }}
-            transition={reducedMotion ? { duration: 0.15 } : { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 }}
-            style={{
-              width: 'calc(50% - 4px)',
-              left: '4px',
-              background: view === 'dashboard'
-                ? 'var(--gradient-accent)'
-                : 'linear-gradient(135deg, var(--color-info), var(--color-accent))',
-            }}
-          />
-          <button
-            onClick={() => setView('dashboard')}
-            className={`relative z-10 flex-1 px-4 py-2 text-sm font-bold rounded-full transition-colors ${
-              view === 'dashboard'
-                ? 'text-white'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setView('analytics')}
-            className={`relative z-10 flex-1 px-4 py-2 text-sm font-bold rounded-full transition-colors ${
-              view === 'analytics'
-                ? 'text-white'
-                : 'text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            Analytics
-          </button>
-        </div>
+      {/* ── Dashboard Header — flat, no card wrapping ────────────────── */}
+      <motion.div variants={itemVariants}>
+        <DashboardHero
+          displayName={displayName}
+          currentHour={currentHour}
+          view={view}
+          setView={setView}
+          reducedMotion={!!reducedMotion}
+          taskCompletion={taskCompletion}
+          habitCompletion={habitCompletion}
+          focusMinutesToday={todayFocusMinutes}
+          productivityScore={dashboard.productivityScore}
+          scorePctChange={scorePctChange}
+          currentHabitStreak={currentHabitStreak}
+          activeProjects={projectStats.activeProjectsCount}
+        />
       </motion.div>
 
       {/* Animated view switcher — crossfade between dashboard widgets and analytics */}
@@ -974,6 +940,154 @@ export function DashboardPage() {
         }}
       />
     </motion.div>
+  );
+}
+
+// ─── DashboardHero ────────────────────────────────────────────────────────────
+// Flat header row — no card border, blends directly into the page bg so the
+// DailyBrief card beneath it reads as the first visual "block".
+
+function DashboardHero({
+  displayName,
+  currentHour,
+  view,
+  setView,
+  reducedMotion,
+  taskCompletion,
+  habitCompletion,
+  focusMinutesToday,
+  productivityScore,
+  scorePctChange,
+  currentHabitStreak,
+  activeProjects,
+}: {
+  displayName: string;
+  currentHour: number;
+  view: 'dashboard' | 'analytics';
+  setView: (v: 'dashboard' | 'analytics') => void;
+  reducedMotion: boolean;
+  taskCompletion: number;
+  habitCompletion: number;
+  focusMinutesToday: number;
+  productivityScore: number;
+  scorePctChange: number;
+  currentHabitStreak: number;
+  activeProjects: number;
+}) {
+  const greeting = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
+  const scorePositive = scorePctChange >= 0;
+
+  const focusLabel = focusMinutesToday >= 60
+    ? `${Math.floor(focusMinutesToday / 60)}h${focusMinutesToday % 60 > 0 ? ` ${focusMinutesToday % 60}m` : ''}`
+    : `${focusMinutesToday}m`;
+
+  const stats = [
+    { value: `${taskCompletion}%`,     label: 'Tasks',    color: 'var(--color-accent)' },
+    { value: `${currentHabitStreak}d`, label: 'Streak',   color: 'var(--color-warning)' },
+    { value: focusLabel,               label: 'Focus',    color: 'var(--color-info)' },
+    { value: String(activeProjects),   label: 'Projects', color: 'var(--color-success)' },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4 sm:gap-5">
+      {/* Top row: greeting + view toggle */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        {/* Greeting */}
+        <div>
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 mb-2 text-[10px] font-black uppercase tracking-[0.22em]"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+              color: 'var(--color-accent)',
+            }}>
+            <motion.span animate={{ rotate: [0, 12, -8, 0] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}>
+              <Sparkles size={11} />
+            </motion.span>
+            Command center
+          </div>
+          <h1 className="font-black tracking-tight"
+            style={{ fontSize: 'clamp(1.5rem, 2.8vw, 2.4rem)', lineHeight: 1.1, color: 'var(--color-text-primary)' }}>
+            {greeting},{' '}
+            <span style={{ color: 'var(--color-accent)' }}>{displayName}.</span>
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            Here's your productivity snapshot for today.
+          </p>
+        </div>
+
+        {/* View toggle — same spring pill */}
+        <div className="relative inline-flex items-center rounded-full border p-1 shrink-0 mt-1"
+          style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div
+            className="absolute top-1 bottom-1 rounded-full"
+            initial={false}
+            animate={{ left: view === 'dashboard' ? '4px' : '50%' }}
+            transition={reducedMotion ? { duration: 0.15 } : { type: 'spring', stiffness: 320, damping: 28 }}
+            style={{
+              width: 'calc(50% - 4px)',
+              background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
+              boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 28%, transparent)',
+            }}
+          />
+          {(['dashboard', 'analytics'] as const).map((v) => (
+            <button key={v} onClick={() => setView(v)}
+              className="relative z-10 px-5 py-2 text-xs font-black rounded-full transition-colors"
+              style={{ color: view === v ? 'white' : 'var(--color-text-muted)' }}>
+              {v.charAt(0).toUpperCase() + v.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom row: score badge + stats strip side by side */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Score badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border px-3.5 py-2"
+          style={{
+            background: scorePositive
+              ? 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))'
+              : 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
+            borderColor: scorePositive
+              ? 'color-mix(in srgb, var(--color-success) 22%, transparent)'
+              : 'color-mix(in srgb, var(--color-warning) 22%, transparent)',
+          }}>
+          <motion.span animate={{ y: [0, -2, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+            <ArrowUpRight size={12} style={{ color: scorePositive ? 'var(--color-success)' : 'var(--color-warning)', transform: scorePositive ? 'none' : 'rotate(90deg)' }} />
+          </motion.span>
+          <span className="text-xs font-black" style={{ color: scorePositive ? 'var(--color-success)' : 'var(--color-warning)' }}>
+            {productivityScore} score
+          </span>
+          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+            {scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`} this week
+          </span>
+        </div>
+
+        {/* Divider-separated stat strip */}
+        <div className="flex items-center divide-x overflow-hidden rounded-2xl border"
+          style={{ borderColor: 'var(--color-border)' }}>
+          {stats.map((s, i) => (
+            <div key={s.label}
+              className="flex items-center gap-1.5 px-3.5 py-2"
+              style={{ background: 'var(--color-surface)' }}>
+              <motion.span
+                className="text-sm font-black leading-none"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.06 }}
+                style={{ color: s.color }}
+              >
+                {s.value}
+              </motion.span>
+              <span className="text-[10px] font-mono uppercase tracking-[0.12em]"
+                style={{ color: 'var(--color-text-muted)' }}>
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
