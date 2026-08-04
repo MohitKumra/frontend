@@ -24,6 +24,7 @@ export function useCreateProject() {
       apiClient.post<ProjectDTO>('/projects', data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },
@@ -38,6 +39,7 @@ export function useUpdateProject(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['projects', id] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },
@@ -50,6 +52,7 @@ export function useDeleteProject() {
     mutationFn: (id: string) => apiClient.delete(`/projects/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },

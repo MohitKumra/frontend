@@ -1,9 +1,11 @@
 import apiClient from '../../lib/apiClient';
 import type {
+  AIPreferenceDTO,
   AppearanceSettingsDTO,
   GoogleCalendarSyncResponse,
   NotificationPreferenceDTO,
   SettingsDTO,
+  UpdateAIPreferencesRequest,
   UpdateAppearanceRequest,
   UpdateNotificationPreferencesRequest,
   UpdateRecoveryEmailRequest,
@@ -18,6 +20,9 @@ export const settingsApi = {
 
   updateNotifications: (data: UpdateNotificationPreferencesRequest) =>
     apiClient.patch<NotificationPreferenceDTO>('/settings/notifications', data).then((r) => r.data),
+
+  updateAIPreferences: (data: UpdateAIPreferencesRequest) =>
+    apiClient.patch<{ ai: AIPreferenceDTO }>('/settings/ai', data).then((r) => r.data),
 
   updateRecoveryEmail: (data: UpdateRecoveryEmailRequest) =>
     apiClient.patch<{ recoveryEmail: string | null }>('/settings/security/recovery-email', data).then((r) => r.data),

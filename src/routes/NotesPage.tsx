@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   FileText,
@@ -452,114 +452,23 @@ export function NotesPage() {
         animate="visible"
         className="flex flex-col gap-6 sm:gap-8"
       >
-        {/* ── Header ─────────────────────────────────── */}
+        {/* ── Premium Hero Header ─────────────────────────────── */}
         <motion.div variants={itemVariants}>
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg"
-                style={{ background: 'var(--gradient-accent)', color: 'white' }}
-              >
-                <FileText size={22} />
-              </div>
-              <div>
-                <h1 className="text-[1.9rem] font-black text-text-primary tracking-tight leading-tight">
-                  Notes & Journal
-                </h1>
-                <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--color-accent)' }}>
-                  {totalCount} note{totalCount !== 1 ? 's' : ''}
-                </p>
-                <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                  Jot down thoughts, journal entries, and important ideas
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              {/* View toggle */}
-              <div
-                className="flex items-center gap-1 p-1 rounded-xl"
-                style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
-              >
-                {(['grid', 'list'] as ViewMode[]).map((vm) => (
-                  <button
-                    key={vm}
-                    onClick={() => setViewMode(vm)}
-                    className="p-2 rounded-lg transition-all"
-                    style={{
-                      background: viewMode === vm ? 'var(--gradient-accent)' : 'transparent',
-                      color: viewMode === vm ? 'white' : 'var(--color-text-muted)',
-                    }}
-                  >
-                    {vm === 'grid' ? <Grid3x3 size={15} /> : <List size={15} />}
-                  </button>
-                ))}
-              </div>
-
-              {/* Import from Notion button */}
-              {notionStatus?.connected && (
-                <button
-                  onClick={() => setNotionImportOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-md transition-transform hover:-translate-y-0.5"
-                  style={{ background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
-                >
-                  <BookOpen size={16} />
-                  Import
-                </button>
-              )}
-
-              {/* Create Note split button */}
-              <div className="relative flex items-stretch rounded-xl overflow-hidden shadow-md" style={{ background: 'var(--gradient-accent)' }}>
-                <button
-                  onClick={() => {
-                    setCreateModalIsJournal(filter === 'journal');
-                    setCreateModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-white"
-                >
-                  <Plus size={16} />
-                  {filter === 'journal' ? 'New Journal' : 'New Note'}
-                </button>
-                <button
-                  onClick={() => setNewMenuOpen((o) => !o)}
-                  aria-label="More create options"
-                  className="px-2.5 flex items-center justify-center border-l transition-colors"
-                  style={{ borderColor: 'rgba(255,255,255,0.28)', color: 'rgba(255,255,255,0.9)' }}
-                >
-                  <ChevronDown size={14} />
-                </button>
-                {newMenuOpen && (
-                  <div
-                    className="absolute right-0 top-full mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
-                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreateModalIsJournal(false);
-                        setCreateModalOpen(true);
-                        setNewMenuOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    >
-                      📝 New Note
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreateModalIsJournal(true);
-                        setCreateModalOpen(true);
-                        setNewMenuOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs font-bold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    >
-                      📓 New Journal
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <NotesHero
+            totalCount={totalCount}
+            journalCount={filteredNotes.filter((n) => n.isJournal).length}
+            noteCount={filteredNotes.filter((n) => !n.isJournal).length}
+            pinnedCount={filteredNotes.filter((n) => n.isPinned).length}
+            filter={filter}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            notionConnected={!!notionStatus?.connected}
+            onNotionImport={() => setNotionImportOpen(true)}
+            onNewNote={() => { setCreateModalIsJournal(false); setCreateModalOpen(true); }}
+            onNewJournal={() => { setCreateModalIsJournal(true); setCreateModalOpen(true); }}
+            newMenuOpen={newMenuOpen}
+            setNewMenuOpen={setNewMenuOpen}
+          />
         </motion.div>
 
         {/* Search & Filter Bar */}
@@ -1227,6 +1136,261 @@ export function NotesPage() {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+/* ───────────────────────── Notes Page Premium Hero ───────────────────────── */
+
+function NotesHero({
+  totalCount,
+  journalCount,
+  noteCount,
+  pinnedCount,
+  filter,
+  viewMode,
+  setViewMode,
+  notionConnected,
+  onNotionImport,
+  onNewNote,
+  onNewJournal,
+  newMenuOpen,
+  setNewMenuOpen,
+}: {
+  totalCount: number;
+  journalCount: number;
+  noteCount: number;
+  pinnedCount: number;
+  filter: NoteFilter;
+  viewMode: ViewMode;
+  setViewMode: (v: ViewMode) => void;
+  notionConnected: boolean;
+  onNotionImport: () => void;
+  onNewNote: () => void;
+  onNewJournal: () => void;
+  newMenuOpen: boolean;
+  setNewMenuOpen: (fn: (v: boolean) => boolean) => void;
+}) {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const springX = useSpring(mouseX, { stiffness: 50, damping: 18 });
+  const springY = useSpring(mouseY, { stiffness: 50, damping: 18 });
+  const blob1X = useTransform(springX, [0, 1], ['-5%', '5%']);
+  const blob1Y = useTransform(springY, [0, 1], ['-5%', '5%']);
+  const blob2X = useTransform(springX, [0, 1], ['5%', '-5%']);
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = heroRef.current?.getBoundingClientRect();
+    if (!r) return;
+    mouseX.set((e.clientX - r.left) / r.width);
+    mouseY.set((e.clientY - r.top) / r.height);
+  };
+  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+
+  // Mini bar data — proportional widths
+  const barTotal = Math.max(noteCount + journalCount, 1);
+  const noteBarPct  = Math.round((noteCount  / barTotal) * 100);
+  const journalBarPct = 100 - noteBarPct;
+
+  return (
+    <div
+      ref={heroRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className="relative overflow-hidden rounded-[28px]"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        boxShadow:
+          '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
+      }}
+    >
+      {/* Ambient blobs */}
+      <motion.div style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full" aria-hidden="true"
+        animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}>
+        <div className="h-full w-full rounded-full"
+          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 70%)', filter: 'blur(36px)' }} />
+      </motion.div>
+      <motion.div style={{ x: blob2X }}
+        className="pointer-events-none absolute -bottom-10 -right-10 h-56 w-56 rounded-full" aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}>
+        <div className="h-full w-full rounded-full"
+          style={{ background: 'radial-gradient(circle, color-mix(in srgb, #EC4899 10%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      </motion.div>
+
+      {/* Dot grid */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.022]" aria-hidden="true"
+        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+
+      <div className="relative flex flex-col gap-5 p-5 sm:p-7 lg:p-8">
+
+        {/* Row 1: eyebrow + CTAs */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+              color: 'var(--color-accent)',
+            }}>
+            <motion.span animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}>
+              <FileText size={11} />
+            </motion.span>
+            Notes &amp; Journal
+          </div>
+
+          {/* Right controls */}
+          <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="flex items-center gap-1 rounded-2xl border p-1"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+              {(['grid', 'list'] as ViewMode[]).map((vm) => (
+                <button key={vm} onClick={() => setViewMode(vm)}
+                  className="flex items-center justify-center rounded-xl p-2 transition-all"
+                  style={viewMode === vm
+                    ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
+                    : { color: 'var(--color-text-muted)' }}>
+                  {vm === 'grid' ? <Grid3x3 size={14} /> : <List size={14} />}
+                </button>
+              ))}
+            </div>
+
+            {/* Notion import */}
+            {notionConnected && (
+              <button onClick={onNotionImport}
+                className="inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-xs font-black transition-all hover:opacity-80 active:scale-95"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                <BookOpen size={14} /> Import
+              </button>
+            )}
+
+            {/* Split create button */}
+            <div className="relative flex items-stretch overflow-hidden rounded-2xl"
+              style={{ boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 28%, transparent)' }}>
+              <button
+                onClick={onNewNote}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, var(--color-accent), #818CF8)' }}>
+                <Plus size={14} /> New Note
+              </button>
+              <button
+                onClick={() => setNewMenuOpen((o) => !o)}
+                className="flex items-center justify-center border-l px-2.5 text-white transition-colors hover:opacity-80"
+                style={{
+                  background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
+                  borderColor: 'rgba(255,255,255,0.25)',
+                }}>
+                <ChevronDown size={13} />
+              </button>
+              {newMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-40 overflow-hidden rounded-2xl border shadow-lg z-30"
+                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+                  <button type="button" onClick={() => { onNewNote(); setNewMenuOpen(() => false); }}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-bold text-left transition-colors hover:opacity-80"
+                    style={{ color: 'var(--color-text-primary)' }}>
+                    <StickyNote size={13} style={{ color: 'var(--color-accent)' }} />
+                    New Note
+                  </button>
+                  <button type="button" onClick={() => { onNewJournal(); setNewMenuOpen(() => false); }}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-bold text-left transition-colors hover:opacity-80"
+                    style={{ color: 'var(--color-text-primary)' }}>
+                    <BookOpen size={13} style={{ color: '#EC4899' }} />
+                    New Journal
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Headline + stat cluster */}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left: headline + sub */}
+          <div className="min-w-0">
+            <h1 className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}>
+              Your{' '}
+              <span style={{ color: 'var(--color-accent)' }}>
+                thoughts,
+              </span>{' '}
+              captured.
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed max-w-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              {totalCount > 0
+                ? `${totalCount} entr${totalCount !== 1 ? 'ies' : 'y'} — ${noteCount} note${noteCount !== 1 ? 's' : ''}, ${journalCount} journal${journalCount !== 1 ? 's' : ''}.`
+                : 'Start writing — notes and journal entries live here.'}
+            </p>
+
+            {/* Stacked composition bar */}
+            {totalCount > 0 && (
+              <div className="mt-4 max-w-xs">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Composition</span>
+                  <span className="text-[11px] font-black" style={{ color: 'var(--color-text-primary)' }}>
+                    {noteCount} notes · {journalCount} journals
+                  </span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden flex" style={{ background: 'var(--color-border-subtle)' }}>
+                  <motion.div
+                    className="h-full rounded-l-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${noteBarPct}%` }}
+                    transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ background: 'linear-gradient(90deg, var(--color-accent), #818CF8)' }}
+                  />
+                  <motion.div
+                    className="h-full rounded-r-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${journalBarPct}%` }}
+                    transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                    style={{ background: 'linear-gradient(90deg, #EC4899, #F9A8D4)' }}
+                  />
+                </div>
+                <div className="mt-1.5 flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full" style={{ background: 'var(--color-accent)' }} />
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Notes</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full" style={{ background: '#EC4899' }} />
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Journal</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: inline stats strip */}
+          <div className="flex items-center divide-x overflow-hidden rounded-2xl border lg:shrink-0"
+            style={{ borderColor: 'var(--color-border)' }}>
+            {[
+              { value: noteCount,    label: 'Notes',    color: 'var(--color-accent)' },
+              { value: journalCount, label: 'Journals', color: '#EC4899' },
+              { value: pinnedCount,  label: 'Pinned',   color: 'var(--color-warning)' },
+              { value: totalCount,   label: 'Total',    color: 'var(--color-text-primary)' },
+            ].map((s, i) => (
+              <div key={s.label}
+                className="flex flex-col items-center gap-0.5 px-5 py-3 min-w-[72px]"
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+                <span className="text-[11px] font-mono uppercase tracking-[0.15em] leading-none" style={{ color: 'var(--color-text-muted)' }}>
+                  {s.label}
+                </span>
+                <motion.span
+                  className="text-2xl font-black leading-tight"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.07 }}
+                  style={{ color: s.color }}
+                >
+                  {s.value}
+                </motion.span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

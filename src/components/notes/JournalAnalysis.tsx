@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Loader2, Brain } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { useJournalEntryAnalysis, useJournalWeeklyAnalysis } from '../../features/ai/hooks/useAI';
+import { useJournalEntryAnalysis, useJournalWeeklyAnalysis, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
 
 interface JournalAnalysisProps {
   entryContent: string;
@@ -14,6 +14,10 @@ export function JournalEntryAnalysis({ entryContent, entryId }: JournalAnalysisP
   const [analyzed, setAnalyzed] = useState(false);
   const prevIdRef = useRef<string | undefined>(undefined);
   const analysisMutation = useJournalEntryAnalysis();
+  const analysisEnabled = useAIFeatureEnabled('journalAnalysisEnabled');
+
+  // Remove the AI analysis section entirely when disabled
+  if (!analysisEnabled) return null;
 
   // Reset when entry changes
   if (entryId && prevIdRef.current !== entryId) {
@@ -110,6 +114,10 @@ export function JournalEntryAnalysis({ entryContent, entryId }: JournalAnalysisP
 
 export function JournalWeeklyAnalysis() {
   const { data: weekly, isLoading, isError } = useJournalWeeklyAnalysis();
+  const weeklyEnabled = useAIFeatureEnabled('journalWeeklyEnabled');
+
+  // Remove the AI weekly summary section entirely when disabled
+  if (!weeklyEnabled) return null;
 
   if (isLoading) {
     return (

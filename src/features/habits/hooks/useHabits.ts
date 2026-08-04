@@ -15,6 +15,7 @@ export function useCreateHabit() {
     mutationFn: (data: CreateHabitRequest) => habitsApi.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['goals'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -26,6 +27,7 @@ export function useToggleHabit() {
     mutationFn: (id: string) => habitsApi.toggle(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['goals'] });
       qc.invalidateQueries({ queryKey: [...HABITS_KEY, 'streak-status'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
@@ -39,6 +41,7 @@ export function useUpdateHabit() {
     mutationFn: ({ id, data }: { id: string; data: UpdateHabitRequest }) => habitsApi.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['goals'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -50,6 +53,7 @@ export function useDeleteHabit() {
     mutationFn: (id: string) => habitsApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HABITS_KEY });
+      qc.invalidateQueries({ queryKey: ['goals'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['dashboard', 'gamification'] });
     },

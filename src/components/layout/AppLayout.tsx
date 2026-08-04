@@ -6,7 +6,7 @@ import {
   LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
   Timer, LogOut, X, Sparkles,
   Search, MoreHorizontal, Settings2, FolderKanban,
-  Keyboard
+  Keyboard, Flag
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -48,6 +48,7 @@ const navItems = [
   { to: '/notes',     icon: FileText,        label: 'Notes',     onboarding: 'notes' },
   { to: '/focus',     icon: Timer,           label: 'Focus',     onboarding: 'focus' },
   { to: '/projects',  icon: FolderKanban,    label: 'Projects',  onboarding: 'projects' },
+  { to: '/goals',     icon: Flag,            label: 'Goals',     onboarding: 'goals' },
   { to: '/settings',  icon: Settings2,       label: 'Settings',  onboarding: 'settings' },
 ];
 
@@ -71,6 +72,12 @@ function warmRouteData(route: string): void {
       void queryClient.prefetchQuery({
         queryKey: ['projects'],
         queryFn: () => apiClient.get('/projects').then((r) => r.data),
+      });
+      break;
+    case '/goals':
+      void queryClient.prefetchQuery({
+        queryKey: ['goals'],
+        queryFn: () => apiClient.get('/goals').then((r) => r.data),
       });
       break;
     case '/calendar': {
@@ -166,7 +173,7 @@ export function AppLayout() {
   }, [layoutPreference]);
 
   useEffect(() => {
-    const routesToWarm = ['/', '/tasks', '/projects', '/calendar', '/habits', '/notes', '/focus', '/analytics', '/profile', '/settings'];
+    const routesToWarm = ['/', '/tasks', '/projects', '/goals', '/calendar', '/habits', '/notes', '/focus', '/analytics', '/profile', '/settings'];
     const timer = window.setTimeout(() => {
       routesToWarm.forEach((route) => warmRouteData(route));
     }, 500);
@@ -248,6 +255,7 @@ export function AppLayout() {
   //   G then N         → Navigate to Notes
   //   G then F         → Navigate to Focus
   //   G then P         → Navigate to Projects
+  //   G then O         → Navigate to Goals
   //   G then S         → Navigate to Settings
   //
   useEffect(() => {
@@ -296,6 +304,7 @@ export function AppLayout() {
           n: '/notes',  // Notes
           f: '/focus',  // Focus
           p: '/projects', // Projects
+          o: '/goals', // Goals
           s: '/settings', // Settings
         };
 
@@ -316,6 +325,12 @@ export function AppLayout() {
   }, [navigate, showShortcuts, searchOpen, mobileMoreOpen]);
 
   const contentPaddingClass = 'pt-3 sm:pt-4 px-3 sm:px-4';
+
+  // Goals routes render outside the shared AnimatePresence/PageTransition
+  // wrapper: the `mode="wait"` exit→mount handoff can get stuck when
+  // navigating to /goals, leaving the content area empty until a re-render.
+  // A plain always-visible div can never get stuck.
+  const isGoalsRoute = location.pathname === '/goals' || location.pathname.startsWith('/goals/');
 
   const headerPaddingClass =
     layoutPreference === 'COMPACT'
@@ -603,14 +618,20 @@ export function AppLayout() {
         </header>
 
         <div className="flex-1 overflow-y-auto pb-28 md:pb-0 relative min-w-0">
-          <AnimatePresence mode="wait" initial={false}>
-            <PageTransition
-              key={location.pathname}
-              className={contentPaddingClass}
-            >
+          {isGoalsRoute ? (
+            <div className={contentPaddingClass}>
               <Outlet />
-            </PageTransition>
-          </AnimatePresence>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait" initial={false}>
+              <PageTransition
+                key={location.pathname}
+                className={contentPaddingClass}
+              >
+                <Outlet />
+              </PageTransition>
+            </AnimatePresence>
+          )}
         </div>
       </main>
 
@@ -748,6 +769,7 @@ export function AppLayout() {
                 '/notes': 'var(--gradient-info)',
                 '/focus': 'var(--gradient-success)',
                 '/analytics': 'var(--gradient-danger)',
+                '/goals': 'var(--gradient-accent)',
               };
               const gradient = gradientMap[to] || 'var(--gradient-accent)';
               
@@ -859,6 +881,7 @@ export function AppLayout() {
                 ['G + N', 'Go to Notes'],
                 ['G + F', 'Go to Focus'],
                 ['G + P', 'Go to Projects'],
+                ['G + O', 'Go to Goals'],
                 ['G + S', 'Go to Settings'],
               ].map(([key, label]) => (
                 <div key={key} className="flex items-center justify-between">

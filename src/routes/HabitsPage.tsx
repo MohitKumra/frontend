@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   Grid3x3,
@@ -40,6 +41,7 @@ type HabitSort = 'custom' | 'streak' | 'name' | 'progress';
 type ViewMode = 'grid' | 'list';
 
 export function HabitsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data, isLoading } = useHabits();
   const { data: gamification } = useGamificationProfile();
   const { data: tasksData } = useTasks();
@@ -129,6 +131,21 @@ export function HabitsPage() {
 
   const userName = user?.name?.split(' ')[0] || 'there';
 
+  React.useEffect(() => {
+    const habitId = searchParams.get('habitId');
+    if (!habitId) return;
+    setFocusedHabitId(habitId);
+    setSearchParams({}, { replace: true });
+    setTimeout(() => {
+      const el = document.getElementById(`habit-card-${habitId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+    const timer = setTimeout(() => setFocusedHabitId(null), 5000);
+    return () => clearTimeout(timer);
+  }, [searchParams, setSearchParams]);
+
   const handleFocusHabit = useCallback((habitId: string) => {
     setFocusedHabitId(habitId);
     // Scroll the card into view after a small delay for the DOM to be ready
@@ -177,6 +194,106 @@ export function HabitsPage() {
     onNavigateFocus: () => window.location.href = '/focus',
     onFocusHabit: handleFocusHabit,
   };
+
+  // ── renderFiltersAndList defined here (before the return) so it is
+  //    available in all layout branches (mobile, tablet, desktop).
+  const renderFiltersAndList = () => (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+        className="flex flex-col gap-3"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base sm:text-lg font-black text-text-primary">Your Habits</h2>
+          <div className="flex gap-1 p-1.5 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            <motion.button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-accent text-white' : 'text-text-muted'}`}
+              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+            >
+              <Grid3x3 size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+            </motion.button>
+            <motion.button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-accent text-white' : 'text-text-muted'}`}
+              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+            >
+              <List size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
+            </motion.button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch gap-2">
+          <div className="relative flex-1">
+            <Search size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+            <input
+              type="text" placeholder="Search habits..." value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+            />
+          </div>
+          <select
+            value={sort} onChange={(e) => setSort(e.target.value as HabitSort)}
+            className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+          >
+            <option value="custom">Sort: Custom</option>
+            <option value="streak">Sort: Streak</option>
+            <option value="name">Sort: Name</option>
+            <option value="progress">Sort: Progress</option>
+          </select>
+        </div>
+
+        <div className="flex overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="np-pill-segmented">
+            {(['all', 'active', 'pending', 'completed'] as HabitFilter[]).map((f) => {
+              const isActive = filter === f;
+              const iconMap: Record<HabitFilter, React.ReactNode> = {
+                all: <LayoutList size={12} />,
+                active: <Zap size={12} />,
+                pending: <Clock size={12} />,
+                completed: <CheckCircle2 size={12} />,
+              };
+              return (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`np-pill ${isActive ? 'is-active' : ''}`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="habit-pill-indicator"
+                      className="np-pill-indicator"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                    />
+                  )}
+                  <span className="relative z-[1] flex items-center gap-[5px]">
+                    {iconMap[f]}
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                    <span className="np-pill-count">{filterCounts[f]}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+
+      {filteredHabits.length === 0 ? (
+        <Card variant="default" className="p-6 sm:p-10 text-center" style={{ borderRadius: '24px' }}>
+          <p className="text-sm font-bold text-text-primary">No habits match this view</p>
+          <p className="text-xs text-text-muted mt-1">Try a different filter.</p>
+        </Card>
+      ) : (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.6 }}>
+          <HabitList habits={filteredHabits} viewMode={viewMode} focusedHabitId={focusedHabitId} />
+        </motion.div>
+      )}
+    </>
+  );
 
   // Early return AFTER all hooks/callbacks — this ensures hook count never changes between renders
   if (isLoading) return <LoadingScreen />;
@@ -348,105 +465,6 @@ export function HabitsPage() {
     </motion.div>
   );
 
-  function renderFiltersAndList() {
-    return (
-      <>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="flex flex-col gap-3"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-base sm:text-lg font-black text-text-primary">Your Habits</h2>
-            <div className="flex gap-1 p-1.5 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-              <motion.button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-accent text-white' : 'text-text-muted'}`}
-                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              >
-                <Grid3x3 size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
-              </motion.button>
-              <motion.button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-accent text-white' : 'text-text-muted'}`}
-                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              >
-                <List size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
-              </motion.button>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch gap-2">
-            <div className="relative flex-1">
-              <Search size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-              <input
-                type="text" placeholder="Search habits..." value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
-              />
-            </div>
-            <select
-              value={sort} onChange={(e) => setSort(e.target.value as HabitSort)}
-              className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-            >
-              <option value="custom">Sort: Custom</option>
-              <option value="streak">Sort: Streak</option>
-              <option value="name">Sort: Name</option>
-              <option value="progress">Sort: Progress</option>
-            </select>
-          </div>
-
-          <div className="flex overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <div className="np-pill-segmented">
-              {(['all', 'active', 'pending', 'completed'] as HabitFilter[]).map((f) => {
-                const isActive = filter === f;
-                const iconMap: Record<HabitFilter, React.ReactNode> = {
-                  all: <LayoutList size={12} />,
-                  active: <Zap size={12} />,
-                  pending: <Clock size={12} />,
-                  completed: <CheckCircle2 size={12} />,
-                };
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`np-pill ${isActive ? 'is-active' : ''}`}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="habit-pill-indicator"
-                        className="np-pill-indicator"
-                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
-                      />
-                    )}
-                    <span className="relative z-[1] flex items-center gap-[5px]">
-                      {iconMap[f]}
-                      {f.charAt(0).toUpperCase() + f.slice(1)}
-                      <span className="np-pill-count">{filterCounts[f]}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </motion.div>
-
-        {filteredHabits.length === 0 ? (
-          <Card variant="default" className="p-6 sm:p-10 text-center" style={{ borderRadius: '24px' }}>
-            <p className="text-sm font-bold text-text-primary">No habits match this view</p>
-            <p className="text-xs text-text-muted mt-1">Try a different filter.</p>
-          </Card>
-        ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.6 }}>
-            <HabitList habits={filteredHabits} viewMode={viewMode} focusedHabitId={focusedHabitId} />
-          </motion.div>
-        )}
-      </>
-    );
-  }
 }
 
 export default HabitsPage;

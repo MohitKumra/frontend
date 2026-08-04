@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Link, useSearchParams } from 'react-router-dom';
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import toast from 'react-hot-toast';
 import {
@@ -27,6 +27,7 @@ import {
   SlidersHorizontal,
   SunMedium,
   Unplug,
+  BrainCircuit,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -38,6 +39,7 @@ import {
   useGoogleCalendarStart,
   useSettings,
   useSyncGoogleCalendar,
+  useUpdateAIPreferences,
   useUpdateAppearance,
   useUpdateNotifications,
   useUpdateRecoveryEmail,
@@ -45,9 +47,10 @@ import {
 import { useChangePassword, useSetPassword } from '../features/auth';
 import { usePushNotifications } from '../features/notifications';
 import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
-import type { LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
+import { AISettingsPanel } from '../components/settings/AISettingsPanel';
+import type { AIPreferenceDTO, LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
 
-type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security';
+type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security' | 'ai';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
 type TaskView = 'list' | 'board';
 
@@ -58,6 +61,7 @@ const TAB_COLOR: Record<SettingsTab, string> = {
   notifications: '--color-info',
   integrations: '--color-success',
   security: '--color-warning',
+  ai: '--color-accent',
 };
 
 const SETTINGS_TABS: Array<{
@@ -69,6 +73,7 @@ const SETTINGS_TABS: Array<{
     { id: 'notifications', label: 'Notifications', icon: <BellRing size={14} /> },
     { id: 'integrations', label: 'Integrations', icon: <Cloud size={14} /> },
     { id: 'security', label: 'Security', icon: <ShieldCheck size={14} /> },
+    { id: 'ai', label: 'AI & Tokens', icon: <BrainCircuit size={14} /> },
   ];
 
 const APPEARANCE_OPTIONS: Array<{
@@ -187,127 +192,156 @@ function Badge3D({
   );
 }
 
-function StatChip({ label, value, colorVar }: { label: string; value: string; colorVar: string }) {
+/**
+ * Premium settings header — editorial layout matching the Goals / Tasks
+ * hero style: ambient blobs, dot grid, gradient headline, stat chips,
+ * and module preview cards instead of the old orbit diagram.
+ */
+function SettingsHero({
+  isSaving,
+  stats,
+  activeTab,
+}: {
+  isSaving: boolean;
+  stats: { theme: string; density: string; alerts: string; linked: string };
+  activeTab: SettingsTab;
+}) {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const springX = useSpring(mouseX, { stiffness: 50, damping: 18 });
+  const springY = useSpring(mouseY, { stiffness: 50, damping: 18 });
+  const blob1X = useTransform(springX, [0, 1], ['-5%', '5%']);
+  const blob1Y = useTransform(springY, [0, 1], ['-5%', '5%']);
+  const blob2X = useTransform(springX, [0, 1], ['5%', '-5%']);
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = heroRef.current?.getBoundingClientRect();
+    if (!r) return;
+    mouseX.set((e.clientX - r.left) / r.width);
+    mouseY.set((e.clientY - r.top) / r.height);
+  };
+  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+
+  const modules: Array<{ id: SettingsTab; label: string; icon: ReactNode; colorVar: string; desc: string }> = [
+    { id: 'appearance',    label: 'Appearance',    icon: <Palette size={16} />,      colorVar: TAB_COLOR.appearance,    desc: 'Theme · Layout · Views' },
+    { id: 'notifications', label: 'Notifications', icon: <BellRing size={16} />,     colorVar: TAB_COLOR.notifications, desc: 'Alerts · Reminders' },
+    { id: 'integrations',  label: 'Integrations',  icon: <Cloud size={16} />,        colorVar: TAB_COLOR.integrations,  desc: 'Calendar · Notion' },
+    { id: 'security',      label: 'Security',      icon: <ShieldCheck size={16} />,  colorVar: TAB_COLOR.security,      desc: 'Password · Recovery' },
+    { id: 'ai',            label: 'AI & Tokens',   icon: <BrainCircuit size={16} />, colorVar: TAB_COLOR.ai,            desc: 'Features · Budget' },
+  ];
+
   return (
     <div
-      className="flex items-center gap-2 rounded-xl border px-3 py-2 min-w-0"
-      style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+      ref={heroRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className="relative overflow-hidden rounded-2xl sm:rounded-3xl border"
+      style={{
+        borderColor: 'var(--color-border)',
+        background: 'var(--color-surface)',
+        boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
+      }}
     >
-      <span
-        className="w-1.5 h-1.5 rounded-full shrink-0"
-        style={{ background: `var(${colorVar})`, boxShadow: `0 0 6px var(${colorVar})` }}
-      />
-      <div className="min-w-0">
-        <div className="text-[9px] font-mono uppercase tracking-wider text-text-muted leading-none">{label}</div>
-        <div className="text-xs font-bold text-text-primary mt-1 truncate">{value}</div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Orbit illustration: a central "sliders" hub with four satellite tiles —
- * one per settings module — wired by animated signal lines on an elliptical
- * (pseudo-isometric) orbit ring. Colors map 1:1 to TAB_COLOR so the hero
- * visually previews the tab strip below it.
- */
-function HeroOrbit() {
-  const satellites: Array<{ icon: ReactNode; colorVar: string; angle: number }> = [
-    { icon: <Palette size={14} />, colorVar: TAB_COLOR.appearance, angle: -90 },
-    { icon: <BellRing size={14} />, colorVar: TAB_COLOR.notifications, angle: 0 },
-    { icon: <Cloud size={14} />, colorVar: TAB_COLOR.integrations, angle: 90 },
-    { icon: <ShieldCheck size={14} />, colorVar: TAB_COLOR.security, angle: 180 },
-  ];
-  // Everything below is expressed as a percentage of the container (0-100),
-  // and the SVG uses a matching 0-100 viewBox. That way hub, satellites, and
-  // the connecting lines always line up exactly, at any container size —
-  // nothing is pinned to a fixed pixel canvas that could drift out of sync.
-  const cx = 50;
-  const cy = 50;
-  const rx = 39;
-  const ry = 28;
-
-  return (
-    <div className="relative w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] md:w-[300px] md:h-[300px] shrink-0 mx-auto">
-      <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <radialGradient id="settingsOrbitGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.16" />
-            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        <circle cx={cx} cy={cy} r="46" fill="url(#settingsOrbitGlow)" />
-
-        <motion.ellipse
-          cx={cx}
-          cy={cy}
-          rx={rx}
-          ry={ry}
-          fill="none"
-          stroke="var(--color-border)"
-          strokeWidth="0.5"
-          strokeDasharray="1 2.2"
-          style={{ transformOrigin: `${cx}px ${cy}px` }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 44, repeat: Infinity, ease: 'linear' }}
-        />
-
-        {satellites.map((s, i) => {
-          const rad = (s.angle * Math.PI) / 180;
-          const x = cx + rx * Math.cos(rad);
-          const y = cy + ry * Math.sin(rad);
-          return (
-            <motion.line
-              key={`line-${i}`}
-              x1={cx}
-              y1={cy}
-              x2={x}
-              y2={y}
-              stroke={`var(${s.colorVar})`}
-              strokeWidth="0.5"
-              strokeDasharray="1.2 1.8"
-              opacity={0.4}
-              animate={{ strokeDashoffset: [0, -6] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', delay: i * 0.2 }}
-            />
-          );
-        })}
-      </svg>
-
-      {/* Hub */}
-      <motion.div
-        className="absolute"
-        style={{ left: `${cx}%`, top: `${cy}%`, transform: 'translate(-50%, -50%)' }}
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        <Badge3D
-          icon={<SlidersHorizontal size={22} className="sm:w-[26px] sm:h-[26px]" />}
-          size={56}
-          colorVar="--color-accent"
-          rotation={8}
-          className="w-12 h-12 sm:w-[68px] sm:h-[68px]"
-        />
+      {/* Ambient blobs */}
+      <motion.div style={{ x: blob1X, y: blob1Y }} className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full" aria-hidden="true"
+        animate={{ scale: [1, 1.07, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}>
+        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      </motion.div>
+      <motion.div style={{ x: blob2X }} className="pointer-events-none absolute -bottom-16 -right-10 h-64 w-64 rounded-full" aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}>
+        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-info) 10%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
       </motion.div>
 
-      {/* Satellites */}
-      {satellites.map((s, i) => {
-        const rad = (s.angle * Math.PI) / 180;
-        const x = cx + rx * Math.cos(rad);
-        const y = cy + ry * Math.sin(rad);
-        return (
-          <motion.div
-            key={i}
-            className="absolute"
-            style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
-            animate={{ y: [0, i % 2 === 0 ? -6 : 6, 0] }}
-            transition={{ duration: 4.5 + i * 0.6, repeat: Infinity, ease: 'easeInOut', delay: i * 0.35 }}
-          >
-            <Badge3D icon={s.icon} size={32} colorVar={s.colorVar} rotation={6} className="w-8 h-8 sm:w-10 sm:h-10" />
-          </motion.div>
-        );
-      })}
+      {/* Dot grid */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.025]" aria-hidden="true"
+        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+
+      {/* Content */}
+      <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:p-8">
+
+        {/* Top row: eyebrow + save status */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+            style={{ background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))', borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>
+            <SlidersHorizontal size={11} />
+            Control deck
+          </div>
+
+          <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
+            style={{ background: isSaving ? 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))' : 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))', borderColor: isSaving ? 'color-mix(in srgb, var(--color-warning) 20%, transparent)' : 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
+            <motion.span className="h-1.5 w-1.5 rounded-full shrink-0"
+              style={{ background: isSaving ? 'var(--color-warning)' : 'var(--color-success)' }}
+              animate={{ opacity: isSaving ? [1, 0.3, 1] : 1 }}
+              transition={{ duration: 1.2, repeat: isSaving ? Infinity : 0 }} />
+            <span className="text-[11px] font-bold" style={{ color: isSaving ? 'var(--color-warning)' : 'var(--color-success)' }}>
+              {isSaving ? 'Saving…' : 'All synced'}
+            </span>
+          </div>
+        </div>
+
+        {/* Headline + sub + stat chips */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.9rem, 3.5vw, 3rem)', lineHeight: 1.06, color: 'var(--color-text-primary)' }}>
+              Settings
+            </h1>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Five modules, one console. Every change saves the moment you make it.
+            </p>
+          </div>
+
+          {/* Stat chips */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: 'Theme',    value: stats.theme,   colorVar: TAB_COLOR.appearance },
+              { label: 'Density',  value: stats.density, colorVar: TAB_COLOR.appearance },
+              { label: 'Alerts',   value: stats.alerts,  colorVar: TAB_COLOR.notifications },
+              { label: 'Linked',   value: stats.linked,  colorVar: TAB_COLOR.integrations },
+            ].map((s) => (
+              <div key={s.label} className="flex items-center gap-2 rounded-xl border px-3 py-2"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+                <span className="h-1.5 w-1.5 rounded-full shrink-0"
+                  style={{ background: `var(${s.colorVar})`, boxShadow: `0 0 5px var(${s.colorVar})` }} />
+                <div>
+                  <div className="text-[9px] font-mono uppercase tracking-wider leading-none" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
+                  <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{s.value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Module preview cards */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {modules.map((mod) => {
+            const isActive = activeTab === mod.id;
+            return (
+              <div key={mod.id}
+                className="flex flex-col gap-2 rounded-2xl border p-3 transition-all"
+                style={{
+                  borderColor: isActive ? `color-mix(in srgb, var(${mod.colorVar}) 40%, transparent)` : 'var(--color-border)',
+                  background: isActive ? `color-mix(in srgb, var(${mod.colorVar}) 6%, var(--color-surface-raised))` : 'var(--color-surface-raised)',
+                  boxShadow: isActive ? `0 0 0 1px color-mix(in srgb, var(${mod.colorVar}) 20%, transparent)` : 'none',
+                }}>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{
+                    background: `linear-gradient(135deg, var(${mod.colorVar}), color-mix(in srgb, var(${mod.colorVar}) 60%, white))`,
+                    boxShadow: `0 4px 10px color-mix(in srgb, var(${mod.colorVar}) 30%, transparent)`,
+                    color: 'white',
+                  }}>
+                  {mod.icon}
+                </div>
+                <div>
+                  <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{mod.label}</p>
+                  <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{mod.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -426,79 +460,6 @@ function TabPanel({
   );
 }
 
-function SettingsHero({
-  isSaving,
-  stats,
-}: {
-  isSaving: boolean;
-  stats: { theme: string; density: string; alerts: string; linked: string };
-}) {
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl sm:rounded-3xl border"
-      style={{
-        borderColor: 'var(--color-border)',
-        background:
-          'linear-gradient(135deg, var(--color-surface) 0%, color-mix(in srgb, var(--color-accent) 5%, var(--color-surface)) 55%, color-mix(in srgb, var(--color-info) 6%, var(--color-surface)) 100%)',
-      }}
-    >
-      {/* Dot-grid texture, faded toward the edges */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-40"
-        style={{
-          backgroundImage: 'radial-gradient(var(--color-border) 1px, transparent 1px)',
-          backgroundSize: '22px 22px',
-          maskImage: 'radial-gradient(ellipse at 30% 35%, black 0%, transparent 72%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at 30% 35%, black 0%, transparent 72%)',
-        }}
-      />
-
-      <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 sm:gap-10 lg:gap-14 p-4 sm:p-6 md:p-8 lg:p-10">
-        <HeroOrbit />
-
-        <div className="flex-1 min-w-0 text-center lg:text-left w-full">
-          <div className="inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-text-muted mb-1.5 sm:mb-2">
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--color-accent)' }} />
-            Control deck
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-text-primary tracking-tight">
-            Settings
-          </h1>
-          <p className="text-xs sm:text-sm text-text-muted mt-1.5 sm:mt-2 max-w-md mx-auto lg:mx-0 leading-relaxed">
-            Four modules, one console. Tune appearance, notifications, integrations, and security —
-            every change here saves the instant you make it.
-          </p>
-
-          <div className="mt-3 sm:mt-4 flex justify-center lg:justify-start">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-3 sm:px-3.5 py-1.5"
-              style={{ background: 'var(--icon-bg-success)' }}
-            >
-              <motion.span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ background: 'var(--icon-text-success)' }}
-                animate={{ opacity: [1, 0.35, 1] }}
-                transition={{ duration: 1.6, repeat: Infinity }}
-              />
-              <span className="text-[10px] sm:text-[11px] font-bold whitespace-nowrap" style={{ color: 'var(--icon-text-success)' }}>
-                {isSaving ? 'Syncing…' : 'All synced'}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
-            <StatChip label="Theme" value={stats.theme} colorVar={TAB_COLOR.appearance} />
-            <StatChip label="Density" value={stats.density} colorVar={TAB_COLOR.appearance} />
-            <StatChip label="Alerts on" value={stats.alerts} colorVar={TAB_COLOR.notifications} />
-            <StatChip label="Linked" value={stats.linked} colorVar={TAB_COLOR.integrations} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const uiTheme = useUIStore((s) => s.themePreference);
@@ -514,6 +475,7 @@ export function SettingsPage() {
   const { data, isLoading } = useSettings();
   const appearanceMutation = useUpdateAppearance();
   const notificationsMutation = useUpdateNotifications();
+  const aiMutation = useUpdateAIPreferences();
   const recoveryMutation = useUpdateRecoveryEmail();
   const googleStart = useGoogleCalendarStart();
   const syncGoogleCalendar = useSyncGoogleCalendar();
@@ -1200,6 +1162,15 @@ export function SettingsPage() {
                     </div>
                   </div>
                 </Card>
+              </TabPanel>
+            )}
+
+            {activeTab === 'ai' && (
+              <TabPanel key="ai" panelKey="ai" className="w-full">
+                <AISettingsPanel
+                  preferences={data?.ai}
+                  onChange={(next) => aiMutation.mutate(next)}
+                />
               </TabPanel>
             )}
 

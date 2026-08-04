@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -10,11 +10,13 @@ import {
   SkipForward, MoreHorizontal, Music, CalendarDays, Clock, AudioLines,
   FolderKanban,
   LucideTrendingUp,
+  Zap,
+  BarChart3,
+  Brain,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
 import { Button } from '../components/ui/Button';
-import { PageHeader } from '../components/ui/PageHeader';
 import { TabBar } from '../components/ui/TabBar';
 import { Card } from '../components/ui/Card';
 import { useUIStore } from '../store/uiStore';
@@ -774,6 +776,202 @@ function ProjectSelector({
   );
 }
 
+/* ───────────────────────── Focus Page Premium Hero ───────────────────────── */
+
+function FocusHero({
+  todayFocusMin,
+  todayFocusCount,
+  goalPct,
+  focusScore,
+  focusScoreLabel,
+  thisWeekTotal,
+  weekDeltaMin,
+  running,
+  mode,
+  onEnterFocusMode,
+}: {
+  todayFocusMin: number;
+  todayFocusCount: number;
+  goalPct: number;
+  focusScore: number;
+  focusScoreLabel: string;
+  thisWeekTotal: number;
+  weekDeltaMin: number;
+  running: boolean;
+  mode: TimerMode;
+  onEnterFocusMode: () => void;
+}) {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const springX = useSpring(mouseX, { stiffness: 50, damping: 18 });
+  const springY = useSpring(mouseY, { stiffness: 50, damping: 18 });
+  const blob1X = useTransform(springX, [0, 1], ['-5%', '5%']);
+  const blob1Y = useTransform(springY, [0, 1], ['-5%', '5%']);
+  const blob2X = useTransform(springX, [0, 1], ['5%', '-5%']);
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = heroRef.current?.getBoundingClientRect();
+    if (!r) return;
+    mouseX.set((e.clientX - r.left) / r.width);
+    mouseY.set((e.clientY - r.top) / r.height);
+  };
+  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+
+  const modeColors = getModeColors(mode);
+  const goalDone = goalPct >= 100;
+  const weekDeltaPositive = weekDeltaMin >= 0;
+
+  // Animated ring circumference
+  const ringR = 36;
+  const ringCirc = 2 * Math.PI * ringR;
+  const ringOffset = ringCirc - (Math.min(goalPct, 100) / 100) * ringCirc;
+
+  return (
+    <div
+      ref={heroRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className="relative isolate overflow-hidden rounded-[28px]"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        boxShadow: running
+          ? `0 0 0 1px ${modeColors.primary}30, 0 20px 60px -12px ${modeColors.primary}20`
+          : '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
+        transition: 'box-shadow 0.6s ease',
+      }}
+    >
+      {/* Ambient blobs */}
+      <motion.div style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute z-0 -top-20 -left-20 h-72 w-72 rounded-full" aria-hidden="true"
+        animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
+        <div className="h-full w-full rounded-full" style={{
+          background: `radial-gradient(circle, color-mix(in srgb, ${modeColors.primary} 14%, transparent), transparent 70%)`,
+          filter: 'blur(36px)',
+          transition: 'background 0.6s ease',
+        }} />
+      </motion.div>
+      <motion.div style={{ x: blob2X }}
+        className="pointer-events-none absolute z-0 -bottom-12 -right-12 h-56 w-56 rounded-full" aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}>
+        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-success) 9%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      </motion.div>
+
+      {/* Dot grid */}
+      <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.022]" aria-hidden="true"
+        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+
+      {/* Running pulse bar */}
+      <AnimatePresence>
+        {running && (
+          <motion.div
+            className="absolute top-0 inset-x-0 h-[2px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ background: `linear-gradient(90deg, transparent, ${modeColors.primary}, transparent)` }}
+          >
+            <motion.div
+              className="absolute inset-y-0 w-40"
+              style={{ background: `linear-gradient(90deg, transparent, ${modeColors.primary}88, transparent)` }}
+              animate={{ left: ['−10%', '110%'] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="relative z-10 flex flex-col gap-5 p-5 sm:p-7 lg:p-8">
+
+        {/* Row 1: Eyebrow + Focus Mode CTA */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+            style={{
+              background: running
+                ? `color-mix(in srgb, ${modeColors.primary} 10%, var(--color-surface))`
+                : 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
+              borderColor: running
+                ? `color-mix(in srgb, ${modeColors.primary} 22%, transparent)`
+                : 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+              color: running ? modeColors.primary : 'var(--color-accent)',
+              transition: 'all 0.4s ease',
+            }}>
+            <motion.span
+              animate={running ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+              transition={{ duration: 1.5, repeat: running ? Infinity : 0 }}>
+              <Timer size={11} />
+            </motion.span>
+            {running ? (mode === 'focus' ? 'In session' : 'On break') : 'Focus studio'}
+          </div>
+
+          <button
+            onClick={onEnterFocusMode}
+            className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-black transition-all hover:opacity-90 active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent) 0%, #818CF8 100%)',
+              color: 'white',
+              boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 28%, transparent)',
+            }}
+          >
+            <Maximize2 size={13} />
+            Focus Mode
+          </button>
+        </div>
+
+        {/* Row 2: Headline + right-side stats cluster */}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left: title + sub + progress */}
+          <div className="min-w-0">
+            <h1 className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}>
+              Focus{' '}
+              <span
+                className="focus-headline-gradient"
+                style={{ ['--focus-gradient-from' as string]: modeColors.primary }}
+              >
+                Studio.
+              </span>
+            </h1>
+            <p className="mt-1.5 text-sm leading-relaxed max-w-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              {running
+                ? `${mode === 'focus' ? 'Session in progress' : 'Break time'} — stay in the zone.`
+                : 'Deep work, one session at a time.'}
+            </p>
+
+            {/* Goal progress bar */}
+            <div className="mt-4 max-w-xs">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  Daily goal
+                </span>
+                <span className="text-[11px] font-black" style={{ color: goalDone ? 'var(--color-success)' : 'var(--color-text-primary)' }}>
+                  {formatDuration(todayFocusMin * 60000)} / {formatDuration(DEFAULT_GOAL_MIN * 60000)}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+                <motion.div
+                  className="h-full rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(goalPct, 100)}%` }}
+                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    background: goalDone
+                      ? 'linear-gradient(90deg, var(--color-success), #16A34A)'
+                      : `linear-gradient(90deg, ${modeColors.primary}, #818CF8)`,
+                    transition: 'background 0.4s ease',
+                    boxShadow: goalDone ? '0 0 8px color-mix(in srgb, var(--color-success) 50%, transparent)' : `0 0 8px ${modeColors.primary}44`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ───────────────────────── Small presentational cards ───────────────────────── */
 
 function StatCard({ icon, iconBg, iconColor, label, value, sub, subColor, sparkline }: {
@@ -1185,11 +1383,11 @@ export function FocusPage() {
   const activeTasks = useMemo(() => (tasksData?.data ?? []).filter((t) => t.status === 'TODO' || t.status === 'IN_PROGRESS'), [tasksData]);
   const allTasks = tasksData?.data ?? [];
   const selectedTask = allTasks.find((t) => t.id === selectedTaskId) ?? null;
-  const tasksById = useMemo(() => new Map(allTasks.map((t) => [t.id, t.title])), [allTasks]);
+  const tasksById:Map<string , string> = useMemo(() => new Map(allTasks.map((t) => [t.id, t.title])), [allTasks]);
   const activeProjects = useMemo(() => (projectsData?.data ?? []).filter((p) => p.status !== 'COMPLETED' && p.status !== 'CANCELLED'), [projectsData]);
   const allProjects = projectsData?.data ?? [];
   const selectedProject = allProjects.find((p) => p.id === selectedProjectId) ?? null;
-  const projectsById = useMemo(() => new Map(allProjects.map((p) => [p.id, p.name])), [allProjects]);
+  const projectsById:Map<string , string> = useMemo(() => new Map(allProjects.map((p) => [p.id, p.name])), [allProjects]);
 
   useEffect(() => {
     const projectIdParam = searchParams.get('projectId');
@@ -1534,7 +1732,7 @@ export function FocusPage() {
       })
     );
     if (dayKeys.size === 0) return 0;
-    const sortedDays = Array.from(dayKeys).sort((a, b) => a - b);
+    const sortedDays:any = Array.from(dayKeys).sort((a:any, b:any) => a - b);
     let longest = 1;
     let current = 1;
     const oneDayMs = 86400000;
@@ -1587,17 +1785,20 @@ export function FocusPage() {
 
       <div className="w-full flex flex-col gap-4 sm:gap-5">
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4 sm:gap-5">
-          {/* Header */}
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <PageHeader icon={<Timer size={20} />} title="Focus Timer" subtitle="Stay productive using the Pomodoro technique" />
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={enterFocusMode}
-                className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all border border-border"
-              >
-                <Maximize2 size={14} /> Focus Mode
-              </button>
-            </div>
+          {/* ── Premium Hero Header ──────────────────────────────── */}
+          <motion.div variants={itemVariants}>
+            <FocusHero
+              todayFocusMin={todayFocusMin}
+              todayFocusCount={todayFocusCount}
+              goalPct={goalPct}
+              focusScore={focusScore}
+              focusScoreLabel={focusScoreLabel}
+              thisWeekTotal={thisWeekTotal}
+              weekDeltaMin={weekDeltaMin}
+              running={running}
+              mode={mode}
+              onEnterFocusMode={enterFocusMode}
+            />
           </motion.div>
 
           {/* Stats row */}

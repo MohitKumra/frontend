@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Lightbulb, TrendingUp, Loader2 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { useAICoach } from '../../features/ai/hooks/useAI';
+import { useAICoach, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
 
 interface AICoachPanelProps {
   completedToday: number;
@@ -12,8 +12,10 @@ interface AICoachPanelProps {
 
 export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps) {
   const { data: coachData, isLoading } = useAICoach();
+  const coachEnabled = useAIFeatureEnabled('coachEnabled');
 
   const percentage = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+  const isRuleBased = !coachEnabled || coachData?.source !== 'ai';
 
   // Fallback colors based on mood
   const getColor = () => {
@@ -86,8 +88,8 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
           
           <div className="flex-1">
             <p className="text-xs font-bold text-text-primary flex items-center gap-1.5">
-              AI Coach
-              {coachData?.source === 'ai' ? (
+              {isRuleBased ? 'Coach' : 'AI Coach'}
+              {!isRuleBased ? (
                 <motion.span
                   className="px-2 py-0.5 rounded-full text-[9px] font-extrabold"
                   style={{ background: `${color}20`, color }}

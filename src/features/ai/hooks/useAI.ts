@@ -1,73 +1,102 @@
 // frontend/src/features/ai/hooks/useAI.ts
-// React hooks for AI-powered features.
+// React hooks for AI-powered features. Settings-aware to control token usage.
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import * as aiApi from '../api';
+import { useSettings } from '../../settings';
 
-// ─── AI Status ───────────────────────────────────────────────────────────────
+export type AIFeatureKey =
+  | 'dailyBriefEnabled'
+  | 'journalWeeklyEnabled'
+  | 'insightsEnabled'
+  | 'coachEnabled'
+  | 'journalAnalysisEnabled'
+  | 'goalSummaryEnabled'
+  | 'taskParserEnabled'
+  | 'goalPlannerEnabled';
+
+/** Returns whether a specific AI feature is enabled for the current user. */
+export function useAIFeatureEnabled(featureKey: AIFeatureKey): boolean {
+  const { data: settings } = useSettings();
+  return settings?.ai?.[featureKey] !== false;
+}
 
 export function useAIStatus() {
   return useQuery({
     queryKey: ['ai-status'],
     queryFn: aiApi.getAIStatus,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 }
 
-// ─── AI Insights ─────────────────────────────────────────────────────────────
-
 export function useAIInsights() {
+  const { data: settings } = useSettings();
+  const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
+  const enabled = settings?.ai?.insightsEnabled !== false;
   return useQuery({
     queryKey: ['ai-insights'],
     queryFn: aiApi.getAIInsights,
-    staleTime: 60 * 60 * 1000, // 1 hour cache
+    staleTime: refreshMinutes * 60 * 1000,
+    refetchInterval: enabled ? refreshMinutes * 60 * 1000 : false,
+    enabled,
     retry: 1,
   });
 }
 
-// ─── AI Coach ────────────────────────────────────────────────────────────────
-
 export function useAICoach() {
+  const { data: settings } = useSettings();
+  const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 5;
+  const enabled = settings?.ai?.coachEnabled !== false;
   return useQuery({
     queryKey: ['ai-coach'],
     queryFn: aiApi.getAICoach,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: refreshMinutes * 60 * 1000,
+    refetchInterval: enabled ? refreshMinutes * 60 * 1000 : false,
+    enabled,
     retry: 1,
   });
 }
 
-// ─── Daily Brief ─────────────────────────────────────────────────────────────
-
 export function useDailyBrief() {
+  const { data: settings } = useSettings();
+  const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
+  const enabled = settings?.ai?.dailyBriefEnabled !== false;
   return useQuery({
     queryKey: ['ai-daily-brief'],
     queryFn: aiApi.getDailyBrief,
-    staleTime: 60 * 60 * 1000, // 1 hour (generated once per day)
+    staleTime: refreshMinutes * 60 * 1000,
+    refetchInterval: enabled ? refreshMinutes * 60 * 1000 : false,
+    enabled,
     retry: 1,
   });
 }
 
-// ─── Journal Analysis ────────────────────────────────────────────────────────
-
 export function useJournalEntryAnalysis() {
+  const { data: settings } = useSettings();
+  const enabled = settings?.ai?.journalAnalysisEnabled !== false;
   return useMutation({
     mutationFn: aiApi.analyzeJournalEntry,
   });
 }
 
 export function useJournalWeeklyAnalysis() {
+  const { data: settings } = useSettings();
+  const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
+  const enabled = settings?.ai?.journalWeeklyEnabled !== false;
   return useQuery({
     queryKey: ['ai-journal-weekly'],
     queryFn: aiApi.getJournalWeeklyAnalysis,
-    staleTime: 60 * 60 * 1000, // 1 hour
+    staleTime: refreshMinutes * 60 * 1000,
+    refetchInterval: enabled ? refreshMinutes * 60 * 1000 : false,
+    enabled,
     retry: 1,
   });
 }
 
-// ─── Task Parser ─────────────────────────────────────────────────────────────
-
 export function useTaskParser() {
+  const { data: settings } = useSettings();
+  const enabled = settings?.ai?.taskParserEnabled !== false;
   return useMutation({
     mutationFn: aiApi.parseTaskText,
   });

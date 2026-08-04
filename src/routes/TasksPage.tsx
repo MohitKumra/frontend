@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   CheckSquare,
@@ -25,6 +25,10 @@ import {
   ListChecks,
   Columns3,
   X,
+  Clock,
+  Flame,
+  ArrowUpRight,
+  BarChart3,
 } from 'lucide-react';
 import { useTasks, useUpdateTask, useDeleteTask } from '../features/tasks/hooks/useTasks';
 import { useTaskKeyboardShortcuts } from '../hooks/useTaskKeyboardShortcuts';
@@ -73,6 +77,358 @@ function isUpcoming(dateStr: string | null): boolean {
   weekFromNow.setHours(23, 59, 59, 999);
   return d > today && d <= weekFromNow;
 }
+
+// ─── TasksHero ────────────────────────────────────────────────────────────────
+
+type TasksCounts = {
+  pending: number;
+  today: number;
+  upcoming: number;
+  completed: number;
+  overdue: number;
+  all: number;
+};
+
+type AnalyticsWindow = {
+  recent: Array<{ tasksCompleted: number; focusMinutes: number; habitsCompleted: number }>;
+  tasksTrend: string;
+  focusTrend: string;
+  scoreTrend: string;
+  scoreSignal: number;
+};
+
+function TasksHero({
+  user,
+  greeting,
+  counts,
+  filter,
+  setFilter,
+  searchQuery,
+  setSearchQuery,
+  searchRef,
+  view,
+  setView,
+  setTaskViewPreference,
+  sortBy,
+  setSortBy,
+  sortMenuOpen,
+  setSortMenuOpen,
+  sortLabel,
+  notionConnected,
+  onNotionImport,
+  onNewTask,
+  capacityUsedPct,
+  capacityLabel,
+  tasksScheduledToday,
+  plannedMinutesToday,
+  completedCount,
+  overdueCount,
+  analyticsWindow,
+  dashboardSummary,
+}: {
+  user: { name?: string; email?: string } | null;
+  greeting: string;
+  counts: TasksCounts;
+  filter: TaskFilter;
+  setFilter: (f: TaskFilter) => void;
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+  searchRef: React.RefObject<HTMLInputElement>;
+  view: ViewMode;
+  setView: (v: ViewMode) => void;
+  setTaskViewPreference: (v: ViewMode) => void;
+  sortBy: SortKey;
+  setSortBy: (k: SortKey) => void;
+  sortMenuOpen: boolean;
+  setSortMenuOpen: (fn: (v: boolean) => boolean) => void;
+  sortLabel: Record<SortKey, string>;
+  notionConnected: boolean;
+  onNotionImport: () => void;
+  onNewTask: () => void;
+  capacityUsedPct: number;
+  capacityLabel: string;
+  tasksScheduledToday: number;
+  plannedMinutesToday: number;
+  completedCount: number;
+  overdueCount: number;
+  analyticsWindow: AnalyticsWindow;
+  dashboardSummary: { productivityScore: number; focusMinutesTotal: number } | null | undefined;
+}) {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const springX = useSpring(mouseX, { stiffness: 55, damping: 18 });
+  const springY = useSpring(mouseY, { stiffness: 55, damping: 18 });
+  const blob1X = useTransform(springX, [0, 1], ['-5%', '5%']);
+  const blob1Y = useTransform(springY, [0, 1], ['-5%', '5%']);
+  const blob2X = useTransform(springX, [0, 1], ['5%', '-5%']);
+  const blob2Y = useTransform(springY, [0, 1], ['5%', '-5%']);
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = heroRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width);
+    mouseY.set((e.clientY - rect.top) / rect.height);
+  };
+  const onMouseLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+
+  const firstName = user?.name?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there';
+  const capacityFreePct = 100 - capacityUsedPct;
+  const circumference = 2 * Math.PI * 28;
+  const ringOffset = circumference - (capacityUsedPct / 100) * circumference;
+  const ringColor = capacityUsedPct > 75 ? 'var(--color-danger)' : capacityUsedPct > 50 ? 'var(--color-warning)' : 'var(--color-success)';
+
+  const filterMeta: Record<TaskFilter, { icon: React.ReactNode; color: string }> = {
+    pending:   { icon: <CheckSquare size={12} />, color: 'var(--color-accent)' },
+    today:     { icon: <Zap size={12} />, color: '#F59E0B' },
+    upcoming:  { icon: <Calendar size={12} />, color: 'var(--color-info)' },
+    completed: { icon: <CheckCircle2 size={12} />, color: 'var(--color-success)' },
+    overdue:   { icon: <AlertTriangle size={12} />, color: 'var(--color-danger)' },
+    all:       { icon: <ListChecks size={12} />, color: 'var(--color-text-muted)' },
+  };
+
+  return (
+    <motion.div
+      ref={heroRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      variants={itemVariants}
+      className="relative overflow-hidden"
+      style={{
+        background: 'var(--color-surface)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
+    >
+      {/* Ambient blobs */}
+      <motion.div
+        style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute -top-20 -left-20 h-[380px] w-[380px] rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.07, 1] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 11%, transparent), transparent 70%)', filter: 'blur(36px)' }} />
+      </motion.div>
+      <motion.div
+        style={{ x: blob2X, y: blob2Y }}
+        className="pointer-events-none absolute -bottom-12 right-0 h-[300px] w-[300px] rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.09, 1] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      >
+        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, #22C55E 9%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      </motion.div>
+
+      {/* Dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.022]"
+        aria-hidden="true"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
+      {/* ── Content ── */}
+      <div className="relative flex flex-col gap-5 px-4 pt-6 pb-0 sm:px-6 xl:px-8">
+
+        {/* ── Row 1: Eyebrow + Headline + subtitle ── */}
+        <div className="flex flex-col gap-1">
+          {/* Eyebrow */}
+          <div className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+              color: 'var(--color-accent)',
+            }}
+          >
+            <motion.span animate={{ rotate: [0, 12, -8, 0] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}>
+              <CheckSquare size={11} />
+            </motion.span>
+            Task Command Center
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="mt-2 font-black tracking-tight"
+            style={{ fontSize: 'clamp(1.6rem, 3vw, 2.5rem)', lineHeight: 1.1, color: 'var(--color-text-primary)' }}
+          >
+            Good {greeting},{' '}
+            <span style={{ color: 'var(--color-accent)' }}>
+              {firstName}.
+            </span>
+          </h1>
+
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            {counts.pending > 0
+              ? `${counts.pending} task${counts.pending !== 1 ? 's' : ''} waiting · ${counts.today} due today`
+              : 'All caught up — nice work.'}
+            {overdueCount > 0 && (
+              <span className="ml-2 font-bold" style={{ color: 'var(--color-danger)' }}>
+                · {overdueCount} overdue
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* ── Row 2: Stat chips + capacity ring + search + CTAs ── */}
+        <div className="flex flex-wrap items-center gap-3">
+
+          {/* Stat chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { icon: <CheckCircle2 size={12} />, value: completedCount, label: 'done', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) 10%, transparent)' },
+              { icon: <Zap size={12} />, value: counts.today, label: 'today', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
+              { icon: <Calendar size={12} />, value: counts.upcoming, label: 'upcoming', color: 'var(--color-info)', bg: 'color-mix(in srgb, var(--color-info) 10%, transparent)' },
+              { icon: <ListChecks size={12} />, value: counts.all, label: 'total', color: 'var(--color-text-muted)', bg: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' },
+            ].map((s) => (
+              <div key={s.label} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}22` }}>
+                {s.icon}
+                <span style={{ color: 'var(--color-text-primary)' }}>{s.value}</span>
+                <span>{s.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Spacer pushes the right tools to the end */}
+          <div className="flex-1" />
+
+          {/* Capacity ring */}
+          <div className="flex items-center gap-2.5 rounded-2xl border px-3 py-2"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <div className="relative flex-shrink-0">
+              <svg width="48" height="48" viewBox="0 0 48 48" aria-label={`${capacityUsedPct}% capacity`}>
+                <circle cx="24" cy="24" r="20" fill="none" stroke="var(--color-border)" strokeWidth="5" />
+                <motion.circle cx="24" cy="24" r="20" fill="none" stroke={ringColor} strokeWidth="5.5"
+                  strokeLinecap="round" strokeDasharray={2 * Math.PI * 20}
+                  transform="rotate(-90 24 24)"
+                  initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 20 - (capacityUsedPct / 100) * 2 * Math.PI * 20 }}
+                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                  style={{ filter: `drop-shadow(0 0 3px ${ringColor}55)` }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[11px] font-black" style={{ color: 'var(--color-text-primary)' }}>{capacityUsedPct}%</span>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{capacityLabel}</p>
+              <p className="text-[10px] leading-tight" style={{ color: ringColor }}>{capacityFreePct}% free · {tasksScheduledToday} tasks</p>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative w-[200px] sm:w-[240px]">
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+            <input
+              ref={searchRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search… ( / )"
+              className="w-full rounded-2xl border py-2 pl-9 pr-3 text-sm font-semibold focus:outline-none focus:ring-2"
+              style={{
+                background: 'var(--color-surface-raised)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-primary)',
+                '--tw-ring-color': 'var(--color-accent)',
+              } as React.CSSProperties}
+            />
+          </div>
+
+          {/* View toggle */}
+          <div className="flex items-center gap-1 rounded-2xl border p-1" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <button onClick={() => { setView('list'); setTaskViewPreference('list'); }}
+              className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all"
+              style={view === 'list' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}>
+              <ListChecks size={13} /> List
+            </button>
+            <button onClick={() => { setView('board'); setTaskViewPreference('board'); }}
+              className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all"
+              style={view === 'board' ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' } : { color: 'var(--color-text-muted)' }}>
+              <Columns3 size={13} /> Board
+            </button>
+          </div>
+
+          {/* Notion import */}
+          {notionConnected && (
+            <button onClick={onNotionImport}
+              className="inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-sm font-black transition-all hover:opacity-80 active:scale-95"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+              <BookOpen size={15} /> Import
+            </button>
+          )}
+
+          {/* New Task CTA */}
+          <button onClick={onNewTask}
+            className="inline-flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-black text-white transition-all hover:opacity-90 active:scale-95"
+            style={{
+              background: 'linear-gradient(135deg, var(--color-accent) 0%, #818CF8 100%)',
+              boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 28%, transparent)',
+            }}>
+            <Plus size={15} /> New Task
+          </button>
+        </div>
+
+        {/* ── Row 3: Filter tabs + sort ── */}
+        <div className="flex items-center justify-between gap-3 pb-5">
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            <div className="np-pill-segmented shadow-sm">
+              {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
+                const isActive = filter === f;
+                return (
+                  <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
+                    {isActive && (
+                      <motion.div layoutId="task-pill-indicator" className="np-pill-indicator"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }} />
+                    )}
+                    <span className="relative z-[1] flex items-center gap-[5px]">
+                      {filterMeta[f].icon}
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                      <span className="np-pill-count">{counts[f]}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Sort */}
+          <div className="relative shrink-0">
+            <button type="button" onClick={() => setSortMenuOpen((v) => !v)}
+              className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-black whitespace-nowrap"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+              Sort: {sortLabel[sortBy]}
+              <ChevronDown size={12} />
+            </button>
+            {sortMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(() => false)} />
+                <div className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
+                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+                  {(Object.keys(sortLabel) as SortKey[]).map((key) => (
+                    <button key={key} onClick={() => { setSortBy(key); setSortMenuOpen(() => false); }}
+                      className="w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors"
+                      style={{
+                        color: sortBy === key ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                        background: sortBy === key ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                      }}>
+                      {sortLabel[key]}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Sparkline ────────────────────────────────────────────────────────────────
 
 /** Small inline trend line — no chart library needed for a 4-6 point sparkline. */
 function Sparkline({ points, color }: { points: number[]; color: string }) {
@@ -499,168 +855,36 @@ export function TasksPage() {
         {/* ── Left column: header + task content ───────────────────────── */}
         <div className="xl:flex xl:flex-col xl:flex-1 xl:min-w-0">
 
-          {/* Header */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-col gap-6 border-b px-4 py-6 sm:px-6 xl:px-8"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className="hidden sm:flex w-11 h-11 shrink-0 items-center justify-center rounded-2xl shadow-sm"
-                  style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }}
-                >
-                  <CheckSquare size={20} style={{ color: 'var(--color-accent)' }} />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-2xl font-black tracking-tight text-text-primary">Tasks</h1>
-                  <p className="mt-1 text-sm font-semibold text-text-secondary">
-                    Stay focused and get more done
-                  </p>
-                  <p className="mt-0.5 text-xs text-text-muted">
-                    Good {greeting}, {user?.name?.split(' ')[0] ?? 'there'} · {filteredTasks.length} visible task{filteredTasks.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex min-w-0 flex-wrap items-center gap-3">
-                <div className="relative flex-1 min-w-[220px] sm:w-[320px] sm:flex-none">
-                  <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-                  <input
-                    ref={searchRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search tasks... ( / )"
-                    className="w-full rounded-2xl border py-3 pl-11 pr-4 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                    style={{
-                      background: 'var(--color-surface-raised)',
-                      borderColor: 'var(--color-border)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  />
-                </div>
-
-                {/* Kept as one nowrap unit so it drops to its own line as a whole, never splits mid-group */}
-                <div className="flex items-center gap-2 shrink-0 whitespace-nowrap ml-auto">
-                  <div className="flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-sm shrink-0" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-                    <button
-                      onClick={() => { setView('list'); setTaskViewPreference('list'); }}
-                      className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition-all whitespace-nowrap"
-                      style={view === 'list' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}
-                    >
-                      <ListChecks size={14} />
-                      List
-                    </button>
-                    <button
-                      onClick={() => { setView('board'); setTaskViewPreference('board'); }}
-                      className="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition-all whitespace-nowrap"
-                      style={view === 'board' ? { background: 'var(--gradient-accent)', color: 'white' } : { color: 'var(--color-text-muted)' }}
-                    >
-                      <Columns3 size={14} />
-                      Board
-                    </button>
-                  </div>
-
-                  {notionStatus?.connected && (
-                    <button
-                      onClick={() => setNotionImportOpen(true)}
-                      className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black shadow-sm transition-transform hover:-translate-y-0.5 shrink-0"
-                      style={{ background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
-                    >
-                      <BookOpen size={18} />
-                      Import
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setCreateModalOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-md transition-transform hover:-translate-y-0.5 shrink-0"
-                    style={{ background: 'var(--gradient-accent)' }}
-                  >
-                    <Plus size={18} />
-                    New Task
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible pb-1 md:pb-0" style={{ scrollbarWidth: 'none' }}>
-              <div className="np-pill-segmented shadow-sm">
-                {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
-                  const isActive = filter === f;
-                  const icons: Record<TaskFilter, React.ReactNode> = {
-                    pending: <CheckSquare size={12} />,
-                    today: <Zap size={12} />,
-                    upcoming: <Calendar size={12} />,
-                    completed: <CheckCircle2 size={12} />,
-                    overdue: <TrendingUp size={12} />,
-                    all: <ListChecks size={12} />,
-                  };
-                  return (
-                    <button
-                      key={f}
-                      onClick={() => setFilter(f)}
-                      className={`np-pill ${isActive ? 'is-active' : ''}`}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="task-pill-indicator"
-                          className="np-pill-indicator"
-                          transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
-                        />
-                      )}
-                      <span className="relative z-[1] flex items-center gap-[5px]">
-                        {icons[f]}
-                        {f.charAt(0).toUpperCase() + f.slice(1)}
-                        <span className="np-pill-count">{counts[f]}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-              <div className="flex items-center gap-2">
-
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setSortMenuOpen((v) => !v)}
-                    className="flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black whitespace-nowrap shadow-sm"
-                    style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                  >
-                    Sort by: {sortLabel[sortBy]}
-                    <ChevronDown size={13} />
-                  </button>
-                  {sortMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(false)} />
-                      <div
-                        className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
-                        style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-                      >
-                        {(Object.keys(sortLabel) as SortKey[]).map((key) => (
-                          <button
-                            key={key}
-                            onClick={() => { setSortBy(key); setSortMenuOpen(false); }}
-                            className="w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors"
-                            style={{
-                              color: sortBy === key ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                              background: sortBy === key ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
-                            }}
-                          >
-                            {sortLabel[key]}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          {/* ── PREMIUM HEADER HERO ──────────────────────────────────── */}
+          <TasksHero
+            user={user}
+            greeting={greeting}
+            counts={counts}
+            filter={filter}
+            setFilter={setFilter}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchRef={searchRef}
+            view={view}
+            setView={setView}
+            setTaskViewPreference={setTaskViewPreference}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortMenuOpen={sortMenuOpen}
+            setSortMenuOpen={setSortMenuOpen}
+            sortLabel={sortLabel}
+            notionConnected={!!notionStatus?.connected}
+            onNotionImport={() => setNotionImportOpen(true)}
+            onNewTask={() => setCreateModalOpen(true)}
+            capacityUsedPct={capacityUsedPct}
+            capacityLabel={capacityLabel}
+            tasksScheduledToday={tasksScheduledToday}
+            plannedMinutesToday={plannedMinutesToday}
+            completedCount={counts.completed}
+            overdueCount={counts.overdue}
+            analyticsWindow={analyticsWindow}
+            dashboardSummary={dashboardSummary}
+          />
 
           {/* Overdue banner — right after filters */}
           {overdueTasks.length > 0 && filter !== 'overdue' && (

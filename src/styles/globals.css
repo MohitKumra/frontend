@@ -824,6 +824,23 @@
     }
   }
 
+  /*
+   * Gradient headline text (e.g. "Focus Studio." hero).
+   * Mirrors the auth page's proven `.auth-mobile-headline-accent` pattern:
+   * the background-clip lives in a static class (not inline styles) to avoid
+   * the Chrome bug where a dynamically re-painted inline gradient on
+   * `background-clip: text` paints a solid rectangle over the glyphs.
+   * The hue is driven by a CSS custom property so the gradient can still
+   * respond to focus-mode color changes without touching `background`.
+   */
+  .focus-headline-gradient {
+    background: linear-gradient(130deg, var(--focus-gradient-from, #6366f1) 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: none;
+  }
+
   /* Glass morphism utility */
   .glass {
     background: color-mix(in srgb, var(--color-surface) 70%, transparent);

@@ -115,7 +115,7 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
             }}
           >
             <Lightbulb size={10} />
-            Intelligence Engine
+            Insights
           </span>
         </div>
       </div>

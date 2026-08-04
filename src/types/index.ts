@@ -80,9 +80,30 @@ export interface SecuritySettingsDTO {
   recoveryEmail: string | null;
 }
 
+export interface AIPreferenceDTO {
+  dailyBriefEnabled: boolean;
+  journalWeeklyEnabled: boolean;
+  insightsEnabled: boolean;
+  coachEnabled: boolean;
+  journalAnalysisEnabled: boolean;
+  goalSummaryEnabled: boolean;
+  taskParserEnabled: boolean;
+  goalPlannerEnabled: boolean;
+  summaryRefreshMinutes: number;
+
+  // ─── Token consumption counters (read-only, set server-side) ──────────
+  tokensToday: number;
+  tokensThisWeek: number;
+  tokensThisMonth: number;
+  tokensTotal: number;
+  aiCallsTotal: number;
+  tokenUsageUpdatedAt: string | null;
+}
+
 export interface SettingsDTO {
   appearance: AppearanceSettingsDTO;
   notifications: NotificationPreferenceDTO;
+  ai: AIPreferenceDTO;
   integrations: {
     googleCalendar: GoogleCalendarIntegrationDTO;
   };
@@ -98,17 +119,10 @@ export interface UpdateAppearanceRequest {
 
 export interface UpdateNotificationPreferencesRequest extends NotificationPreferenceDTO {}
 
+export interface UpdateAIPreferencesRequest extends AIPreferenceDTO {}
+
 export interface UpdateRecoveryEmailRequest {
   recoveryEmail: string | null;
-}
-
-export interface ChangePasswordRequest {
-  currentPassword?: string;
-  newPassword: string;
-}
-
-export interface SetPasswordRequest {
-  newPassword: string;
 }
 
 export interface GoogleAuthStartResponse {
@@ -125,6 +139,99 @@ export interface GoogleCalendarSyncResponse {
   skipped: number;
 }
 
+// ─── Goals ───────────────────────────────────────────────────────────────────
+
+export type GoalStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'ARCHIVED';
+export type GoalPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface GoalDTO {
+  id: string;
+  userId: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  icon: string | null;
+  color: string;
+  targetDate: string | null;
+  status: GoalStatus;
+  priority: GoalPriority;
+  progress: number;
+  manualProgress: number;
+  aiSummary: string | null;
+  linkedHabitIds: string[];
+  linkedTaskIds: string[];
+  linkedProjectIds: string[];
+  milestones: GoalMilestoneDTO[];
+  habitCount: number;
+  taskCount: number;
+  projectCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type GoalMilestoneStatus = 'PENDING' | 'COMPLETED' | 'SKIPPED';
+
+export interface GoalMilestoneDTO {
+  id: string;
+  goalId: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  status: GoalMilestoneStatus;
+  sortOrder: number;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateGoalMilestoneRequest {
+  title: string;
+  description?: string | null;
+  dueDate?: string | null;
+  status?: GoalMilestoneStatus;
+  sortOrder?: number;
+}
+
+export interface UpdateGoalMilestoneRequest {
+  title?: string;
+  description?: string | null;
+  dueDate?: string | null;
+  status?: GoalMilestoneStatus;
+  sortOrder?: number;
+}
+
+export interface CreateGoalRequest {
+  title: string;
+  description?: string;
+  category?: string;
+  icon?: string;
+  color?: string;
+  targetDate?: string | null;
+  status?: GoalStatus;
+  priority?: GoalPriority;
+  manualProgress?: number;
+  aiSummary?: string | null;
+  linkedHabitIds?: string[];
+  linkedTaskIds?: string[];
+  linkedProjectIds?: string[];
+}
+
+export interface UpdateGoalRequest {
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  icon?: string | null;
+  color?: string;
+  targetDate?: string | null;
+  status?: GoalStatus;
+  priority?: GoalPriority;
+  manualProgress?: number;
+  aiSummary?: string | null;
+  linkedHabitIds?: string[];
+  linkedTaskIds?: string[];
+  linkedProjectIds?: string[];
+}
+
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
 export type TaskStatus =
@@ -134,8 +241,6 @@ export type TaskStatus =
   | 'CANCELLED';
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-
-// ─── SubTasks ──────────────────────────────────────────────────────────────────
 
 export interface SubTaskDTO {
   id: string;
@@ -165,27 +270,27 @@ export interface UpdateSubTaskRequest {
   order?: number;
 }
 
-/** Full task shape returned by the API. */
 export interface TaskDTO {
   id: string;
   userId: string;
+  goalId: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;
   priority: Priority;
-  dueDate: string | null; // ISO 8601
-  dueTime: string | null; // "HH:mm"
-  reminderTime: string | null; // "HH:mm"
+  dueDate: string | null;
+  dueTime: string | null;
+  reminderTime: string | null;
   reminderMessage: string | null;
-  recurrenceRule: string | null; // RRULE string
-  recurrenceEndDate: string | null; // ISO 8601
-  skipDates: string[]; // YYYY-MM-DD
+  recurrenceRule: string | null;
+  recurrenceEndDate: string | null;
+  skipDates: string[];
   parentTaskId: string | null;
   attachmentUrl: string | null;
   voiceNoteUrl: string | null;
   inProgressAt: string | null;
   completedAt: string | null;
-  estimatedDuration: number | null; // minutes
+  estimatedDuration: number | null;
   project?: {
     id: string;
     name: string;
@@ -206,6 +311,7 @@ export interface CreateTaskRequest {
   reminderTime?: string | null;
   reminderMessage?: string | null;
   projectId?: string | null;
+  goalId?: string | null;
   recurrenceRule?: string;
   recurrenceEndDate?: string;
   skipDates?: string[];
@@ -214,6 +320,7 @@ export interface CreateTaskRequest {
   attachmentUrl?: string | null;
   voiceNoteUrl?: string | null;
   subTasks?: CreateSubTaskRequest[];
+  recurrenceConfig?: TaskRecurrenceConfig;
 }
 
 export interface UpdateTaskRequest {
@@ -231,7 +338,34 @@ export interface UpdateTaskRequest {
   attachmentUrl?: string | null;
   voiceNoteUrl?: string | null;
   estimatedDuration?: number | null;
+  goalId?: string | null;
   subTasks?: TaskSubTaskInput[];
+  recurrenceConfig?: TaskRecurrenceConfig | null;
+}
+
+export type TaskRecurrenceFrequency = 'day' | 'week' | 'month' | 'year';
+export type TaskRecurrenceEndsType = 'never' | 'date' | 'occurrences';
+export type TaskRecurrenceRepeatBasedOn = 'dueDate' | 'completionDate';
+export type TaskRecurrenceMissedBehavior = 'skip' | 'overdue' | 'createNext';
+export type TaskRecurrenceGenerateNext = 'onCompletion' | 'onDueDate';
+export type TaskRecurrenceMonthlyMode = 'dayOfMonth' | 'weekdayPattern';
+
+export interface TaskRecurrenceConfig {
+  enabled: boolean;
+  frequency: TaskRecurrenceFrequency;
+  interval: number;
+  weekdays?: string[];
+  monthlyMode?: TaskRecurrenceMonthlyMode;
+  dayOfMonth?: number | null;
+  weekOfMonth?: number | null;
+  weekday?: string | null;
+  startsAt?: string | null;
+  endsType?: TaskRecurrenceEndsType;
+  endsAt?: string | null;
+  occurrenceCount?: number | null;
+  repeatBasedOn?: TaskRecurrenceRepeatBasedOn;
+  missedBehavior?: TaskRecurrenceMissedBehavior;
+  generateNext?: TaskRecurrenceGenerateNext;
 }
 
 export interface TaskActivityDTO {
@@ -273,6 +407,7 @@ export interface TaskDetailDTO extends TaskDTO {
 export interface HabitDTO {
   id: string;
   userId: string;
+  goalId: string | null;
   title: string;
   targetPerWeek: number;
   reminderTime: string | null;
@@ -283,45 +418,14 @@ export interface HabitDTO {
   isActive: boolean;
   createdAt: string;
   currentStreak: number;
-  bestStreak: number;
   completedToday: boolean;
   completionsThisWeek: number;
   completionsLastWeek: number;
+  bestStreak: number;
   weekPattern: boolean[];
   completionDates: string[];
   streakSafeDays: string[];
   totalXp: number;
-}
-
-export interface HabitsListResponse {
-  data: HabitDTO[];
-  meta: {
-    total: number;
-    weeklyTrend: number;
-  };
-}
-
-export interface HabitStreakBreakDTO {
-  habitId: string;
-  title: string;
-  previousStreak: number;
-  xpLost: number;
-  brokenAt: string;
-}
-
-// ─── Week Overview ────────────────────────────────────────────────────────────
-
-export interface WeekDayDTO {
-  date: string;   // "YYYY-MM-DD"
-  score: number;  // 0-100
-  completed: number;
-  total: number;
-  isFuture: boolean;
-  isToday: boolean;
-}
-
-export interface WeekOverviewDTO {
-  days: WeekDayDTO[];
 }
 
 export interface CreateHabitRequest {
@@ -330,6 +434,7 @@ export interface CreateHabitRequest {
   reminderMessage?: string;
   durationDays?: number | null;
   skipDays?: number[];
+  goalId?: string | null;
 }
 
 export interface UpdateHabitRequest {
@@ -338,20 +443,20 @@ export interface UpdateHabitRequest {
   reminderMessage?: string | null;
   durationDays?: number | null;
   skipDays?: number[];
+  goalId?: string | null;
 }
-
-// ─── Habit Completions ────────────────────────────────────────────────────────
 
 export interface HabitCompletionDTO {
   id: string;
   habitId: string;
-  date: string; // "YYYY-MM-DD"
+  date: string;
   createdAt: string;
 }
 
 // ─── Notes ───────────────────────────────────────────────────────────────────
 
 export type NoteMood = 'great' | 'good' | 'neutral' | 'bad' | 'awful' | null;
+
 export type NoteSortField = 'updatedAt' | 'createdAt' | 'title';
 export type NoteSortOrder = 'asc' | 'desc';
 
@@ -399,32 +504,6 @@ export interface UpdateNoteRequest {
   archived?: boolean;
 }
 
-export interface NoteListParams {
-  isJournal?: boolean;
-  taskId?: string;
-  projectId?: string;
-  search?: string;
-  tags?: string[];
-  mood?: NoteMood;
-  dateFrom?: string;
-  dateTo?: string;
-  archived?: boolean;
-  isPinned?: boolean;
-  sortField?: NoteSortField;
-  sortOrder?: NoteSortOrder;
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    totalPages: number;
-  };
-}
-
 // ─── Focus Sessions ──────────────────────────────────────────────────────────
 
 export type FocusSessionStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -442,50 +521,64 @@ export interface FocusSessionDTO {
   isBreak: boolean;
 }
 
-export interface CreateFocusSessionRequest {
-  durationMin: number;
-  taskId?: string | null;
-  projectId?: string | null;
-  isBreak?: boolean;
-}
+// ─── Projects ────────────────────────────────────────────────────────────────
 
-export interface UpdateFocusSessionRequest {
-  elapsedMin: number;
-  status?: FocusSessionStatus;
-}
+export type ProjectStatus = 'PLANNING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
 
-// ─── Calendar ────────────────────────────────────────────────────────────────
-
-export type CalendarEventType = 'TASK_DUE' | 'FOCUS_SESSION';
-
-export interface CalendarEventDTO {
+export interface MediaItemDTO {
   id: string;
-  type: CalendarEventType;
-  title: string;
-  startAt: string;
-  endAt: string;
-  allDay: boolean;
-  taskId: string | null;
-  priority: Priority | null;
-  status: TaskStatus | null;
-  sourceLabel: string;
-  metadata?: {
-    durationMin?: number;
-    description?: string | null;
-  };
+  url: string;
+  type: 'attachment' | 'voice_note';
+  fileName: string | null;
+  mimeType: string | null;
+  size: number | null;
+  createdAt: string;
 }
 
-export interface CalendarOverviewDTO {
-  range: {
-    from: string;
-    to: string;
-  };
-  events: CalendarEventDTO[];
-  meta: {
-    totalEvents: number;
-    taskEvents: number;
-    focusEvents: number;
-  };
+export interface ProjectDTO {
+  id: string;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  color: string;
+  userId: string;
+  goalId: string | null;
+  startDate: string | null;
+  dueDate: string | null;
+  attachmentUrl: string | null;
+  voiceNoteUrl: string | null;
+  attachments: MediaItemDTO[];
+  voiceNotes: MediaItemDTO[];
+  progress: number;
+  createdAt: string;
+  updatedAt: string;
+  taskCount?: number;
+  completedTaskCount?: number;
+}
+
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  status?: ProjectStatus;
+  color?: string;
+  startDate?: string;
+  dueDate?: string;
+  attachmentUrl?: string | null;
+  voiceNoteUrl?: string | null;
+  goalId?: string | null;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string | null;
+  status?: ProjectStatus;
+  color?: string;
+  startDate?: string | null;
+  dueDate?: string | null;
+  attachmentUrl?: string | null;
+  voiceNoteUrl?: string | null;
+  progress?: number;
+  goalId?: string | null;
 }
 
 // ─── Analytics ───────────────────────────────────────────────────────────────
@@ -493,7 +586,7 @@ export interface CalendarOverviewDTO {
 export interface AnalyticsSummaryDTO {
   tasksCompleted: number;
   tasksTotal: number;
-  taskCompletionRate: number; // 0-100
+  taskCompletionRate: number;
   habitsCompletedToday: number;
   habitsTotal: number;
   focusMinutesTotal: number;
@@ -502,18 +595,15 @@ export interface AnalyticsSummaryDTO {
   cancelledFocusSessions: number;
   missedHabitsToday: number;
   longestHabitStreak: number;
-  currentHabitStreak: number; // Current active streak (not broken)
-  productivityScore: number; // 0-100 productivity score
+  currentHabitStreak: number;
+  productivityScore: number;
 }
 
-export interface DailyAnalyticsDTO {
-  date: string; // "YYYY-MM-DD"
-  tasksCreated: number;
-  tasksCompleted: number;
-  tasksOverdue: number;
-  focusMinutes: number;
-  habitsCompleted: number;
-  productivityScore: number;
+export interface InsightDTO {
+  id: string;
+  type: 'positive' | 'neutral' | 'warning';
+  icon: 'trend' | 'clock' | 'calendar' | 'alert';
+  text: string;
 }
 
 // ─── Gamification ─────────────────────────────────────────────────────────
@@ -564,170 +654,6 @@ export interface GamificationProfileDTO {
   recentPoints: PointLedgerDTO[];
 }
 
-// ─── Notifications ────────────────────────────────────────────────────────────
-
-export type NotificationChannel = 'BROWSER_PUSH' | 'EMAIL' | 'NATIVE_LOCAL';
-
-export interface NotificationLogDTO {
-  id: string;
-  userId: string;
-  channel: NotificationChannel;
-  title: string;
-  body: string;
-  sentAt: string;
-  readAt: string | null;
-}
-
-export interface PushSubscriptionRequest {
-  endpoint: string;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
-// ─── In-App Activity Feed ─────────────────────────────────────────────────────
-
-export type InAppNotificationType =
-  | 'TASK_CREATED' | 'TASK_COMPLETED' | 'TASK_STATUS_CHANGED'
-  | 'HABIT_COMPLETED' | 'HABIT_STREAK'
-  | 'FOCUS_SESSION_COMPLETED'
-  | 'PROJECT_CREATED' | 'PROJECT_COMPLETED' | 'PROJECT_STATUS_CHANGED'
-  | 'TASK_OVERDUE' | 'TASK_DUE_SOON' | 'HABIT_PENDING';
-
-export interface InAppNotificationDTO {
-  id: string;
-  type: InAppNotificationType;
-  title: string;
-  description?: string;
-  timestamp: string;
-  entityType: 'task' | 'habit' | 'project' | 'focus';
-  entityId: string;
-  metadata?: Record<string, any>;
-  isActionable: boolean; // true for overdue/pending items
-}
-
-export interface ActivityFeedResponse {
-  data: InAppNotificationDTO[];
-  meta: {
-    total: number;
-    page: number;
-    pageSize: number;
-    hasMore: boolean;
-    nextCursor?: string;
-    totalActionable: number;
-    totalActivity: number;
-  };
-}
-
-// ─── API Envelope ─────────────────────────────────────────────────────────────
-
-/** Standard list response envelope. */
-export interface ListResponse<T> {
-  data: T[];
-  meta: { total: number; nextCursor?: string | null };
-}
-
-/** Standard error envelope. */
-export interface ApiError {
-  error: {
-    code: string;
-    message: string;
-  };
-}
-
-// ─── Project Media ──────────────────────────────────────────────────────────────
-
-export interface MediaItemDTO {
-  id: string;
-  url: string;
-  type: 'attachment' | 'voice_note';
-  fileName: string | null;
-  mimeType: string | null;
-  size: number | null;
-  createdAt: string;
-}
-
-// ─── Projects (Individual) ────────────────────────────────────────────────────
-
-export type ProjectStatus = 'PLANNING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
-
-export interface ProjectDTO {
-  id: string;
-  name: string;
-  description: string | null;
-  status: ProjectStatus;
-  color: string;
-  userId: string;
-  startDate: string | null;
-  dueDate: string | null;
-  attachmentUrl: string | null;
-  voiceNoteUrl: string | null;
-  attachments: MediaItemDTO[];
-  voiceNotes: MediaItemDTO[];
-  progress: number; // 0-100
-  createdAt: string;
-  updatedAt: string;
-  taskCount?: number;
-  completedTaskCount?: number;
-}
-
-export interface CreateProjectRequest {
-  name: string;
-  description?: string;
-  status?: ProjectStatus;
-  color?: string;
-  startDate?: string;
-  dueDate?: string;
-  attachmentUrl?: string | null;
-  voiceNoteUrl?: string | null;
-}
-
-export interface UpdateProjectRequest {
-  name?: string;
-  description?: string | null;
-  status?: ProjectStatus;
-  color?: string;
-  startDate?: string | null;
-  dueDate?: string | null;
-  attachmentUrl?: string | null;
-  voiceNoteUrl?: string | null;
-  progress?: number;
-}
-
-// ─── Enhanced Analytics (Individual Focus) ────────────────────────────────────
-
-export interface ProjectAnalyticsDTO {
-  projectId: string;
-  projectName: string;
-  status: ProjectStatus;
-  progress: number;
-  expectedProgress: number;
-  progressDelta: number;
-  health: 'AHEAD' | 'ON_TRACK' | 'BEHIND';
-  totalTasks: number;
-  completedTasks: number;
-  overdueTasks: number;
-  focusMinutes: number;
-  daysRemaining: number | null;
-  expectedFinish: string | null;
-  actualFinish: string | null;
-  weeklyProgress: Array<{
-    week: string;
-    tasksCompleted: number;
-  }>;
-}
-
-export type InsightType = 'positive' | 'neutral' | 'warning';
-export type InsightIcon = 'trend' | 'clock' | 'calendar' | 'alert';
-
-export interface InsightDTO {
-  id: string;
-  type: InsightType;
-  icon: InsightIcon;
-  text: string;
-}
-
 export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
   gamification: GamificationProfileDTO;
   activeProjects: ProjectDTO[];
@@ -753,46 +679,18 @@ export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
   insights: InsightDTO[];
 }
 
-// ─── Notion Integration ────────────────────────────────────────────────────────
+// ─── Misc ────────────────────────────────────────────────────────────────────
 
-export interface NotionIntegrationDTO {
-  connected: boolean;
-  workspaceName: string | null;
-  workspaceIcon: string | null;
-  connectedAt: string | null;
-  lastSyncedAt: string | null;
+/** Standard list response envelope. */
+export interface ListResponse<T> {
+  data: T[];
+  meta: { total: number; nextCursor?: string | null };
 }
 
-export interface NotionDatabaseDTO {
-  id: string;
-  object: 'database' | 'data_source';
-  title: string;
-  icon: string | null;
-}
-
-export interface NotionDatabaseProperty {
-  type: string;
-  name: string;
-}
-
-export interface NotionPagePreview {
-  id: string;
-  title: string;
-  alreadyImported: boolean;
-}
-
-export interface NotionImportResult {
-  imported: number;
+export interface GoogleCalendarSyncResponse {
+  synced: number;
+  created: number;
+  updated: number;
+  deleted: number;
   skipped: number;
-  errors: string[];
-}
-
-export interface SearchResult {
-  type: 'task' | 'habit' | 'note' | 'project';
-  id: string;
-  title: string;
-  description?: string | null;
-  createdAt: string;
-  updatedAt?: string;
-  metadata?: any;
 }

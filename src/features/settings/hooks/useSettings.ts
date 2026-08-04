@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { settingsApi } from '../api';
 import { useAuthStore } from '../../../store/authStore';
 import type {
+  UpdateAIPreferencesRequest,
   UpdateAppearanceRequest,
   UpdateNotificationPreferencesRequest,
 } from '../../../types';
@@ -39,6 +40,20 @@ export function useUpdateNotifications() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: SETTINGS_KEY });
       toast.success('Notification preferences saved');
+    },
+  });
+}
+
+export function useUpdateAIPreferences() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateAIPreferencesRequest) => settingsApi.updateAIPreferences(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SETTINGS_KEY });
+      toast.success('AI preferences saved');
+    },
+    onError: () => {
+      toast.error('Could not update AI preferences');
     },
   });
 }
