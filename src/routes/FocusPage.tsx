@@ -882,7 +882,7 @@ function FocusHero({
         )}
       </AnimatePresence>
 
-      <div className="relative z-10 flex flex-col gap-5 p-5 sm:p-7 lg:p-8">
+      <div className="relative z-10 flex flex-col gap-5 p-5 sm:p-7 lg:p-5">
 
         {/* Row 1: Eyebrow + Focus Mode CTA */}
         <div className="flex items-center justify-between gap-3">

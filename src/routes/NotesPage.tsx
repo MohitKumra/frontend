@@ -1224,7 +1224,7 @@ function NotesHero({
       <div className="pointer-events-none absolute inset-0 opacity-[0.022]" aria-hidden="true"
         style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
 
-      <div className="relative flex flex-col gap-5 p-5 sm:p-7 lg:p-8">
+      <div className="relative flex flex-col gap-5 p-5 sm:p-7 lg:p-5">
 
         {/* Row 1: eyebrow + CTAs */}
         <div className="flex flex-wrap items-center justify-between gap-3">
