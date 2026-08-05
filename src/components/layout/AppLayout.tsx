@@ -341,8 +341,8 @@ export function AppLayout() {
         ? 'px-4 py-5 gap-1.5'
         : 'px-3 py-4 gap-1';
 
-  const taskBadge = todayData?.pendingTasks > 0 ?  todayData?.pendingTasks : '';
-  const habitBadge = todayData?.habitsToComplete > 0 ? todayData?.habitsToComplete : '';
+  const taskBadge = (todayData?.pendingTasks ?? 0) > 0 ? todayData!.pendingTasks : '';
+  const habitBadge = (todayData?.habitsToComplete ?? 0) > 0 ? todayData!.habitsToComplete : '';
 
   const mobilePrimaryItems = navItems.slice(0, 4);
   const mobileLeftItems = mobilePrimaryItems.slice(0, 2);
