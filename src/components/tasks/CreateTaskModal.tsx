@@ -182,7 +182,12 @@ export function CreateTaskModal({
       setSelectedProjectId(initialProjectId ?? '');
       if (initialTitle)    setTitle(initialTitle);
       if (initialDuration) setEstimatedDuration(initialDuration);
-      setTimeout(() => titleRef.current?.focus(), 140);
+      // Only auto-focus on non-touch devices; on mobile it would
+      // immediately pop the virtual keyboard before the user is ready.
+      const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      if (!isTouchDevice) {
+        setTimeout(() => titleRef.current?.focus(), 140);
+      }
     }
   }, [initialProjectId, isOpen, initialTitle, initialDuration]);
 
