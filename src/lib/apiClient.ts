@@ -24,11 +24,23 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // On 401, try once to refresh; on failure, logout + redirect
+// Skip the refresh attempt for auth endpoints (login, signup, etc.)
+// so a wrong-password 401 never triggers a page reload.
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+
+    // Never intercept auth-endpoint 401s — just let them propagate as normal errors
+    const isAuthEndpoint = originalRequest?.url && (
+      originalRequest.url.includes('/auth/login') ||
+      originalRequest.url.includes('/auth/signup') ||
+      originalRequest.url.includes('/auth/refresh') ||
+      originalRequest.url.includes('/auth/forgot-password') ||
+      originalRequest.url.includes('/auth/reset-password')
+    );
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
         const baseUrl = import.meta.env.VITE_BACKEND_URL || '';

@@ -193,7 +193,7 @@ function TasksHero({
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       variants={itemVariants}
-      className="relative overflow-hidden"
+      className="relative"
       style={{
         background: 'var(--color-surface)',
         borderBottom: '1px solid var(--color-border)',

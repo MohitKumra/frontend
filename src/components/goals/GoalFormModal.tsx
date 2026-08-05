@@ -14,7 +14,6 @@ export type GoalFormState = {
   targetDate: string;
   status: GoalStatus;
   priority: GoalPriority;
-  manualProgress: number;
   aiSummary: string;
   linkedHabitIds: Set<string>;
   linkedTaskIds: Set<string>;
@@ -182,23 +181,6 @@ export function GoalFormModal({
                   onChange={(value) => setForm({ ...form, priority: value as GoalPriority })}
                   options={Object.keys(priorityMeta).map((priority) => ({ value: priority, label: priorityMeta[priority as GoalPriority].label }))}
                 />
-                <div className="md:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Manual progress</label>
-                    <span className="text-sm font-black" style={{ color: 'var(--color-accent)' }}>{form.manualProgress}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={form.manualProgress}
-                    onChange={(event) => setForm({ ...form, manualProgress: Number(event.target.value) })}
-                    onBlur={() => setTouched((current) => ({ ...current, manualProgress: true }))}
-                    className="mt-3 w-full"
-                  />
-                  {fieldError('manualProgress') && <p className="mt-2 text-xs text-danger">{fieldError('manualProgress')}</p>}
-                </div>
               </div>
             </FormSection>
 
@@ -313,7 +295,8 @@ export function GoalFormModal({
                       </div>
                     </div>
                     <div className="flex flex-col items-center">
-                      <ProgressRing progress={clamp(form.manualProgress, 0, 100)} color={form.color || 'var(--color-accent)'} size={76} />
+                      <ProgressRing progress={0} color={form.color || 'var(--color-accent)'} size={76} />
+                      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Auto</span>
                     </div>
                   </div>
 
@@ -325,7 +308,7 @@ export function GoalFormModal({
                     <PreviewStat label="Habits" value={form.linkedHabitIds.size} />
                     <PreviewStat label="Tasks" value={form.linkedTaskIds.size} />
                     <PreviewStat label="Projects" value={form.linkedProjectIds.size} />
-                    <PreviewStat label="Confidence" value={`${Math.max(0, 100 - form.manualProgress)}%`} />
+                    <PreviewStat label="Progress" value="Auto" />
                   </div>
 
                   <div className="mt-4 rounded-2xl border p-3" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
@@ -334,7 +317,7 @@ export function GoalFormModal({
                       <span>{form.targetDate ? formatDateLong(form.targetDate) : 'No target date'}</span>
                     </div>
                     <div className="mt-2 h-2 rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
-                      <div className="h-2 rounded-full" style={{ width: `${clamp(form.manualProgress, 0, 100)}%`, background: form.color }} />
+                      <div className="h-2 rounded-full" style={{ width: '0%', background: form.color }} />
                     </div>
                   </div>
                 </div>

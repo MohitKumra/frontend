@@ -75,7 +75,6 @@ type GoalFormState = {
   targetDate: string;
   status: GoalStatus;
   priority: GoalPriority;
-  manualProgress: number;
   aiSummary: string;
   linkedHabitIds: Set<string>;
   linkedTaskIds: Set<string>;
@@ -115,7 +114,6 @@ function emptyForm(): GoalFormState {
     targetDate: '',
     status: 'ACTIVE',
     priority: 'MEDIUM',
-    manualProgress: 0,
     aiSummary: '',
     linkedHabitIds: new Set(),
     linkedTaskIds: new Set(),
@@ -133,7 +131,6 @@ function goalToForm(goal: GoalDTO): GoalFormState {
     targetDate: goal.targetDate ? goal.targetDate.slice(0, 10) : '',
     status: goal.status,
     priority: goal.priority,
-    manualProgress: goal.manualProgress,
     aiSummary: goal.aiSummary ?? '',
     linkedHabitIds: new Set(goal.linkedHabitIds),
     linkedTaskIds: new Set(goal.linkedTaskIds),
@@ -145,7 +142,6 @@ function validateForm(form: GoalFormState): FormErrors {
   const errors: FormErrors = {};
   if (!form.title.trim()) errors.title = 'Title is required.';
   else if (form.title.trim().length < 3) errors.title = 'Title must be at least 3 characters.';
-  if (form.manualProgress < 0 || form.manualProgress > 100) errors.manualProgress = 'Progress must be between 0 and 100.';
   if (form.targetDate) {
     const date = new Date(form.targetDate);
     if (Number.isNaN(date.getTime())) errors.targetDate = 'Enter a valid date.';
@@ -447,7 +443,6 @@ export function GoalsPage() {
       targetDate: form.targetDate || null,
       status: form.status,
       priority: form.priority,
-      manualProgress: form.manualProgress,
       aiSummary: form.aiSummary.trim() || null,
       linkedHabitIds: Array.from(form.linkedHabitIds),
       linkedTaskIds: Array.from(form.linkedTaskIds),
@@ -788,17 +783,6 @@ function GoalsHero({
       >
         <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, #3B82F6 12%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
       </motion.div>
-
-      {/* ── Subtle grid texture ── */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.025]"
-        aria-hidden="true"
-        style={{
-          backgroundImage: 'linear-gradient(var(--color-text-primary) 1px, transparent 1px), linear-gradient(to right, var(--color-text-primary) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }}
-      />
-
       {/* ── Main content ── */}
       <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:p-10 xl:flex-row xl:items-center xl:gap-12">
 

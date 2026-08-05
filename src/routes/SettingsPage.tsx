@@ -645,7 +645,7 @@ export function SettingsPage() {
   const isSaving = appearanceMutation.isPending || notificationsMutation.isPending;
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0">
+    <div className="w-full max-w-8xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0">
       <motion.div
         variants={containerVariants}
         initial="hidden"

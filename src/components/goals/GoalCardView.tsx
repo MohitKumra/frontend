@@ -345,7 +345,7 @@ export function GoalCardView({
                 color: 'var(--color-info)',
               }}
             >
-              + {clamp(100 - goal.progress + 12, 60, 99)}% AI Confidence
+              Milestones {milestones.length === 0 ? '—' : `${completedMs} / ${milestones.length}`}
             </span>
             <span
               style={{

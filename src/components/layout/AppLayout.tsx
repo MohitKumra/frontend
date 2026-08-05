@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
   LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
   Timer, LogOut, X, Sparkles,
-  Search, MoreHorizontal, Settings2, FolderKanban,
+  Search, Plus, Settings2, FolderKanban,
   Keyboard, Flag
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
@@ -146,6 +147,7 @@ export function AppLayout() {
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [achievementQueue, setAchievementQueue] = useState<AchievementWithStatusDTO[]>([]);
   const { data: todayData } = useDashboardToday();
   const { data: achievements } = useAchievements();
@@ -339,10 +341,12 @@ export function AppLayout() {
         ? 'px-4 py-5 gap-1.5'
         : 'px-3 py-4 gap-1';
 
-  const taskBadge = todayData?.pendingTasks ?? 0;
-  const habitBadge = todayData?.habitsToComplete ?? 0;
+  const taskBadge = todayData?.pendingTasks > 0 ?  todayData?.pendingTasks : '';
+  const habitBadge = todayData?.habitsToComplete > 0 ? todayData?.habitsToComplete : '';
 
   const mobilePrimaryItems = navItems.slice(0, 4);
+  const mobileLeftItems = mobilePrimaryItems.slice(0, 2);
+  const mobileRightItems = mobilePrimaryItems.slice(2, 4);
   const mobileOverflowItems = navItems.slice(4);
 
   return (
@@ -516,7 +520,7 @@ export function AppLayout() {
           )}
 
           <button
-            onClick={() => logout.mutate()}
+            onClick={() => setLogoutConfirmOpen(true)}
             className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150 select-none text-red-500 hover:bg-red-500/10 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
             aria-label="Log out"
           >
@@ -635,72 +639,111 @@ export function AppLayout() {
           WebkitBackdropFilter: 'blur(20px)',
         }}
       >
-        <div className="px-2 pb-safe pt-1.5 flex items-center justify-around relative">
+        <div className="px-2 pb-safe pt-1.5 flex items-end justify-around relative">
           {/* Animated indicator line */}
           <div 
             className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-300"
             style={{ background: 'var(--color-accent)' }}
           />
-          
-          {mobilePrimaryItems.map(({ to, icon: Icon, label, onboarding }) => {
+
+          {/* Left 2 nav items */}
+          {mobileLeftItems.map(({ to, icon: Icon, label, onboarding }) => {
             const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
             return (
-            <NavLink 
-              key={to} 
-              to={to} 
-              end={to === '/'} 
-              onPointerEnter={() => warmRouteData(to)}
-              onFocus={() => warmRouteData(to)}
-              onPointerDown={() => warmRouteData(to)}
-              {...mobileOnboardingAttr}
-              className={({ isActive }) => [
-                'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
-                isActive ? 'text-accent' : 'text-text-muted'
-              ].join(' ')}
-            >
-              {({ isActive }) => (
-                <>
-                  <div
-                    className={[
-                      'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
-                      isActive ? 'scale-110' : 'scale-100'
-                    ].join(' ')}
-                    style={{ 
-                      background: isActive ? 'var(--bottomnav-indicator)' : 'transparent'
-                    }}
-                  >
-                    {/* Icon size kept constant — the wrapping div's scale-110/
-                        scale-100 (a GPU transform) already produces the grow
-                        effect. Previously the size prop ALSO changed 20->22,
-                        which mutates the SVG's width/height attributes and
-                        forces a layout reflow of this whole flex row on every
-                        tab switch — redundant with the transform above. */}
-                    <Icon size={20} className="transition-all duration-200" />
-                    
-                    {/* Glow effect for active item */}
-                    {isActive && (
-                      <div 
-                        className="absolute inset-0 rounded-2xl opacity-30 blur-md"
-                        style={{ background: 'var(--color-accent)' }}
-                      />
-                    )}
-                  </div>
-                  <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
-                </>
-              )}
-            </NavLink>
-          );
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                onPointerEnter={() => warmRouteData(to)}
+                onFocus={() => warmRouteData(to)}
+                onPointerDown={() => warmRouteData(to)}
+                {...mobileOnboardingAttr}
+                className={({ isActive }) => [
+                  'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
+                  isActive ? 'text-accent' : 'text-text-muted'
+                ].join(' ')}
+              >
+                {({ isActive }) => (
+                  <>
+                    <div
+                      className={[
+                        'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
+                        isActive ? 'scale-110' : 'scale-100'
+                      ].join(' ')}
+                      style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
+                    >
+                      <Icon size={20} className="transition-all duration-200" />
+                      {isActive && (
+                        <div
+                          className="absolute inset-0 rounded-2xl opacity-30 blur-md"
+                          style={{ background: 'var(--color-accent)' }}
+                        />
+                      )}
+                    </div>
+                    <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
+                  </>
+                )}
+              </NavLink>
+            );
           })}
 
-          <button
-            onClick={() => setMobileMoreOpen(true)}
-            className="flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold text-text-muted hover:text-text-secondary transition-all duration-200 active:scale-95"
-          >
-            <div className="p-2 rounded-2xl flex items-center justify-center bg-gradient-to-br from-accent/10 to-info/10 border border-accent/20">
-              <MoreHorizontal size={20} />
-            </div>
-            <span>More</span>
-          </button>
+          {/* Center Plus / More button — floats above the bar */}
+          <div className="relative flex flex-col items-center flex-1" style={{ marginBottom: '-2px' }}>
+            <button
+              onClick={() => setMobileMoreOpen(true)}
+              aria-label="More options"
+              className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg active:scale-90 transition-transform duration-150"
+              style={{
+                background: 'var(--gradient-accent)',
+                boxShadow: '0 4px 20px color-mix(in srgb, var(--color-accent) 50%, transparent), 0 2px 8px rgba(0,0,0,0.25)',
+                marginTop: '-22px',
+              }}
+            >
+              <Plus size={26} className="text-white" strokeWidth={2.5} />
+            </button>
+            <span className="text-[10px] font-bold text-text-muted mt-1 pb-2 leading-none">More</span>
+          </div>
+
+          {/* Right 2 nav items */}
+          {mobileRightItems.map(({ to, icon: Icon, label, onboarding }) => {
+            const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                onPointerEnter={() => warmRouteData(to)}
+                onFocus={() => warmRouteData(to)}
+                onPointerDown={() => warmRouteData(to)}
+                {...mobileOnboardingAttr}
+                className={({ isActive }) => [
+                  'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
+                  isActive ? 'text-accent' : 'text-text-muted'
+                ].join(' ')}
+              >
+                {({ isActive }) => (
+                  <>
+                    <div
+                      className={[
+                        'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
+                        isActive ? 'scale-110' : 'scale-100'
+                      ].join(' ')}
+                      style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
+                    >
+                      <Icon size={20} className="transition-all duration-200" />
+                      {isActive && (
+                        <div
+                          className="absolute inset-0 rounded-2xl opacity-30 blur-md"
+                          style={{ background: 'var(--color-accent)' }}
+                        />
+                      )}
+                    </div>
+                    <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </div>
       </nav>
 
@@ -738,30 +781,31 @@ export function AppLayout() {
                   </p>
                   <p className="text-xs text-white/80 truncate mt-0.5">{user.email}</p>
                 </div>
-                <NavLink
-                  to="/settings"
-                  onClick={() => setMobileMoreOpen(false)}
+                <button
+                  onClick={() => setLogoutConfirmOpen(true)}
+                  aria-label="Sign out"
                   className="p-2.5 rounded-xl bg-white/15 active:bg-white/25 transition-colors"
                 >
-                  <Settings2 size={18} className="text-white" />
-                </NavLink>
+                  <LogOut size={18} className="text-white" />
+                </button>
               </div>
             </div>
           )}
 
-          {/* Grid Layout for Navigation Items */}
+          {/* Grid Layout for Navigation Items — includes Settings */}
           <div className="grid grid-cols-3 gap-4">
-            {mobileOverflowItems.filter(item => item.to !== '/settings').map(({ to, icon: Icon, label, badgeKey }) => {
+            {mobileOverflowItems.map(({ to, icon: Icon, label, badgeKey }) => {
               const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
               
-              // Assign gradient based on route
               const gradientMap: Record<string, string> = {
-                '/notes': 'var(--gradient-info)',
-                '/focus': 'var(--gradient-success)',
+                '/notes':     'var(--gradient-info)',
+                '/focus':     'var(--gradient-success)',
                 '/analytics': 'var(--gradient-danger)',
-                '/goals': 'var(--gradient-accent)',
+                '/goals':     'var(--gradient-accent)',
+                '/projects':  'var(--gradient-accent)',
+                '/settings':  'linear-gradient(135deg, #6b7280, #4b5563)',
               };
-              const gradient = gradientMap[to] || 'var(--gradient-accent)';
+              const gradient = gradientMap[to] ?? 'var(--gradient-accent)';
               
               return (
                 <NavLink
@@ -777,7 +821,6 @@ export function AppLayout() {
                     border: '1px solid var(--color-border)'
                   }}
                 >
-                  {/* Icon with gradient background */}
                   <div className="relative">
                     <div 
                       className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
@@ -794,8 +837,6 @@ export function AppLayout() {
                       </div>
                     )}
                   </div>
-                  
-                  {/* Label */}
                   <span className="text-[11px] font-bold text-text-primary text-center leading-tight">
                     {label}
                   </span>
@@ -804,37 +845,77 @@ export function AppLayout() {
             })}
           </div>
 
-          {/* Divider with style */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" style={{ borderColor: 'var(--color-border)' }} />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 text-[10px] font-bold text-text-muted uppercase tracking-wider" 
-                    style={{ background: 'var(--color-bg)' }}>
-                Account
-              </span>
-            </div>
-          </div>
-
-          {/* Sign Out Button - Prominent */}
-          <button
-            onClick={() => { setMobileMoreOpen(false); logout.mutate(); }}
-            className="relative flex items-center justify-center gap-3 p-4 rounded-2xl font-bold text-sm transition-transform active:scale-98 overflow-hidden"
-            style={{ 
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)',
-              border: '1px solid rgba(239, 68, 68, 0.2)'
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-500/10 text-red-500">
-                <LogOut size={20} />
-              </div>
-              <span className="text-red-600 dark:text-red-400">Sign out</span>
-            </div>
-          </button>
         </div>
       </DraggableModal>
+
+      {/* ── Logout Confirmation Modal — portalled to body, above everything ── */}
+      {createPortal(
+        <AnimatePresence>
+          {logoutConfirmOpen && (
+            <motion.div
+              key="logout-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 flex items-center justify-center p-4"
+              style={{ backdropFilter: 'blur(6px)', zIndex: 9999, background: 'rgba(0,0,0,0.55)' }}
+              onClick={() => setLogoutConfirmOpen(false)}
+            >
+              <motion.div
+                key="logout-card"
+                initial={{ opacity: 0, scale: 0.88, y: 24 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 16 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 28, mass: 0.8 }}
+                className="w-full max-w-sm rounded-2xl border p-6 flex flex-col gap-5"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <motion.div
+                    initial={{ scale: 0.5, rotate: -15 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 22, delay: 0.06 }}
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center bg-red-500/10"
+                  >
+                    <LogOut size={26} className="text-red-500" />
+                  </motion.div>
+                  <div>
+                    <h3 className="text-base font-extrabold" style={{ color: 'var(--color-text-primary)' }}>
+                      Sign out?
+                    </h3>
+                    <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                      You'll need to sign back in to access your account.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => { setLogoutConfirmOpen(false); logout.mutate(); }}
+                    className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-transform active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}
+                  >
+                    Yes, sign me out
+                  </button>
+                  <button
+                    onClick={() => setLogoutConfirmOpen(false)}
+                    className="w-full py-3 rounded-xl text-sm font-bold transition-transform active:scale-95"
+                    style={{
+                      background: 'var(--color-surface-raised)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-secondary)',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
 
       <AchievementCelebrationModal
         open={!!activeAchievement}

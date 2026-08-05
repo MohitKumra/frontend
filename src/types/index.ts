@@ -156,7 +156,6 @@ export interface GoalDTO {
   status: GoalStatus;
   priority: GoalPriority;
   progress: number;
-  manualProgress: number;
   aiSummary: string | null;
   linkedHabitIds: string[];
   linkedTaskIds: string[];
@@ -209,7 +208,6 @@ export interface CreateGoalRequest {
   targetDate?: string | null;
   status?: GoalStatus;
   priority?: GoalPriority;
-  manualProgress?: number;
   aiSummary?: string | null;
   linkedHabitIds?: string[];
   linkedTaskIds?: string[];
@@ -225,7 +223,6 @@ export interface UpdateGoalRequest {
   targetDate?: string | null;
   status?: GoalStatus;
   priority?: GoalPriority;
-  manualProgress?: number;
   aiSummary?: string | null;
   linkedHabitIds?: string[];
   linkedTaskIds?: string[];

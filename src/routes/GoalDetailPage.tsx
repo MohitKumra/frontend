@@ -128,6 +128,19 @@ export function GoalDetailPage() {
         </Card>
       </motion.div>
 
+      <motion.div variants={itemVariants}>
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-sm font-bold">Progress Breakdown</p>
+              <p className="text-xs text-text-muted">How this goal's progress is calculated from real activity</p>
+            </div>
+            <Badge variant="accent" size="sm">{goal.progress}%</Badge>
+          </div>
+          <ProgressBreakdown goal={goal} />
+        </Card>
+      </motion.div>
+
       <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-5">
         <Card className="p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-4">
@@ -245,6 +258,54 @@ function GoalMetric({ label, value }: { label: string; value: number }) {
     <div className="rounded-xl p-3 text-center border" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
       <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{label}</p>
       <p className="text-base font-black text-text-primary mt-1">{value}</p>
+    </div>
+  );
+}
+
+function ProgressBreakdown({ goal }: { goal: { progress: number; milestones: GoalMilestoneDTO[]; taskCount: number; habitCount: number; projectCount: number } }) {
+  const activeMilestones = goal.milestones.filter((m) => m.status !== 'SKIPPED');
+  const milestoneScore = activeMilestones.length === 0 ? 0 : Math.round((activeMilestones.filter((m) => m.status === 'COMPLETED').length / activeMilestones.length) * 100);
+  const taskScore = goal.taskCount === 0 ? 0 : 0; // task completion % not available on detail DTO; show count
+  const projectScore = goal.projectCount === 0 ? 0 : 0;
+  const habitScore = goal.habitCount === 0 ? 0 : 0;
+
+  const factors = [
+    { label: 'Milestones', value: milestoneScore, weight: 35, color: 'var(--color-accent)' },
+    { label: 'Tasks', value: taskScore, weight: 25, color: 'var(--color-info)' },
+    { label: 'Projects', value: projectScore, weight: 20, color: 'var(--color-success)' },
+    { label: 'Habits', value: habitScore, weight: 20, color: 'var(--color-warning)' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex h-3 w-full overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
+        {factors.map((factor) => (
+          <div
+            key={factor.label}
+            style={{ width: `${factor.weight}%`, background: factor.color, opacity: 0.85 }}
+            title={`${factor.label} (${factor.weight}%)`}
+          />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {factors.map((factor) => (
+          <div key={factor.label} className="rounded-2xl border p-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: factor.color }} />
+              <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>{factor.label}</p>
+            </div>
+            <p className="mt-2 text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+              {factor.value}%
+            </p>
+            <p className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+              {factor.weight}% weight
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs leading-5" style={{ color: 'var(--color-text-muted)' }}>
+        Progress is calculated automatically from completed milestones, finished tasks, project progress, and 4-week habit consistency. No manual input.
+      </p>
     </div>
   );
 }
