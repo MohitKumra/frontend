@@ -1,9 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Lightbulb, TrendingUp, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { useAICoach, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
+import { useSettings } from '../../features/settings';
 
 interface AICoachPanelProps {
   completedToday: number;
@@ -13,6 +16,9 @@ interface AICoachPanelProps {
 export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps) {
   const { data: coachData, isLoading } = useAICoach();
   const coachEnabled = useAIFeatureEnabled('coachEnabled');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: settings } = useSettings();
 
   const percentage = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
   const isRuleBased = !coachEnabled || coachData?.source !== 'ai';
@@ -33,6 +39,16 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
   };
 
   const color = getColor();
+
+  // The action label is a short generic CTA from the AI (e.g. "Start Now",
+  // "Take a Break", "Do It Now"). We navigate to /habits as the primary
+  // destination since this coach lives in the habits context, and also
+  // invalidate the coach cache so the next fetch gets fresh advice.
+  const handleActionClick = () => {
+    const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
+    queryClient.invalidateQueries({ queryKey: ['ai-coach', refreshMinutes] });
+    navigate('/habits');
+  };
 
   return (
     <Card
@@ -168,6 +184,7 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
                       size="sm"
                       fullWidth
                       className="text-xs font-bold"
+                      onClick={handleActionClick}
                       style={{
                         background: `linear-gradient(135deg, ${color}, ${color}dd)`,
                         border: 'none',

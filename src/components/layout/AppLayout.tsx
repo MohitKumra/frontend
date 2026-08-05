@@ -631,7 +631,7 @@ export function AppLayout() {
 
       {/* ── Mobile Bottom Navigation - Enhanced Design ─────────────────────────── */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 border-t z-40 safe-area-pb"
+        className="md:hidden fixed bottom-0 inset-x-0 border-t z-40 safe-area-pb overflow-visible"
         style={{ 
           background: 'var(--bottomnav-bg)', 
           borderColor: 'var(--bottomnav-border)',
@@ -639,7 +639,7 @@ export function AppLayout() {
           WebkitBackdropFilter: 'blur(20px)',
         }}
       >
-        <div className="px-2 pb-safe pt-1.5 flex items-end justify-around relative">
+        <div className="px-2 pb-safe pt-1.5 flex items-end justify-around relative overflow-visible">
           {/* Animated indicator line */}
           <div 
             className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-300"
@@ -688,18 +688,18 @@ export function AppLayout() {
           })}
 
           {/* Center Plus / More button — floats above the bar */}
-          <div className="relative flex flex-col items-center flex-1" style={{ marginBottom: '-2px' }}>
+          <div className="relative flex flex-col items-center flex-1 z-10" style={{ marginBottom: '-2px' }}>
             <button
               onClick={() => setMobileMoreOpen(true)}
               aria-label="More options"
-              className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg active:scale-90 transition-transform duration-150"
+              className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg active:scale-90 transition-transform duration-150 text-white"
               style={{
-                background: 'var(--gradient-accent)',
-                boxShadow: '0 4px 20px color-mix(in srgb, var(--color-accent) 50%, transparent), 0 2px 8px rgba(0,0,0,0.25)',
+                background: 'linear-gradient(135deg, #6C63FF 0%, #8B83FF 100%)',
+                boxShadow: '0 4px 20px rgba(108,99,255,0.5), 0 2px 8px rgba(0,0,0,0.25)',
                 marginTop: '-22px',
               }}
             >
-              <Plus size={26} className="text-white" strokeWidth={2.5} />
+              <Plus size={26} strokeWidth={2.5} />
             </button>
             <span className="text-[10px] font-bold text-text-muted mt-1 pb-2 leading-none">More</span>
           </div>

@@ -258,7 +258,7 @@ export function GoalCardView({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-                className="flex items-center justify-center rounded-lg border opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex items-center justify-center rounded-lg border transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 style={{
                   width: 30,
                   height: 30,
@@ -605,54 +605,6 @@ export function GoalCardView({
           <Zap size={11} style={{ color: 'var(--color-warning)' }} />
           Last AI review: {formatRelativeTime(goal.updatedAt)}
         </span>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen();
-            }}
-            className="rounded-2xl border px-4 py-2 text-sm font-semibold"
-            style={{
-              background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))',
-              borderColor: 'color-mix(in srgb, var(--color-accent) 16%, transparent)',
-              color: 'var(--color-accent)',
-            }}
-          >
-            Continue
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen();
-            }}
-            className="rounded-2xl border px-4 py-2 text-sm font-semibold"
-            style={{
-              background: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            Roadmap
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen((v) => !v);
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-2xl border"
-            style={{
-              background: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text-muted)',
-            }}
-          >
-            <MoreHorizontal size={14} />
-          </button>
-        </div>
       </div>
     </motion.div>
   );
