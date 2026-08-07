@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Folder } from 'lucide-react';
 import { useCreateProject } from '../../features/projects/hooks/useProjects';
+import { useGoals } from '../../features/goals/hooks/useGoals';
 import { DraggableModal } from '../ui/DraggableModal';
 import type { CreateProjectRequest, ProjectStatus } from '../../types';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
@@ -23,6 +24,7 @@ const PROJECT_COLORS = [
 
 export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
   const createProject = useCreateProject();
+  const goalsQuery = useGoals();
   const [formData, setFormData] = useState<CreateProjectRequest>({
     name: '',
     description: '',
@@ -32,7 +34,10 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
     dueDate: '',
     attachmentUrl: '',
     voiceNoteUrl: '',
+    goalId: null,
   });
+
+  const goals = goalsQuery.data?.data ?? [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +55,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         dueDate: '',
         attachmentUrl: '',
         voiceNoteUrl: '',
+        goalId: null,
       });
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -124,6 +130,22 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
             <option value="ACTIVE">Active</option>
             <option value="ON_HOLD">On Hold</option>
             <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+
+        {/* Goal */}
+        <div>
+          <label className="block text-xs font-bold text-text-primary mb-2">Goal</label>
+          <select
+            value={formData.goalId ?? ''}
+            onChange={(e) => setFormData({ ...formData, goalId: e.target.value || null })}
+            className={inputCls}
+            style={inputStyle}
+          >
+            <option value="">No goal</option>
+            {goals.map((g) => (
+              <option key={g.id} value={g.id}>{g.title}</option>
+            ))}
           </select>
         </div>
 

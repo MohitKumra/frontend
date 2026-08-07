@@ -357,7 +357,7 @@ function TasksHero({
             <button onClick={onNotionImport}
               className="inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-sm font-black transition-all hover:opacity-80 active:scale-95"
               style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-              <BookOpen size={15} /> Import
+              <BookOpen size={15} /> Notion Import 
             </button>
           )}
 

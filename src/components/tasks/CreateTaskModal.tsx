@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Calendar, Flag, FolderKanban, Plus, Trash2, Repeat,
   ListChecks, Clock, AlignLeft, Wand2, CheckSquare,
-  Bell, Layers, ArrowRight,
+  Bell, Layers, ArrowRight, Target,
 } from 'lucide-react';
 import { useCreateTask } from '../../features/tasks/hooks/useTasks';
 import { useProjects } from '../../features/projects/hooks/useProjects';
+import { useGoals } from '../../features/goals/hooks/useGoals';
 import { NaturalTaskInput } from './NaturalTaskInput';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 import type {
@@ -22,6 +23,7 @@ interface CreateTaskModalProps {
   lockProject?: boolean;
   initialTitle?: string;
   initialDuration?: number | null;
+  initialGoalId?: string | null;
 }
 
 type RecurrenceOption = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
@@ -150,9 +152,11 @@ export function CreateTaskModal({
   isOpen, onClose,
   initialProjectId = null, lockProject = false,
   initialTitle = '', initialDuration = null,
+  initialGoalId = null,
 }: CreateTaskModalProps) {
   const createTask = useCreateTask();
   const { data: projectsData } = useProjects();
+  const goalsQuery = useGoals();
   const titleRef = useRef<HTMLInputElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -162,6 +166,7 @@ export function CreateTaskModal({
   const [dueTime,           setDueTime]           = useState('');
   const [priority,          setPriority]          = useState<Priority>('MEDIUM');
   const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId ?? '');
+  const [selectedGoalId,    setSelectedGoalId]    = useState(initialGoalId ?? '');
   const [description,       setDescription]       = useState('');
   const [reminderTime,      setReminderTime]      = useState('');
   const [reminderMessage,   setReminderMessage]   = useState('');
@@ -176,10 +181,12 @@ export function CreateTaskModal({
   const [newSubTaskTitle,   setNewSubTaskTitle]   = useState('');
 
   const projects = projectsData?.data ?? [];
+  const goals = goalsQuery.data?.data ?? [];
 
   useEffect(() => {
     if (isOpen) {
       setSelectedProjectId(initialProjectId ?? '');
+      setSelectedGoalId(initialGoalId ?? '');
       if (initialTitle)    setTitle(initialTitle);
       if (initialDuration) setEstimatedDuration(initialDuration);
       // Only auto-focus on non-touch devices; on mobile it would
@@ -189,7 +196,7 @@ export function CreateTaskModal({
         setTimeout(() => titleRef.current?.focus(), 140);
       }
     }
-  }, [initialProjectId, isOpen, initialTitle, initialDuration]);
+  }, [initialProjectId, initialGoalId, isOpen, initialTitle, initialDuration]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -210,7 +217,8 @@ export function CreateTaskModal({
 
   const resetForm = () => {
     setTitle(''); setDueDate(''); setDueTime(''); setPriority('MEDIUM');
-    setSelectedProjectId(initialProjectId ?? ''); setDescription('');
+    setSelectedProjectId(initialProjectId ?? ''); setSelectedGoalId(initialGoalId ?? '');
+    setDescription('');
     setReminderTime(''); setReminderMessage(''); setStatus('TODO');
     setRecurrence('none'); setRecurrenceEndDate(''); setEstimatedDuration(null);
     setCustomDuration(''); setAttachmentUrl(''); setVoiceNoteUrl('');
@@ -240,6 +248,7 @@ export function CreateTaskModal({
       if (reminderTime)           body.reminderTime     = reminderTime;
       if (reminderMessage.trim()) body.reminderMessage  = reminderMessage.trim();
       if (selectedProjectId)      body.projectId        = selectedProjectId;
+      if (selectedGoalId)         body.goalId           = selectedGoalId;
       if (recurrenceRule)         body.recurrenceRule   = recurrenceRule;
       if (recurrenceEndDate)      body.recurrenceEndDate = recurrenceEndDate;
       const rc = buildRecurrenceConfig(recurrence, dueDate, recurrenceEndDate);
@@ -360,7 +369,7 @@ export function CreateTaskModal({
                     style={iStyle} />
                 </Section>
 
-                {/* ── Project + Status row ───────────────────────────── */}
+                {/* ── Project + Goal + Status row ─────────────────────── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Section icon={<FolderKanban size={14} />} title="Project">
                     <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}
@@ -368,6 +377,16 @@ export function CreateTaskModal({
                       <option value="">No project</option>
                       {projects.map((p) => (
                         <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </Section>
+
+                  <Section icon={<Target size={14} />} title="Goal">
+                    <select value={selectedGoalId} onChange={(e) => setSelectedGoalId(e.target.value)}
+                      className={iCls} style={iStyle}>
+                      <option value="">No goal</option>
+                      {goals.map((g) => (
+                        <option key={g.id} value={g.id}>{g.title}</option>
                       ))}
                     </select>
                   </Section>

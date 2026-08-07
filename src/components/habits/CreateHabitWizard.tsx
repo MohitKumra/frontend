@@ -5,38 +5,45 @@ import { Button } from '../ui/Button';
 import { SkipDaysPicker } from './SkipDaysPicker';
 import { getCategory } from '../../features/habits/Habitpresentation';
 import { useCreateHabit } from '../../features/habits/hooks/useHabits';
+import { useGoals } from '../../features/goals/hooks/useGoals';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 
-const STEPS = ['Name', 'Reminder', 'Duration', 'Skip Days'];
-const STEP_ICONS = ['📝', '⏰', '🎯', '📅'];
+const STEPS = ['Name', 'Goal', 'Reminder', 'Duration', 'Skip Days'];
+const STEP_ICONS = ['📝', '🎯', '⏰', '🎯', '📅'];
 
 interface CreateHabitWizardProps {
   open: boolean;
   onClose: () => void;
   initialTitle?: string;
   initialReminderTime?: string;
+  initialGoalId?: string | null;
 }
 
-export function CreateHabitWizard({ open, onClose, initialTitle = '', initialReminderTime = '' }: CreateHabitWizardProps) {
+export function CreateHabitWizard({ open, onClose, initialTitle = '', initialReminderTime = '', initialGoalId = null }: CreateHabitWizardProps) {
   const createHabit = useCreateHabit();
+  const goalsQuery = useGoals();
   const isMobile = useMediaQuery('(max-width: 640px)');
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState(initialTitle);
+  const [selectedGoalId, setSelectedGoalId] = useState(initialGoalId ?? '');
   const [reminderTime, setReminderTime] = useState(initialReminderTime);
   const [reminderMessage, setReminderMessage] = useState('');
   const [durationDays, setDurationDays] = useState<number | null>(null);
   const [durationMode, setDurationMode] = useState<'days' | 'forever'>('forever');
   const [skipDays, setSkipDays] = useState<number[]>([]);
 
+  const goals = goalsQuery.data?.data ?? [];
+
   const previewCategory = title.trim() ? getCategory(title) : null;
 
   const canNext = () => {
     switch (step) {
       case 0: return title.trim().length > 0;
-      case 1: return true; // Reminder is optional
-      case 2: return true; // Duration is optional
-      case 3: return true; // Skip days is optional
+      case 1: return true; // Goal is optional
+      case 2: return true; // Reminder is optional
+      case 3: return true; // Duration is optional
+      case 4: return true; // Skip days is optional
       default: return true;
     }
   };
@@ -53,6 +60,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
     createHabit.mutate(
       {
         title: title.trim(),
+        goalId: selectedGoalId || null,
         reminderTime: reminderTime || undefined,
         reminderMessage: reminderMessage || undefined,
         durationDays: durationMode === 'days' ? durationDays : null,
@@ -62,6 +70,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
         onSuccess: () => {
           setStep(0);
           setTitle('');
+          setSelectedGoalId('');
           setReminderTime('');
           setReminderMessage('');
           setDurationDays(null);
@@ -160,6 +169,32 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
           )}
 
           {step === 1 && (
+            <div>
+              <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">
+                Link to a goal (optional)
+              </label>
+              <select
+                value={selectedGoalId}
+                onChange={(e) => setSelectedGoalId(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+                style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <option value="">No goal</option>
+                {goals.map((g) => (
+                  <option key={g.id} value={g.id}>{g.title}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-text-muted mt-2">
+                Linking this habit to a goal will contribute to its progress automatically.
+              </p>
+            </div>
+          )}
+
+          {step === 2 && (
             <div className="flex flex-col gap-4">
               <Input
                 id="wizard-reminder"
@@ -182,7 +217,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
             </div>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <div>
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">
                 How long will this habit run?
@@ -253,7 +288,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <SkipDaysPicker value={skipDays} onChange={setSkipDays} />
           )}
         </motion.div>

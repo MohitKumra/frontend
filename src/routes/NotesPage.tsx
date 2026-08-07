@@ -22,6 +22,7 @@ import {
   Clock,
   StickyNote,
   Archive,
+  Bookmark,
   RotateCcw,
   ArrowUpDown,
   Loader2,
@@ -435,7 +436,15 @@ export function NotesPage() {
 
         {/* Bottom row: Badge and Media Icons */}
         <div className="np-card-footer">
-          <span className="np-card-badge">{note.isJournal ? 'Journal' : 'Note'}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="np-card-badge">{note.isJournal ? 'Journal' : 'Note'}</span>
+            {note.isJournal && note.bookmarkPage && (
+              <span className="np-card-bookmark-tag" title={`Bookmarked Page ${note.bookmarkPage}`}>
+                <Bookmark size={10} fill="currentColor" />
+                <span>Pg {note.bookmarkPage}</span>
+              </span>
+            )}
+          </div>
           <CardMediaIcons note={note} />
         </div>
 
@@ -1262,28 +1271,30 @@ function NotesHero({
               <button onClick={onNotionImport}
                 className="inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-xs font-black transition-all hover:opacity-80 active:scale-95"
                 style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-                <BookOpen size={14} /> Import
+                <BookOpen size={14} /> Notion Import
               </button>
             )}
 
             {/* Split create button */}
-            <div className="relative flex items-stretch overflow-hidden rounded-2xl"
+            <div className="relative flex items-stretch"
               style={{ boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 28%, transparent)' }}>
-              <button
-                onClick={onNewNote}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white transition-all hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, var(--color-accent), #818CF8)' }}>
-                <Plus size={14} /> New Note
-              </button>
-              <button
-                onClick={() => setNewMenuOpen((o) => !o)}
-                className="flex items-center justify-center border-l px-2.5 text-white transition-colors hover:opacity-80"
-                style={{
-                  background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
-                  borderColor: 'rgba(255,255,255,0.25)',
-                }}>
-                <ChevronDown size={13} />
-              </button>
+              <div className="flex items-stretch overflow-hidden rounded-2xl">
+                <button
+                  onClick={onNewNote}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white transition-all hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, var(--color-accent), #818CF8)' }}>
+                  <Plus size={14} /> New Note
+                </button>
+                <button
+                  onClick={() => setNewMenuOpen((o) => !o)}
+                  className="flex items-center justify-center border-l px-2.5 text-white transition-colors hover:opacity-80"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
+                    borderColor: 'rgba(255,255,255,0.25)',
+                  }}>
+                  <ChevronDown size={13} />
+                </button>
+              </div>
               {newMenuOpen && (
                 <div className="absolute right-0 top-full mt-1.5 w-40 overflow-hidden rounded-2xl border shadow-lg z-30"
                   style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>

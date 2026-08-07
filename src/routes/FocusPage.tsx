@@ -902,7 +902,7 @@ function FocusHero({
               transition={{ duration: 1.5, repeat: running ? Infinity : 0 }}>
               <Timer size={11} />
             </motion.span>
-            {running ? (mode === 'focus' ? 'In session' : 'On break') : 'Focus studio'}
+            {running ? (mode === 'focus' ? 'In session' : 'On break') : 'Pomodoro Timer'}
           </div>
 
           <button

@@ -302,7 +302,7 @@ export function ProjectDetailPage() {
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)', color: 'var(--color-info)' }}>
                   <Calendar size={12} />
-                  {project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No deadline'}
+                  {project.dueDate ? new Date(project.dueDate).toLocaleDateString("eng-gs") : 'No deadline'}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
                   <CheckCircle2 size={12} />

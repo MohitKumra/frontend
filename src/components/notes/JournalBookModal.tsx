@@ -1,9 +1,10 @@
-import React, { Component, forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { Component, forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import HTMLFlipBook from 'react-pageflip';
-import { Edit3, Trash2, X, Calendar } from 'lucide-react';
+import { Edit3, Trash2, X, Calendar, Bookmark } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import type { NoteDTO } from '../../types';
 import { MediaPreview } from '../media/MediaPreview';
+import { useUpdateNote } from '../../features/notes/hooks/useNotes';
 
 interface JournalBookModalProps {
   note: NoteDTO;
@@ -264,34 +265,37 @@ class FlipBookBoundary extends Component<
   }
 }
 
-function FlipBookContent({ note, journalDate, lastUpdated }: {
+// ── FlipBook Content ────────────────────────────────────────────
+// Bookmark buttons are intentionally NOT inside flipbook pages because
+// react-pageflip intercepts click events for its flip gestures, making
+// buttons inside pages unreliable. The bookmark toggle lives in the
+// action bar of JournalBookModal instead.
+
+function FlipBookContent({ note, journalDate, lastUpdated, bookmarkedPage, onFlip }: {
   note: NoteDTO;
   journalDate: string;
   lastUpdated: string;
+  bookmarkedPage: number | null;
+  onFlip?: (pageIndex: number) => void;
 }) {
   const bookRef = useRef<any>(null);
   const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
-  const hasMediaPage = Boolean(note.attachmentUrl || note.voiceNoteUrl);
 
-  // Wait 2 frames then auto-flip to reveal content
+  // Auto-flip to bookmarked page (or page 1) after flipbook mounts
   useEffect(() => {
+    const targetPage = bookmarkedPage && bookmarkedPage > 0 ? bookmarkedPage : 1;
     const flipTimer = setTimeout(() => {
       try {
-        console.log("bookRef.current:", bookRef.current);
-        console.log("bookRef.current.pageFlip():", bookRef.current?.pageFlip?.());
-        bookRef.current?.pageFlip()?.flipNext();
+        bookRef.current?.pageFlip()?.flip(targetPage);
       } catch (err) {
         console.error("Error flipping page:", err);
       }
-    }, 700);
+    }, 650);
     return () => clearTimeout(flipTimer);
   }, []);
 
   const FlipBook = HTMLFlipBook as any;
 
-  console.log("Rendering FlipBook with", contentPages.length, "content pages");
-
-  // Build all children in an array first, then filter out any falsy values
   const bookChildren = React.useMemo(() => {
     const children = [
       // Front Cover
@@ -301,6 +305,14 @@ function FlipBookContent({ note, journalDate, lastUpdated }: {
           <div className="journal-cover-rule" />
           <h2 className="journal-cover-title">{note.title || 'Untitled Entry'}</h2>
           <span className="journal-cover-date">{journalDate}</span>
+
+          {bookmarkedPage && (
+            <div className="journal-cover-bookmark-badge">
+              <Bookmark size={13} fill="currentColor" />
+              <span>Bookmarked Page {bookmarkedPage}</span>
+            </div>
+          )}
+
           <div className="journal-cover-corner journal-cover-corner-tl" />
           <div className="journal-cover-corner journal-cover-corner-tr" />
           <div className="journal-cover-corner journal-cover-corner-bl" />
@@ -308,34 +320,44 @@ function FlipBookContent({ note, journalDate, lastUpdated }: {
         </div>
       </div>,
       // Content Pages
-      ...contentPages.map((chunk, i) => (
-        <div className="rpf-page rpf-content" key={`content-${i}`} style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
-          <div className="journal-paper-face">
-            {i === 0 && (
-              <>
-                <span className="journal-header-date">{journalDate}</span>
-                {note.title && <h2 className="journal-header-title">{note.title}</h2>}
-              </>
-            )}
-            <div className="journal-paper-scroll">
-              <p className="journal-text">{chunk}</p>
-            </div>
-            <div className="journal-paper-footer">
-              {i === 0 ? (
-                <Badge variant="accent" size="sm">Journal Entry</Badge>
-              ) : (
-                <span className="journal-footer-date">
-                  <Calendar size={11} />
-                  Updated {lastUpdated}
-                </span>
+      ...contentPages.map((chunk, i) => {
+        const pageNum = i + 1;
+        const isBookmarked = bookmarkedPage === pageNum;
+
+        return (
+          <div className="rpf-page rpf-content" key={`content-${i}`} style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
+            <div className="journal-paper-face" style={{ position: 'relative' }}>
+              {/* Visual bookmark indicator on bookmarked page */}
+              {isBookmarked && (
+                <div className="journal-page-bookmark-indicator" aria-label={`Page ${pageNum} is bookmarked`}>
+                  <Bookmark size={10} fill="currentColor" />
+                </div>
               )}
-              <span className="journal-page-number">
-                Page {i + 1} of {contentPages.length}
-              </span>
+
+              <span className="journal-header-date">{journalDate}</span>
+              {i === 0 && note.title && <h2 className="journal-header-title">{note.title}</h2>}
+
+              <div className="journal-paper-scroll">
+                <p className="journal-text">{chunk}</p>
+              </div>
+
+              <div className="journal-paper-footer">
+                {i === 0 ? (
+                  <Badge variant="accent" size="sm">Journal Entry</Badge>
+                ) : (
+                  <span className="journal-footer-date">
+                    <Calendar size={11} />
+                    Updated {lastUpdated}
+                  </span>
+                )}
+                <span className="journal-page-number">
+                  Page {pageNum} of {contentPages.length}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      )),
+        );
+      }),
       // Media Page (conditional)
       (note.attachmentUrl || note.voiceNoteUrl) ? (
         <div className="rpf-page rpf-content" key="media" style={{ overflow: 'hidden', width: '100%', height: '100%' }}>
@@ -356,37 +378,67 @@ function FlipBookContent({ note, journalDate, lastUpdated }: {
         </div>
       </div>,
     ];
-    // Filter out null, undefined, false, etc.
     return children.filter(Boolean);
-  }, [note, journalDate, lastUpdated, contentPages]);
+  }, [note, journalDate, lastUpdated, contentPages, bookmarkedPage]);
 
-  console.log("Book children count:", bookChildren.length);
+  // Handle flipbook page change events
+  const handleFlip = useCallback((e: any) => {
+    const pageIndex = e?.data ?? e;
+    if (typeof pageIndex === 'number' && onFlip) {
+      onFlip(pageIndex);
+    }
+  }, [onFlip]);
 
   return (
-    <FlipBook
-      width={320}
-      height={400}
-      size="stretch"
-      minWidth={200}
-      maxWidth={420}
-      minHeight={260}
-      maxHeight={500}
-      showCover={true}
-      usePortrait
-      mobileScrollSupport
-      drawShadow
-      maxShadowOpacity={0.6}
-      flippingTime={650}
-      startPage={0}
-      startZIndex={0}
-      autoSize={true}
-      clickEventForward={true}
-      useMouseEvents={true}
-      className="journal-flipbook"
-      ref={bookRef}
-    >
-      {bookChildren}
-    </FlipBook>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* Hanging Satin Bookmark Ribbon Stripe */}
+      {bookmarkedPage && (
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              bookRef.current?.pageFlip()?.flip(bookmarkedPage);
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          className="journal-bookmark-ribbon-stripe"
+          title={`Click to jump to bookmarked Page ${bookmarkedPage}`}
+        >
+          <div className="journal-bookmark-ribbon-body">
+            <Bookmark size={11} className="journal-ribbon-icon" fill="currentColor" />
+            <span className="journal-ribbon-text">{bookmarkedPage}</span>
+          </div>
+          <div className="journal-bookmark-ribbon-tail" />
+        </button>
+      )}
+
+      <FlipBook
+        width={320}
+        height={400}
+        size="stretch"
+        minWidth={200}
+        maxWidth={420}
+        minHeight={260}
+        maxHeight={500}
+        showCover={true}
+        usePortrait
+        mobileScrollSupport
+        drawShadow
+        maxShadowOpacity={0.6}
+        flippingTime={650}
+        startPage={0}
+        startZIndex={0}
+        autoSize={true}
+        clickEventForward={true}
+        useMouseEvents={true}
+        className="journal-flipbook"
+        ref={bookRef}
+        onFlip={handleFlip}
+      >
+        {bookChildren}
+      </FlipBook>
+    </div>
   );
 }
 
@@ -397,7 +449,29 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
   const [closing, setClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
-  console.log("JournalBookModal: useFallback =", useFallback);
+
+  // Bookmark state — owned here, outside the flipbook so clicks always work
+  const updateNote = useUpdateNote();
+  const [bookmarkedPage, setBookmarkedPage] = useState<number | null>(note.bookmarkPage ?? null);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const contentPages = useMemo(() => paginateContent(note.content), [note.content]);
+  const totalContentPages = contentPages.length;
+
+  // Current content page number (1-indexed). 0 means cover / back cover.
+  const currentContentPage = currentPage >= 1 && currentPage <= totalContentPages ? currentPage : 0;
+  const isOnContentPage = currentContentPage > 0;
+  const isCurrentPageBookmarked = isOnContentPage && bookmarkedPage === currentContentPage;
+
+  const handleToggleBookmark = () => {
+    if (!isOnContentPage) return;
+    const newPage = isCurrentPageBookmarked ? null : currentContentPage;
+    setBookmarkedPage(newPage);
+    updateNote.mutate({ id: note.id, data: { bookmarkPage: newPage } });
+  };
+
+  const handleFlip = useCallback((pageIndex: number) => {
+    setCurrentPage(pageIndex);
+  }, []);
 
   const journalDate = new Date(note.updatedAt).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -438,7 +512,6 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
   }, []);
 
   useEffect(() => {
-    // Reset fallback state when modal opens
     setUseFallback(false);
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -487,7 +560,13 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
         className={`journal-book-stage ${originRect ? 'journal-book-stage--flip' : ''}`}
         ref={stageRef}
       >
-        <FlipBookContent note={note} journalDate={journalDate} lastUpdated={lastUpdated} />
+        <FlipBookContent
+          note={note}
+          journalDate={journalDate}
+          lastUpdated={lastUpdated}
+          bookmarkedPage={bookmarkedPage}
+          onFlip={handleFlip}
+        />
       </div>
 
       <div className="entry-action-bar">
@@ -495,6 +574,31 @@ export function JournalBookModal({ note, originRect, onClose, onEdit, onDelete }
           <Trash2 size={16} />
           <span>Delete</span>
         </button>
+
+        {/* Bookmark button — outside the flipbook so clicks always work */}
+        <button
+          type="button"
+          className={`entry-btn ${isCurrentPageBookmarked ? 'entry-btn-bookmark-active' : 'entry-btn-bookmark'}`}
+          onClick={handleToggleBookmark}
+          disabled={!isOnContentPage}
+          title={
+            !isOnContentPage
+              ? 'Flip to a content page to bookmark'
+              : isCurrentPageBookmarked
+                ? `Remove bookmark from Page ${currentContentPage}`
+                : `Bookmark Page ${currentContentPage}`
+          }
+        >
+          <Bookmark size={16} fill={isCurrentPageBookmarked ? 'currentColor' : 'white'} />
+          <span>
+            {isCurrentPageBookmarked
+              ? `Bookmarked Pg ${currentContentPage}`
+              : isOnContentPage
+                ? `Bookmark Pg ${currentContentPage}`
+                : 'Bookmark'}
+          </span>
+        </button>
+
         <button type="button" className="entry-btn entry-btn-primary" onClick={onEdit}>
           <Edit3 size={16} />
           <span>Edit Entry</span>

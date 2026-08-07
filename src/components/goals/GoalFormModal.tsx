@@ -1,5 +1,11 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import { CheckCircle2, Edit2, Layers, Plus, Sparkles, Target, type LucideIcon } from 'lucide-react';
+import { useState } from 'react';
+import {
+  BookOpen, Brain, Briefcase, CheckCircle2, ChevronDown, ChevronUp,
+  Code2, DollarSign, Edit2, Flame, FolderKanban, Globe, GraduationCap,
+  Heart, Lightbulb, Plus, Rocket, Settings, Sparkles, Star,
+  Target, Trophy, type LucideIcon,
+} from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input, Textarea } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -39,16 +45,28 @@ type GoalFormModalProps = {
   toggleSelected: (kind: 'habits' | 'tasks' | 'projects', id: string) => void;
 };
 
-const iconChoices = [
-  { value: 'target', label: 'Target', icon: Target },
-  { value: 'rocket', label: 'Rocket', icon: Sparkles },
-  { value: 'brain', label: 'Brain', icon: Sparkles },
-  { value: 'book-open', label: 'Book', icon: Target },
-  { value: 'calendar', label: 'Calendar', icon: Target },
-  { value: 'flame', label: 'Focus', icon: Sparkles },
-  { value: 'folder-kanban', label: 'Plan', icon: Layers },
-  { value: 'check-square', label: 'Done', icon: CheckCircle2 },
-] as const;
+const iconChoices: { value: string; label: string; icon: LucideIcon }[] = [
+  { value: 'target',        label: 'Target',    icon: Target       },
+  { value: 'rocket',        label: 'Rocket',    icon: Rocket       },
+  { value: 'brain',         label: 'Brain',     icon: Brain        },
+  { value: 'book-open',     label: 'Book',      icon: BookOpen     },
+  { value: 'flame',         label: 'Focus',     icon: Flame        },
+  { value: 'folder-kanban', label: 'Plan',      icon: FolderKanban },
+  { value: 'check-square',  label: 'Done',      icon: CheckCircle2 },
+  { value: 'trophy',        label: 'Trophy',    icon: Trophy       },
+  { value: 'dollar-sign',   label: 'Finance',   icon: DollarSign   },
+  { value: 'lightbulb',     label: 'Idea',      icon: Lightbulb    },
+  { value: 'graduation',    label: 'Learn',     icon: GraduationCap},
+  { value: 'briefcase',     label: 'Work',      icon: Briefcase    },
+  { value: 'code2',         label: 'Code',      icon: Code2        },
+  { value: 'heart',         label: 'Health',    icon: Heart        },
+  { value: 'globe',         label: 'Global',    icon: Globe        },
+  { value: 'star',          label: 'Star',      icon: Star         },
+  { value: 'settings',      label: 'Systems',   icon: Settings     },
+  { value: 'sparkles',      label: 'AI',        icon: Sparkles     },
+];
+
+const ICONS_INITIAL = 6;
 
 const colorChoices = ['#4F46E5', '#7C3AED', '#EC4899', '#EF4444', '#F59E0B', '#10B981', '#0EA5E9', '#8B5CF6'];
 
@@ -76,7 +94,8 @@ function formatDateLong(value: string | null | undefined): string {
 }
 
 function getIconForKey(key: string): ReactNode {
-  const Icon = iconChoices.find((choice) => choice.value === key)?.icon ?? Target;
+  const match = iconChoices.find((choice) => choice.value === key);
+  const Icon: LucideIcon = match?.icon ?? Target;
   return <Icon size={26} />;
 }
 
@@ -96,6 +115,9 @@ export function GoalFormModal({
   projects,
   toggleSelected,
 }: GoalFormModalProps) {
+  const [showAllIcons, setShowAllIcons] = useState(false);
+  const visibleIcons = showAllIcons ? iconChoices : iconChoices.slice(0, ICONS_INITIAL);
+
   return (
     <Modal open={open} onClose={onClose} title={editingGoal ? 'Edit Goal' : 'Create Goal'} maxWidth="max-w-6xl">
       <div className="space-y-6">
@@ -121,7 +143,7 @@ export function GoalFormModal({
 
             <div className="flex flex-wrap gap-2">
               <MiniPill icon={<Target size={12} />} label="Outcome" />
-              <MiniPill icon={<Layers size={12} />} label="Linked work" />
+              <MiniPill icon={<FolderKanban size={12} />} label="Linked work" />
               <MiniPill icon={<Sparkles size={12} />} label="AI ready" />
             </div>
           </div>
@@ -188,8 +210,8 @@ export function GoalFormModal({
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Icon</label>
-                  <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">
-                    {iconChoices.map((choice) => {
+                  <div className="mt-2 grid grid-cols-6 gap-2">
+                    {visibleIcons.map((choice) => {
                       const active = form.icon === choice.value;
                       const Icon = choice.icon;
                       return (
@@ -210,6 +232,14 @@ export function GoalFormModal({
                       );
                     })}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllIcons((v) => !v)}
+                    className="mt-2 flex items-center gap-1 text-xs font-bold transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
+                    {showAllIcons ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Show {iconChoices.length - ICONS_INITIAL} more</>}
+                  </button>
                 </div>
 
                 <div className="md:col-span-2">

@@ -33,7 +33,7 @@
   --notes-shadow: rgba(0, 0, 0, 0.08);
 
   --ease-book: cubic-bezier(0.22, 1, 0.36, 1);
-  
+
   /* Note Colors */
   --note-yellow: #FEF3C7;
   --note-blue: #DBEAFE;
@@ -45,7 +45,7 @@
   --journal-darker: #0A0E1A;
   --journal-dark: #1A2335;
   --journal-paper: #E8DCC8;
-  
+
   --note-yellow: #4A3F1A;
   --note-blue: #1E3A5F;
   --note-pink: #4A2545;
@@ -111,11 +111,9 @@
   top: 5%;
   bottom: 5%;
   width: 7px;
-  background: repeating-linear-gradient(
-    180deg,
-    var(--journal-paper), var(--journal-paper) 2px,
-    var(--journal-paper-shadow) 2px, var(--journal-paper-shadow) 3px
-  );
+  background: repeating-linear-gradient(180deg,
+      var(--journal-paper), var(--journal-paper) 2px,
+      var(--journal-paper-shadow) 2px, var(--journal-paper-shadow) 3px);
   border-radius: 0 2px 2px 0;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.25);
   z-index: 0;
@@ -180,7 +178,8 @@
   position: relative;
   width: 100%;
   max-width: 170px;
-  aspect-ratio: 3 / 4.3; /* portrait, like a real book cover */
+  aspect-ratio: 3 / 4.3;
+  /* portrait, like a real book cover */
   margin: 0 auto;
 }
 
@@ -202,11 +201,9 @@
   top: 5%;
   bottom: 5%;
   width: 7px;
-  background: repeating-linear-gradient(
-    180deg,
-    var(--journal-paper), var(--journal-paper) 2px,
-    var(--journal-paper-shadow) 2px, var(--journal-paper-shadow) 3px
-  );
+  background: repeating-linear-gradient(180deg,
+      var(--journal-paper), var(--journal-paper) 2px,
+      var(--journal-paper-shadow) 2px, var(--journal-paper-shadow) 3px);
   border-radius: 0 2px 2px 0;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.25);
   z-index: 0;
@@ -219,7 +216,8 @@
   border-radius: 3px 8px 8px 3px;
   overflow: hidden;
   z-index: 1;
-  background-color: #4a3320; /* fallback tint if texture fails */
+  background-color: #4a3320;
+  /* fallback tint if texture fails */
   background-image: var(--leather-texture);
   background-size: cover;
   background-position: center;
@@ -304,13 +302,23 @@
 }
 
 @keyframes journal-backdrop-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes journal-backdrop-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 .journal-book-stage {
@@ -323,6 +331,15 @@
   transform: scale(0.82) translateY(24px);
   opacity: 0;
   animation: journal-book-in 0.6s 0.08s var(--ease-book) forwards;
+}
+
+/* On mobile show a single large page — no two-page spread */
+@media (max-width: 600px) {
+  .journal-book-stage {
+    width: 92vw;
+    height: min(82dvh, 640px);
+    max-height: calc(100dvh - 120px);
+  }
 }
 
 .journal-overlay.is-closing .journal-book-stage {
@@ -369,7 +386,8 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #4a3320; /* fallback tint if texture fails, matches grid card */
+  background-color: #4a3320;
+  /* fallback tint if texture fails, matches grid card */
 }
 
 .rpf-cover::after {
@@ -580,6 +598,199 @@
 }
 
 /* ============================================================
+   JOURNAL BOOKMARK SYSTEM
+   Satin Bookmark Ribbon Stripe, Header Bookmark Toggle, Card Tag
+   ============================================================ */
+
+/* Hanging Satin Bookmark Ribbon Stripe */
+.journal-bookmark-ribbon-stripe {
+  position: absolute;
+  top: 0;
+  right: 28px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.journal-bookmark-ribbon-stripe:hover {
+  transform: translateY(4px);
+}
+
+.journal-bookmark-ribbon-body {
+  background: linear-gradient(135deg, #b91c1c, #991b1b, #7f1d1d);
+  color: #fef3c7;
+  padding: 8px 6px 4px;
+  border-radius: 0 0 2px 2px;
+  border: 1px solid #d4af37;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 28px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+.journal-ribbon-icon {
+  color: #fef3c7;
+}
+
+.journal-ribbon-text {
+  font-family: Georgia, serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.journal-bookmark-ribbon-tail {
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 10px solid #7f1d1d;
+  margin-top: -1px;
+}
+
+/* Front Cover Bookmark Badge */
+.journal-cover-bookmark-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(185, 28, 28, 0.2));
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: var(--journal-gold);
+  font-family: Georgia, serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.journal-cover-bookmark-badge:hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.35), rgba(185, 28, 28, 0.35));
+  transform: scale(1.04);
+}
+
+/* Page Header Bookmark Toggle Button */
+.journal-bookmark-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(92, 64, 51, 0.2);
+  background: rgba(244, 232, 216, 0.6);
+  color: var(--journal-dark);
+  font-family: Georgia, serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.journal-bookmark-toggle-btn:hover {
+  background: rgba(139, 111, 71, 0.15);
+  border-color: rgba(92, 64, 51, 0.4);
+}
+
+.journal-bookmark-toggle-btn.is-bookmarked {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  border-color: #d4af37;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.3);
+}
+
+/* Card view bookmark tag on NotesPage grid */
+.np-card-bookmark-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(212, 175, 55, 0.15));
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+[data-theme='dark'] .np-card-bookmark-tag {
+  color: #f87171;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(212, 175, 55, 0.25));
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+/* Visual bookmark indicator tab on the page itself (no click) */
+.journal-page-bookmark-indicator {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  z-index: 10;
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  color: #fef3c7;
+  padding: 4px 5px 6px;
+  border-radius: 0 0 3px 3px;
+  border: 1px solid #d4af37;
+  border-top: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+/* Action bar bookmark button styles */
+.entry-btn-bookmark {
+  background: rgba(139, 111, 71, 0.1);
+  border: 1px solid rgba(255, 182, 79, 0.3);
+  color: var(--journal-dark, #c05b2c);
+  border-radius: 12px;
+}
+
+.entry-btn-bookmark:hover:not(:disabled) {
+  background: rgba(139, 111, 71, 0.2);
+  border-color: rgba(139, 111, 71, 0.5);
+}
+
+.entry-btn-bookmark:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.entry-btn-bookmark-active {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  border: 1px solid #d4af37;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.3);
+}
+
+.entry-btn-bookmark-active:hover {
+  background: linear-gradient(135deg, #a31717, #881818);
+}
+
+[data-theme='dark'] .entry-btn-bookmark {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.3);
+  color: #d4af37;
+}
+
+[data-theme='dark'] .entry-btn-bookmark:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+/* ============================================================
    NOTE — FULL SCREEN SHEET, styled as a giant sticky note
    ============================================================ */
 
@@ -604,10 +815,15 @@
 }
 
 @keyframes note-backdrop-in {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
+
 @keyframes note-backdrop-out {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 
 .note-sheet {
@@ -617,7 +833,8 @@
   max-height: calc(100dvh - 40px);
   display: flex;
   flex-direction: column;
-  margin-top: 16px; /* room for the pin to poke above the sheet */
+  margin-top: 16px;
+  /* room for the pin to poke above the sheet */
   background: linear-gradient(160deg, #fff9c4 0%, #fff59d 55%, #ffee8c 100%);
   border-radius: 4px;
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.12);
@@ -638,6 +855,7 @@
     opacity: 1;
   }
 }
+
 @keyframes note-sheet-out {
   to {
     transform: translateY(16px) scale(0.97);
@@ -773,6 +991,7 @@
   box-shadow: var(--entry-close-shadow, none);
   transition: background 0.2s ease, transform 0.2s ease;
 }
+
 .entry-close-btn:hover {
   background: var(--entry-close-bg-hover);
   transform: rotate(90deg);
@@ -799,7 +1018,8 @@
 }
 
 .entry-btn-close {
-  display: inline-flex; /* visible on mobile, part of the bottom row */
+  display: inline-flex;
+  /* visible on mobile, part of the bottom row */
 }
 
 .entry-btn {
@@ -814,9 +1034,11 @@
   transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
   backdrop-filter: blur(6px);
 }
+
 .entry-btn:hover {
   transform: translateY(-2px);
 }
+
 .entry-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -828,6 +1050,7 @@
   border-color: var(--entry-danger-border);
   background: var(--entry-danger-bg);
 }
+
 .entry-btn-danger:hover {
   background: var(--entry-danger-bg-hover);
   color: var(--entry-danger-color-hover);
@@ -838,6 +1061,7 @@
   border-color: var(--entry-ghost-border);
   background: var(--entry-ghost-bg);
 }
+
 .entry-btn-ghost:hover {
   background: var(--entry-ghost-bg-hover);
 }
@@ -847,6 +1071,7 @@
   background: var(--entry-primary-bg);
   box-shadow: var(--entry-primary-shadow);
 }
+
 .entry-btn-primary:hover {
   box-shadow: var(--entry-primary-shadow-hover);
 }
@@ -857,9 +1082,11 @@
   .entry-close-btn--desktop {
     display: flex;
   }
+
   .entry-btn-close {
     display: none;
   }
+
   .entry-action-bar {
     left: auto;
     right: max(24px, env(safe-area-inset-right));
@@ -869,8 +1096,10 @@
     padding: 0;
     gap: 14px;
   }
+
   .entry-btn span {
-    display: none; /* icon-only on the right rail */
+    display: none;
+    /* icon-only on the right rail */
   }
 }
 
@@ -878,13 +1107,16 @@
   .entry-action-bar {
     gap: 8px;
   }
+
   .entry-btn {
     padding: 9px 12px;
     font-size: 12px;
   }
+
   .entry-btn span {
     display: none;
   }
+
   .note-sheet {
     padding: clamp(18px, 5vw, 28px);
   }
@@ -966,6 +1198,7 @@
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .journal-overlay,
   .journal-book-stage,
   .note-overlay,
@@ -978,10 +1211,12 @@
     animation: none !important;
     transition: none !important;
   }
+
   .journal-book-stage {
     transform: none;
     opacity: 1;
   }
+
   .note-sheet {
     transform: none;
     opacity: 1;
@@ -999,7 +1234,8 @@
   width: 100%;
   max-width: 170px;
   aspect-ratio: 1 / 1.05;
-  margin: 24px auto 0; /* top margin gives the pin room to poke out */
+  margin: 24px auto 0;
+  /* top margin gives the pin room to poke out */
   padding: 26px 14px 14px;
   display: flex;
   flex-direction: column;
@@ -1011,9 +1247,17 @@
   transition: transform 0.25s var(--ease-book), box-shadow 0.25s var(--ease-book);
 }
 
-.sticky-note:nth-child(3n + 1) { transform: rotate(-3deg); }
-.sticky-note:nth-child(3n + 2) { transform: rotate(2.5deg); }
-.sticky-note:nth-child(3n + 3) { transform: rotate(-1.5deg); }
+.sticky-note:nth-child(3n + 1) {
+  transform: rotate(-3deg);
+}
+
+.sticky-note:nth-child(3n + 2) {
+  transform: rotate(2.5deg);
+}
+
+.sticky-note:nth-child(3n + 3) {
+  transform: rotate(-1.5deg);
+}
 
 .sticky-note:hover {
   transform: rotate(0deg) translateY(-4px) scale(1.03);
@@ -1176,10 +1420,12 @@
   margin-bottom: 8px;
   transition: border-color 0.2s ease;
 }
+
 .journal-edit-title-input:focus {
   outline: none;
   border-bottom-color: var(--journal-accent);
 }
+
 .journal-edit-title-input::placeholder {
   color: rgba(62, 39, 35, 0.35);
   font-weight: 400;
@@ -1207,9 +1453,11 @@
   letter-spacing: 0.3px;
   scrollbar-width: none;
 }
+
 .journal-edit-textarea::-webkit-scrollbar {
   display: none;
 }
+
 .journal-edit-textarea::placeholder {
   color: rgba(62, 39, 35, 0.35);
 }
@@ -1237,10 +1485,12 @@
   margin-bottom: 4px;
   transition: border-color 0.2s ease;
 }
+
 .note-edit-title-input:focus {
   outline: none;
   border-bottom-color: #7a6420;
 }
+
 .note-edit-title-input::placeholder {
   color: rgba(74, 60, 0, 0.35);
   font-weight: 600;
@@ -1259,9 +1509,11 @@
   line-height: 1.7;
   scrollbar-width: none;
 }
+
 .note-edit-textarea::-webkit-scrollbar {
   display: none;
 }
+
 .note-edit-textarea::placeholder {
   color: rgba(92, 74, 26, 0.4);
 }
@@ -1290,6 +1542,7 @@
   transition: background 0.2s ease, color 0.2s ease;
   white-space: nowrap;
 }
+
 .entry-type-btn.is-active {
   background: var(--entry-toggle-active-bg);
   color: var(--entry-toggle-active-text);
@@ -1322,7 +1575,7 @@
 /* Override the generic surface/border tokens inside note sheets so
    the media field matches the yellow sticky-note palette instead of
    clashing with dark navy cards. */
-.note-sheet .note-media-field-wrap > div {
+.note-sheet .note-media-field-wrap>div {
   background: transparent !important;
 }
 
@@ -1371,7 +1624,7 @@
   margin-top: 16px;
 }
 
-.journal-edit-page .journal-media-field-wrap > div {
+.journal-edit-page .journal-media-field-wrap>div {
   background: rgba(139, 111, 71, 0.1) !important;
   border-color: rgba(92, 64, 51, 0.25) !important;
 }
@@ -1400,6 +1653,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .journal-edit-textarea-wrap::-webkit-scrollbar {
   display: none;
 }
@@ -1930,17 +2184,20 @@
   cursor: pointer;
   flex-shrink: 0;
 }
+
 .np-pill:hover {
   color: var(--color-text-primary);
   border-color: var(--color-accent);
   background: var(--color-surface-raised);
 }
+
 .np-pill.is-active {
   background: var(--gradient-accent);
   border-color: transparent;
   color: #fff;
   box-shadow: 0 4px 12px -4px rgba(79, 70, 229, 0.4);
 }
+
 .np-pill-count {
   display: inline-flex;
   align-items: center;
@@ -1994,6 +2251,7 @@
   transition: transform 0.22s var(--ease-book), box-shadow 0.22s ease;
   box-shadow: 0 1px 2px rgba(20, 20, 43, 0.05);
 }
+
 .np-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 18px 30px -16px rgba(20, 20, 43, 0.28);
@@ -2020,12 +2278,15 @@
   color: var(--color-text-muted);
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
   flex-shrink: 0;
-  opacity: 1; /* Always visible */
+  opacity: 1;
+  /* Always visible */
 }
+
 .np-card-action-btn:hover {
   background: rgba(0, 0, 0, 0.07);
   transform: scale(1.1);
 }
+
 .np-card-action-btn.is-starred {
   color: #f5b301;
 }
@@ -2042,9 +2303,11 @@
   transition: background 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
 }
+
 .np-card-star:hover {
   background: rgba(0, 0, 0, 0.06);
 }
+
 .np-card-star.is-starred {
   color: #f5b301;
 }
@@ -2060,12 +2323,14 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .np-card-meta {
   font-size: 11.5px;
   font-weight: 700;
   color: var(--color-text-muted);
   margin-top: 3px;
 }
+
 .np-card-preview {
   font-size: 12.5px;
   line-height: 1.55;
@@ -2077,12 +2342,14 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .np-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 14px;
 }
+
 .np-card-badge {
   font-size: 10px;
   font-weight: 800;
@@ -2090,6 +2357,7 @@
   padding: 4px 10px;
   border-radius: 999px;
 }
+
 .np-card-menu-btn {
   width: 26px;
   height: 26px;
@@ -2101,54 +2369,166 @@
   opacity: 0;
   transition: opacity 0.15s ease, background 0.15s ease;
 }
+
 .np-card:hover .np-card-menu-btn {
   opacity: 1;
 }
+
 .np-card-menu-btn:hover {
   background: rgba(0, 0, 0, 0.07);
 }
 
 /* pastel theme variants — light mode */
-.np-theme-violet { background: linear-gradient(150deg, #eef0ff 0%, #e3e6ff 100%); border-color: #dcdfff; }
-.np-theme-violet .np-card-icon { background: #dfe2ff; color: #5b57f0; }
-.np-theme-violet .np-card-badge { background: #dfe2ff; color: #4b47d6; }
+.np-theme-violet {
+  background: linear-gradient(150deg, #eef0ff 0%, #e3e6ff 100%);
+  border-color: #dcdfff;
+}
 
-.np-theme-amber { background: linear-gradient(150deg, #fff8e6 0%, #ffefc4 100%); border-color: #f6e2a0; }
-.np-theme-amber .np-card-icon { background: #ffe9ad; color: #b9780a; }
-.np-theme-amber .np-card-badge { background: #ffe9ad; color: #92600a; }
+.np-theme-violet .np-card-icon {
+  background: #dfe2ff;
+  color: #5b57f0;
+}
 
-.np-theme-green { background: linear-gradient(150deg, #eafbf1 0%, #d9f5e4 100%); border-color: #bfe9d2; }
-.np-theme-green .np-card-icon { background: #cdf0dc; color: #16875e; }
-.np-theme-green .np-card-badge { background: #cdf0dc; color: #0f6b48; }
+.np-theme-violet .np-card-badge {
+  background: #dfe2ff;
+  color: #4b47d6;
+}
 
-.np-theme-blue { background: linear-gradient(150deg, #eaf3ff 0%, #dcecff 100%); border-color: #c3ddff; }
-.np-theme-blue .np-card-icon { background: #d6e8ff; color: #1c6fd6; }
-.np-theme-blue .np-card-badge { background: #d6e8ff; color: #14539f; }
+.np-theme-amber {
+  background: linear-gradient(150deg, #fff8e6 0%, #ffefc4 100%);
+  border-color: #f6e2a0;
+}
 
-.np-theme-pink { background: linear-gradient(150deg, #fdeef6 0%, #fbe1ee 100%); border-color: #f6cbe2; }
-.np-theme-pink .np-card-icon { background: #f9d7e9; color: #c23b81; }
-.np-theme-pink .np-card-badge { background: #f9d7e9; color: #9c2d67; }
+.np-theme-amber .np-card-icon {
+  background: #ffe9ad;
+  color: #b9780a;
+}
+
+.np-theme-amber .np-card-badge {
+  background: #ffe9ad;
+  color: #92600a;
+}
+
+.np-theme-green {
+  background: linear-gradient(150deg, #eafbf1 0%, #d9f5e4 100%);
+  border-color: #bfe9d2;
+}
+
+.np-theme-green .np-card-icon {
+  background: #cdf0dc;
+  color: #16875e;
+}
+
+.np-theme-green .np-card-badge {
+  background: #cdf0dc;
+  color: #0f6b48;
+}
+
+.np-theme-blue {
+  background: linear-gradient(150deg, #eaf3ff 0%, #dcecff 100%);
+  border-color: #c3ddff;
+}
+
+.np-theme-blue .np-card-icon {
+  background: #d6e8ff;
+  color: #1c6fd6;
+}
+
+.np-theme-blue .np-card-badge {
+  background: #d6e8ff;
+  color: #14539f;
+}
+
+.np-theme-pink {
+  background: linear-gradient(150deg, #fdeef6 0%, #fbe1ee 100%);
+  border-color: #f6cbe2;
+}
+
+.np-theme-pink .np-card-icon {
+  background: #f9d7e9;
+  color: #c23b81;
+}
+
+.np-theme-pink .np-card-badge {
+  background: #f9d7e9;
+  color: #9c2d67;
+}
 
 /* pastel theme variants — dark mode */
-[data-theme='dark'] .np-theme-violet { background: linear-gradient(150deg, #22234a 0%, #1b1c3d 100%); border-color: #33356b; }
-[data-theme='dark'] .np-theme-violet .np-card-icon { background: #2d2f66; color: #b3b0ff; }
-[data-theme='dark'] .np-theme-violet .np-card-badge { background: #2d2f66; color: #b3b0ff; }
+[data-theme='dark'] .np-theme-violet {
+  background: linear-gradient(150deg, #22234a 0%, #1b1c3d 100%);
+  border-color: #33356b;
+}
 
-[data-theme='dark'] .np-theme-amber { background: linear-gradient(150deg, #3a2f13 0%, #2e2510 100%); border-color: #55461c; }
-[data-theme='dark'] .np-theme-amber .np-card-icon { background: #4a3b16; color: #f2c869; }
-[data-theme='dark'] .np-theme-amber .np-card-badge { background: #4a3b16; color: #f2c869; }
+[data-theme='dark'] .np-theme-violet .np-card-icon {
+  background: #2d2f66;
+  color: #b3b0ff;
+}
 
-[data-theme='dark'] .np-theme-green { background: linear-gradient(150deg, #123626 0%, #0e2c1e 100%); border-color: #1d5138; }
-[data-theme='dark'] .np-theme-green .np-card-icon { background: #164630; color: #6fe0ab; }
-[data-theme='dark'] .np-theme-green .np-card-badge { background: #164630; color: #6fe0ab; }
+[data-theme='dark'] .np-theme-violet .np-card-badge {
+  background: #2d2f66;
+  color: #b3b0ff;
+}
 
-[data-theme='dark'] .np-theme-blue { background: linear-gradient(150deg, #142c47 0%, #102338 100%); border-color: #1f4570; }
-[data-theme='dark'] .np-theme-blue .np-card-icon { background: #18365a; color: #7fb4f5; }
-[data-theme='dark'] .np-theme-blue .np-card-badge { background: #18365a; color: #7fb4f5; }
+[data-theme='dark'] .np-theme-amber {
+  background: linear-gradient(150deg, #3a2f13 0%, #2e2510 100%);
+  border-color: #55461c;
+}
 
-[data-theme='dark'] .np-theme-pink { background: linear-gradient(150deg, #3a1a2c 0%, #2e1523 100%); border-color: #602a49; }
-[data-theme='dark'] .np-theme-pink .np-card-icon { background: #4a2038; color: #f0a0cc; }
-[data-theme='dark'] .np-theme-pink .np-card-badge { background: #4a2038; color: #f0a0cc; }
+[data-theme='dark'] .np-theme-amber .np-card-icon {
+  background: #4a3b16;
+  color: #f2c869;
+}
+
+[data-theme='dark'] .np-theme-amber .np-card-badge {
+  background: #4a3b16;
+  color: #f2c869;
+}
+
+[data-theme='dark'] .np-theme-green {
+  background: linear-gradient(150deg, #123626 0%, #0e2c1e 100%);
+  border-color: #1d5138;
+}
+
+[data-theme='dark'] .np-theme-green .np-card-icon {
+  background: #164630;
+  color: #6fe0ab;
+}
+
+[data-theme='dark'] .np-theme-green .np-card-badge {
+  background: #164630;
+  color: #6fe0ab;
+}
+
+[data-theme='dark'] .np-theme-blue {
+  background: linear-gradient(150deg, #142c47 0%, #102338 100%);
+  border-color: #1f4570;
+}
+
+[data-theme='dark'] .np-theme-blue .np-card-icon {
+  background: #18365a;
+  color: #7fb4f5;
+}
+
+[data-theme='dark'] .np-theme-blue .np-card-badge {
+  background: #18365a;
+  color: #7fb4f5;
+}
+
+[data-theme='dark'] .np-theme-pink {
+  background: linear-gradient(150deg, #3a1a2c 0%, #2e1523 100%);
+  border-color: #602a49;
+}
+
+[data-theme='dark'] .np-theme-pink .np-card-icon {
+  background: #4a2038;
+  color: #f0a0cc;
+}
+
+[data-theme='dark'] .np-theme-pink .np-card-badge {
+  background: #4a2038;
+  color: #f0a0cc;
+}
 
 /* ---- featured journal entry panel ---- */
 .np-featured {
@@ -2159,6 +2539,7 @@
   overflow: hidden;
   box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.15);
 }
+
 .np-featured-header {
   display: flex;
   align-items: center;
@@ -2166,6 +2547,7 @@
   padding: 18px 24px;
   border-bottom: 1px solid var(--color-border);
 }
+
 .np-featured-date-btn {
   display: inline-flex;
   align-items: center;
@@ -2178,15 +2560,18 @@
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
 }
+
 .np-featured-date-btn:disabled {
   cursor: default;
   opacity: 0.85;
 }
+
 .np-featured-body {
   position: relative;
   padding: 24px 28px 28px;
   min-height: 220px;
 }
+
 .np-featured-illustration {
   position: absolute;
   right: 0;
@@ -2195,6 +2580,7 @@
   pointer-events: none;
   opacity: 0.95;
 }
+
 .np-featured-stats {
   display: flex;
   flex-wrap: wrap;
@@ -2205,11 +2591,13 @@
   position: relative;
   z-index: 1;
 }
+
 .np-stat {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 }
+
 .np-stat-icon {
   width: 30px;
   height: 30px;
@@ -2221,6 +2609,7 @@
   color: var(--icon-text-accent);
   flex-shrink: 0;
 }
+
 .np-stat-label {
   font-size: 10.5px;
   font-weight: 700;
@@ -2228,6 +2617,7 @@
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
+
 .np-stat-value {
   font-size: 13px;
   font-weight: 800;
@@ -2244,6 +2634,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .np-card,
   .np-pill {
     transition: none !important;
