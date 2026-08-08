@@ -180,10 +180,10 @@ export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelet
       style={{
         background: selected
           ? `linear-gradient(180deg, color-mix(in srgb, ${accent} 4%, var(--color-surface)) 0%, var(--color-surface) 100%)`
-          : 'linear-gradient(180deg, var(--color-surface) 0%, #ffffff 100%)',
+          : 'var(--color-surface)',
         borderColor: selected
           ? `color-mix(in srgb, ${accent} 18%, var(--color-border))`
-          : 'color-mix(in srgb, var(--color-border) 88%, white)',
+          : 'var(--color-border)',
         boxShadow: selected
           ? `0 14px 32px color-mix(in srgb, ${accent} 8%, transparent), 0 0 0 1px color-mix(in srgb, ${accent} 14%, transparent)`
           : '0 12px 26px rgba(15, 23, 42, 0.035)',
@@ -534,7 +534,7 @@ export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelet
           marginTop: 10,
           borderRadius: 14,
           border: '1px solid var(--color-border)',
-          background: '#fff',
+          background: 'var(--color-surface-elevated)',
           overflow: 'hidden',
           display: 'grid',
           gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',

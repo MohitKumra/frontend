@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Check, X, SlidersHorizontal } from 'lucide-react';
+import { Calendar, Check, RotateCcw, X, SlidersHorizontal } from 'lucide-react';
 
 export type DateRangePreset =
   'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'custom';
@@ -150,6 +150,15 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
     setIsCustomModalOpen(false);
   };
 
+  const handleClear = () => {
+    const dates = computePresetDates('this_week');
+    onChange({
+      preset: 'this_week',
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+    });
+  };
+
   const formattedRangeText =
     value.startDate === value.endDate
       ? formatReadableDate(value.startDate)
@@ -160,7 +169,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
       {/* Single pill container — all-in-one filter bar */}
       <div
         ref={containerRef}
-        className="relative flex items-center gap-2 overflow-hidden rounded-full border px-2 py-1.5 shadow-[0_8px_32px_rgba(2,6,23,0.10)] backdrop-blur-xl sm:gap-3 sm:px-3 sm:py-2"
+        className="relative flex items-center gap-2 overflow-hidden rounded-full border px-2 py-1.5 shadow-[0_8px_32px_rgba(2,6,23,0.10)] backdrop-blur-xl sm:gap-3 sm:px-3 sm:py-2 2xl:gap-4 2xl:px-4 2xl:py-2.5"
         style={{
           background:
             'linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 96%, white), var(--color-surface-elevated))',
@@ -168,12 +177,13 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         }}
       >
         {/* Filter icon */}
-        <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1">
-          <SlidersHorizontal size={13} className="text-accent" />
+        <div className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 2xl:px-3">
+          <SlidersHorizontal size={13} className="text-accent 2xl:hidden" />
+          <SlidersHorizontal size={16} className="text-accent hidden 2xl:block" />
         </div>
 
         {/* Preset pills with sliding indicator */}
-        <div className="relative flex items-center gap-1 overflow-x-auto no-scrollbar">
+        <div className="relative flex items-center gap-1 overflow-x-auto no-scrollbar 2xl:gap-2">
           {PRESETS.map((preset) => {
             const isActive = value.preset === preset.id;
             return (
@@ -184,11 +194,16 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
                   else buttonRefs.current.delete(preset.id);
                 }}
                 onClick={() => handlePresetSelect(preset.id)}
-                className={`relative z-10 flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[10.5px] font-extrabold whitespace-nowrap transition-colors duration-200 ${
+                className={`relative z-10 flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[10.5px] font-extrabold whitespace-nowrap transition-colors duration-200 2xl:px-4 2xl:py-1.5 2xl:text-sm ${
                   isActive ? 'text-white' : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
-                {preset.id === 'custom' && <Calendar size={11} className={isActive ? 'text-white' : 'text-accent'} />}
+                {preset.id === 'custom' && (
+                  <>
+                    <Calendar size={11} className={`2xl:hidden ${isActive ? 'text-white' : 'text-accent'}`} />
+                    <Calendar size={14} className={`hidden 2xl:block ${isActive ? 'text-white' : 'text-accent'}`} />
+                  </>
+                )}
                 <span>{preset.label}</span>
 
                 {/* Sliding pill indicator — only for non-custom presets */}
@@ -210,31 +225,43 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         </div>
 
         {/* Separator */}
-        <div className="h-4 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
+        <div className="h-4 w-px shrink-0 2xl:h-5" style={{ background: 'var(--color-border-subtle)' }} />
 
         {/* Inline date range display + custom edit */}
         <div
-          className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1"
+          className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 2xl:gap-2 2xl:px-3 2xl:py-1.5"
           style={{ background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)' }}
         >
-          <Calendar size={11} className="text-accent" />
+          <Calendar size={11} className="text-accent 2xl:hidden" />
+          <Calendar size={14} className="text-accent hidden 2xl:block" />
           <span
-            className="whitespace-nowrap text-[10px] font-bold tracking-tight"
+            className="whitespace-nowrap text-[10px] font-bold tracking-tight 2xl:text-sm"
             style={{ color: 'var(--color-text-secondary)' }}
           >
             {formattedRangeText}
           </span>
           {value.preset === 'custom' && (
-            <button
-              onClick={() => {
-                setTempStart(value.startDate);
-                setTempEnd(value.endDate);
-                setIsCustomModalOpen(true);
-              }}
-              className="ml-0.5 text-[9px] font-black uppercase tracking-wide text-accent hover:underline"
-            >
-              Edit
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setTempStart(value.startDate);
+                  setTempEnd(value.endDate);
+                  setIsCustomModalOpen(true);
+                }}
+                className="ml-0.5 text-[9px] font-black uppercase tracking-wide text-accent hover:underline 2xl:text-xs"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleClear}
+                title="Clear custom date range"
+                className="ml-0.5 flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-text-muted transition-colors hover:text-text-primary hover:bg-surface-raised 2xl:text-xs 2xl:px-2"
+              >
+                <RotateCcw size={10} className="2xl:hidden" />
+                <RotateCcw size={12} className="hidden 2xl:block" />
+                Clear
+              </button>
+            </>
           )}
         </div>
 
@@ -242,7 +269,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         {value.preset === 'custom' && (
           <motion.div
             layoutId="activeFilterPill"
-            className="absolute rounded-full"
+            className="absolute rounded-full pointer-events-none"
             style={{
               background:
                 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',

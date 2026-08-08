@@ -168,7 +168,7 @@ export function HabitList({ habits, viewMode, focusedHabitId }: HabitListProps) 
           rail. Pagination is the only navigation, on every screen size. */}
       {viewMode === 'grid' && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid gap-4 sm:gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {paginatedHabits.map((h) => (
               <HabitCard key={h.id} habit={h} isFocused={h.id === focusedHabitId} />
             ))}
