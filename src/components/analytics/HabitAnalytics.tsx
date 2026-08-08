@@ -32,7 +32,14 @@ function OverallRing({ value }: { value: number }) {
   return (
     <div className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-border-subtle)" strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-border-subtle)"
+          strokeWidth={strokeWidth}
+        />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -47,8 +54,15 @@ function OverallRing({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{clamped}%</span>
-        <span className="text-[7.5px] font-bold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Overall</span>
+        <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
+          {clamped}%
+        </span>
+        <span
+          className="text-[7.5px] font-bold uppercase tracking-[0.16em]"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          Overall
+        </span>
       </div>
     </div>
   );
@@ -77,7 +91,10 @@ export function HabitAnalytics({ data }: { data: HabitAnalyticsData | null }) {
       />
 
       <div className="space-y-3 p-5">
-        <div className="flex items-center justify-center rounded-xl border p-4" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}>
+        <div
+          className="flex items-center justify-center rounded-xl border p-4"
+          style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}
+        >
           <OverallRing value={data.overallCompletion} />
         </div>
 
@@ -89,7 +106,11 @@ export function HabitAnalytics({ data }: { data: HabitAnalyticsData | null }) {
 
         <div className="space-y-2">
           {data.habits.slice(0, 5).map((habit, idx) => (
-            <div key={habit.id} className="space-y-1.5 rounded-xl border p-3" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}>
+            <div
+              key={habit.id}
+              className="space-y-1.5 rounded-xl border p-3"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}
+            >
               <div className="flex items-center justify-between gap-3 text-[11px]">
                 <span className="truncate font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
                   {habit.title}
@@ -108,7 +129,10 @@ export function HabitAnalytics({ data }: { data: HabitAnalyticsData | null }) {
                   {habit.completionRate}%
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--color-surface-elevated)' }}>
+              <div
+                className="h-1.5 overflow-hidden rounded-full"
+                style={{ background: 'var(--color-surface-elevated)' }}
+              >
                 <motion.div
                   className="h-full rounded-full"
                   style={{

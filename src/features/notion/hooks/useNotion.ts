@@ -57,12 +57,23 @@ export function useNotionDatabaseProperties(collectionId: string | null, object:
 export function useNotionImportTasks() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ collectionId, object, propertyMapping, pageIds }: { collectionId: string; object: string; propertyMapping: Record<string, string>; pageIds?: string[] }) =>
-      notionApi.importTasks(collectionId, object, propertyMapping, pageIds),
+    mutationFn: ({
+      collectionId,
+      object,
+      propertyMapping,
+      pageIds,
+    }: {
+      collectionId: string;
+      object: string;
+      propertyMapping: Record<string, string>;
+      pageIds?: string[];
+    }) => notionApi.importTasks(collectionId, object, propertyMapping, pageIds),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: NOTION_KEY });
-      toast.success(`Imported ${data.imported} tasks${data.errors.length > 0 ? ` (${data.errors.length} errors)` : ''}`);
+      toast.success(
+        `Imported ${data.imported} tasks${data.errors.length > 0 ? ` (${data.errors.length} errors)` : ''}`
+      );
     },
     onError: (err) => toast.error('Failed to import tasks from Notion'),
   });
@@ -71,12 +82,25 @@ export function useNotionImportTasks() {
 export function useNotionImportNotes() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ collectionId, object, propertyMapping, isJournal, pageIds }: { collectionId: string; object: string; propertyMapping: Record<string, string>; isJournal?: boolean; pageIds?: string[] }) =>
-      notionApi.importNotes(collectionId, object, propertyMapping, isJournal, pageIds),
+    mutationFn: ({
+      collectionId,
+      object,
+      propertyMapping,
+      isJournal,
+      pageIds,
+    }: {
+      collectionId: string;
+      object: string;
+      propertyMapping: Record<string, string>;
+      isJournal?: boolean;
+      pageIds?: string[];
+    }) => notionApi.importNotes(collectionId, object, propertyMapping, isJournal, pageIds),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['notes'] });
       qc.invalidateQueries({ queryKey: NOTION_KEY });
-      toast.success(`Imported ${data.imported} notes${data.errors.length > 0 ? ` (${data.errors.length} errors)` : ''}`);
+      toast.success(
+        `Imported ${data.imported} notes${data.errors.length > 0 ? ` (${data.errors.length} errors)` : ''}`
+      );
     },
     onError: (err) => toast.error('Failed to import notes from Notion'),
   });
@@ -84,8 +108,15 @@ export function useNotionImportNotes() {
 
 export function useNotionPreviewPages() {
   return useMutation({
-    mutationFn: ({ collectionId, object, propertyMapping }: { collectionId: string; object: string; propertyMapping: Record<string, string> }) =>
-      notionApi.previewPages(collectionId, object, propertyMapping),
+    mutationFn: ({
+      collectionId,
+      object,
+      propertyMapping,
+    }: {
+      collectionId: string;
+      object: string;
+      propertyMapping: Record<string, string>;
+    }) => notionApi.previewPages(collectionId, object, propertyMapping),
   });
 }
 

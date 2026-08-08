@@ -10,7 +10,7 @@ import { useAuthStore } from '../store/authStore';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
-  withCredentials: true,  // send httpOnly refresh cookie on refresh calls
+  withCredentials: true, // send httpOnly refresh cookie on refresh calls
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -32,23 +32,19 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Never intercept auth-endpoint 401s — just let them propagate as normal errors
-    const isAuthEndpoint = originalRequest?.url && (
-      originalRequest.url.includes('/auth/login') ||
-      originalRequest.url.includes('/auth/signup') ||
-      originalRequest.url.includes('/auth/refresh') ||
-      originalRequest.url.includes('/auth/forgot-password') ||
-      originalRequest.url.includes('/auth/reset-password')
-    );
+    const isAuthEndpoint =
+      originalRequest?.url &&
+      (originalRequest.url.includes('/auth/login') ||
+        originalRequest.url.includes('/auth/signup') ||
+        originalRequest.url.includes('/auth/refresh') ||
+        originalRequest.url.includes('/auth/forgot-password') ||
+        originalRequest.url.includes('/auth/reset-password'));
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
         const baseUrl = import.meta.env.VITE_BACKEND_URL || '';
-        const res = await axios.post<{ accessToken: string }>(
-          `${baseUrl}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
+        const res = await axios.post<{ accessToken: string }>(`${baseUrl}/auth/refresh`, {}, { withCredentials: true });
         useAuthStore.getState().setAccessToken(res.data.accessToken);
         originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
         return apiClient(originalRequest);
@@ -58,7 +54,7 @@ apiClient.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 export default apiClient;

@@ -42,6 +42,6 @@ initTheme().then(() => {
           />
         </QueryClientProvider>
       </BrowserRouter>
-    </React.StrictMode>,
+    </React.StrictMode>
   );
 });

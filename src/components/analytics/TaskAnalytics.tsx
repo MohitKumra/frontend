@@ -46,7 +46,11 @@ export function TaskAnalytics({ data }: { data: TaskAnalyticsData | null }) {
           <StatTile label="Created" value={data.totalCreated} tone="accent" />
           <StatTile label="Completed" value={data.totalCompleted} tone="success" />
           <StatTile label="Overdue" value={data.totalOverdue} tone={data.totalOverdue > 0 ? 'danger' : 'success'} />
-          <StatTile label="Rate" value={`${data.completionRate}%`} tone={data.completionRate >= 80 ? 'success' : 'warning'} />
+          <StatTile
+            label="Rate"
+            value={`${data.completionRate}%`}
+            tone={data.completionRate >= 80 ? 'success' : 'warning'}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

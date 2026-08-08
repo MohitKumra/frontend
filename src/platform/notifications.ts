@@ -12,8 +12,8 @@ export interface NotifyPayload {
 }
 
 function isNative(): boolean {
-  return typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
-    .Capacitor?.isNativePlatform === 'function'
+  return typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
+    ?.isNativePlatform === 'function'
     ? (window as unknown as { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform()
     : false;
 }

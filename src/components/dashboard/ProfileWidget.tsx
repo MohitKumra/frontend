@@ -60,7 +60,12 @@ export function ProfileHero({ summary, onAvatarUpload, onAvatarRemove }: Profile
 
   const userName = user.name ?? user.email.split('@')[0];
   const userInitials = user.name
-    ? user.name.split(' ').map((part) => part[0]).join('').toUpperCase().slice(0, 2)
+    ? user.name
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
     : user.email[0].toUpperCase();
 
   const score = summary.productivityScore ?? 0;
@@ -107,16 +112,20 @@ export function ProfileHero({ summary, onAvatarUpload, onAvatarRemove }: Profile
                 <span>{greetingForHour(currentHour)}</span>
               </div>
               <h2 className="text-lg sm:text-xl font-extrabold text-white truncate">{userName}</h2>
-              
+
               {/* Today's Summary */}
               <div className="flex flex-wrap items-center gap-2 mt-2 text-white/80 text-xs font-bold">
                 <span>Today looks {pendingTasks > 5 ? 'busy' : 'manageable'}.</span>
                 <span className="text-white/60">•</span>
-                <span>{pendingTasks} important task{pendingTasks !== 1 ? 's' : ''}</span>
+                <span>
+                  {pendingTasks} important task{pendingTasks !== 1 ? 's' : ''}
+                </span>
                 {habitsOverdue > 0 && (
                   <>
                     <span className="text-white/60">•</span>
-                    <span>{habitsOverdue} habit{habitsOverdue !== 1 ? 's' : ''} overdue</span>
+                    <span>
+                      {habitsOverdue} habit{habitsOverdue !== 1 ? 's' : ''} overdue
+                    </span>
                   </>
                 )}
                 <span className="text-white/60">•</span>

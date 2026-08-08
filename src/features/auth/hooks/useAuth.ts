@@ -58,8 +58,7 @@ export function useForgotPasswordByRecoveryEmail() {
 export function useResetPassword() {
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: ({ token, password }: { token: string; password: string }) =>
-      authApi.resetPassword(token, password),
+    mutationFn: ({ token, password }: { token: string; password: string }) => authApi.resetPassword(token, password),
     onSuccess: () => navigate('/login'),
   });
 }

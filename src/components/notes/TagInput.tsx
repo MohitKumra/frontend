@@ -43,10 +43,7 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag...' }: TagInpu
   };
 
   return (
-    <div
-      className={`tag-input-wrap ${isFocused ? 'is-focused' : ''}`}
-      onClick={() => inputRef.current?.focus()}
-    >
+    <div className={`tag-input-wrap ${isFocused ? 'is-focused' : ''}`} onClick={() => inputRef.current?.focus()}>
       {tags.map((tag) => (
         <span
           key={tag}
@@ -60,7 +57,10 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag...' }: TagInpu
           {tag}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              removeTag(tag);
+            }}
             className="tag-chip-remove"
           >
             <X size={10} />
@@ -73,7 +73,10 @@ export function TagInput({ tags, onChange, placeholder = 'Add tag...' }: TagInpu
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onFocus={() => setIsFocused(true)}
-        onBlur={() => { setIsFocused(false); if (input) addTag(input); }}
+        onBlur={() => {
+          setIsFocused(false);
+          if (input) addTag(input);
+        }}
         onKeyDown={handleKeyDown}
         placeholder={tags.length < 10 ? placeholder : ''}
         className="tag-input"

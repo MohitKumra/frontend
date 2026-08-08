@@ -231,11 +231,7 @@ export interface UpdateGoalRequest {
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
-export type TaskStatus =
-  | 'TODO'
-  | 'IN_PROGRESS'
-  | 'DONE'
-  | 'CANCELLED';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
@@ -280,6 +276,7 @@ export interface TaskDTO {
   reminderTime: string | null;
   reminderMessage: string | null;
   recurrenceRule: string | null;
+  recurrenceConfig: TaskRecurrenceConfig | null;
   recurrenceEndDate: string | null;
   skipDates: string[];
   parentTaskId: string | null;

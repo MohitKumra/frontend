@@ -39,7 +39,7 @@ export function StatCard({
   return (
     <div className={cardClasses} onClick={onClick}>
       <div className="flex items-start justify-between mb-4">
-        <div 
+        <div
           className="w-12 h-12 icon-container"
           style={{
             background: `var(--icon-bg-${color})`,
@@ -49,7 +49,7 @@ export function StatCard({
           {icon}
         </div>
         {isLive && (
-          <div 
+          <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
             style={{
               background: 'var(--live-badge-bg)',
@@ -70,9 +70,7 @@ export function StatCard({
           <span
             className={[
               'text-xs font-bold flex items-center gap-0.5 px-1.5 py-0.5 rounded-md',
-              isPositive 
-                ? 'text-success bg-success/10' 
-                : 'text-danger bg-danger/10',
+              isPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10',
             ].join(' ')}
           >
             <TrendingUp size={12} className={isPositive ? '' : 'rotate-180'} />
@@ -80,9 +78,7 @@ export function StatCard({
           </span>
         )}
       </div>
-      {sub && (
-        <p className="text-xs text-text-muted mt-2 font-medium">{sub}</p>
-      )}
+      {sub && <p className="text-xs text-text-muted mt-2 font-medium">{sub}</p>}
     </div>
   );
 }

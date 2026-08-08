@@ -12,10 +12,7 @@ export function WeekPatternDots({ pattern, color }: WeekPatternDotsProps) {
     <div className="flex items-center gap-1.5">
       {pattern.map((day, i) => (
         <div key={i} className="flex flex-col items-center gap-1">
-          <span
-            className="text-[9px] font-bold"
-            style={{ color: day.isToday ? color : 'var(--color-text-muted)' }}
-          >
+          <span className="text-[9px] font-bold" style={{ color: day.isToday ? color : 'var(--color-text-muted)' }}>
             {day.label}
           </span>
           <div
@@ -25,8 +22,8 @@ export function WeekPatternDots({ pattern, color }: WeekPatternDotsProps) {
               border: day.isToday
                 ? `1.5px solid ${color}`
                 : day.isFuture
-                ? '1px dashed var(--color-border)'
-                : '1px solid var(--color-border)',
+                  ? '1px dashed var(--color-border)'
+                  : '1px solid var(--color-border)',
               opacity: day.isFuture ? 0.5 : 1,
             }}
           >

@@ -46,7 +46,7 @@ export const QUOTES: Quote[] = [
     author: 'Robin Sharma',
   },
   {
-    quote: 'You don\'t have to be extreme, just consistent.',
+    quote: "You don't have to be extreme, just consistent.",
     author: 'Unknown',
   },
   {
@@ -70,7 +70,7 @@ export const QUOTES: Quote[] = [
     author: 'Charles C. Noble',
   },
   {
-    quote: 'The harder you work for something, the greater you\'ll feel when you achieve it.',
+    quote: "The harder you work for something, the greater you'll feel when you achieve it.",
     author: 'Unknown',
   },
   {
@@ -78,7 +78,7 @@ export const QUOTES: Quote[] = [
     author: 'Confucius',
   },
   {
-    quote: 'Believe you can and you\'re halfway there.',
+    quote: "Believe you can and you're halfway there.",
     author: 'Theodore Roosevelt',
   },
   {
@@ -102,7 +102,7 @@ export const QUOTES: Quote[] = [
     author: 'Steve Jobs',
   },
   {
-    quote: 'Don\'t watch the clock; do what it does. Keep going.',
+    quote: "Don't watch the clock; do what it does. Keep going.",
     author: 'Sam Levenson',
   },
   {
@@ -130,11 +130,11 @@ export const QUOTES: Quote[] = [
     author: 'Theodore Roosevelt',
   },
   {
-    quote: 'It always seems impossible until it\'s done.',
+    quote: "It always seems impossible until it's done.",
     author: 'Nelson Mandela',
   },
   {
-    quote: 'Whether you think you can or you think you can\'t, you\'re right.',
+    quote: "Whether you think you can or you think you can't, you're right.",
     author: 'Henry Ford',
   },
   {
@@ -142,7 +142,7 @@ export const QUOTES: Quote[] = [
     author: 'Eleanor Roosevelt',
   },
   {
-    quote: 'Don\'t count the days, make the days count.',
+    quote: "Don't count the days, make the days count.",
     author: 'Muhammad Ali',
   },
   {
@@ -150,7 +150,7 @@ export const QUOTES: Quote[] = [
     author: 'Peter Drucker',
   },
   {
-    quote: 'You miss 100% of the shots you don\'t take.',
+    quote: "You miss 100% of the shots you don't take.",
     author: 'Wayne Gretzky',
   },
   {
@@ -190,7 +190,7 @@ export const QUOTES: Quote[] = [
     author: 'Walt Disney',
   },
   {
-    quote: 'Don\'t let yesterday take up too much of today.',
+    quote: "Don't let yesterday take up too much of today.",
     author: 'Will Rogers',
   },
   {
@@ -214,7 +214,7 @@ export const QUOTES: Quote[] = [
     author: 'Tony Robbins',
   },
   {
-    quote: 'Everything you\'ve ever wanted is on the other side of fear.',
+    quote: "Everything you've ever wanted is on the other side of fear.",
     author: 'George Addair',
   },
   {
@@ -230,7 +230,7 @@ export const QUOTES: Quote[] = [
     author: 'Oprah Winfrey',
   },
   {
-    quote: 'Your time is limited, don\'t waste it living someone else\'s life.',
+    quote: "Your time is limited, don't waste it living someone else's life.",
     author: 'Steve Jobs',
   },
   {

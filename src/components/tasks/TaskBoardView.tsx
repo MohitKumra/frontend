@@ -10,11 +10,7 @@ import {
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
-import type {
-  DragEndEvent,
-  DragOverEvent,
-  DragStartEvent,
-} from '@dnd-kit/core';
+import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import {
   Calendar,
   CheckCircle2,
@@ -57,7 +53,13 @@ const columns: {
   empty: string;
 }[] = [
   { status: 'TODO', label: 'To Do', accent: 'var(--color-info)', icon: Circle, empty: 'Nothing waiting here' },
-  { status: 'IN_PROGRESS', label: 'In Progress', accent: 'var(--color-warning)', icon: Clock3, empty: 'No active task' },
+  {
+    status: 'IN_PROGRESS',
+    label: 'In Progress',
+    accent: 'var(--color-warning)',
+    icon: Clock3,
+    empty: 'No active task',
+  },
   { status: 'DONE', label: 'Done', accent: 'var(--color-success)', icon: CheckCircle2, empty: 'No wins logged yet' },
 ];
 
@@ -109,7 +111,10 @@ function PageControls({
 }) {
   if (total <= PAGE_SIZE) return null;
   return (
-    <div className="mt-2 flex items-center justify-between border-t px-1 pt-2.5" style={{ borderColor: 'var(--color-border)' }}>
+    <div
+      className="mt-2 flex items-center justify-between border-t px-1 pt-2.5"
+      style={{ borderColor: 'var(--color-border)' }}
+    >
       <button
         type="button"
         disabled={page <= 1}
@@ -217,7 +222,9 @@ function DroppableColumn({
       style={{
         ...externalStyle,
         borderColor: isOver ? accent : 'var(--color-border)',
-        boxShadow: isOver ? `0 0 0 4px color-mix(in srgb, ${accent} 14%, transparent)` : '0 12px 28px -26px rgba(15, 23, 42, 0.3)',
+        boxShadow: isOver
+          ? `0 0 0 4px color-mix(in srgb, ${accent} 14%, transparent)`
+          : '0 12px 28px -26px rgba(15, 23, 42, 0.3)',
       }}
     >
       {children}
@@ -288,8 +295,10 @@ function TaskBoardCard({
     if (!menuOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        menuRef.current && !menuRef.current.contains(event.target as Node) &&
-        menuButtonRef.current && !menuButtonRef.current.contains(event.target as Node)
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(event.target as Node)
       ) {
         onMenuToggle(null);
       }
@@ -308,10 +317,10 @@ function TaskBoardCard({
         borderColor: isHighlighted
           ? 'var(--color-accent)'
           : isDone
-          ? 'color-mix(in srgb, var(--color-success) 24%, var(--color-border))'
-          : overdue
-          ? 'color-mix(in srgb, var(--color-danger) 30%, var(--color-border))'
-          : 'var(--color-border)',
+            ? 'color-mix(in srgb, var(--color-success) 24%, var(--color-border))'
+            : overdue
+              ? 'color-mix(in srgb, var(--color-danger) 30%, var(--color-border))'
+              : 'var(--color-border)',
         boxShadow: isHighlighted
           ? '0 8px 30px color-mix(in srgb, var(--color-accent) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent)'
           : '0 1px 2px rgba(15, 23, 42, 0.05)',
@@ -324,7 +333,12 @@ function TaskBoardCard({
 
       <div className="p-2.5 sm:p-3">
         <div className="flex items-start gap-2">
-          <button type="button" onPointerDown={(e) => e.stopPropagation()} onClick={() => onEdit(task)} className="min-w-0 flex-1 text-left">
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => onEdit(task)}
+            className="min-w-0 flex-1 text-left"
+          >
             <h4
               className="truncate text-[12.5px] font-black leading-snug"
               style={{
@@ -350,84 +364,107 @@ function TaskBoardCard({
               <MoreVertical size={14} />
             </button>
 
-            {menuOpen && menuPosition && createPortal(
-              <>
-                <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => onMenuToggle(null)} />
-                <div
-                  key={task.id}
-                  ref={menuRef}
-                  className="fixed w-40 overflow-hidden rounded-xl border py-1.5 shadow-xl"
-                  style={{
-                    top: `${menuPosition.top}px`,
-                    right: `${menuPosition.right}px`,
-                    background: 'var(--color-surface-raised)',
-                    borderColor: 'var(--color-border)',
-                    zIndex: 9999,
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  {onViewDetails && (
-                    <button
-                      type="button"
-                      onClick={() => { onViewDetails(task); onMenuToggle(null); }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                    >
-                      <ExternalLink size={12} /> View Details
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => { onEdit(task); onMenuToggle(null); }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+            {menuOpen &&
+              menuPosition &&
+              createPortal(
+                <>
+                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => onMenuToggle(null)} />
+                  <div
+                    key={task.id}
+                    ref={menuRef}
+                    className="fixed w-40 overflow-hidden rounded-xl border py-1.5 shadow-xl"
+                    style={{
+                      top: `${menuPosition.top}px`,
+                      right: `${menuPosition.right}px`,
+                      background: 'var(--color-surface-raised)',
+                      borderColor: 'var(--color-border)',
+                      zIndex: 9999,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                   >
-                    <Edit3 size={12} /> Edit
-                  </button>
-                  {task.status !== 'IN_PROGRESS' && !isDone && (
+                    {onViewDetails && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onViewDetails(task);
+                          onMenuToggle(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <ExternalLink size={12} /> View Details
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => { onStatusChange(task, 'IN_PROGRESS'); onMenuToggle(null); }}
+                      onClick={() => {
+                        onEdit(task);
+                        onMenuToggle(null);
+                      }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                     >
-                      <Play size={12} /> Start
+                      <Edit3 size={12} /> Edit
                     </button>
-                  )}
-                  {!isDone && (
+                    {task.status !== 'IN_PROGRESS' && !isDone && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onStatusChange(task, 'IN_PROGRESS');
+                          onMenuToggle(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <Play size={12} /> Start
+                      </button>
+                    )}
+                    {!isDone && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onStatusChange(task, 'DONE');
+                          onMenuToggle(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <CheckCircle2 size={12} /> Mark done
+                      </button>
+                    )}
+                    {isDone && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onStatusChange(task, 'TODO');
+                          onMenuToggle(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      >
+                        <Circle size={12} /> Unmark done
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => { onStatusChange(task, 'DONE'); onMenuToggle(null); }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                      onClick={() => {
+                        onDelete(task.id);
+                        onMenuToggle(null);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-danger hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                     >
-                      <CheckCircle2 size={12} /> Mark done
+                      <Trash2 size={12} /> Delete
                     </button>
-                  )}
-                  {isDone && (
-                    <button
-                      type="button"
-                      onClick={() => { onStatusChange(task, 'TODO'); onMenuToggle(null); }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-text-primary hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                    >
-                      <Circle size={12} /> Unmark done
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => { onDelete(task.id); onMenuToggle(null); }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-danger hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                  >
-                    <Trash2 size={12} /> Delete
-                  </button>
-                </div>
-              </>,
-              document.body,
-            )}
+                  </div>
+                </>,
+                document.body
+              )}
           </div>
         </div>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
           <span
             className="inline-flex items-center gap-1 rounded-full px-1.5 py-[3px] text-[9px] font-black"
-            style={{ background: `color-mix(in srgb, ${priorityColor[task.priority]} 12%, transparent)`, color: priorityColor[task.priority] }}
+            style={{
+              background: `color-mix(in srgb, ${priorityColor[task.priority]} 12%, transparent)`,
+              color: priorityColor[task.priority],
+            }}
           >
             <Flag size={9} fill="currentColor" />
             {priorityLabel[task.priority]}
@@ -437,7 +474,9 @@ function TaskBoardCard({
             <span
               className="inline-flex items-center gap-1 rounded-full px-1.5 py-[3px] text-[9px] font-bold"
               style={{
-                background: overdue ? 'color-mix(in srgb, var(--color-danger) 10%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+                background: overdue
+                  ? 'color-mix(in srgb, var(--color-danger) 10%, transparent)'
+                  : 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
                 color: overdue ? 'var(--color-danger)' : 'var(--color-text-muted)',
               }}
             >
@@ -455,7 +494,10 @@ function TaskBoardCard({
 
         {totalSubtasks > 0 && (
           <div className="mt-2 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
+            <div
+              className="h-1.5 flex-1 overflow-hidden rounded-full"
+              style={{ background: 'var(--color-border-subtle)' }}
+            >
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${progress}%`, background: isDone ? 'var(--color-success)' : accent }}
@@ -569,7 +611,10 @@ function BoardColumnEmpty({
         className="flex min-h-[160px] flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center transition-all"
         style={{ borderColor: accent, color: accent, background: `color-mix(in srgb, ${accent} 6%, transparent)` }}
       >
-        <motion.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}>
+        <motion.div
+          animate={{ scale: [1, 1.12, 1] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <Plus size={22} />
         </motion.div>
         <p className="mt-2 text-xs font-black">Drop task here</p>
@@ -590,7 +635,10 @@ function BoardColumnEmpty({
         {/* Dashed ring */}
         <svg className="absolute inset-0" width="100" height="80" viewBox="0 0 100 80" fill="none">
           <motion.ellipse
-            cx="50" cy="40" rx="44" ry="34"
+            cx="50"
+            cy="40"
+            rx="44"
+            ry="34"
             stroke={accent}
             strokeWidth="1"
             strokeDasharray="4 6"
@@ -604,16 +652,43 @@ function BoardColumnEmpty({
         {status === 'TODO' && (
           <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
             {/* Back card */}
-            <motion.g animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} style={{ transformOrigin: '20px 30px' }}>
-              <rect x="4" y="14" width="38" height="32" rx="6" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.2" />
+            <motion.g
+              animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }}
+              transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{ transformOrigin: '20px 30px' }}
+            >
+              <rect
+                x="4"
+                y="14"
+                width="38"
+                height="32"
+                rx="6"
+                fill="var(--color-surface-raised)"
+                stroke="var(--color-border)"
+                strokeWidth="1.2"
+              />
               <circle cx="14" cy="24" r="3.5" fill="none" stroke="var(--color-border)" strokeWidth="1.2" />
               <rect x="21" y="22.5" width="16" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
               <circle cx="14" cy="33" r="3.5" fill="none" stroke="var(--color-border)" strokeWidth="1.2" />
               <rect x="21" y="31.5" width="12" height="3" rx="1.5" fill="var(--color-border)" opacity="0.4" />
             </motion.g>
             {/* Front card */}
-            <motion.g animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '46px 28px' }}>
-              <rect x="24" y="6" width="42" height="50" rx="7" fill="var(--color-surface-raised)" stroke={accent} strokeWidth="1.5" style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }} />
+            <motion.g
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ transformOrigin: '46px 28px' }}
+            >
+              <rect
+                x="24"
+                y="6"
+                width="42"
+                height="50"
+                rx="7"
+                fill="var(--color-surface-raised)"
+                stroke={accent}
+                strokeWidth="1.5"
+                style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }}
+              />
               {/* Top accent bar */}
               <rect x="24" y="6" width="42" height="4" rx="2" fill={accent} opacity="0.5" />
               {/* Empty checkbox rows */}
@@ -630,8 +705,21 @@ function BoardColumnEmpty({
         {status === 'IN_PROGRESS' && (
           <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
             {/* Back card */}
-            <motion.g animate={{ y: [0, -3, 0], rotate: [3, 4, 3] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} style={{ transformOrigin: '50px 30px' }}>
-              <rect x="28" y="14" width="38" height="32" rx="6" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.2" />
+            <motion.g
+              animate={{ y: [0, -3, 0], rotate: [3, 4, 3] }}
+              transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{ transformOrigin: '50px 30px' }}
+            >
+              <rect
+                x="28"
+                y="14"
+                width="38"
+                height="32"
+                rx="6"
+                fill="var(--color-surface-raised)"
+                stroke="var(--color-border)"
+                strokeWidth="1.2"
+              />
               <rect x="34" y="24" width="26" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
               <rect x="34" y="31" width="18" height="3" rx="1.5" fill="var(--color-border)" opacity="0.35" />
               {/* half-filled progress bar */}
@@ -639,13 +727,29 @@ function BoardColumnEmpty({
               <rect x="34" y="39" width="14" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
             </motion.g>
             {/* Front card */}
-            <motion.g animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '28px 28px' }}>
-              <rect x="4" y="4" width="46" height="54" rx="8" fill="var(--color-surface-raised)" stroke={accent} strokeWidth="1.5" style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }} />
+            <motion.g
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ transformOrigin: '28px 28px' }}
+            >
+              <rect
+                x="4"
+                y="4"
+                width="46"
+                height="54"
+                rx="8"
+                fill="var(--color-surface-raised)"
+                stroke={accent}
+                strokeWidth="1.5"
+                style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }}
+              />
               <rect x="4" y="4" width="46" height="4" rx="2" fill={accent} opacity="0.5" />
               {/* Animated partial-fill clock arc */}
               <circle cx="27" cy="26" r="10" fill="none" stroke="var(--color-border)" strokeWidth="2" opacity="0.3" />
               <motion.circle
-                cx="27" cy="26" r="10"
+                cx="27"
+                cy="26"
+                r="10"
                 fill="none"
                 stroke={accent}
                 strokeWidth="2"
@@ -656,8 +760,26 @@ function BoardColumnEmpty({
                 style={{ transform: 'rotate(-90deg)', transformOrigin: '27px 26px' }}
               />
               {/* Clock hands */}
-              <line x1="27" y1="26" x2="27" y2="19" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
-              <line x1="27" y1="26" x2="32" y2="29" stroke={accent} strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
+              <line
+                x1="27"
+                y1="26"
+                x2="27"
+                y2="19"
+                stroke={accent}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.8"
+              />
+              <line
+                x1="27"
+                y1="26"
+                x2="32"
+                y2="29"
+                stroke={accent}
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                opacity="0.6"
+              />
               {/* Labels */}
               <rect x="12" y="44" width="28" height="3.5" rx="1.75" fill={accent} opacity="0.25" />
               <rect x="12" y="51" width="20" height="3" rx="1.5" fill="var(--color-border)" opacity="0.35" />
@@ -668,22 +790,65 @@ function BoardColumnEmpty({
         {status === 'DONE' && (
           <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
             {/* Back card */}
-            <motion.g animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }} style={{ transformOrigin: '20px 30px' }}>
-              <rect x="4" y="14" width="36" height="30" rx="6" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.2" />
+            <motion.g
+              animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }}
+              transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+              style={{ transformOrigin: '20px 30px' }}
+            >
+              <rect
+                x="4"
+                y="14"
+                width="36"
+                height="30"
+                rx="6"
+                fill="var(--color-surface-raised)"
+                stroke="var(--color-border)"
+                strokeWidth="1.2"
+              />
               <circle cx="15" cy="25" r="4" fill="var(--color-border)" opacity="0.3" />
-              <path d="M13 25 L14.5 26.5 L17.5 23.5" stroke="var(--color-border)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+              <path
+                d="M13 25 L14.5 26.5 L17.5 23.5"
+                stroke="var(--color-border)"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.5"
+              />
               <rect x="23" y="23" width="12" height="3" rx="1.5" fill="var(--color-border)" opacity="0.4" />
               <circle cx="15" cy="36" r="4" fill="var(--color-border)" opacity="0.3" />
-              <path d="M13 36 L14.5 37.5 L17.5 34.5" stroke="var(--color-border)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+              <path
+                d="M13 36 L14.5 37.5 L17.5 34.5"
+                stroke="var(--color-border)"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.5"
+              />
               <rect x="23" y="34" width="9" height="3" rx="1.5" fill="var(--color-border)" opacity="0.3" />
             </motion.g>
             {/* Front card — with animated check */}
-            <motion.g animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '44px 28px' }}>
-              <rect x="22" y="4" width="44" height="52" rx="8" fill="var(--color-surface-raised)" stroke={accent} strokeWidth="1.5" style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }} />
+            <motion.g
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ transformOrigin: '44px 28px' }}
+            >
+              <rect
+                x="22"
+                y="4"
+                width="44"
+                height="52"
+                rx="8"
+                fill="var(--color-surface-raised)"
+                stroke={accent}
+                strokeWidth="1.5"
+                style={{ filter: `drop-shadow(0 4px 10px color-mix(in srgb, ${accent} 25%, transparent))` }}
+              />
               <rect x="22" y="4" width="44" height="4" rx="2" fill={accent} opacity="0.5" />
               {/* Big check circle */}
               <motion.circle
-                cx="44" cy="28" r="14"
+                cx="44"
+                cy="28"
+                r="14"
                 fill={`color-mix(in srgb, ${accent} 18%, transparent)`}
                 stroke={accent}
                 strokeWidth="1.5"
@@ -778,14 +943,14 @@ export function TaskBoardView({
 
   const grouped = useMemo(
     () => columns.map((col) => ({ ...col, tasks: tasks.filter((task) => task.status === col.status) })),
-    [tasks],
+    [tasks]
   );
 
   const setPage = (status: TaskStatus, page: number) => setPages((prev) => ({ ...prev, [status]: page }));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } })
   );
 
   const handleDragStart = (event: DragStartEvent) => setDraggingId(String(event.active.id));
@@ -816,7 +981,10 @@ export function TaskBoardView({
     <div>
       {/* ── Mobile: tab switcher + single paginated list (no horizontal scrolling, no giant stacked columns) ── */}
       <div className="lg:hidden">
-        <div className="flex gap-1.5 rounded-2xl border p-1.5" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+        <div
+          className="flex gap-1.5 rounded-2xl border p-1.5"
+          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+        >
           {grouped.map((col) => {
             const ColIcon = col.icon;
             const active = mobileTab === col.status;
@@ -835,7 +1003,12 @@ export function TaskBoardView({
                 <span className="hidden xs:inline sm:inline">{col.label}</span>
                 <span
                   className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px]"
-                  style={{ background: active ? 'rgba(255,255,255,0.25)' : `color-mix(in srgb, ${col.accent} 14%, transparent)`, color: active ? 'white' : col.accent }}
+                  style={{
+                    background: active
+                      ? 'rgba(255,255,255,0.25)'
+                      : `color-mix(in srgb, ${col.accent} 14%, transparent)`,
+                    color: active ? 'white' : col.accent,
+                  }}
                 >
                   {col.tasks.length}
                 </span>
@@ -881,7 +1054,13 @@ export function TaskBoardView({
                   />
                 ))}
 
-                <PageControls page={page} totalPages={totalPages} total={col.tasks.length} accent={col.accent} onChange={(p) => setPage(col.status, p)} />
+                <PageControls
+                  page={page}
+                  totalPages={totalPages}
+                  total={col.tasks.length}
+                  accent={col.accent}
+                  onChange={(p) => setPage(col.status, p)}
+                />
 
                 <MoveTasksHereBtn
                   tasks={tasks.filter((t) => t.status !== col.status)}
@@ -896,7 +1075,12 @@ export function TaskBoardView({
 
       {/* ── Desktop: 3-column drag & drop board, each column capped in height with its own pagination ── */}
       <div className="hidden lg:block">
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
           <div className="grid grid-cols-3 gap-5">
             {grouped.map((col) => {
               const ColumnIcon = col.icon;
@@ -911,14 +1095,19 @@ export function TaskBoardView({
                   id={col.status}
                   accent={col.accent}
                   className="flex h-[calc(100vh-260px)] min-h-[480px] max-h-[720px] flex-col rounded-3xl border p-3 transition-all duration-200"
-                  style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${col.accent} 4%, var(--color-surface-raised)) 0%, var(--color-surface-raised) 100%)` }}
+                  style={{
+                    background: `linear-gradient(180deg, color-mix(in srgb, ${col.accent} 4%, var(--color-surface-raised)) 0%, var(--color-surface-raised) 100%)`,
+                  }}
                 >
                   <header className="shrink-0 px-1 pb-3 pt-1">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
                         <div
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                          style={{ color: col.accent, background: `color-mix(in srgb, ${col.accent} 12%, transparent)` }}
+                          style={{
+                            color: col.accent,
+                            background: `color-mix(in srgb, ${col.accent} 12%, transparent)`,
+                          }}
                         >
                           <ColumnIcon size={16} />
                         </div>
@@ -934,7 +1123,10 @@ export function TaskBoardView({
                   </header>
 
                   {/* scrollable card area — fixed column height instead of growing forever */}
-                  <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5" style={{ scrollbarWidth: 'thin' }}>
+                  <div
+                    className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5"
+                    style={{ scrollbarWidth: 'thin' }}
+                  >
                     {pageTasks.length === 0 && !draggingId && (
                       <BoardColumnEmpty
                         status={col.status}
@@ -974,7 +1166,13 @@ export function TaskBoardView({
                   </div>
 
                   <div className="shrink-0">
-                    <PageControls page={page} totalPages={totalPages} total={col.tasks.length} accent={col.accent} onChange={(p) => setPage(col.status, p)} />
+                    <PageControls
+                      page={page}
+                      totalPages={totalPages}
+                      total={col.tasks.length}
+                      accent={col.accent}
+                      onChange={(p) => setPage(col.status, p)}
+                    />
 
                     <MoveTasksHereBtn
                       tasks={tasks.filter((t) => t.status !== col.status)}

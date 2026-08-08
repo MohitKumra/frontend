@@ -11,18 +11,18 @@ interface ProjectsWidgetProps {
 export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
   const navigate = useNavigate();
 
-  const planning = projects.filter(p => p.status === 'PLANNING');
-  const active = projects.filter(p => p.status === 'ACTIVE');
+  const planning = projects.filter((p) => p.status === 'PLANNING');
+  const active = projects.filter((p) => p.status === 'ACTIVE');
 
   return (
     <Card variant="default" className="overflow-hidden">
       {/* Header */}
-      <div 
+      <div
         className="px-5 py-4 border-b flex items-center justify-between"
         style={{ borderColor: 'var(--color-border-subtle)' }}
       >
         <div className="flex items-center gap-2.5">
-          <div 
+          <div
             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{
               background: 'var(--icon-bg-accent)',
@@ -36,7 +36,7 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
             <p className="text-[10px] text-text-muted font-medium">{projects.length} active</p>
           </div>
         </div>
-        <button 
+        <button
           onClick={() => navigate('/projects')}
           className="text-xs font-bold text-accent hover:text-accent-hover transition-colors flex items-center gap-1"
         >
@@ -49,7 +49,7 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
       <div className="p-4 sm:p-5">
         {projects.length === 0 ? (
           <div className="text-center py-10">
-            <div 
+            <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
               style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
             >
@@ -75,15 +75,24 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
               <div className="flex items-center justify-between px-1 mb-1">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full" style={{ background: 'var(--icon-text-info)' }} />
-                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--icon-text-info)' }}>
+                  <span
+                    className="text-[10px] font-black uppercase tracking-wider"
+                    style={{ color: 'var(--icon-text-info)' }}
+                  >
                     Planning
                   </span>
                 </div>
                 <span className="text-[9px] font-bold text-text-muted tabular-nums">{planning.length}</span>
               </div>
-              <div className="flex flex-col gap-1.5 min-h-[60px] rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--icon-bg-info) 15%, var(--color-surface))' }}>
+              <div
+                className="flex flex-col gap-1.5 min-h-[60px] rounded-lg p-2"
+                style={{ background: 'color-mix(in srgb, var(--icon-bg-info) 15%, var(--color-surface))' }}
+              >
                 {planning.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-3 text-center" style={{ borderColor: 'var(--color-border)' }}>
+                  <div
+                    className="rounded-lg border border-dashed p-3 text-center"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
                     <p className="text-[9px] text-text-muted">No projects</p>
                   </div>
                 ) : (
@@ -104,7 +113,10 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
                           {project.name}
                         </p>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+                          <div
+                            className="flex-1 h-1 rounded-full overflow-hidden"
+                            style={{ background: 'var(--color-border-subtle)' }}
+                          >
                             <div
                               className="h-full rounded-full"
                               style={{
@@ -127,15 +139,24 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
               <div className="flex items-center justify-between px-1 mb-1">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full" style={{ background: 'var(--icon-text-accent)' }} />
-                  <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--icon-text-accent)' }}>
+                  <span
+                    className="text-[10px] font-black uppercase tracking-wider"
+                    style={{ color: 'var(--icon-text-accent)' }}
+                  >
                     Active
                   </span>
                 </div>
                 <span className="text-[9px] font-bold text-text-muted tabular-nums">{active.length}</span>
               </div>
-              <div className="flex flex-col gap-1.5 min-h-[60px] rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--icon-bg-accent) 15%, var(--color-surface))' }}>
+              <div
+                className="flex flex-col gap-1.5 min-h-[60px] rounded-lg p-2"
+                style={{ background: 'color-mix(in srgb, var(--icon-bg-accent) 15%, var(--color-surface))' }}
+              >
                 {active.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-3 text-center" style={{ borderColor: 'var(--color-border)' }}>
+                  <div
+                    className="rounded-lg border border-dashed p-3 text-center"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
                     <p className="text-[9px] text-text-muted">No projects</p>
                   </div>
                 ) : (
@@ -156,7 +177,10 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
                           {project.name}
                         </p>
                         <div className="flex items-center gap-1.5 mt-1.5">
-                          <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
+                          <div
+                            className="flex-1 h-1 rounded-full overflow-hidden"
+                            style={{ background: 'var(--color-border-subtle)' }}
+                          >
                             <div
                               className="h-full rounded-full"
                               style={{

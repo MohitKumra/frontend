@@ -40,10 +40,7 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
 
   const sessions = propSessions ?? fetchedSessions?.data ?? [];
 
-  const taskSessions = useMemo(
-    () => sessions.filter((s) => s.taskId === task.id),
-    [sessions, task.id]
-  );
+  const taskSessions = useMemo(() => sessions.filter((s) => s.taskId === task.id), [sessions, task.id]);
 
   const focusSessions = useMemo(() => taskSessions.filter((s) => !s.isBreak), [taskSessions]);
   const breakSessions = useMemo(() => taskSessions.filter((s) => s.isBreak), [taskSessions]);
@@ -60,7 +57,7 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
 
   // 2. Active duration: inProgressAt → completedAt or now
   const inProgressAt = task.inProgressAt ? new Date(task.inProgressAt) : null;
-  const activeDurationMs = inProgressAt ? (endTime.getTime() - inProgressAt.getTime()) : null;
+  const activeDurationMs = inProgressAt ? endTime.getTime() - inProgressAt.getTime() : null;
 
   // 3. Focus & break time
   const focusMs = totalFocusMin * 60000;
@@ -78,7 +75,7 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
     {
       icon: <Hourglass size={18} />,
       label: 'Active Duration',
-      sublabel: task.completedAt ? 'In Progress → Completed' : (inProgressAt ? 'In Progress → Now' : 'Not started'),
+      sublabel: task.completedAt ? 'In Progress → Completed' : inProgressAt ? 'In Progress → Now' : 'Not started',
       value: activeDurationMs !== null ? formatDuration(activeDurationMs) : '—',
       color: 'var(--color-info)',
       bgColor: 'color-mix(in srgb, var(--color-info) 14%, transparent)',
@@ -104,7 +101,10 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
   return (
     <Card variant="default" className="w-full p-5 sm:p-6">
       <div className="flex items-center gap-2.5 mb-5">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}>
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}
+        >
           <Target size={16} />
         </div>
         <div className="min-w-0">
@@ -112,8 +112,13 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
           <p className="text-sm font-bold text-text-primary truncate">{task.title}</p>
         </div>
         {task.status === 'DONE' && (
-          <span className="ml-auto shrink-0 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full"
-            style={{ background: 'color-mix(in srgb, var(--color-success) 14%, transparent)', color: 'var(--color-success)' }}>
+          <span
+            className="ml-auto shrink-0 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full"
+            style={{
+              background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
+              color: 'var(--color-success)',
+            }}
+          >
             Completed
           </span>
         )}
@@ -127,7 +132,10 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
             style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
           >
             <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: m.bgColor, color: m.color }}>
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: m.bgColor, color: m.color }}
+              >
                 {m.icon}
               </div>
               <div className="min-w-0">
@@ -135,7 +143,9 @@ export function TaskTimeAnalysis({ task, sessions: propSessions }: TaskTimeAnaly
                 <p className="text-[10px] text-text-muted">{m.sublabel}</p>
               </div>
             </div>
-            <p className="text-lg font-black tabular-nums" style={{ color: m.color }}>{m.value}</p>
+            <p className="text-lg font-black tabular-nums" style={{ color: m.color }}>
+              {m.value}
+            </p>
           </div>
         ))}
       </div>

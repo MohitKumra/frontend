@@ -15,23 +15,21 @@ interface HabitCelebrationModalProps {
 
 const MESSAGES = [
   "Nice work — that's one more day in the books.",
-  "Consistency wins. See you tomorrow.",
-  "Small steps, real progress. Keep going.",
+  'Consistency wins. See you tomorrow.',
+  'Small steps, real progress. Keep going.',
   "That's how streaks are built — one day at a time.",
-  "Locked in for today. Same time tomorrow?",
+  'Locked in for today. Same time tomorrow?',
 ];
 
 const CONFETTI_COLORS = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
 
-export function HabitCelebrationModal({
-  open, onClose, habitTitle, currentStreak, color,
-}: HabitCelebrationModalProps) {
+export function HabitCelebrationModal({ open, onClose, habitTitle, currentStreak, color }: HabitCelebrationModalProps) {
   const isMobile = useMediaQuery('(max-width: 640px)');
   const achievement = getAchievement(currentStreak);
 
   const message = useMemo(
     () => MESSAGES[(currentStreak + habitTitle.length) % MESSAGES.length],
-    [currentStreak, habitTitle],
+    [currentStreak, habitTitle]
   );
 
   const confetti = useMemo(
@@ -46,7 +44,7 @@ export function HabitCelebrationModal({
       })),
     // Re-generate confetti each time the modal opens
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open],
+    [open]
   );
 
   // Auto-dismiss after 3.4 s
@@ -59,7 +57,9 @@ export function HabitCelebrationModal({
   // Escape key to dismiss
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
@@ -169,9 +169,7 @@ export function HabitCelebrationModal({
                 {habitTitle}
               </p>
               <h3 className="text-xl font-black text-text-primary mb-2">Done for today!</h3>
-              <p className="text-sm font-medium text-text-secondary mb-5 px-2 leading-relaxed">
-                {message}
-              </p>
+              <p className="text-sm font-medium text-text-secondary mb-5 px-2 leading-relaxed">{message}</p>
 
               <div className="flex items-center justify-center gap-2 flex-wrap mb-5">
                 <span
@@ -196,9 +194,7 @@ export function HabitCelebrationModal({
                 )}
               </div>
 
-              <p className="text-xs font-bold text-text-muted mb-5">
-                Come back tomorrow to keep it going.
-              </p>
+              <p className="text-xs font-bold text-text-muted mb-5">Come back tomorrow to keep it going.</p>
 
               <button
                 onClick={onClose}
@@ -212,6 +208,6 @@ export function HabitCelebrationModal({
         </>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 }

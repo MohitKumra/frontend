@@ -3,19 +3,13 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Check, X, SlidersHorizontal } from 'lucide-react';
 
-export type DateRangePreset = 
-  | 'today' 
-  | 'yesterday' 
-  | 'this_week' 
-  | 'last_week' 
-  | 'this_month' 
-  | 'last_month' 
-  | 'custom';
+export type DateRangePreset =
+  'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'custom';
 
 export interface DateRange {
   preset: DateRangePreset;
   startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
 }
 
 interface DateRangePickerProps {
@@ -41,7 +35,11 @@ function formatDate(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function computePresetDates(preset: DateRangePreset, customStart?: string, customEnd?: string): { startDate: string; endDate: string } {
+export function computePresetDates(
+  preset: DateRangePreset,
+  customStart?: string,
+  customEnd?: string
+): { startDate: string; endDate: string } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -134,7 +132,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   const handleApplyCustom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!tempStart || !tempEnd) return;
-    
+
     // Ensure start date <= end date
     let start = tempStart;
     let end = tempEnd;
@@ -152,9 +150,10 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
     setIsCustomModalOpen(false);
   };
 
-  const formattedRangeText = value.startDate === value.endDate
-    ? formatReadableDate(value.startDate)
-    : `${formatReadableDate(value.startDate)} – ${formatReadableDate(value.endDate)}`;
+  const formattedRangeText =
+    value.startDate === value.endDate
+      ? formatReadableDate(value.startDate)
+      : `${formatReadableDate(value.startDate)} – ${formatReadableDate(value.endDate)}`;
 
   return (
     <>
@@ -163,7 +162,8 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         ref={containerRef}
         className="relative flex items-center gap-2 overflow-hidden rounded-full border px-2 py-1.5 shadow-[0_8px_32px_rgba(2,6,23,0.10)] backdrop-blur-xl sm:gap-3 sm:px-3 sm:py-2"
         style={{
-          background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 96%, white), var(--color-surface-elevated))',
+          background:
+            'linear-gradient(180deg, color-mix(in srgb, var(--color-surface-elevated) 96%, white), var(--color-surface-elevated))',
           borderColor: 'var(--color-border-subtle)',
         }}
       >
@@ -197,7 +197,8 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
                     layoutId="activeFilterPill"
                     className="absolute inset-0 -z-10 rounded-full"
                     style={{
-                      background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',
+                      background:
+                        'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',
                       boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 35%, transparent)',
                     }}
                     transition={springConfig}
@@ -212,9 +213,15 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         <div className="h-4 w-px shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
 
         {/* Inline date range display + custom edit */}
-        <div className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1" style={{ background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)' }}>
+        <div
+          className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1"
+          style={{ background: 'color-mix(in srgb, var(--color-surface) 90%, transparent)' }}
+        >
           <Calendar size={11} className="text-accent" />
-          <span className="whitespace-nowrap text-[10px] font-bold tracking-tight" style={{ color: 'var(--color-text-secondary)' }}>
+          <span
+            className="whitespace-nowrap text-[10px] font-bold tracking-tight"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
             {formattedRangeText}
           </span>
           {value.preset === 'custom' && (
@@ -237,7 +244,8 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
             layoutId="activeFilterPill"
             className="absolute rounded-full"
             style={{
-              background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',
+              background:
+                'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-info) 70%, var(--color-accent)))',
               boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 35%, transparent)',
               opacity: 0.15,
               inset: 0,
@@ -279,9 +287,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
                 <form onSubmit={handleApplyCustom} className="space-y-4">
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold text-text-secondary mb-1">
-                        Start Date
-                      </label>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">Start Date</label>
                       <input
                         type="date"
                         value={tempStart}
@@ -292,9 +298,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-text-secondary mb-1">
-                        End Date
-                      </label>
+                      <label className="block text-xs font-bold text-text-secondary mb-1">End Date</label>
                       <input
                         type="date"
                         value={tempEnd}

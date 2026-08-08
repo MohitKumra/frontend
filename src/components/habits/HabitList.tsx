@@ -149,9 +149,17 @@ export function HabitList({ habits, viewMode, focusedHabitId }: HabitListProps) 
       {viewMode === 'list' && (
         <div className="flex flex-col">
           <div className="flex flex-col gap-2 sm:gap-3">
-            {paginatedHabits.map((h) => <HabitCardCompact key={h.id} habit={h} isFocused={h.id === focusedHabitId} />)}
+            {paginatedHabits.map((h) => (
+              <HabitCardCompact key={h.id} habit={h} isFocused={h.id === focusedHabitId} />
+            ))}
           </div>
-          <Pagination page={page} totalPages={totalPages} total={habits.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={habits.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
       )}
 
@@ -161,11 +169,17 @@ export function HabitList({ habits, viewMode, focusedHabitId }: HabitListProps) 
       {viewMode === 'grid' && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {paginatedHabits.map((h) => (
+            {paginatedHabits.map((h) => (
               <HabitCard key={h.id} habit={h} isFocused={h.id === focusedHabitId} />
             ))}
           </div>
-          <Pagination page={page} totalPages={totalPages} total={habits.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={habits.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </>
       )}
     </div>

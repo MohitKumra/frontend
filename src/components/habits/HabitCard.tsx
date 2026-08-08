@@ -1,18 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Check,
-  Clock,
-  Flame,
-  Trophy,
-  Zap,
-  Star,
-  Moon,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { Check, Clock, Flame, Trophy, Zap, Star, Moon, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useToggleHabit, useUpdateHabit, useDeleteHabit } from '../../features/habits/hooks/useHabits';
 import { Card } from '../ui/Card';
 import { HabitCelebrationModal } from './HabitCelebration';
@@ -36,13 +25,24 @@ function MiniRing({ value, color, completed = false }: { value: number; color: s
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="relative z-[1]">
         <circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke="var(--color-border)" strokeWidth={stroke} opacity="0.4"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-border)"
+          strokeWidth={stroke}
+          opacity="0.4"
         />
         <motion.circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke={color} strokeWidth={stroke}
-          strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
@@ -55,7 +55,15 @@ function MiniRing({ value, color, completed = false }: { value: number; color: s
 }
 
 /** Micro heatmap — small, quiet, refined pips */
-function MiniHeatmapStrip({ completionDates, color, skipDays }: { completionDates: string[]; color: string; skipDays?: number[] }) {
+function MiniHeatmapStrip({
+  completionDates,
+  color,
+  skipDays,
+}: {
+  completionDates: string[];
+  color: string;
+  skipDays?: number[];
+}) {
   const cells = useMemo(() => {
     const completedSet = new Set(completionDates || []);
     const now = new Date();
@@ -95,7 +103,17 @@ function MiniHeatmapStrip({ completionDates, color, skipDays }: { completionDate
               animate={{ scale: 1, opacity: 0.8 }}
               transition={{ delay: i * 0.05, duration: 0.3 }}
             >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#8B5CF6"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity="0.7"
+              >
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
               </svg>
             </motion.div>
@@ -178,50 +196,51 @@ function HabitMenu({
         <MoreHorizontal size={16} />
       </button>
 
-      {open && dropdownStyle && typeof document !== 'undefined' && createPortal(
-        <motion.div
-          ref={menuRef}
-          initial={{ opacity: 0, scale: 0.92, y: -4 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={undefined}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="rounded-xl overflow-hidden shadow-xl border"
-          style={dropdownStyle}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onEdit(habit); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-accent/10 transition-colors text-left"
+      {open &&
+        dropdownStyle &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, scale: 0.92, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={undefined}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="rounded-xl overflow-hidden shadow-xl border"
+            style={dropdownStyle}
+            onClick={(e) => e.stopPropagation()}
           >
-            <Pencil size={13} strokeWidth={2} />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onDelete(habit); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors text-left"
-          >
-            <Trash2 size={13} strokeWidth={2} />
-            Delete
-          </button>
-        </motion.div>,
-        document.body
-      )}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onEdit(habit);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-accent/10 transition-colors text-left"
+            >
+              <Pencil size={13} strokeWidth={2} />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onDelete(habit);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors text-left"
+            >
+              <Trash2 size={13} strokeWidth={2} />
+              Delete
+            </button>
+          </motion.div>,
+          document.body
+        )}
     </div>
   );
 }
 
 /** Edit habit modal */
-function EditHabitModal({
-  habit,
-  open,
-  onClose,
-}: {
-  habit: HabitDTO | null;
-  open: boolean;
-  onClose: () => void;
-}) {
+function EditHabitModal({ habit, open, onClose }: { habit: HabitDTO | null; open: boolean; onClose: () => void }) {
   const updateHabit = useUpdateHabit();
   const [title, setTitle] = useState('');
   const [reminderTime, setReminderTime] = useState('');
@@ -317,15 +336,7 @@ function EditHabitModal({
 }
 
 /** Delete confirmation dialog */
-function DeleteHabitModal({
-  habit,
-  open,
-  onClose,
-}: {
-  habit: HabitDTO | null;
-  open: boolean;
-  onClose: () => void;
-}) {
+function DeleteHabitModal({ habit, open, onClose }: { habit: HabitDTO | null; open: boolean; onClose: () => void }) {
   const deleteHabit = useDeleteHabit();
 
   const handleDelete = () => {
@@ -374,7 +385,13 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
     const availableDays = 7 - (habit.skipDays?.length ?? 0);
     const target = Math.max(availableDays, habit.targetPerWeek || 1);
     return Math.round((habit.completionsThisWeek / target) * 100);
-  }, [habit.completionsThisWeek, habit.completionDates.length, habit.durationDays, habit.targetPerWeek, habit.skipDays]);
+  }, [
+    habit.completionsThisWeek,
+    habit.completionDates.length,
+    habit.durationDays,
+    habit.targetPerWeek,
+    habit.skipDays,
+  ]);
 
   // Check if today is a skip day
   const isSkipDay = useMemo(() => {
@@ -537,12 +554,8 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
             <div className="relative flex items-center justify-center shrink-0">
               <MiniRing value={progress} color={category.color} completed={habit.completedToday} />
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <p className="text-base font-semibold leading-none text-text-primary tracking-tight">
-                  {progress}%
-                </p>
-                <p className="text-[7px] font-medium uppercase tracking-wider text-text-muted mt-0.5">
-                  Done
-                </p>
+                <p className="text-base font-semibold leading-none text-text-primary tracking-tight">{progress}%</p>
+                <p className="text-[7px] font-medium uppercase tracking-wider text-text-muted mt-0.5">Done</p>
               </div>
             </div>
 
@@ -552,7 +565,9 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
                 <span className="text-text-muted flex items-center gap-1 text-[10px] font-medium shrink-0">
                   <Clock size={10} strokeWidth={2} /> Reminder
                 </span>
-                <span className="font-medium text-text-primary text-[11px] truncate">{habit.reminderTime ? habit.reminderTime : 'Not Set'}</span>
+                <span className="font-medium text-text-primary text-[11px] truncate">
+                  {habit.reminderTime ? habit.reminderTime : 'Not Set'}
+                </span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-muted text-[10px] font-medium shrink-0">Duration</span>
@@ -570,7 +585,10 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
           </div>
 
           {/* Progress bar — thin, subtle */}
-          <div className="relative h-[3px] rounded-full overflow-hidden mb-4" style={{ background: 'var(--color-border)' }}>
+          <div
+            className="relative h-[3px] rounded-full overflow-hidden mb-4"
+            style={{ background: 'var(--color-border)' }}
+          >
             <motion.div
               className="h-full rounded-full"
               style={{ background: category.color, opacity: 0.85 }}
@@ -582,10 +600,12 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
 
           {/* Micro heatmap */}
           <div className="mb-4">
-            <p className="text-[9px] font-medium text-text-muted uppercase tracking-wider mb-2">
-              Last 7 Days
-            </p>
-            <MiniHeatmapStrip completionDates={habit.completionDates || []} color={category.color} skipDays={habit.skipDays} />
+            <p className="text-[9px] font-medium text-text-muted uppercase tracking-wider mb-2">Last 7 Days</p>
+            <MiniHeatmapStrip
+              completionDates={habit.completionDates || []}
+              color={category.color}
+              skipDays={habit.skipDays}
+            />
           </div>
 
           {/* Footer: Achievement + Complete button */}
@@ -659,18 +679,10 @@ export function HabitCard({ habit, isFocused }: { habit: HabitDTO; isFocused?: b
       </motion.div>
 
       {/* Edit modal */}
-      <EditHabitModal
-        habit={editTarget}
-        open={editTarget !== null}
-        onClose={() => setEditTarget(null)}
-      />
+      <EditHabitModal habit={editTarget} open={editTarget !== null} onClose={() => setEditTarget(null)} />
 
       {/* Delete confirmation */}
-      <DeleteHabitModal
-        habit={deleteTarget}
-        open={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-      />
+      <DeleteHabitModal habit={deleteTarget} open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} />
 
       <HabitCelebrationModal
         open={showCelebration}

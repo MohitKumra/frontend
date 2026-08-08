@@ -29,10 +29,7 @@ const SETTLE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // Cursor glyph — the badge's default/pointing state. Reads as "this is what's guiding you," not a face.
 const CursorGlyph = () => (
   <svg width="46%" height="46%" viewBox="0 0 20 20" fill="none">
-    <path
-      d="M5 3.5 L15.5 9.5 L10.8 10.9 L8.7 15.3 Z"
-      fill="white"
-    />
+    <path d="M5 3.5 L15.5 9.5 L10.8 10.9 L8.7 15.3 Z" fill="white" />
   </svg>
 );
 
@@ -97,11 +94,7 @@ export function AIGuide({
       initial={entering ? { scale: 0.5, opacity: 0 } : { scale: 1, opacity: 1 }}
       animate={exiting ? { scale: 0.6, opacity: 0 } : { scale: 1, opacity: 1 }}
       transition={
-        exiting
-          ? { duration: 0.25, ease: SETTLE_EASE }
-          : entering
-            ? { duration: 0.4, ease: SETTLE_EASE }
-            : undefined
+        exiting ? { duration: 0.25, ease: SETTLE_EASE } : entering ? { duration: 0.4, ease: SETTLE_EASE } : undefined
       }
       aria-hidden="true"
     >
@@ -124,13 +117,7 @@ export function AIGuide({
           boxShadow: 'var(--onboarding-guide-shadow, 0 8px 20px -4px rgba(99,102,241,0.5))',
           border: '2px solid var(--onboarding-guide-ring, #ffffff)',
         }}
-        animate={
-          reducedMotion
-            ? undefined
-            : waving
-              ? { rotate: [0, -14, 12, -10, 0] }
-              : { y: [0, -3, 0] }
-        }
+        animate={reducedMotion ? undefined : waving ? { rotate: [0, -14, 12, -10, 0] } : { y: [0, -3, 0] }}
         transition={
           waving
             ? { duration: 0.9, repeat: Infinity, ease: 'easeInOut' }

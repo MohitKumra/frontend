@@ -120,10 +120,34 @@ export function ProjectsPage() {
 
   const statCards = [
     { label: 'Total Projects', value: totalCount, sub: 'Active projects', icon: Folder, tone: 'accent' as const },
-    { label: 'Completed', value: completedCount, sub: `${pct(completedCount)}% of total`, icon: CheckCircle2, tone: 'success' as const },
-    { label: 'In Progress', value: activeCount, sub: `${pct(activeCount)}% of total`, icon: Clock, tone: 'warning' as const },
-    { label: 'On Hold', value: onHoldCount, sub: `${pct(onHoldCount)}% of total`, icon: Pause, tone: 'warning' as const },
-    { label: 'Overdue', value: overdueCount, sub: `${overdueCount === 1 ? 'project' : 'projects'} overdue`, icon: AlertTriangle, tone: 'danger' as const },
+    {
+      label: 'Completed',
+      value: completedCount,
+      sub: `${pct(completedCount)}% of total`,
+      icon: CheckCircle2,
+      tone: 'success' as const,
+    },
+    {
+      label: 'In Progress',
+      value: activeCount,
+      sub: `${pct(activeCount)}% of total`,
+      icon: Clock,
+      tone: 'warning' as const,
+    },
+    {
+      label: 'On Hold',
+      value: onHoldCount,
+      sub: `${pct(onHoldCount)}% of total`,
+      icon: Pause,
+      tone: 'warning' as const,
+    },
+    {
+      label: 'Overdue',
+      value: overdueCount,
+      sub: `${overdueCount === 1 ? 'project' : 'projects'} overdue`,
+      icon: AlertTriangle,
+      tone: 'danger' as const,
+    },
   ];
 
   const toneStyles: Record<string, { bg: string; color: string }> = {
@@ -139,9 +163,7 @@ export function ProjectsPage() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
-      list = list.filter(
-        (p) => p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q)
-      );
+      list = list.filter((p) => p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q));
     }
 
     const sorted = [...list];
@@ -269,14 +291,21 @@ export function ProjectsPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <div className="relative flex-1 lg:flex-initial">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full lg:w-56 pl-9 pr-3 py-2.5 text-xs font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-                style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
               />
             </div>
 
@@ -300,13 +329,17 @@ export function ProjectsPage() {
                     className="absolute right-0 top-full mt-1 w-44 rounded-xl shadow-lg z-10 py-1"
                     style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
                   >
-                    <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">Sort by</p>
-                    {([
-                      { key: 'default', label: 'Default' },
-                      { key: 'name', label: 'Name' },
-                      { key: 'progress', label: 'Progress' },
-                      { key: 'dueDate', label: 'Due date' },
-                    ] as { key: SortBy; label: string }[]).map((opt) => (
+                    <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                      Sort by
+                    </p>
+                    {(
+                      [
+                        { key: 'default', label: 'Default' },
+                        { key: 'name', label: 'Name' },
+                        { key: 'progress', label: 'Progress' },
+                        { key: 'dueDate', label: 'Due date' },
+                      ] as { key: SortBy; label: string }[]
+                    ).map((opt) => (
                       <button
                         key={opt.key}
                         onClick={() => {
@@ -314,7 +347,9 @@ export function ProjectsPage() {
                           setSortMenuOpen(false);
                         }}
                         className={`w-full px-3 py-2 text-left text-xs font-bold transition-colors ${
-                          sortBy === opt.key ? 'text-accent' : 'text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                          sortBy === opt.key
+                            ? 'text-accent'
+                            : 'text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800'
                         }`}
                       >
                         {opt.label}
@@ -332,21 +367,13 @@ export function ProjectsPage() {
           {filteredProjects.length === 0 ? (
             <Card variant="default" className="p-6 sm:p-10 text-center">
               <FloatingProjectsEmpty
-                title={
-                  filterStatus === 'ALL' && !searchQuery
-                    ? 'No active projects yet'
-                    : 'No projects found'
-                }
+                title={filterStatus === 'ALL' && !searchQuery ? 'No active projects yet' : 'No projects found'}
                 description={
                   filterStatus === 'ALL' && !searchQuery
                     ? 'Get started today — create your first project'
                     : 'Try a different filter or search term'
                 }
-                onCreateProject={
-                  filterStatus === 'ALL' && !searchQuery
-                    ? () => setCreateModalOpen(true)
-                    : undefined
-                }
+                onCreateProject={filterStatus === 'ALL' && !searchQuery ? () => setCreateModalOpen(true) : undefined}
                 showCtaHint={false}
               />
             </Card>
@@ -365,9 +392,7 @@ export function ProjectsPage() {
                     isHighlighted={highlightedProjectId === project.id}
                     onToggleFavorite={() => toggleFavorite(project.id)}
                     menuOpen={projectMenuOpen === project.id}
-                    onToggleMenu={() =>
-                      setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)
-                    }
+                    onToggleMenu={() => setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)}
                     onEdit={() => {
                       setEditingProject(project);
                       setProjectMenuOpen(null);
@@ -414,9 +439,7 @@ export function ProjectsPage() {
                     isLast={idx === filteredProjects.length - 1}
                     onToggleFavorite={() => toggleFavorite(project.id)}
                     menuOpen={projectMenuOpen === project.id}
-                    onToggleMenu={() =>
-                      setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)
-                    }
+                    onToggleMenu={() => setProjectMenuOpen(projectMenuOpen === project.id ? null : project.id)}
                     onEdit={() => {
                       setEditingProject(project);
                       setProjectMenuOpen(null);
@@ -473,10 +496,7 @@ function ProjectCard({
   const StatusIcon = statusConfig[project.status].icon;
   const daysRemaining = getDaysRemaining(project.dueDate);
   const isOverdue =
-    daysRemaining !== null &&
-    daysRemaining < 0 &&
-    project.status !== 'COMPLETED' &&
-    project.status !== 'CANCELLED';
+    daysRemaining !== null && daysRemaining < 0 && project.status !== 'COMPLETED' && project.status !== 'CANCELLED';
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 3;
 
   const color = project.color || 'var(--color-accent)';
@@ -490,8 +510,7 @@ function ProjectCard({
       style={
         isHighlighted
           ? {
-              boxShadow:
-                '0 0 0 3px var(--color-accent), 0 10px 40px -15px rgba(0,0,0,0.35)',
+              boxShadow: '0 0 0 3px var(--color-accent), 0 10px 40px -15px rgba(0,0,0,0.35)',
               borderColor: 'var(--color-accent)',
               transform: 'translateY(-4px) scale(1.01)',
               transition: 'all 0.35s cubic-bezier(0.2, 0.9, 0.25, 1)',
@@ -652,9 +671,7 @@ function ProjectCard({
         </div>
 
         {isOverdue && (
-          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-danger/10 text-danger">
-            Overdue
-          </span>
+          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-danger/10 text-danger">Overdue</span>
         )}
       </div>
     </Card>
@@ -693,7 +710,8 @@ function ProjectListRow({
 }) {
   const StatusIcon = statusConfig[project.status].icon;
   const daysRemaining = getDaysRemaining(project.dueDate);
-  const isOverdue = daysRemaining !== null && daysRemaining < 0 && project.status !== 'COMPLETED' && project.status !== 'CANCELLED';
+  const isOverdue =
+    daysRemaining !== null && daysRemaining < 0 && project.status !== 'COMPLETED' && project.status !== 'CANCELLED';
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 3;
   const progress = Math.min(Math.max(project.progress, 0), 100);
 
@@ -717,7 +735,10 @@ function ProjectListRow({
       <div className="flex items-center gap-3 min-w-0">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: `color-mix(in srgb, ${project.color || '#6366f1'} 16%, transparent)`, color: project.color || 'var(--color-accent)' }}
+          style={{
+            background: `color-mix(in srgb, ${project.color || '#6366f1'} 16%, transparent)`,
+            color: project.color || 'var(--color-accent)',
+          }}
         >
           <Folder size={16} />
         </div>
@@ -877,7 +898,10 @@ function ProjectsHero({
     mouseX.set((e.clientX - r.left) / r.width);
     mouseY.set((e.clientY - r.top) / r.height);
   };
-  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+  const onLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
 
   const pct = (n: number) => (totalCount > 0 ? Math.round((n / totalCount) * 100) : 0);
   const inProgressTotal = activeCount + onHoldCount;
@@ -892,38 +916,69 @@ function ProjectsHero({
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
-        boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
+        boxShadow:
+          '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
       }}
     >
       {/* Ambient blobs */}
-      <motion.div style={{ x: blob1X, y: blob1Y }}
-        className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}>
-        <div className="h-full w-full rounded-full"
-          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 70%)', filter: 'blur(36px)' }} />
+      <motion.div
+        style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.08, 1] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 70%)',
+            filter: 'blur(36px)',
+          }}
+        />
       </motion.div>
-      <motion.div style={{ x: blob2X }}
-        className="pointer-events-none absolute -bottom-10 -right-10 h-56 w-56 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}>
-        <div className="h-full w-full rounded-full"
-          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-success) 10%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      <motion.div
+        style={{ x: blob2X }}
+        className="pointer-events-none absolute -bottom-10 -right-10 h-56 w-56 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-success) 10%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
 
       {/* Dot grid */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.022]" aria-hidden="true"
-        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.022]"
+        aria-hidden="true"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
 
       <div className="relative flex flex-col gap-5 p-5 sm:p-7 lg:p-8">
-
         {/* Row 1: eyebrow + view toggle + CTA */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+          <div
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
             style={{
               background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
               borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
               color: 'var(--color-accent)',
-            }}>
-            <motion.span animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}>
+            }}
+          >
+            <motion.span
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
+            >
               <FolderKanban size={11} />
             </motion.span>
             Project workspace
@@ -931,26 +986,35 @@ function ProjectsHero({
 
           <div className="flex items-center gap-2">
             {/* View toggle */}
-            <div className="flex items-center gap-1 rounded-2xl border p-1"
-              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <div
+              className="flex items-center gap-1 rounded-2xl border p-1"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+            >
               {(['grid', 'list'] as ViewMode[]).map((vm) => (
-                <button key={vm} onClick={() => setViewMode(vm)}
+                <button
+                  key={vm}
+                  onClick={() => setViewMode(vm)}
                   className="flex items-center justify-center rounded-xl p-2 transition-all"
-                  style={viewMode === vm
-                    ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
-                    : { color: 'var(--color-text-muted)' }}>
+                  style={
+                    viewMode === vm
+                      ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
+                      : { color: 'var(--color-text-muted)' }
+                  }
+                >
                   {vm === 'grid' ? <Grid3x3 size={14} /> : <List size={14} />}
                 </button>
               ))}
             </div>
 
             {/* New project CTA */}
-            <button onClick={onNewProject}
+            <button
+              onClick={onNewProject}
               className="inline-flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-black text-white transition-all hover:opacity-90 active:scale-95"
               style={{
                 background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
                 boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 28%, transparent)',
-              }}>
+              }}
+            >
               <Plus size={14} /> New Project
             </button>
           </div>
@@ -960,13 +1024,11 @@ function ProjectsHero({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Left: headline + sub */}
           <div className="min-w-0">
-            <h1 className="font-black tracking-tight"
-              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}>
-              Your{' '}
-              <span style={{ color: 'var(--color-accent)' }}>
-                projects,
-              </span>{' '}
-              organized.
+            <h1
+              className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}
+            >
+              Your <span style={{ color: 'var(--color-accent)' }}>projects,</span> organized.
             </h1>
             <p className="mt-2 text-sm leading-relaxed max-w-sm" style={{ color: 'var(--color-text-secondary)' }}>
               {totalCount > 0
@@ -976,21 +1038,29 @@ function ProjectsHero({
 
             {/* Completion metric */}
             {totalCount > 0 && (
-              <div className="mt-4 inline-flex items-center gap-2.5 rounded-full border px-3.5 py-1.5"
+              <div
+                className="mt-4 inline-flex items-center gap-2.5 rounded-full border px-3.5 py-1.5"
                 style={{
-                  background: completionRate >= 50
-                    ? 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))'
-                    : 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
-                  borderColor: completionRate >= 50
-                    ? 'color-mix(in srgb, var(--color-success) 22%, transparent)'
-                    : 'color-mix(in srgb, var(--color-warning) 22%, transparent)',
-                }}>
-                <motion.span
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}>
-                  <ArrowUpRight size={13} style={{ color: completionRate >= 50 ? 'var(--color-success)' : 'var(--color-warning)' }} />
+                  background:
+                    completionRate >= 50
+                      ? 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))'
+                      : 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
+                  borderColor:
+                    completionRate >= 50
+                      ? 'color-mix(in srgb, var(--color-success) 22%, transparent)'
+                      : 'color-mix(in srgb, var(--color-warning) 22%, transparent)',
+                }}
+              >
+                <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+                  <ArrowUpRight
+                    size={13}
+                    style={{ color: completionRate >= 50 ? 'var(--color-success)' : 'var(--color-warning)' }}
+                  />
                 </motion.span>
-                <span className="text-xs font-black" style={{ color: completionRate >= 50 ? 'var(--color-success)' : 'var(--color-warning)' }}>
+                <span
+                  className="text-xs font-black"
+                  style={{ color: completionRate >= 50 ? 'var(--color-success)' : 'var(--color-warning)' }}
+                >
                   {completionRate}% completion rate
                 </span>
               </div>
@@ -998,18 +1068,29 @@ function ProjectsHero({
           </div>
 
           {/* Right: inline stats strip */}
-          <div className="flex items-center divide-x overflow-hidden rounded-2xl border lg:shrink-0"
-            style={{ borderColor: 'var(--color-border)' }}>
+          <div
+            className="flex items-center divide-x overflow-hidden rounded-2xl border lg:shrink-0"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
             {[
-              { value: totalCount,      label: 'Projects',   color: 'var(--color-accent)' },
-              { value: completedCount,  label: 'Completed',  color: 'var(--color-success)' },
-              { value: inProgressTotal, label: 'In progress',color: 'var(--color-info)' },
-              { value: overdueCount,    label: 'Overdue',    color: overdueCount > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)' },
+              { value: totalCount, label: 'Projects', color: 'var(--color-accent)' },
+              { value: completedCount, label: 'Completed', color: 'var(--color-success)' },
+              { value: inProgressTotal, label: 'In progress', color: 'var(--color-info)' },
+              {
+                value: overdueCount,
+                label: 'Overdue',
+                color: overdueCount > 0 ? 'var(--color-danger)' : 'var(--color-text-muted)',
+              },
             ].map((s, i) => (
-              <div key={s.label}
+              <div
+                key={s.label}
                 className="flex flex-col items-center gap-0.5 px-5 py-3 min-w-[72px]"
-                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-                <span className="text-[11px] font-mono uppercase tracking-[0.15em] leading-none" style={{ color: 'var(--color-text-muted)' }}>
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+              >
+                <span
+                  className="text-[11px] font-mono uppercase tracking-[0.15em] leading-none"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   {s.label}
                 </span>
                 <motion.span
@@ -1040,8 +1121,14 @@ function ProjectsSkeleton() {
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl animate-pulse" style={{ background: 'var(--color-surface-raised)' }} />
           <div>
-            <div className="h-6 w-32 rounded-lg animate-pulse mb-2" style={{ background: 'var(--color-surface-raised)' }} />
-            <div className="h-3.5 w-24 rounded-md animate-pulse" style={{ background: 'var(--color-surface-raised)' }} />
+            <div
+              className="h-6 w-32 rounded-lg animate-pulse mb-2"
+              style={{ background: 'var(--color-surface-raised)' }}
+            />
+            <div
+              className="h-3.5 w-24 rounded-md animate-pulse"
+              style={{ background: 'var(--color-surface-raised)' }}
+            />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1052,7 +1139,15 @@ function ProjectsSkeleton() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="p-4 rounded-2xl animate-pulse" style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', animationDelay: `${i * 60}ms` }}>
+          <div
+            key={i}
+            className="p-4 rounded-2xl animate-pulse"
+            style={{
+              background: 'var(--color-surface-raised)',
+              border: '1px solid var(--color-border)',
+              animationDelay: `${i * 60}ms`,
+            }}
+          >
             <div className="h-3 w-16 rounded mb-4" style={{ background: 'var(--color-border-subtle)' }} />
             <div className="h-7 w-10 rounded" style={{ background: 'var(--color-border-subtle)' }} />
           </div>
@@ -1061,7 +1156,11 @@ function ProjectsSkeleton() {
 
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-9 w-24 rounded-lg animate-pulse shrink-0" style={{ background: 'var(--color-surface-raised)', animationDelay: `${i * 50}ms` }} />
+          <div
+            key={i}
+            className="h-9 w-24 rounded-lg animate-pulse shrink-0"
+            style={{ background: 'var(--color-surface-raised)', animationDelay: `${i * 50}ms` }}
+          />
         ))}
       </div>
 
@@ -1070,7 +1169,11 @@ function ProjectsSkeleton() {
           <div
             key={i}
             className="p-5 rounded-2xl animate-pulse flex items-center gap-4"
-            style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', animationDelay: `${i * 80}ms` }}
+            style={{
+              background: 'var(--color-surface-raised)',
+              border: '1px solid var(--color-border)',
+              animationDelay: `${i * 80}ms`,
+            }}
           >
             <div className="w-14 h-14 rounded-2xl shrink-0" style={{ background: 'var(--color-border-subtle)' }} />
             <div className="flex-1">

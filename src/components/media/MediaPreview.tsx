@@ -74,11 +74,11 @@ function AttachmentPreview({ url, label = 'Attachment', compact = false }: Attac
           type="button"
           onClick={() => setZoomed(true)}
           className="group relative block overflow-hidden rounded-xl border text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
-          style={{ 
-            borderColor: 'var(--color-border)', 
+          style={{
+            borderColor: 'var(--color-border)',
             background: '#fff',
             width: '100%',
-            maxWidth: '280px'
+            maxWidth: '280px',
           }}
           aria-label={`Preview ${label.toLowerCase()}`}
         >
@@ -108,10 +108,7 @@ function AttachmentPreview({ url, label = 'Attachment', compact = false }: Attac
               onClick={() => setZoomed(false)}
               role="presentation"
             >
-              <div
-                className="relative max-h-[92vh] max-w-[96vw]"
-                onClick={(event) => event.stopPropagation()}
-              >
+              <div className="relative max-h-[92vh] max-w-[96vw]" onClick={(event) => event.stopPropagation()}>
                 <button
                   type="button"
                   onClick={() => setZoomed(false)}
@@ -142,11 +139,17 @@ function AttachmentPreview({ url, label = 'Attachment', compact = false }: Attac
       className="flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors hover:bg-black/5"
       style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+        style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
+      >
         <ExternalLink size={18} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--color-text-muted)' }}>
+        <span
+          className="block text-[11px] font-bold uppercase tracking-[0.18em]"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
           {label}
         </span>
         <span className="block truncate text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>

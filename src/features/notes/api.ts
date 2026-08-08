@@ -19,10 +19,8 @@ export const notesApi = {
     apiClient.patch<NoteDTO>(`/notes/${id}`, { isPinned }).then((r) => r.data),
 
   /** Archive a note */
-  archive: (id: string) =>
-    apiClient.patch<NoteDTO>(`/notes/${id}`, { archived: true }).then((r) => r.data),
+  archive: (id: string) => apiClient.patch<NoteDTO>(`/notes/${id}`, { archived: true }).then((r) => r.data),
 
   /** Unarchive a note */
-  unarchive: (id: string) =>
-    apiClient.patch<NoteDTO>(`/notes/${id}`, { archived: false }).then((r) => r.data),
+  unarchive: (id: string) => apiClient.patch<NoteDTO>(`/notes/${id}`, { archived: false }).then((r) => r.data),
 };

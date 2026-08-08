@@ -52,7 +52,7 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
       <div className="p-6 sm:p-7">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'var(--gradient-accent)' }}
           >
@@ -87,9 +87,7 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
                     >
                       <Icon size={14} />
                     </div>
-                    <p className="text-sm font-medium text-text-primary leading-relaxed flex-1">
-                      {insight.text}
-                    </p>
+                    <p className="text-sm font-medium text-text-primary leading-relaxed flex-1">{insight.text}</p>
                   </div>
                 </div>
               );
@@ -101,17 +99,19 @@ export function ProductivityInsights({ insights }: ProductivityInsightsProps) {
             style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
           >
             <p className="text-sm font-bold text-text-primary mb-1">No insights yet</p>
-            <p className="text-xs text-text-secondary">Keep using tasks, habits, and focus sessions to unlock patterns.</p>
+            <p className="text-xs text-text-secondary">
+              Keep using tasks, habits, and focus sessions to unlock patterns.
+            </p>
           </div>
         )}
 
         {/* Intelligence Engine Badge */}
         <div className="mt-5 text-center">
-          <span 
+          <span
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-            style={{ 
-              background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', 
-              color: 'var(--color-accent)' 
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+              color: 'var(--color-accent)',
             }}
           >
             <Lightbulb size={10} />

@@ -54,7 +54,10 @@ async function compressImage(file: File): Promise<File> {
   });
 }
 
-export async function uploadMediaFile(file: File, folder: 'attachments' | 'voice-notes' = 'attachments'): Promise<StoredFileResponse> {
+export async function uploadMediaFile(
+  file: File,
+  folder: 'attachments' | 'voice-notes' = 'attachments'
+): Promise<StoredFileResponse> {
   const prepared = await compressImage(file);
   const base64Data = await readAsDataUrl(prepared);
 

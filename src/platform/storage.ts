@@ -6,8 +6,8 @@
 /** Whether we're running inside a Capacitor native shell. */
 function isNative(): boolean {
   // Safe to call in browser — Capacitor injects this global when native
-  return typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
-    .Capacitor?.isNativePlatform === 'function'
+  return typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
+    ?.isNativePlatform === 'function'
     ? (window as unknown as { Capacitor: { isNativePlatform: () => boolean } }).Capacitor.isNativePlatform()
     : false;
 }

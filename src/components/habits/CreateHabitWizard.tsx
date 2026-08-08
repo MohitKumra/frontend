@@ -19,7 +19,13 @@ interface CreateHabitWizardProps {
   initialGoalId?: string | null;
 }
 
-export function CreateHabitWizard({ open, onClose, initialTitle = '', initialReminderTime = '', initialGoalId = null }: CreateHabitWizardProps) {
+export function CreateHabitWizard({
+  open,
+  onClose,
+  initialTitle = '',
+  initialReminderTime = '',
+  initialGoalId = null,
+}: CreateHabitWizardProps) {
   const createHabit = useCreateHabit();
   const goalsQuery = useGoals();
   const isMobile = useMediaQuery('(max-width: 640px)');
@@ -39,12 +45,18 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
 
   const canNext = () => {
     switch (step) {
-      case 0: return title.trim().length > 0;
-      case 1: return true; // Goal is optional
-      case 2: return true; // Reminder is optional
-      case 3: return true; // Duration is optional
-      case 4: return true; // Skip days is optional
-      default: return true;
+      case 0:
+        return title.trim().length > 0;
+      case 1:
+        return true; // Goal is optional
+      case 2:
+        return true; // Reminder is optional
+      case 3:
+        return true; // Duration is optional
+      case 4:
+        return true; // Skip days is optional
+      default:
+        return true;
     }
   };
 
@@ -185,7 +197,9 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
               >
                 <option value="">No goal</option>
                 {goals.map((g) => (
-                  <option key={g.id} value={g.id}>{g.title}</option>
+                  <option key={g.id} value={g.id}>
+                    {g.title}
+                  </option>
                 ))}
               </select>
               <p className="text-[11px] text-text-muted mt-2">
@@ -211,8 +225,8 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
                 placeholder="This will be the email subject / notification title"
               />
               <p className="text-[11px] text-text-muted leading-relaxed">
-                If you set a reminder time, you'll receive a notification or email at that time.
-                The message will be used as the title.
+                If you set a reminder time, you'll receive a notification or email at that time. The message will be
+                used as the title.
               </p>
             </div>
           )}
@@ -255,9 +269,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
 
               {durationMode === 'days' && (
                 <div>
-                  <label className="text-[11px] font-semibold text-text-muted mb-1.5 block">
-                    Number of days
-                  </label>
+                  <label className="text-[11px] font-semibold text-text-muted mb-1.5 block">Number of days</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
@@ -281,16 +293,12 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
               )}
 
               {durationMode === 'forever' && (
-                <p className="text-[11px] text-text-muted">
-                  No time limit — keep going as long as you like!
-                </p>
+                <p className="text-[11px] text-text-muted">No time limit — keep going as long as you like!</p>
               )}
             </div>
           )}
 
-          {step === 4 && (
-            <SkipDaysPicker value={skipDays} onChange={setSkipDays} />
-          )}
+          {step === 4 && <SkipDaysPicker value={skipDays} onChange={setSkipDays} />}
         </motion.div>
       </AnimatePresence>
 
@@ -311,12 +319,7 @@ export function CreateHabitWizard({ open, onClose, initialTitle = '', initialRem
             Next
           </Button>
         ) : (
-          <Button
-            onClick={handleSubmit}
-            loading={createHabit.isPending}
-            disabled={!canNext()}
-            className="flex-1"
-          >
+          <Button onClick={handleSubmit} loading={createHabit.isPending} disabled={!canNext()} className="flex-1">
             Create Habit
           </Button>
         )}

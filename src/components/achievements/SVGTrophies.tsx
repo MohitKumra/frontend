@@ -27,10 +27,7 @@ function shadeColor(hex: string, percent: number): string {
   const newR = Math.round((t - R) * p) + R;
   const newG = Math.round((t - G) * p) + G;
   const newB = Math.round((t - B) * p) + B;
-  return (
-    '#' +
-    (0x1000000 + newR * 0x10000 + newG * 0x100 + newB).toString(16).slice(1)
-  );
+  return '#' + (0x1000000 + newR * 0x10000 + newG * 0x100 + newB).toString(16).slice(1);
 }
 
 // ─── Premium 3D trophy engine ───────────────────────────────────────────────
@@ -73,8 +70,7 @@ function PremiumTrophy({ size, palette }: { size: number; palette: TierPalette }
 
   // Shared cup silhouette path, reused for both the fill and the clip path
   // that contains the specular highlight.
-  const cupPath =
-    'M9 8C9 6.2 15.5 5 24 5C32.5 5 39 6.2 39 8L39 15C39 22 33 27 24 27C15 27 9 22 9 15Z';
+  const cupPath = 'M9 8C9 6.2 15.5 5 24 5C32.5 5 39 6.2 39 8L39 15C39 22 33 27 24 27C15 27 9 22 9 15Z';
 
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -176,21 +172,22 @@ function PremiumTrophy({ size, palette }: { size: number; palette: TierPalette }
 
         {/* Specular highlight, clipped tightly to the cup so it never bleeds outside the metal */}
         <g clipPath={`url(#${cupClipId})`}>
-          <ellipse
-            cx="16.5"
-            cy="12"
-            rx="5.5"
-            ry="8"
-            fill="white"
-            opacity="0.5"
-            filter={`url(#${blurFilterId})`}
-          />
+          <ellipse cx="16.5" cy="12" rx="5.5" ry="8" fill="white" opacity="0.5" filter={`url(#${blurFilterId})`} />
           <ellipse cx="34" cy="20" rx="4" ry="9" fill="black" opacity="0.14" filter={`url(#${blurFilterId})`} />
         </g>
 
         {/* Rim — top opening of the cup, lighter than the body with a thin inner-shadow line */}
         <ellipse cx="24" cy="8" rx="15" ry="3.2" fill={palette.rimColor} />
-        <ellipse cx="24" cy="8.55" rx="13.2" ry="2.4" fill="none" stroke={palette.rimShadow} strokeWidth="0.5" opacity="0.55" />
+        <ellipse
+          cx="24"
+          cy="8.55"
+          rx="13.2"
+          ry="2.4"
+          fill="none"
+          stroke={palette.rimShadow}
+          strokeWidth="0.5"
+          opacity="0.55"
+        />
 
         {/* Embossed star emblem — darker star behind a smaller lighter star = recessed bevel */}
         <path
@@ -219,19 +216,11 @@ function PremiumTrophy({ size, palette }: { size: number; palette: TierPalette }
       </g>
 
       {/* Sparkles — sit outside the shadow group so they render crisp, not blurred */}
-      <path
-        d="M40 7L40.8 9.1L43 10L40.8 10.9L40 13L39.2 10.9L37 10L39.2 9.1L40 7Z"
-        fill={palette.sparkleColor}
-      />
+      <path d="M40 7L40.8 9.1L43 10L40.8 10.9L40 13L39.2 10.9L37 10L39.2 9.1L40 7Z" fill={palette.sparkleColor} />
       {palette.sparkleCount >= 2 && (
-        <path
-          d="M7.5 27L8 28.4L9.4 29L8 29.6L7.5 31L7 29.6L5.6 29L7 28.4L7.5 27Z"
-          fill={palette.sparkleColor}
-        />
+        <path d="M7.5 27L8 28.4L9.4 29L8 29.6L7.5 31L7 29.6L5.6 29L7 28.4L7.5 27Z" fill={palette.sparkleColor} />
       )}
-      {palette.sparkleCount >= 3 && (
-        <circle cx="8" cy="14" r="1" fill={palette.sparkleColor} opacity="0.85" />
-      )}
+      {palette.sparkleCount >= 3 && <circle cx="8" cy="14" r="1" fill={palette.sparkleColor} opacity="0.85" />}
     </svg>
   );
 }
@@ -573,7 +562,13 @@ export function BrainIcon({ size = 48, color = '#8B5CF6' }: IconProps) {
           <ellipse cx="19" cy="14" rx="6" ry="8" fill="white" opacity="0.4" filter={`url(#${blurId})`} />
           <ellipse cx="30" cy="30" rx="5" ry="8" fill="black" opacity="0.15" filter={`url(#${blurId})`} />
         </g>
-        <path d="M19 20C19 18 21 16 24 16C27 16 29 18 29 20" stroke={light} strokeWidth="1.4" fill="none" opacity="0.7" />
+        <path
+          d="M19 20C19 18 21 16 24 16C27 16 29 18 29 20"
+          stroke={light}
+          strokeWidth="1.4"
+          fill="none"
+          opacity="0.7"
+        />
         <path d="M21 22C21 21 22 20 24 20" stroke={light} strokeWidth="1" fill="none" opacity="0.6" />
         <path d="M27 22C27 21 26 20 24 20" stroke={light} strokeWidth="1" fill="none" opacity="0.6" />
         <path d="M16 14C14 16 14 20 16 22" stroke={dark} strokeWidth="1.4" fill="none" opacity="0.8" />
@@ -990,31 +985,46 @@ export function getAchievementIcon(key: string, tier: string): React.ReactNode {
   const color = tierColors[tier] ?? '#FFD700';
 
   switch (key) {
-    case 'first_task_done':      return <ShieldIcon size={48} color={tier === 'bronze' ? '#10B981' : color} />;
-    case 'task_crusher_25':      return <MedalIcon size={48} color={color} />;
-    case 'task_legend_100':      return <GoldTrophy size={48} color={color} />;
-    case 'task_master_500':      return <CrownIcon size={48} color={color} />;
-    case 'habit_spark':          return <FlameIcon size={48} color={color} />;
-    case 'seven_day_streak':     return <SilverTrophy size={48} color={color} />;
-    case 'thirty_day_streak':    return <GoldTrophy size={48} color={color} />;
-    case 'streak_50':            return <MedalIcon size={48} color={color} />;
-    case 'century_streak':       return <StarIcon size={48} color={color} />;
-    case 'habit_master_100':     return <AwardIcon size={48} color={color} />;
-    case 'focus_rookie':         return <TimerIcon size={48} color={color} />;
-    case 'deep_work_hour':       return <BrainIcon size={48} color={color} />;
-    case 'focus_marathon':       return <ZapIcon size={48} color={color} />;
-    case 'project_shipper':      return <RocketIcon size={48} color={color} />;
-    case 'project_legend_10':    return <TargetIcon size={48} color={color} />;
+    case 'first_task_done':
+      return <ShieldIcon size={48} color={tier === 'bronze' ? '#10B981' : color} />;
+    case 'task_crusher_25':
+      return <MedalIcon size={48} color={color} />;
+    case 'task_legend_100':
+      return <GoldTrophy size={48} color={color} />;
+    case 'task_master_500':
+      return <CrownIcon size={48} color={color} />;
+    case 'habit_spark':
+      return <FlameIcon size={48} color={color} />;
+    case 'seven_day_streak':
+      return <SilverTrophy size={48} color={color} />;
+    case 'thirty_day_streak':
+      return <GoldTrophy size={48} color={color} />;
+    case 'streak_50':
+      return <MedalIcon size={48} color={color} />;
+    case 'century_streak':
+      return <StarIcon size={48} color={color} />;
+    case 'habit_master_100':
+      return <AwardIcon size={48} color={color} />;
+    case 'focus_rookie':
+      return <TimerIcon size={48} color={color} />;
+    case 'deep_work_hour':
+      return <BrainIcon size={48} color={color} />;
+    case 'focus_marathon':
+      return <ZapIcon size={48} color={color} />;
+    case 'project_shipper':
+      return <RocketIcon size={48} color={color} />;
+    case 'project_legend_10':
+      return <TargetIcon size={48} color={color} />;
     case 'level_five': {
       if (tier === 'bronze') return <BronzeTrophy size={48} color={color} />;
       if (tier === 'silver') return <SilverTrophy size={48} color={color} />;
-      if (tier === 'gold')   return <GoldTrophy size={48} color={color} />;
+      if (tier === 'gold') return <GoldTrophy size={48} color={color} />;
       return <PlatinumTrophy size={48} color={color} />;
     }
     default: {
       if (tier === 'bronze') return <BronzeTrophy size={48} color={color} />;
       if (tier === 'silver') return <SilverTrophy size={48} color={color} />;
-      if (tier === 'gold')   return <GoldTrophy size={48} color={color} />;
+      if (tier === 'gold') return <GoldTrophy size={48} color={color} />;
       return <PlatinumTrophy size={48} color={color} />;
     }
   }

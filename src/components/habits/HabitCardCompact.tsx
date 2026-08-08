@@ -21,12 +21,24 @@ function MiniRing({ value, color, size = 44 }: { value: number; color: string; s
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
       <circle
-        cx={size / 2} cy={size / 2} r={radius} fill="none"
-        stroke="var(--color-border)" strokeWidth={stroke} opacity={0.35}
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="var(--color-border)"
+        strokeWidth={stroke}
+        opacity={0.35}
       />
       <circle
-        cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={stroke}
-        strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16,1,0.3,1)' }}
       />
@@ -92,50 +104,51 @@ function HabitMenu({
         <MoreHorizontal size={16} />
       </button>
 
-      {open && dropdownStyle && typeof document !== 'undefined' && createPortal(
-        <motion.div
-          ref={menuRef}
-          initial={{ opacity: 0, scale: 0.92, y: -4 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={undefined}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="rounded-xl overflow-hidden shadow-xl border"
-          style={dropdownStyle}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onEdit(habit); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-accent/10 transition-colors text-left"
+      {open &&
+        dropdownStyle &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, scale: 0.92, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={undefined}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="rounded-xl overflow-hidden shadow-xl border"
+            style={dropdownStyle}
+            onClick={(e) => e.stopPropagation()}
           >
-            <Pencil size={13} strokeWidth={2} />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onDelete(habit); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors text-left"
-          >
-            <Trash2 size={13} strokeWidth={2} />
-            Delete
-          </button>
-        </motion.div>,
-        document.body
-      )}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onEdit(habit);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-text-primary hover:bg-accent/10 transition-colors text-left"
+            >
+              <Pencil size={13} strokeWidth={2} />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onDelete(habit);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors text-left"
+            >
+              <Trash2 size={13} strokeWidth={2} />
+              Delete
+            </button>
+          </motion.div>,
+          document.body
+        )}
     </div>
   );
 }
 
 /** Edit habit modal */
-function EditHabitModal({
-  habit,
-  open,
-  onClose,
-}: {
-  habit: HabitDTO | null;
-  open: boolean;
-  onClose: () => void;
-}) {
+function EditHabitModal({ habit, open, onClose }: { habit: HabitDTO | null; open: boolean; onClose: () => void }) {
   const updateHabit = useUpdateHabit();
   const [title, setTitle] = useState('');
   const [reminderTime, setReminderTime] = useState('');
@@ -231,15 +244,7 @@ function EditHabitModal({
 }
 
 /** Delete confirmation dialog */
-function DeleteHabitModal({
-  habit,
-  open,
-  onClose,
-}: {
-  habit: HabitDTO | null;
-  open: boolean;
-  onClose: () => void;
-}) {
+function DeleteHabitModal({ habit, open, onClose }: { habit: HabitDTO | null; open: boolean; onClose: () => void }) {
   const deleteHabit = useDeleteHabit();
 
   const handleDelete = () => {
@@ -286,7 +291,13 @@ export function HabitCardCompact({ habit, isFocused }: { habit: HabitDTO; isFocu
     const availableDays = 7 - (habit.skipDays?.length ?? 0);
     const target = Math.max(availableDays, habit.targetPerWeek || 1);
     return Math.round((habit.completionsThisWeek / target) * 100);
-  }, [habit.completionsThisWeek, habit.completionDates.length, habit.durationDays, habit.targetPerWeek, habit.skipDays]);
+  }, [
+    habit.completionsThisWeek,
+    habit.completionDates.length,
+    habit.durationDays,
+    habit.targetPerWeek,
+    habit.skipDays,
+  ]);
 
   // Check if today is a skip day
   const isSkipDay = useMemo(() => {
@@ -308,7 +319,7 @@ export function HabitCardCompact({ habit, isFocused }: { habit: HabitDTO; isFocu
   const handleEdit = (h: HabitDTO) => setEditTarget(h);
   const handleDelete = (h: HabitDTO) => setDeleteTarget(h);
 
-      return (
+  return (
     <>
       <motion.div
         id={`habit-card-${habit.id}`}
@@ -333,152 +344,158 @@ export function HabitCardCompact({ habit, isFocused }: { habit: HabitDTO; isFocu
               : habit.completedToday
                 ? `1.5px solid color-mix(in srgb, ${category.color} 45%, var(--color-border))`
                 : '1px solid var(--color-border)',
-            boxShadow: isFocused
-              ? undefined
-              : '0 2px 10px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
+            boxShadow: isFocused ? undefined : '0 2px 10px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
             transition: 'border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-        {/* Left accent bar */}
-        <div
-          className="absolute left-0 top-0 bottom-0 w-1"
-          style={{ background: `linear-gradient(180deg, ${category.color}, ${category.color}99)` }}
-        />
-
-        {/* Menu button top-right */}
-        <div className="absolute top-2 right-2 z-20">
-          <HabitMenu habit={habit} onEdit={handleEdit} onDelete={handleDelete} />
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 pl-1.5 pr-12">
-          {/* Checkbox / Rest Day indicator */}
-          {isSkipDay ? (
-            <div className="shrink-0 flex items-center justify-center w-[26px] h-[26px] rounded-full" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' }}>
-              <Moon size={16} style={{ color: 'var(--color-text-muted)', opacity: 0.6 }} strokeWidth={1.5} />
-            </div>
-          ) : (
-            <button
-              onClick={handleToggle}
-              disabled={toggle.isPending}
-              className="shrink-0 transition-colors duration-150 tap-target"
-              aria-label={habit.completedToday ? 'Unmark today' : 'Mark done today'}
-            >
-              {habit.completedToday ? (
-                <CheckCircle2 size={26} style={{ color: 'var(--color-success)' }} fill="var(--color-success)" fillOpacity={0.16} />
-              ) : (
-                <Circle size={26} className="text-text-muted" />
-              )}
-            </button>
-          )}
-
-          {/* Icon */}
+          {/* Left accent bar */}
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-            style={{
-              background: `color-mix(in srgb, ${category.color} 14%, transparent)`,
-              color: category.color,
-              boxShadow: `0 3px 10px color-mix(in srgb, ${category.color} 20%, transparent)`,
-            }}
-          >
-            <Icon size={19} strokeWidth={2.25} />
+            className="absolute left-0 top-0 bottom-0 w-1"
+            style={{ background: `linear-gradient(180deg, ${category.color}, ${category.color}99)` }}
+          />
+
+          {/* Menu button top-right */}
+          <div className="absolute top-2 right-2 z-20">
+            <HabitMenu habit={habit} onEdit={handleEdit} onDelete={handleDelete} />
           </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <p className={`text-sm font-extrabold truncate ${habit.completedToday ? 'text-success' : 'text-text-primary'}`}>
-                {habit.title}
-              </p>
-              {habit.currentStreak > 0 && (
-                <span
-                  className="flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0"
-                  style={{ color: 'var(--color-warning)', background: 'color-mix(in srgb, var(--color-warning) 14%, transparent)' }}
-                >
-                  <Flame size={10} /> {habit.currentStreak}d
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ color: category.color, background: `color-mix(in srgb, ${category.color} 12%, transparent)` }}
+          <div className="flex items-center gap-2 sm:gap-3 pl-1.5 pr-12">
+            {/* Checkbox / Rest Day indicator */}
+            {isSkipDay ? (
+              <div
+                className="shrink-0 flex items-center justify-center w-[26px] h-[26px] rounded-full"
+                style={{ background: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' }}
               >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: category.color }} />
-                {category.name}
-              </span>
-              <p className="text-[10px] font-semibold text-text-muted">
-                {habit.completionsThisWeek}/{habit.targetPerWeek} this week
-              </p>
-              {/* Skip days */}
-              {habit.skipDays && habit.skipDays.length > 0 && (
+                <Moon size={16} style={{ color: 'var(--color-text-muted)', opacity: 0.6 }} strokeWidth={1.5} />
+              </div>
+            ) : (
+              <button
+                onClick={handleToggle}
+                disabled={toggle.isPending}
+                className="shrink-0 transition-colors duration-150 tap-target"
+                aria-label={habit.completedToday ? 'Unmark today' : 'Mark done today'}
+              >
+                {habit.completedToday ? (
+                  <CheckCircle2
+                    size={26}
+                    style={{ color: 'var(--color-success)' }}
+                    fill="var(--color-success)"
+                    fillOpacity={0.16}
+                  />
+                ) : (
+                  <Circle size={26} className="text-text-muted" />
+                )}
+              </button>
+            )}
+
+            {/* Icon */}
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: `color-mix(in srgb, ${category.color} 14%, transparent)`,
+                color: category.color,
+                boxShadow: `0 3px 10px color-mix(in srgb, ${category.color} 20%, transparent)`,
+              }}
+            >
+              <Icon size={19} strokeWidth={2.25} />
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <p
+                  className={`text-sm font-extrabold truncate ${habit.completedToday ? 'text-success' : 'text-text-primary'}`}
+                >
+                  {habit.title}
+                </p>
+                {habit.currentStreak > 0 && (
+                  <span
+                    className="flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0"
+                    style={{
+                      color: 'var(--color-warning)',
+                      background: 'color-mix(in srgb, var(--color-warning) 14%, transparent)',
+                    }}
+                  >
+                    <Flame size={10} /> {habit.currentStreak}d
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span
-                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{
-                    color: 'var(--color-text-muted)',
-                    border: '1px solid var(--color-border)',
+                    color: category.color,
+                    background: `color-mix(in srgb, ${category.color} 12%, transparent)`,
                   }}
                 >
-                  Skip: {habit.skipDays.map((d) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][d]).join(',')}
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: category.color }} />
+                  {category.name}
                 </span>
-              )}
-              {/* Duration completed */}
-              {habit.durationDays && !habit.isActive && (
-                <span
-                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{
-                    color: 'var(--color-success, #22C55E)',
-                    border: '1px solid color-mix(in srgb, var(--color-success, #22C55E) 30%, transparent)',
-                  }}
-                >
-                  Completed 🎉
-                </span>
-              )}
-              {habit.durationDays && habit.isActive && (
-                <span
-                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{
-                    color: 'var(--color-text-muted)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  {habit.completionDates.length}/{habit.durationDays}d
-                </span>
-              )}
+                <p className="text-[10px] font-semibold text-text-muted">
+                  {habit.completionsThisWeek}/{habit.targetPerWeek} this week
+                </p>
+                {/* Skip days */}
+                {habit.skipDays && habit.skipDays.length > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      color: 'var(--color-text-muted)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    Skip: {habit.skipDays.map((d) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d]).join(',')}
+                  </span>
+                )}
+                {/* Duration completed */}
+                {habit.durationDays && !habit.isActive && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      color: 'var(--color-success, #22C55E)',
+                      border: '1px solid color-mix(in srgb, var(--color-success, #22C55E) 30%, transparent)',
+                    }}
+                  >
+                    Completed 🎉
+                  </span>
+                )}
+                {habit.durationDays && habit.isActive && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      color: 'var(--color-text-muted)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    {habit.completionDates.length}/{habit.durationDays}d
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Reminder time */}
+            {habit.reminderTime && (
+              <div className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-text-muted shrink-0">
+                <Clock size={12} />
+                <span>{habit.reminderTime}</span>
+              </div>
+            )}
+
+            {/* Mini progress ring */}
+            <div className="relative flex items-center justify-center shrink-0">
+              <MiniRing value={progress} color={category.color} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-[10px] font-black text-text-primary">{progress}%</p>
+              </div>
             </div>
           </div>
-
-          {/* Reminder time */}
-          {habit.reminderTime && (
-            <div className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-text-muted shrink-0">
-              <Clock size={12} />
-              <span>{habit.reminderTime}</span>
-            </div>
-          )}
-
-          {/* Mini progress ring */}
-          <div className="relative flex items-center justify-center shrink-0">
-            <MiniRing value={progress} color={category.color} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-[10px] font-black text-text-primary">{progress}%</p>
-            </div>
-          </div>
-        </div>
         </Card>
       </motion.div>
 
       {/* Edit modal */}
-      <EditHabitModal
-        habit={editTarget}
-        open={editTarget !== null}
-        onClose={() => setEditTarget(null)}
-      />
+      <EditHabitModal habit={editTarget} open={editTarget !== null} onClose={() => setEditTarget(null)} />
 
       {/* Delete confirmation */}
-      <DeleteHabitModal
-        habit={deleteTarget}
-        open={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-      />
+      <DeleteHabitModal habit={deleteTarget} open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} />
 
       <HabitCelebrationModal
         open={showCelebration}

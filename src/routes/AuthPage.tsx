@@ -11,7 +11,9 @@ export function AuthPage() {
     <AuthFrame
       mode={isSignup ? 'signup' : 'login'}
       title={isSignup ? 'Create your account' : 'Welcome back'}
-      subtitle={isSignup ? "It only takes a minute. No credit card, ever." : "Sign in to continue your productivity workspace."}
+      subtitle={
+        isSignup ? 'It only takes a minute. No credit card, ever.' : 'Sign in to continue your productivity workspace.'
+      }
     >
       {isSignup ? <SignupForm /> : <LoginForm />}
     </AuthFrame>

@@ -71,9 +71,7 @@ export function JournalEntryAnalysis({ entryContent, entryId }: JournalAnalysisP
           </div>
         )}
 
-        {result.insight && (
-          <p className="text-xs text-text-secondary mb-2 leading-relaxed">{result.insight}</p>
-        )}
+        {result.insight && <p className="text-xs text-text-secondary mb-2 leading-relaxed">{result.insight}</p>}
 
         {result.reflectionPrompt && (
           <div
@@ -144,7 +142,8 @@ export function JournalWeeklyAnalysis() {
           <span className="text-xs font-bold text-text-primary">Weekly Journal Summary</span>
         </div>
         <p className="text-xs text-text-secondary mb-3 leading-relaxed">
-          Write more journal entries this week to unlock your AI-powered weekly summary with mood trends, key themes, and personalized insights.
+          Write more journal entries this week to unlock your AI-powered weekly summary with mood trends, key themes,
+          and personalized insights.
         </p>
         <div className="mt-3 text-center">
           <span
@@ -196,9 +195,7 @@ export function JournalWeeklyAnalysis() {
       )}
 
       {weekly.insight && (
-        <p className="text-[11px] font-medium text-text-primary mb-2 leading-relaxed">
-          💡 {weekly.insight}
-        </p>
+        <p className="text-[11px] font-medium text-text-primary mb-2 leading-relaxed">💡 {weekly.insight}</p>
       )}
 
       {weekly.suggestion && (
@@ -211,7 +208,8 @@ export function JournalWeeklyAnalysis() {
       )}
 
       <div className="mt-3 text-center">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider"
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider"
           style={{
             background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
             color: 'var(--color-accent)',

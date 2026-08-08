@@ -39,7 +39,10 @@ export function OverdueBanner({ tasks, onViewOverdue, onRescheduleAll, onStartHi
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+            style={{
+              background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)',
+              color: 'var(--color-danger)',
+            }}
           >
             <AlertTriangle size={22} />
           </div>
@@ -55,7 +58,8 @@ export function OverdueBanner({ tasks, onViewOverdue, onRescheduleAll, onStartHi
               of work — {hasHighPriority ? 'includes high-priority items' : 'all lower priority'}.
               {topTask && (
                 <>
-                  {' '}Top task:{' '}
+                  {' '}
+                  Top task:{' '}
                   <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                     {topTask.title}
                   </span>

@@ -11,9 +11,9 @@
 }
 
 .sidebar-nav-link {
-  transition: 
-    background-color 150ms ease, 
-    color 150ms ease, 
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
     transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
@@ -177,7 +177,7 @@ button:not(:disabled):active {
 input:focus,
 textarea:focus,
 select:focus {
-  transition: 
+  transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
     transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -246,16 +246,36 @@ select:focus {
 }
 
 /* Stagger delays (15-20ms per item) */
-.list-item-stagger:nth-child(1) { animation-delay: 0ms; }
-.list-item-stagger:nth-child(2) { animation-delay: 15ms; }
-.list-item-stagger:nth-child(3) { animation-delay: 30ms; }
-.list-item-stagger:nth-child(4) { animation-delay: 45ms; }
-.list-item-stagger:nth-child(5) { animation-delay: 60ms; }
-.list-item-stagger:nth-child(6) { animation-delay: 75ms; }
-.list-item-stagger:nth-child(7) { animation-delay: 90ms; }
-.list-item-stagger:nth-child(8) { animation-delay: 105ms; }
-.list-item-stagger:nth-child(9) { animation-delay: 120ms; }
-.list-item-stagger:nth-child(10) { animation-delay: 135ms; }
+.list-item-stagger:nth-child(1) {
+  animation-delay: 0ms;
+}
+.list-item-stagger:nth-child(2) {
+  animation-delay: 15ms;
+}
+.list-item-stagger:nth-child(3) {
+  animation-delay: 30ms;
+}
+.list-item-stagger:nth-child(4) {
+  animation-delay: 45ms;
+}
+.list-item-stagger:nth-child(5) {
+  animation-delay: 60ms;
+}
+.list-item-stagger:nth-child(6) {
+  animation-delay: 75ms;
+}
+.list-item-stagger:nth-child(7) {
+  animation-delay: 90ms;
+}
+.list-item-stagger:nth-child(8) {
+  animation-delay: 105ms;
+}
+.list-item-stagger:nth-child(9) {
+  animation-delay: 120ms;
+}
+.list-item-stagger:nth-child(10) {
+  animation-delay: 135ms;
+}
 
 /* ====== Page Transitions ====== */
 .page-transition-wrapper {
@@ -272,7 +292,7 @@ select:focus {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .sidebar-rail,
   .sidebar-nav-link,
   .sidebar-nav-link::before,

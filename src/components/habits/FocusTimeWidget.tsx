@@ -39,11 +39,7 @@ export function FocusTimeWidget() {
   }
 
   return (
-      <Card
-        variant="default"
-        className="p-3 sm:p-5 relative overflow-hidden"
-        style={{ borderRadius: '16px' }}
-      >
+    <Card variant="default" className="p-3 sm:p-5 relative overflow-hidden" style={{ borderRadius: '16px' }}>
       {/* Gradient background */}
       <div
         className="absolute inset-0 pointer-events-none opacity-5"
@@ -79,7 +75,10 @@ export function FocusTimeWidget() {
         </div>
 
         {/* Progress bar */}
-        <div className="relative h-1.5 sm:h-2 rounded-full overflow-hidden mb-3 sm:mb-5" style={{ background: 'var(--color-border)' }}>
+        <div
+          className="relative h-1.5 sm:h-2 rounded-full overflow-hidden mb-3 sm:mb-5"
+          style={{ background: 'var(--color-border)' }}
+        >
           <motion.div
             className="h-full rounded-full"
             style={{ background: 'var(--gradient-accent)' }}
@@ -101,9 +100,7 @@ export function FocusTimeWidget() {
                 className={`flex-1 rounded-t transition-all ${isCurrent ? 'opacity-100' : 'opacity-60'}`}
                 style={{
                   height: `${Math.max(heightPercent, 3)}%`,
-                  background: isCurrent 
-                    ? 'var(--gradient-accent)' 
-                    : 'var(--color-border)',
+                  background: isCurrent ? 'var(--gradient-accent)' : 'var(--color-border)',
                   boxShadow: isCurrent ? '0 0 12px var(--color-accent)40' : 'none',
                 }}
                 initial={{ height: 0 }}

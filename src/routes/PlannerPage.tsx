@@ -60,7 +60,10 @@ export function PlannerPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-4 sm:gap-6 md:gap-8 px-3 sm:px-4" aria-hidden={!!selectedDate}>
+    <div
+      className="w-full max-w-5xl mx-auto flex flex-col gap-4 sm:gap-6 md:gap-8 px-3 sm:px-4"
+      aria-hidden={!!selectedDate}
+    >
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -70,177 +73,177 @@ export function PlannerPage() {
         {/* Header */}
         <motion.div variants={itemVariants}>
           <PageHeader
-        icon={<Calendar size={20} />}
-        title="Planner"
-        subtitle="Manage your schedule"
-        action={
-          <TabBar
-            tabs={viewTabs}
-            activeTab={view}
-            onTabChange={(v) => setView(v as PlannerView)}
-            variant="pill"
-          />
-        }
+            icon={<Calendar size={20} />}
+            title="Planner"
+            subtitle="Manage your schedule"
+            action={
+              <TabBar tabs={viewTabs} activeTab={view} onTabChange={(v) => setView(v as PlannerView)} variant="pill" />
+            }
           />
         </motion.div>
 
         {/* Navigation Row */}
         <motion.div variants={itemVariants}>
-          <div 
+          <div
             className="flex items-center justify-between p-2 sm:p-3 rounded-xl sm:rounded-2xl border"
-        style={{
-          background: 'var(--color-surface-raised)',
-          borderColor: 'var(--color-border)',
-        }}
-      >
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800/50 text-text-secondary hover:text-text-primary transition-colors tap-target"
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <p className="text-xs sm:text-sm md:text-base font-extrabold text-text-primary text-center px-2 truncate">
-          {view === 'day' ? format(reference, 'EEEE, MMMM d')
-           : view === 'week' ? `Week of ${format(getWeekDays(reference)[0], 'MMMM d, yyyy')}`
-           : format(reference, 'MMMM yyyy')}
-        </p>
-        <button 
-          onClick={() => navigate(1)} 
-          className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800/50 text-text-secondary hover:text-text-primary transition-colors tap-target"
-        >
-          <ChevronRight size={18} />
-        </button>
+            style={{
+              background: 'var(--color-surface-raised)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800/50 text-text-secondary hover:text-text-primary transition-colors tap-target"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <p className="text-xs sm:text-sm md:text-base font-extrabold text-text-primary text-center px-2 truncate">
+              {view === 'day'
+                ? format(reference, 'EEEE, MMMM d')
+                : view === 'week'
+                  ? `Week of ${format(getWeekDays(reference)[0], 'MMMM d, yyyy')}`
+                  : format(reference, 'MMMM yyyy')}
+            </p>
+            <button
+              onClick={() => navigate(1)}
+              className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800/50 text-text-secondary hover:text-text-primary transition-colors tap-target"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
         </motion.div>
 
         {/* Day/Week/Month Views */}
         <motion.div variants={itemVariants}>
           {/* Day View */}
-          {view === 'day' && (
-        <DayColumn date={reference} tasks={tasksForDay(reference)} updateTask={updateTask} />
-      )}
+          {view === 'day' && <DayColumn date={reference} tasks={tasksForDay(reference)} updateTask={updateTask} />}
 
-      {/* Week View - Responsive Grid */}
-      {view === 'week' && (
-        <div className="grid  grid-cols-4 md:grid-cols-7 gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto no-scrollbar min-w-[320px] sm:min-w-[500px] md:min-w-[640px] py-1">
-          {getWeekDays(reference).map((day) => {
-            const dayTasks = tasksForDay(day);
-            const today = isToday(day);
-            return (
-              <div 
-                key={day.toISOString()} 
-                className="flex flex-col gap-1.5 sm:gap-2 md:gap-3 min-w-0 cursor-pointer"
-                onClick={() => setSelectedDate(day)}
-              >
-                <div 
-                  className={[
-                    'text-center py-2 sm:py-3 rounded-lg sm:rounded-xl md:rounded-2xl text-[10px] sm:text-xs font-extrabold flex flex-col border',
-                    today 
-                      ? 'text-white border-transparent shadow-sm'
-                      : 'text-text-secondary border-border',
-                  ].join(' ')}
-                  style={{
-                    background: today ? 'var(--gradient-accent)' : 'var(--color-surface)',
-                  }}
-                >
-                  <span className="uppercase tracking-wider opacity-75">{format(day, 'EEE')}</span>
-                  <span className="text-base sm:text-lg md:text-xl font-black mt-0.5">{format(day, 'd')}</span>
-                </div>
-                <div className="flex flex-col gap-1 min-h-[80px] sm:min-h-[100px] md:min-h-[140px] p-1 rounded-lg sm:rounded-xl md:rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/20 border border-dashed border-border">
-                  {dayTasks.map((t) => (
-                    <div 
-                      key={t.id} 
-                      className={[
-                        'p-1.5 sm:p-2 rounded-md sm:rounded-lg text-[10px] sm:text-[11px] leading-snug font-bold border transition-all duration-200',
-                        t.status === 'DONE'
-                          ? 'bg-success/5 border-success/15 text-success line-through opacity-70'
-                          : 'bg-accent-subtle border-accent-border text-accent',
-                      ].join(' ')}
-                    >
-                      <p className="line-clamp-1 sm:line-clamp-2">{t.title}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Month View - Responsive Grid */}
-      {view === 'month' && (
-        <div className="overflow-x-auto no-scrollbar min-w-[320px] sm:min-w-[500px] md:min-w-[768px] py-1">
-          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 mb-2 sm:mb-3">
-            {['M','T','W','T','F','S','S'].map((d, i) => (
-              <div key={i} className="text-center text-[9px] sm:text-[10px] uppercase font-bold text-text-muted py-1 tracking-wider">{d}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2">
-            {getMonthDays(reference).map((day) => {
-              const dayTasks = tasksForDay(day);
-              const today = isToday(day);
-              const inCurrentMonth = isSameMonth(day, reference);
-              return (
-                <div 
-                  key={day.toISOString()} 
-                  className={[
-                    'min-h-[70px] sm:min-h-[90px] md:min-h-[110px] p-1.5 sm:p-2 md:p-2.5 rounded-lg sm:rounded-xl md:rounded-2xl border flex flex-col',
-                    today 
-                      ? 'border-accent shadow-sm'
-                      : inCurrentMonth
-                        ? 'border-border'
-                        : 'border-border/30',
-                    inCurrentMonth ? 'cursor-pointer' : 'cursor-default',
-                  ].join(' ')}
-                  style={{
-                    background: inCurrentMonth ? 'var(--color-surface)' : 'var(--color-surface-raised)',
-                    opacity: inCurrentMonth ? 1 : 0.4,
-                  }}
-                  onClick={() => inCurrentMonth && setSelectedDate(day)}
-                >
-                  <p 
-                    className={[
-                      'text-[9px] sm:text-xs font-bold self-start mb-1 sm:mb-2 rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center',
-                      today ? 'text-text-onaccent font-black' : inCurrentMonth ? 'text-text-secondary' : 'text-text-muted',
-                    ].join(' ')}
-                    style={{
-                      background: today ? 'var(--gradient-accent)' : undefined,
-                    }}
+          {/* Week View - Responsive Grid */}
+          {view === 'week' && (
+            <div className="grid  grid-cols-4 md:grid-cols-7 gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto no-scrollbar min-w-[320px] sm:min-w-[500px] md:min-w-[640px] py-1">
+              {getWeekDays(reference).map((day) => {
+                const dayTasks = tasksForDay(day);
+                const today = isToday(day);
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className="flex flex-col gap-1.5 sm:gap-2 md:gap-3 min-w-0 cursor-pointer"
+                    onClick={() => setSelectedDate(day)}
                   >
-                    {format(day, 'd')}
-                  </p>
-                  {inCurrentMonth && (
-                    <div className="flex-1 flex flex-col gap-0.5 sm:gap-1 overflow-y-auto no-scrollbar">
-                      {dayTasks.slice(0, 2).map((t) => (
-                        <div 
-                          key={t.id} 
+                    <div
+                      className={[
+                        'text-center py-2 sm:py-3 rounded-lg sm:rounded-xl md:rounded-2xl text-[10px] sm:text-xs font-extrabold flex flex-col border',
+                        today ? 'text-white border-transparent shadow-sm' : 'text-text-secondary border-border',
+                      ].join(' ')}
+                      style={{
+                        background: today ? 'var(--gradient-accent)' : 'var(--color-surface)',
+                      }}
+                    >
+                      <span className="uppercase tracking-wider opacity-75">{format(day, 'EEE')}</span>
+                      <span className="text-base sm:text-lg md:text-xl font-black mt-0.5">{format(day, 'd')}</span>
+                    </div>
+                    <div className="flex flex-col gap-1 min-h-[80px] sm:min-h-[100px] md:min-h-[140px] p-1 rounded-lg sm:rounded-xl md:rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/20 border border-dashed border-border">
+                      {dayTasks.map((t) => (
+                        <div
+                          key={t.id}
                           className={[
-                            'text-[8px] sm:text-[9px] font-bold rounded-sm sm:rounded-md px-1 py-0.5 sm:px-1.5 sm:py-0.5 truncate border',
+                            'p-1.5 sm:p-2 rounded-md sm:rounded-lg text-[10px] sm:text-[11px] leading-snug font-bold border transition-all duration-200',
                             t.status === 'DONE'
-                              ? 'bg-success/5 border-success/10 text-success opacity-70 line-through'
+                              ? 'bg-success/5 border-success/15 text-success line-through opacity-70'
                               : 'bg-accent-subtle border-accent-border text-accent',
                           ].join(' ')}
                         >
-                          {t.title}
+                          <p className="line-clamp-1 sm:line-clamp-2">{t.title}</p>
                         </div>
                       ))}
-                      {dayTasks.length > 2 && (
-                        <div className="text-[8px] sm:text-[9px] text-text-muted font-bold pl-1">{dayTasks.length - 2} more</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Month View - Responsive Grid */}
+          {view === 'month' && (
+            <div className="overflow-x-auto no-scrollbar min-w-[320px] sm:min-w-[500px] md:min-w-[768px] py-1">
+              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 mb-2 sm:mb-3">
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                  <div
+                    key={i}
+                    className="text-center text-[9px] sm:text-[10px] uppercase font-bold text-text-muted py-1 tracking-wider"
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2">
+                {getMonthDays(reference).map((day) => {
+                  const dayTasks = tasksForDay(day);
+                  const today = isToday(day);
+                  const inCurrentMonth = isSameMonth(day, reference);
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={[
+                        'min-h-[70px] sm:min-h-[90px] md:min-h-[110px] p-1.5 sm:p-2 md:p-2.5 rounded-lg sm:rounded-xl md:rounded-2xl border flex flex-col',
+                        today ? 'border-accent shadow-sm' : inCurrentMonth ? 'border-border' : 'border-border/30',
+                        inCurrentMonth ? 'cursor-pointer' : 'cursor-default',
+                      ].join(' ')}
+                      style={{
+                        background: inCurrentMonth ? 'var(--color-surface)' : 'var(--color-surface-raised)',
+                        opacity: inCurrentMonth ? 1 : 0.4,
+                      }}
+                      onClick={() => inCurrentMonth && setSelectedDate(day)}
+                    >
+                      <p
+                        className={[
+                          'text-[9px] sm:text-xs font-bold self-start mb-1 sm:mb-2 rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center',
+                          today
+                            ? 'text-text-onaccent font-black'
+                            : inCurrentMonth
+                              ? 'text-text-secondary'
+                              : 'text-text-muted',
+                        ].join(' ')}
+                        style={{
+                          background: today ? 'var(--gradient-accent)' : undefined,
+                        }}
+                      >
+                        {format(day, 'd')}
+                      </p>
+                      {inCurrentMonth && (
+                        <div className="flex-1 flex flex-col gap-0.5 sm:gap-1 overflow-y-auto no-scrollbar">
+                          {dayTasks.slice(0, 2).map((t) => (
+                            <div
+                              key={t.id}
+                              className={[
+                                'text-[8px] sm:text-[9px] font-bold rounded-sm sm:rounded-md px-1 py-0.5 sm:px-1.5 sm:py-0.5 truncate border',
+                                t.status === 'DONE'
+                                  ? 'bg-success/5 border-success/10 text-success opacity-70 line-through'
+                                  : 'bg-accent-subtle border-accent-border text-accent',
+                              ].join(' ')}
+                            >
+                              {t.title}
+                            </div>
+                          ))}
+                          {dayTasks.length > 2 && (
+                            <div className="text-[8px] sm:text-[9px] text-text-muted font-bold pl-1">
+                              {dayTasks.length - 2} more
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </motion.div>
       </motion.div>
       {/* Day Detail Modal — a calendar app's day-agenda view, not a form list */}
-      <Modal 
-        open={!!selectedDate} 
-        onClose={() => setSelectedDate(null)} 
+      <Modal
+        open={!!selectedDate}
+        onClose={() => setSelectedDate(null)}
         title={selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : ''}
         maxWidth="max-w-2xl"
       >
@@ -275,7 +278,10 @@ export function PlannerPage() {
                 </div>
 
                 {/* Segmented progress bar — one bespoke bar, not a generic chart widget */}
-                <div className="flex w-full h-2 rounded-full overflow-hidden mb-3" style={{ background: 'var(--color-border-subtle)' }}>
+                <div
+                  className="flex w-full h-2 rounded-full overflow-hidden mb-3"
+                  style={{ background: 'var(--color-border-subtle)' }}
+                >
                   {(['DONE', 'IN_PROGRESS', 'TODO'] as const).map((key) =>
                     statusCounts[key] > 0 ? (
                       <div
@@ -336,7 +342,11 @@ export function PlannerPage() {
   );
 }
 
-function DayColumn({ date, tasks, updateTask }: {
+function DayColumn({
+  date,
+  tasks,
+  updateTask,
+}: {
   date: Date;
   tasks: TaskDTO[];
   updateTask: ReturnType<typeof useUpdateTask>;
@@ -347,7 +357,9 @@ function DayColumn({ date, tasks, updateTask }: {
         {format(date, 'EEEE, MMMM d')}
       </p>
       {tasks.length === 0 ? (
-        <p className="text-xs sm:text-sm text-text-muted py-8 sm:py-10 text-center font-bold">No tasks scheduled for this day</p>
+        <p className="text-xs sm:text-sm text-text-muted py-8 sm:py-10 text-center font-bold">
+          No tasks scheduled for this day
+        </p>
       ) : (
         <div>
           {tasks.map((t, i) => (

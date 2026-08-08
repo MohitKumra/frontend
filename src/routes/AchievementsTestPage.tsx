@@ -50,14 +50,9 @@ export function AchievementsTestPage() {
         {grouped.map(({ tier, items }) => (
           <div key={tier}>
             <h2 className="text-lg font-bold text-text-primary capitalize mb-4 flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ background: tierColors[tier] }}
-              />
+              <span className="w-3 h-3 rounded-full" style={{ background: tierColors[tier] }} />
               {tier}
-              <span className="text-xs font-medium text-text-muted ml-1">
-                ({items.length})
-              </span>
+              <span className="text-xs font-medium text-text-muted ml-1">({items.length})</span>
             </h2>
 
             <div className="flex flex-col gap-6">
@@ -72,15 +67,24 @@ export function AchievementsTestPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                       {/* Locked version */}
-                      <div className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border border-dashed" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-                        <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-border)' }}>
+                      <div
+                        className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border border-dashed"
+                        style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                      >
+                        <div
+                          className="w-16 h-16 rounded-xl flex items-center justify-center"
+                          style={{ background: 'var(--color-border)' }}
+                        >
                           <div style={{ filter: 'grayscale(1) brightness(0) opacity(0.3)', width: 36, height: 36 }}>
                             {getAchievementIcon(achievement.key, achievement.tier)}
                           </div>
                         </div>
                         <p className="text-xs font-bold text-text-muted">{achievement.title}</p>
                         <p className="text-[10px] text-text-muted">{achievement.description}</p>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                        >
                           +{achievement.pointsAwarded} XP
                         </span>
                         <div className="w-full">
@@ -89,22 +93,34 @@ export function AchievementsTestPage() {
                             <span>{achievement.progressTarget}</span>
                           </div>
                           <div className="w-full h-1 bg-border rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ background: tierColor, width: `${achievement.progress}%`, opacity: 0.4 }} />
+                            <div
+                              className="h-full rounded-full"
+                              style={{ background: tierColor, width: `${achievement.progress}%`, opacity: 0.4 }}
+                            />
                           </div>
                         </div>
                         <span className="text-[8px] font-bold uppercase tracking-wider text-text-muted">LOCKED</span>
                       </div>
 
                       {/* Unlocked version */}
-                      <div className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border" style={{ background: 'var(--color-surface-raised)', borderColor: `${tierColor}40` }}>
-                        <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: `${tierColor}20` }}>
+                      <div
+                        className="flex flex-col items-center text-center gap-2 p-4 rounded-xl border"
+                        style={{ background: 'var(--color-surface-raised)', borderColor: `${tierColor}40` }}
+                      >
+                        <div
+                          className="w-16 h-16 rounded-xl flex items-center justify-center"
+                          style={{ background: `${tierColor}20` }}
+                        >
                           <div style={{ width: 36, height: 36 }}>
                             {getAchievementIcon(achievement.key, achievement.tier)}
                           </div>
                         </div>
                         <p className="text-xs font-bold text-text-primary">{achievement.title}</p>
                         <p className="text-[10px] text-text-muted">{achievement.description}</p>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${tierColor}20`, color: tierColor }}>
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: `${tierColor}20`, color: tierColor }}
+                        >
                           +{achievement.pointsAwarded} XP
                         </span>
                         <div className="w-full">
@@ -113,10 +129,15 @@ export function AchievementsTestPage() {
                             <span>{achievement.progressTarget}</span>
                           </div>
                           <div className="w-full h-1 bg-border rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ background: tierColor, width: `${achievement.progress}%` }} />
+                            <div
+                              className="h-full rounded-full"
+                              style={{ background: tierColor, width: `${achievement.progress}%` }}
+                            />
                           </div>
                         </div>
-                        <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: tierColor }}>UNLOCKED</span>
+                        <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: tierColor }}>
+                          UNLOCKED
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -132,14 +153,16 @@ export function AchievementsTestPage() {
         <h3 className="text-base font-bold text-text-primary mb-3">Legend</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {tierOrder.map((tier) => (
-            <div key={tier} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--color-surface)' }}>
+            <div
+              key={tier}
+              className="flex items-center gap-3 p-3 rounded-xl"
+              style={{ background: 'var(--color-surface)' }}
+            >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ background: `${tierColors[tier]}30` }}
               >
-                <div style={{ width: 20, height: 20 }}>
-                  {getAchievementIcon('level_five', tier)}
-                </div>
+                <div style={{ width: 20, height: 20 }}>{getAchievementIcon('level_five', tier)}</div>
               </div>
               <div>
                 <p className="text-sm font-bold text-text-primary capitalize">{tier}</p>

@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import {
   CalendarDays,
@@ -12,6 +12,7 @@ import {
   LayoutList,
   Timer,
   CheckSquare,
+  CheckCircle2,
   Circle,
   Sparkles,
   ArrowRight,
@@ -39,7 +40,6 @@ import {
 import { useCalendarOverview } from '../features/calendar/hooks/useCalendar';
 import { useSettings, useSyncGoogleCalendar } from '../features/settings/hooks/useSettings';
 import { LoadingScreen } from '../components/ui/Spinner';
-import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { AgendaTaskRow } from '../components/planner/AgendaTaskRow';
@@ -154,7 +154,7 @@ export function CalendarPage() {
       from: format(range.from, 'yyyy-MM-dd'),
       to: format(range.to, 'yyyy-MM-dd'),
     }),
-    [range.from, range.to],
+    [range.from, range.to]
   );
 
   const { data, isLoading } = useCalendarOverview(calendarRange);
@@ -182,7 +182,7 @@ export function CalendarPage() {
   const todayEvents = useMemo(
     () => eventsByDay.get(todayKey) ?? [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [eventsByDay, todayKey],
+    [eventsByDay, todayKey]
   );
 
   const rangeLabel = formatRangeLabel(view, reference);
@@ -225,21 +225,20 @@ export function CalendarPage() {
     return set;
   }, [eventsByDay, plannerTasks]);
 
-  const tasksForDay = useCallback((date: Date) =>
-    plannerTasks
-      .filter((task: TaskDTO) => task.dueDate && isSameDay(new Date(task.dueDate), date))
-      .sort((a: TaskDTO, b: TaskDTO) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()),
-  [plannerTasks]);
+  const tasksForDay = useCallback(
+    (date: Date) =>
+      plannerTasks
+        .filter((task: TaskDTO) => task.dueDate && isSameDay(new Date(task.dueDate), date))
+        .sort((a: TaskDTO, b: TaskDTO) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()),
+    [plannerTasks]
+  );
 
   const todaysTasks = useMemo(() => tasksForDay(new Date()), [tasksForDay]);
   const todaysDone = todaysTasks.filter((t) => t.status === 'DONE').length;
   const todaysTotal = todaysTasks.length;
 
   const weekDays = useMemo(() => getWeekDays(new Date()), []);
-  const weekTasks = useMemo(
-    () => weekDays.flatMap((d) => tasksForDay(d)),
-    [tasksForDay, weekDays],
-  );
+  const weekTasks = useMemo(() => weekDays.flatMap((d) => tasksForDay(d)), [tasksForDay, weekDays]);
   const weekDone = weekTasks.filter((t) => t.status === 'DONE').length;
   const weekInProgress = weekTasks.filter((t) => t.status === 'IN_PROGRESS').length;
   const weekTodo = weekTasks.filter((t) => t.status === 'TODO').length;
@@ -262,14 +261,22 @@ export function CalendarPage() {
       })
       .map((t) => ({ id: `task-${t.id}`, title: t.title, date: new Date(t.dueDate!), kind: 'Task' as const }));
     const fromFocusEvents = events
-      .filter((e: CalendarEventDTO) => e.type === 'FOCUS_SESSION' && new Date(e.startAt) >= startOfDay(now) && new Date(e.startAt) <= horizon)
+      .filter(
+        (e: CalendarEventDTO) =>
+          e.type === 'FOCUS_SESSION' && new Date(e.startAt) >= startOfDay(now) && new Date(e.startAt) <= horizon
+      )
       .filter((e: CalendarEventDTO) => {
         const key = `event-${e.id}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .map((e: CalendarEventDTO) => ({ id: `event-${e.id}`, title: e.title, date: new Date(e.startAt), kind: EVENT_META[e.type].label }));
+      .map((e: CalendarEventDTO) => ({
+        id: `event-${e.id}`,
+        title: e.title,
+        date: new Date(e.startAt),
+        kind: EVENT_META[e.type].label,
+      }));
     return [...fromTasks, ...fromFocusEvents].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 5);
   }, [plannerTasks, events]);
 
@@ -315,80 +322,18 @@ export function CalendarPage() {
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4">
         {/* Header */}
         <motion.div variants={itemVariants}>
-          <PageHeader
-            icon={<CalendarDays size={18} />}
-            title="Calendar"
-            subtitle="Plan your time. Achieve more."
-            action={
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={jumpToToday}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all hover:shadow-sm"
-                  style={{
-                    background: 'var(--color-surface-raised)',
-                    borderColor: 'var(--color-border)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                >
-                  Today
-                </button>
-                <div className="np-pill-segmented">
-                  {(['day', 'week', 'month'] as CalendarView[]).map((v) => {
-                    const isActive = view === v;
-                    return (
-                      <button
-                        key={v}
-                        onClick={() => setView(v)}
-                        className={`np-pill ${isActive ? 'is-active' : ''}`}
-                      >
-                        {isActive && (
-                          <motion.div
-                            layoutId="calendar-view-indicator"
-                            className="np-pill-indicator"
-                            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
-                          />
-                        )}
-                        <span className="relative z-[1] flex items-center gap-[5px]">
-                          {v.charAt(0).toUpperCase() + v.slice(1)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setNewMenuOpen((o) => !o)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
-                      style={{ background: 'var(--gradient-accent)' }}
-                    >
-                      <Plus size={14} /> New <ChevronDown size={12} />
-                    </button>
-                    {newMenuOpen && (
-                      <div
-                        className="absolute right-0 mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
-                        style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-                      >
-                        {[
-                          { label: 'Task', to: '/tasks' },
-                          { label: 'Focus', to: '/focus' },
-                          { label: 'Habit', to: '/habits' },
-                        ].map((item) => (
-                        <button
-                          key={item.label}
-                          type="button"
-                          onClick={() => { setNewMenuOpen(false); navigate(item.to); }}
-                          className="w-full text-left px-3 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            }
+          <CalendarHero
+            view={view}
+            setView={setView}
+            onJumpToday={jumpToToday}
+            onNewMenuOpen={() => setNewMenuOpen((o) => !o)}
+            newMenuOpen={newMenuOpen}
+            setNewMenuOpen={setNewMenuOpen}
+            summary={summary}
+            todaysTasks={todaysTasks}
+            todaysDone={todaysDone}
+            weekRate={weekRate}
+            navigate={navigate}
           />
         </motion.div>
 
@@ -410,7 +355,10 @@ export function CalendarPage() {
           {/* MAIN COLUMN */}
           <motion.div variants={itemVariants} className="order-1 lg:order-2 flex flex-col gap-4 min-w-0">
             {isLoading ? (
-              <div className="flex items-center justify-center py-16 rounded-2xl border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+              <div
+                className="flex items-center justify-center py-16 rounded-2xl border"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+              >
                 <div className="flex flex-col items-center gap-2">
                   <RefreshCw size={22} className="text-text-muted animate-spin" />
                   <p className="text-sm font-bold text-text-muted">Loading calendar data...</p>
@@ -536,6 +484,284 @@ export function CalendarPage() {
   );
 }
 
+/* ====== Calendar Hero ====== */
+
+function CalendarHero({
+  view,
+  setView,
+  onJumpToday,
+  onNewMenuOpen,
+  newMenuOpen,
+  setNewMenuOpen,
+  summary,
+  todaysTasks,
+  todaysDone,
+  weekRate,
+  navigate,
+}: {
+  view: CalendarView;
+  setView: (v: CalendarView) => void;
+  onJumpToday: () => void;
+  onNewMenuOpen: () => void;
+  newMenuOpen: boolean;
+  setNewMenuOpen: (fn: (v: boolean) => boolean) => void;
+  summary: { tasks: number; focus: number };
+  todaysTasks: TaskDTO[];
+  todaysDone: number;
+  weekRate: number;
+  navigate: ReturnType<typeof useNavigate>;
+}) {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const springX = useSpring(mouseX, { stiffness: 55, damping: 18 });
+  const springY = useSpring(mouseY, { stiffness: 55, damping: 18 });
+  const blob1X = useTransform(springX, [0, 1], ['-5%', '5%']);
+  const blob1Y = useTransform(springY, [0, 1], ['-5%', '5%']);
+  const blob2X = useTransform(springX, [0, 1], ['5%', '-5%']);
+  const blob2Y = useTransform(springY, [0, 1], ['5%', '-5%']);
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = heroRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width);
+    mouseY.set((e.clientY - rect.top) / rect.height);
+  };
+  const onMouseLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
+
+  const todaysTotal = todaysTasks.length;
+  const todayPct = todaysTotal > 0 ? Math.round((todaysDone / todaysTotal) * 100) : 0;
+
+  const chips = [
+    {
+      icon: <CheckCircle2 size={12} />,
+      value: todaysDone,
+      label: 'done today',
+      color: 'var(--color-success)',
+      bg: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+    },
+    {
+      icon: <ListTodo size={12} />,
+      value: todaysTotal,
+      label: 'scheduled',
+      color: 'var(--color-accent)',
+      bg: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+    },
+    {
+      icon: <Clock3 size={12} />,
+      value: summary.focus,
+      label: 'focus sessions',
+      color: 'var(--color-info, #3b82f6)',
+      bg: 'color-mix(in srgb, var(--color-info, #3b82f6) 10%, transparent)',
+    },
+    {
+      icon: <Zap size={12} />,
+      value: `${weekRate}%`,
+      label: 'week rate',
+      color: '#F59E0B',
+      bg: 'rgba(245,158,11,0.10)',
+    },
+  ];
+
+  const viewTabs = [
+    { id: 'day' as CalendarView, label: 'Day', icon: <LayoutList size={12} /> },
+    { id: 'week' as CalendarView, label: 'Week', icon: <CalendarDays size={12} /> },
+    { id: 'month' as CalendarView, label: 'Month', icon: <Clock3 size={12} /> },
+  ];
+
+  return (
+    <motion.div
+      ref={heroRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      className="relative rounded-2xl"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+      }}
+    >
+      {/* Clipped background layer — keeps blobs inside the rounded border without clipping the dropdown */}
+      <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none" aria-hidden="true">
+        {/* Ambient blob 1 */}
+        <motion.div
+          style={{ x: blob1X, y: blob1Y }}
+          className="absolute -top-24 -left-24 h-[420px] w-[420px] rounded-full"
+          animate={{ scale: [1, 1.07, 1] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <div
+            className="h-full w-full rounded-full"
+            style={{
+              background:
+                'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 70%)',
+              filter: 'blur(40px)',
+            }}
+          />
+        </motion.div>
+
+        {/* Ambient blob 2 */}
+        <motion.div
+          style={{ x: blob2X, y: blob2Y }}
+          className="absolute -bottom-16 right-0 h-[320px] w-[320px] rounded-full"
+          animate={{ scale: [1, 1.09, 1] }}
+          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        >
+          <div
+            className="h-full w-full rounded-full"
+            style={{
+              background:
+                'radial-gradient(circle, color-mix(in srgb, var(--color-info, #3b82f6) 8%, transparent), transparent 70%)',
+              filter: 'blur(44px)',
+            }}
+          />
+        </motion.div>
+
+        {/* Dot grid */}
+        <div
+          className="absolute inset-0 opacity-[0.022]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+          }}
+        />
+      </div>
+
+      {/* Content */}
+      <div className="relative flex flex-col gap-5 px-4 pt-6 pb-5 sm:px-6 xl:px-8">
+        {/* Row 1: Eyebrow + headline + subtitle */}
+        <div className="flex flex-col gap-1">
+          {/* Eyebrow badge */}
+          <div
+            className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+              color: 'var(--color-accent)',
+            }}
+          >
+            <motion.span
+              animate={{ rotate: [0, 12, -8, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
+            >
+              <CalendarDays size={11} />
+            </motion.span>
+            Time Planner
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="mt-2 font-black tracking-tight"
+            style={{ fontSize: 'clamp(1.6rem, 3vw, 2.5rem)', lineHeight: 1.1, color: 'var(--color-text-primary)' }}
+          >
+            Your <span style={{ color: 'var(--color-accent)' }}>Calendar.</span>
+          </h1>
+
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            {todaysTotal > 0
+              ? `${todaysDone} of ${todaysTotal} task${todaysTotal !== 1 ? 's' : ''} done today · ${todayPct}% complete`
+              : 'Plan your time. Stay on top of every commitment.'}
+          </p>
+        </div>
+
+        {/* Row 2: Stat chips + controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Stat chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            {chips.map((chip) => (
+              <div
+                key={chip.label}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                style={{ background: chip.bg, color: chip.color, border: `1px solid ${chip.color}22` }}
+              >
+                {chip.icon}
+                <span style={{ color: 'var(--color-text-primary)' }}>{chip.value}</span>
+                <span>{chip.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Today button */}
+          <button
+            type="button"
+            onClick={onJumpToday}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all hover:shadow-sm"
+            style={{
+              background: 'var(--color-surface-raised)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Today
+          </button>
+
+          {/* View toggle */}
+          <div
+            className="flex items-center gap-1 rounded-2xl border p-1"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
+            {viewTabs.map(({ id, label, icon }) => (
+              <button
+                key={id}
+                onClick={() => setView(id)}
+                className="relative flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all"
+                style={
+                  view === id
+                    ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
+                    : { color: 'var(--color-text-muted)' }
+                }
+              >
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+
+          {/* New dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={onNewMenuOpen}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+              style={{ background: 'var(--gradient-accent)' }}
+            >
+              <Plus size={14} /> New <ChevronDown size={12} />
+            </button>
+            {newMenuOpen && (
+              <div
+                className="absolute right-0 mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+              >
+                {[
+                  { label: 'Task', to: '/tasks' },
+                  { label: 'Focus', to: '/focus' },
+                  { label: 'Habit', to: '/habits' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      setNewMenuOpen(() => false);
+                      navigate(item.to);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-semibold text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ====== Left Rail ====== */
 
 interface LeftRailProps {
@@ -551,12 +777,17 @@ interface LeftRailProps {
 }
 
 const LeftRail = memo(function LeftRail({
-  miniRef, setMiniRef, reference, datesWithTasks, onSelectDate, upcomingItems,
-  lastSyncedAt, isSyncing, onSync,
+  miniRef,
+  setMiniRef,
+  reference,
+  datesWithTasks,
+  onSelectDate,
+  upcomingItems,
+  lastSyncedAt,
+  isSyncing,
+  onSync,
 }: LeftRailProps) {
-  const syncLabel = lastSyncedAt
-    ? `Last sync ${format(new Date(lastSyncedAt), 'h:mm a')}`
-    : 'Not synced yet';
+  const syncLabel = lastSyncedAt ? `Last sync ${format(new Date(lastSyncedAt), 'h:mm a')}` : 'Not synced yet';
 
   return (
     <motion.div variants={itemVariants} className="order-2 lg:order-1 flex flex-col gap-4">
@@ -575,7 +806,10 @@ const LeftRail = memo(function LeftRail({
           <div className="flex flex-col gap-2.5">
             {upcomingItems.map((item) => (
               <div key={item.id} className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--color-accent)' }} />
+                <span
+                  className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                  style={{ background: 'var(--color-accent)' }}
+                />
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold text-text-muted uppercase tracking-wide">
                     {isSameDay(item.date, new Date()) ? 'Today' : format(item.date, 'EEE, h:mm a')}
@@ -589,7 +823,10 @@ const LeftRail = memo(function LeftRail({
       </Card>
       <Card variant="default" className="p-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)' }}>
+          <span
+            className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)' }}
+          >
             <Check size={12} style={{ color: 'var(--color-success)' }} strokeWidth={3} />
           </span>
           <div className="min-w-0">
@@ -597,7 +834,12 @@ const LeftRail = memo(function LeftRail({
             <p className="text-[10px] text-text-muted font-semibold truncate">{syncLabel}</p>
           </div>
         </div>
-        <button type="button" onClick={onSync} disabled={isSyncing} className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50">
+        <button
+          type="button"
+          onClick={onSync}
+          disabled={isSyncing}
+          className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+        >
           <RefreshCw size={13} className={`text-text-muted shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
         </button>
       </Card>
@@ -622,8 +864,16 @@ interface RightRailProps {
 }
 
 const RightRail = memo(function RightRail({
-  todaysDone, todaysTotal, todaysTasks, todayEvents, updateTask,
-  weekTasks, weekDone, weekInProgress, weekTodo, weekRate,
+  todaysDone,
+  todaysTotal,
+  todaysTasks,
+  todayEvents,
+  updateTask,
+  weekTasks,
+  weekDone,
+  weekInProgress,
+  weekTodo,
+  weekRate,
   navigate,
 }: RightRailProps) {
   return (
@@ -636,13 +886,24 @@ const RightRail = memo(function RightRail({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <RingProgress value={todaysTotal > 0 ? (todaysDone / todaysTotal) * 100 : 0} size={64} strokeWidth={7} color="var(--color-accent)">
-            <span className="text-xs font-black text-text-primary">{todaysDone}/{todaysTotal}</span>
+          <RingProgress
+            value={todaysTotal > 0 ? (todaysDone / todaysTotal) * 100 : 0}
+            size={64}
+            strokeWidth={7}
+            color="var(--color-accent)"
+          >
+            <span className="text-xs font-black text-text-primary">
+              {todaysDone}/{todaysTotal}
+            </span>
           </RingProgress>
           <div className="min-w-0">
             <p className="text-xs font-extrabold text-text-primary">Daily Progress</p>
             <p className="text-[11px] text-text-muted font-semibold">
-              {todaysTotal === 0 ? 'Nothing due today' : todaysDone === todaysTotal ? "You're all done!" : "You're doing great!"}
+              {todaysTotal === 0
+                ? 'Nothing due today'
+                : todaysDone === todaysTotal
+                  ? "You're all done!"
+                  : "You're doing great!"}
             </p>
           </div>
         </div>
@@ -650,9 +911,24 @@ const RightRail = memo(function RightRail({
       <Card variant="default" className="p-3.5">
         <h4 className="text-xs font-bold text-text-primary mb-3">Week Progress</h4>
         <div className="grid grid-cols-4 gap-2">
-          <MiniRing value={weekTasks.length ? (weekDone / weekTasks.length) * 100 : 0} color="var(--color-success)" label="Done" count={weekDone} />
-          <MiniRing value={weekTasks.length ? (weekInProgress / weekTasks.length) * 100 : 0} color="var(--color-warning, #f59e0b)" label="Active" count={weekInProgress} />
-          <MiniRing value={weekTasks.length ? (weekTodo / weekTasks.length) * 100 : 0} color="var(--color-info, #3b82f6)" label="To do" count={weekTodo} />
+          <MiniRing
+            value={weekTasks.length ? (weekDone / weekTasks.length) * 100 : 0}
+            color="var(--color-success)"
+            label="Done"
+            count={weekDone}
+          />
+          <MiniRing
+            value={weekTasks.length ? (weekInProgress / weekTasks.length) * 100 : 0}
+            color="var(--color-warning, #f59e0b)"
+            label="Active"
+            count={weekInProgress}
+          />
+          <MiniRing
+            value={weekTasks.length ? (weekTodo / weekTasks.length) * 100 : 0}
+            color="var(--color-info, #3b82f6)"
+            label="To do"
+            count={weekTodo}
+          />
           <MiniRing value={weekRate} color="var(--color-accent)" label="Rate" count={`${weekRate}%`} />
         </div>
       </Card>
@@ -664,8 +940,16 @@ const RightRail = memo(function RightRail({
             { label: 'Focus', icon: <Timer size={16} />, to: '/focus' },
             { label: 'Habit', icon: <Sparkles size={16} />, to: '/habits' },
           ].map((item) => (
-            <button key={item.label} type="button" onClick={() => navigate(item.to)} className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl border transition-colors hover:shadow-sm"
-              style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)', color: 'var(--color-text-primary)' }}
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => navigate(item.to)}
+              className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl border transition-colors hover:shadow-sm"
+              style={{
+                borderColor: 'var(--color-border)',
+                background: 'var(--color-surface-raised)',
+                color: 'var(--color-text-primary)',
+              }}
             >
               {item.icon}
               <span className="text-[9px] font-bold">{item.label}</span>
@@ -680,9 +964,19 @@ const RightRail = memo(function RightRail({
 /* ====== Main Section ====== */
 
 function CalendarMainSection({
-  view, data, summary, weekRate, rangeLabel, events, reference, referenceEvents, eventsByDay,
-  navigatePeriod, setSelectedDate,
-  tasksForDay, updateTask,
+  view,
+  data,
+  summary,
+  weekRate,
+  rangeLabel,
+  events,
+  reference,
+  referenceEvents,
+  eventsByDay,
+  navigatePeriod,
+  setSelectedDate,
+  tasksForDay,
+  updateTask,
 }: {
   view: CalendarView;
   data: any;
@@ -702,22 +996,65 @@ function CalendarMainSection({
     <>
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={<CalendarDays size={16} />} iconBg="color-mix(in srgb, var(--color-accent) 14%, transparent)" iconColor="var(--color-accent)" label="Total Events" value={data?.meta.totalEvents ?? 0} sub="in current range" subColor="var(--color-success)" />
-        <StatCard icon={<ListTodo size={16} />} iconBg="color-mix(in srgb, var(--color-info, #3b82f6) 14%, transparent)" iconColor="var(--color-info, #3b82f6)" label="Tasks Due" value={summary.tasks} sub="in range" subColor="var(--color-text-muted)" />
-        <StatCard icon={<Clock3 size={16} />} iconBg="color-mix(in srgb, var(--color-success) 14%, transparent)" iconColor="var(--color-success)" label="Focus Sessions" value={summary.focus} sub="in range" subColor="var(--color-text-muted)" />
-        <StatCard icon={<Zap size={16} />} iconBg="color-mix(in srgb, var(--color-warning, #f59e0b) 14%, transparent)" iconColor="var(--color-warning, #f59e0b)" label="Completion" value={`${weekRate}%`} sub="this week" subColor="var(--color-text-muted)" />
+        <StatCard
+          icon={<CalendarDays size={16} />}
+          iconBg="color-mix(in srgb, var(--color-accent) 14%, transparent)"
+          iconColor="var(--color-accent)"
+          label="Total Events"
+          value={data?.meta.totalEvents ?? 0}
+          sub="in current range"
+          subColor="var(--color-success)"
+        />
+        <StatCard
+          icon={<ListTodo size={16} />}
+          iconBg="color-mix(in srgb, var(--color-info, #3b82f6) 14%, transparent)"
+          iconColor="var(--color-info, #3b82f6)"
+          label="Tasks Due"
+          value={summary.tasks}
+          sub="in range"
+          subColor="var(--color-text-muted)"
+        />
+        <StatCard
+          icon={<Clock3 size={16} />}
+          iconBg="color-mix(in srgb, var(--color-success) 14%, transparent)"
+          iconColor="var(--color-success)"
+          label="Focus Sessions"
+          value={summary.focus}
+          sub="in range"
+          subColor="var(--color-text-muted)"
+        />
+        <StatCard
+          icon={<Zap size={16} />}
+          iconBg="color-mix(in srgb, var(--color-warning, #f59e0b) 14%, transparent)"
+          iconColor="var(--color-warning, #f59e0b)"
+          label="Completion"
+          value={`${weekRate}%`}
+          sub="this week"
+          subColor="var(--color-text-muted)"
+        />
       </div>
 
       {/* Range nav */}
-      <div className="flex items-center justify-between p-2.5 rounded-2xl border" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-        <button type="button" onClick={() => navigatePeriod(-1)} className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+      <div
+        className="flex items-center justify-between p-2.5 rounded-2xl border"
+        style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+      >
+        <button
+          type="button"
+          onClick={() => navigatePeriod(-1)}
+          className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+        >
           <ChevronLeft size={16} />
         </button>
         <div className="text-center min-w-0">
           <p className="text-sm font-extrabold text-text-primary truncate">{rangeLabel}</p>
           <p className="text-[10px] font-semibold text-text-muted mt-0.5">{events.length} events shown</p>
         </div>
-        <button type="button" onClick={() => navigatePeriod(1)} className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+        <button
+          type="button"
+          onClick={() => navigatePeriod(1)}
+          className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+        >
           <ChevronRight size={16} />
         </button>
       </div>
@@ -730,11 +1067,22 @@ function CalendarMainSection({
               <h3 className="text-xs font-bold text-text-primary">Day View</h3>
               <p className="text-[10px] text-text-muted mt-0.5">Everything scheduled for the selected day</p>
             </div>
-            <button type="button" onClick={() => setSelectedDate(reference)} className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(reference)}
+              className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+            >
               Open agenda
             </button>
           </div>
-          <CalendarDayAgenda day={reference} events={referenceEvents} tasks={tasksForDay(reference)} updateTask={updateTask} onPickDay={setSelectedDate} />
+          <CalendarDayAgenda
+            day={reference}
+            events={referenceEvents}
+            tasks={tasksForDay(reference)}
+            updateTask={updateTask}
+            onPickDay={setSelectedDate}
+          />
         </Card>
       )}
       {view === 'week' && (
@@ -748,14 +1096,33 @@ function CalendarMainSection({
             const doneCount = dayTasks.filter((t) => t.status === 'DONE').length;
             const totalCount = dayTasks.length;
             return (
-              <button type="button" key={dayKey} onClick={() => setSelectedDate(day)} className="text-left rounded-xl border p-2.5 transition-all hover:shadow-md"
-                style={{ background: today ? 'color-mix(in srgb, var(--color-accent) 5%, var(--color-surface))' : 'var(--color-surface)', borderColor: today ? 'var(--color-accent-border)' : 'var(--color-border)' }}>
+              <button
+                type="button"
+                key={dayKey}
+                onClick={() => setSelectedDate(day)}
+                className="text-left rounded-xl border p-2.5 transition-all hover:shadow-md"
+                style={{
+                  background: today
+                    ? 'color-mix(in srgb, var(--color-accent) 5%, var(--color-surface))'
+                    : 'var(--color-surface)',
+                  borderColor: today ? 'var(--color-accent-border)' : 'var(--color-border)',
+                }}
+              >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
-                    <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">{format(day, 'EEE')}</div>
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-text-muted">
+                      {format(day, 'EEE')}
+                    </div>
                     <div className="text-base font-black text-text-primary">{format(day, 'd')}</div>
                   </div>
-                  {today && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: EVENT_META.TASK_DUE.bg, color: EVENT_META.TASK_DUE.accent }}>Today</span>}
+                  {today && (
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: EVENT_META.TASK_DUE.bg, color: EVENT_META.TASK_DUE.accent }}
+                    >
+                      Today
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between text-[10px] font-semibold text-text-muted mb-1">
                   <span>Tasks {summaryForDay.tasks}</span>
@@ -763,13 +1130,23 @@ function CalendarMainSection({
                 </div>
                 {/* Task progress bar */}
                 {totalCount > 0 && (
-                  <div className="w-full h-1 rounded-full overflow-hidden mb-1.5" style={{ background: 'var(--color-border-subtle)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${(doneCount / totalCount) * 100}%`, background: 'var(--color-success)' }} />
+                  <div
+                    className="w-full h-1 rounded-full overflow-hidden mb-1.5"
+                    style={{ background: 'var(--color-border-subtle)' }}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${(doneCount / totalCount) * 100}%`, background: 'var(--color-success)' }}
+                    />
                   </div>
                 )}
                 <div className="space-y-1">
-                  {dayEvents.slice(0, 2).map((event) => (<EventChip key={event.id} event={event} compact />))}
-                  {dayEvents.length > 2 && <div className="text-[10px] font-semibold text-text-muted">+{dayEvents.length - 2} more</div>}
+                  {dayEvents.slice(0, 2).map((event) => (
+                    <EventChip key={event.id} event={event} compact />
+                  ))}
+                  {dayEvents.length > 2 && (
+                    <div className="text-[10px] font-semibold text-text-muted">+{dayEvents.length - 2} more</div>
+                  )}
                 </div>
               </button>
             );
@@ -780,7 +1157,9 @@ function CalendarMainSection({
         <div className="overflow-x-auto no-scrollbar">
           <div className="grid grid-cols-7 gap-1.5 mb-1.5 min-w-[620px]">
             {WEEKDAY_LABELS.map((label, i) => (
-              <div key={i} className="text-center text-[9px] font-bold uppercase tracking-wider text-text-muted py-1">{label}</div>
+              <div key={i} className="text-center text-[9px] font-bold uppercase tracking-wider text-text-muted py-1">
+                {label}
+              </div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1.5 min-w-[620px]">
@@ -793,17 +1172,45 @@ function CalendarMainSection({
               const doneCount = dayTasks.filter((t) => t.status === 'DONE').length;
               const totalCount = dayTasks.length;
               return (
-                <button key={dayKey} type="button" onClick={() => inMonth && setSelectedDate(day)} className="text-left rounded-xl border p-1.5 sm:p-2 min-h-[74px] sm:min-h-[92px] transition-all"
-                  style={{ background: today ? 'color-mix(in srgb, var(--color-accent) 6%, var(--color-surface))' : inMonth ? 'var(--color-surface)' : 'var(--color-surface-raised)', borderColor: today ? 'var(--color-accent)' : 'var(--color-border)', opacity: inMonth ? 1 : 0.4, cursor: inMonth ? 'pointer' : 'default' }}>
+                <button
+                  key={dayKey}
+                  type="button"
+                  onClick={() => inMonth && setSelectedDate(day)}
+                  className="text-left rounded-xl border p-1.5 sm:p-2 min-h-[74px] sm:min-h-[92px] transition-all"
+                  style={{
+                    background: today
+                      ? 'color-mix(in srgb, var(--color-accent) 6%, var(--color-surface))'
+                      : inMonth
+                        ? 'var(--color-surface)'
+                        : 'var(--color-surface-raised)',
+                    borderColor: today ? 'var(--color-accent)' : 'var(--color-border)',
+                    opacity: inMonth ? 1 : 0.4,
+                    cursor: inMonth ? 'pointer' : 'default',
+                  }}
+                >
                   <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center" style={{ background: today ? 'var(--gradient-accent)' : 'transparent', color: today ? 'var(--color-text-onaccent)' : 'var(--color-text-primary)' }}>{format(day, 'd')}</span>
+                    <span
+                      className="w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center"
+                      style={{
+                        background: today ? 'var(--gradient-accent)' : 'transparent',
+                        color: today ? 'var(--color-text-onaccent)' : 'var(--color-text-primary)',
+                      }}
+                    >
+                      {format(day, 'd')}
+                    </span>
                     {totalCount > 0 && (
-                      <span className="text-[8px] font-bold text-text-muted">{doneCount}/{totalCount}</span>
+                      <span className="text-[8px] font-bold text-text-muted">
+                        {doneCount}/{totalCount}
+                      </span>
                     )}
                   </div>
                   <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (<EventChip key={event.id} event={event} compact />))}
-                    {dayEvents.length > 2 && <div className="text-[9px] font-semibold text-text-muted">+{dayEvents.length - 2} more</div>}
+                    {dayEvents.slice(0, 2).map((event) => (
+                      <EventChip key={event.id} event={event} compact />
+                    ))}
+                    {dayEvents.length > 2 && (
+                      <div className="text-[9px] font-semibold text-text-muted">+{dayEvents.length - 2} more</div>
+                    )}
                   </div>
                 </button>
               );
@@ -817,7 +1224,12 @@ function CalendarMainSection({
 
 /* ====== Day Detail Modal ====== */
 
-function DayDetailModal({ day, events, tasks, updateTask }: {
+function DayDetailModal({
+  day,
+  events,
+  tasks,
+  updateTask,
+}: {
   day: Date;
   events: CalendarEventDTO[];
   tasks: TaskDTO[];
@@ -848,9 +1260,17 @@ function DayDetailModal({ day, events, tasks, updateTask }: {
       {totalCount > 0 && (
         <div className="flex items-center gap-2">
           <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
-            <div className="h-full rounded-full transition-all" style={{ width: `${completionPct}%`, background: completionPct === 100 ? 'var(--color-success)' : 'var(--color-accent)' }} />
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${completionPct}%`,
+                background: completionPct === 100 ? 'var(--color-success)' : 'var(--color-accent)',
+              }}
+            />
           </div>
-          <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-accent)' }}>{completionPct}%</span>
+          <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-accent)' }}>
+            {completionPct}%
+          </span>
         </div>
       )}
 
@@ -860,8 +1280,15 @@ function DayDetailModal({ day, events, tasks, updateTask }: {
           <h4 className="text-[11px] font-bold text-text-primary mb-2 uppercase tracking-wide">Events</h4>
           <div className="space-y-1.5">
             {events.map((event) => (
-              <div key={event.id} className="flex items-center gap-2.5 p-2 rounded-xl border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-                <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: EVENT_META[event.type].bg, color: EVENT_META[event.type].accent }}>
+              <div
+                key={event.id}
+                className="flex items-center gap-2.5 p-2 rounded-xl border"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+              >
+                <span
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: EVENT_META[event.type].bg, color: EVENT_META[event.type].accent }}
+                >
                   {event.type === 'TASK_DUE' ? <CheckSquare size={12} /> : <Timer size={12} />}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -883,7 +1310,14 @@ function DayDetailModal({ day, events, tasks, updateTask }: {
           <h4 className="text-[11px] font-bold text-text-primary mb-2 uppercase tracking-wide">Tasks</h4>
           <div className="space-y-1">
             {tasks.map((task, index) => (
-              <AgendaTaskRow key={task.id} task={task} isLast={index === tasks.length - 1} onToggle={() => updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })} />
+              <AgendaTaskRow
+                key={task.id}
+                task={task}
+                isLast={index === tasks.length - 1}
+                onToggle={() =>
+                  updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })
+                }
+              />
             ))}
           </div>
         </div>
@@ -891,7 +1325,10 @@ function DayDetailModal({ day, events, tasks, updateTask }: {
 
       {/* Empty state */}
       {events.length === 0 && tasks.length === 0 && (
-        <div className="py-8 text-center rounded-xl border" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+        <div
+          className="py-8 text-center rounded-xl border"
+          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+        >
           <Circle size={24} className="mx-auto text-text-muted mb-2" />
           <p className="text-xs font-bold text-text-primary">Nothing scheduled here</p>
           <p className="text-[10px] text-text-muted mt-1">This day is available for planning.</p>
@@ -903,23 +1340,56 @@ function DayDetailModal({ day, events, tasks, updateTask }: {
 
 /* ---------- Small presentational pieces ---------- */
 
-function StatCard({ icon, iconBg, iconColor, label, value, sub, subColor }: {
-  icon: React.ReactNode; iconBg: string; iconColor: string; label: string; value: React.ReactNode; sub?: string; subColor?: string;
+function StatCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  value,
+  sub,
+  subColor,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+  subColor?: string;
 }) {
   return (
     <Card variant="default" className="p-3 flex items-start gap-2.5">
-      <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg, color: iconColor }}>{icon}</span>
+      <span
+        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: iconBg, color: iconColor }}
+      >
+        {icon}
+      </span>
       <div className="min-w-0">
         <div className="text-[10px] font-bold uppercase tracking-wide text-text-muted truncate">{label}</div>
         <div className="text-lg font-black text-text-primary leading-tight">{value}</div>
-        {sub && <div className="text-[10px] font-semibold mt-0.5" style={{ color: subColor }}>{sub}</div>}
+        {sub && (
+          <div className="text-[10px] font-semibold mt-0.5" style={{ color: subColor }}>
+            {sub}
+          </div>
+        )}
       </div>
     </Card>
   );
 }
 
-function RingProgress({ value, size = 60, strokeWidth = 6, color, children }: {
-  value: number; size?: number; strokeWidth?: number; color: string; children?: React.ReactNode;
+function RingProgress({
+  value,
+  size = 60,
+  strokeWidth = 6,
+  color,
+  children,
+}: {
+  value: number;
+  size?: number;
+  strokeWidth?: number;
+  color: string;
+  children?: React.ReactNode;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -928,15 +1398,42 @@ function RingProgress({ value, size = 60, strokeWidth = 6, color, children }: {
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-border-subtle)" strokeWidth={strokeWidth} />
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-border-subtle)"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+        />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">{children}</div>
     </div>
   );
 }
 
-function MiniRing({ value, color, label, count }: { value: number; color: string; label: string; count: React.ReactNode }) {
+function MiniRing({
+  value,
+  color,
+  label,
+  count,
+}: {
+  value: number;
+  color: string;
+  label: string;
+  count: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center gap-1">
       <RingProgress value={value} size={44} strokeWidth={4.5} color={color}>
@@ -947,8 +1444,18 @@ function MiniRing({ value, color, label, count }: { value: number; color: string
   );
 }
 
-function MiniCalendar({ miniRef, setMiniRef, reference, datesWithTasks, onSelectDate }: {
-  miniRef: Date; setMiniRef: (d: Date) => void; reference: Date; datesWithTasks: Set<string>; onSelectDate: (d: Date) => void;
+function MiniCalendar({
+  miniRef,
+  setMiniRef,
+  reference,
+  datesWithTasks,
+  onSelectDate,
+}: {
+  miniRef: Date;
+  setMiniRef: (d: Date) => void;
+  reference: Date;
+  datesWithTasks: Set<string>;
+  onSelectDate: (d: Date) => void;
 }) {
   const days = getMonthDays(miniRef);
   return (
@@ -956,12 +1463,28 @@ function MiniCalendar({ miniRef, setMiniRef, reference, datesWithTasks, onSelect
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-bold text-text-primary">{format(miniRef, 'MMMM yyyy')}</p>
         <div className="flex items-center gap-0.5">
-          <button type="button" onClick={() => setMiniRef(addMonths(miniRef, -1))} className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary"><ChevronLeft size={13} /></button>
-          <button type="button" onClick={() => setMiniRef(addMonths(miniRef, 1))} className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary"><ChevronRight size={13} /></button>
+          <button
+            type="button"
+            onClick={() => setMiniRef(addMonths(miniRef, -1))}
+            className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary"
+          >
+            <ChevronLeft size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMiniRef(addMonths(miniRef, 1))}
+            className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-text-secondary"
+          >
+            <ChevronRight size={13} />
+          </button>
         </div>
       </div>
       <div className="grid grid-cols-7 gap-y-1">
-        {WEEKDAY_LABELS.map((label, i) => (<div key={i} className="text-center text-[9px] font-bold text-text-muted">{label}</div>))}
+        {WEEKDAY_LABELS.map((label, i) => (
+          <div key={i} className="text-center text-[9px] font-bold text-text-muted">
+            {label}
+          </div>
+        ))}
         {days.map((day) => {
           const inMonth = isSameMonth(day, miniRef);
           const today = isSameDay(day, new Date());
@@ -969,12 +1492,34 @@ function MiniCalendar({ miniRef, setMiniRef, reference, datesWithTasks, onSelect
           const dayKey = format(day, 'yyyy-MM-dd');
           const hasTasks = datesWithTasks.has(dayKey);
           return (
-            <button key={day.toISOString()} type="button" onClick={() => onSelectDate(day)}
+            <button
+              key={day.toISOString()}
+              type="button"
+              onClick={() => onSelectDate(day)}
               className="w-full aspect-square flex flex-col items-center justify-center text-[10px] font-bold rounded-lg mx-auto relative"
-              style={{ color: !inMonth ? 'var(--color-text-muted)' : isReference ? '#fff' : today ? 'var(--color-accent)' : 'var(--color-text-primary)', background: isReference ? 'var(--gradient-accent)' : today ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : 'transparent', opacity: inMonth ? 1 : 0.35 }}
+              style={{
+                color: !inMonth
+                  ? 'var(--color-text-muted)'
+                  : isReference
+                    ? '#fff'
+                    : today
+                      ? 'var(--color-accent)'
+                      : 'var(--color-text-primary)',
+                background: isReference
+                  ? 'var(--gradient-accent)'
+                  : today
+                    ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)'
+                    : 'transparent',
+                opacity: inMonth ? 1 : 0.35,
+              }}
             >
               {format(day, 'd')}
-              {hasTasks && inMonth && <span className="absolute bottom-1 w-1 h-1 rounded-full" style={{ background: 'var(--color-accent)' }} />}
+              {hasTasks && inMonth && (
+                <span
+                  className="absolute bottom-1 w-1 h-1 rounded-full"
+                  style={{ background: 'var(--color-accent)' }}
+                />
+              )}
             </button>
           );
         })}
@@ -987,20 +1532,43 @@ function EventChip({ event, compact = false }: { event: CalendarEventDTO; compac
   const meta = EVENT_META[event.type];
   const timeLabel = event.allDay ? 'All day' : formatTime(new Date(event.startAt));
   return (
-    <div className={['flex items-center gap-1.5 rounded-lg border px-1.5 py-1 text-left', compact ? 'px-1.5 py-1' : 'px-2.5 py-2'].join(' ')}
-      style={{ background: meta.bg, borderColor: 'color-mix(in srgb, ' + meta.accent + ' 20%, var(--color-border))' }}>
-      {event.type === 'TASK_DUE' ? <CheckSquare size={10} style={{ color: meta.accent }} /> : <Timer size={10} style={{ color: meta.accent }} />}
+    <div
+      className={[
+        'flex items-center gap-1.5 rounded-lg border px-1.5 py-1 text-left',
+        compact ? 'px-1.5 py-1' : 'px-2.5 py-2',
+      ].join(' ')}
+      style={{ background: meta.bg, borderColor: 'color-mix(in srgb, ' + meta.accent + ' 20%, var(--color-border))' }}
+    >
+      {event.type === 'TASK_DUE' ? (
+        <CheckSquare size={10} style={{ color: meta.accent }} />
+      ) : (
+        <Timer size={10} style={{ color: meta.accent }} />
+      )}
       <div className="min-w-0 flex-1">
         <div className="text-[10px] font-bold text-text-primary truncate">{event.title}</div>
-        {!compact && <div className="text-[9px] font-semibold text-text-muted truncate">{meta.label} · {timeLabel}</div>}
+        {!compact && (
+          <div className="text-[9px] font-semibold text-text-muted truncate">
+            {meta.label} · {timeLabel}
+          </div>
+        )}
       </div>
       {!compact && <span className="text-[9px] font-bold text-text-muted whitespace-nowrap">{timeLabel}</span>}
     </div>
   );
 }
 
-function CalendarDayAgenda({ day, events, tasks, updateTask, onPickDay }: {
-  day: Date; events: CalendarEventDTO[]; tasks: TaskDTO[]; updateTask: any; onPickDay?: (day: Date) => void;
+function CalendarDayAgenda({
+  day,
+  events,
+  tasks,
+  updateTask,
+  onPickDay,
+}: {
+  day: Date;
+  events: CalendarEventDTO[];
+  tasks: TaskDTO[];
+  updateTask: any;
+  onPickDay?: (day: Date) => void;
 }) {
   const doneCount = tasks.filter((t) => t.status === 'DONE').length;
   const totalCount = tasks.length;
@@ -1022,10 +1590,18 @@ function CalendarDayAgenda({ day, events, tasks, updateTask, onPickDay }: {
       {/* Task progress bar */}
       {totalCount > 0 && (
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
-            <div className="h-full rounded-full" style={{ width: `${(doneCount / totalCount) * 100}%`, background: 'var(--color-success)' }} />
+          <div
+            className="flex-1 h-1.5 rounded-full overflow-hidden"
+            style={{ background: 'var(--color-border-subtle)' }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${(doneCount / totalCount) * 100}%`, background: 'var(--color-success)' }}
+            />
           </div>
-          <span className="text-[10px] font-bold text-text-muted">{doneCount}/{totalCount}</span>
+          <span className="text-[10px] font-bold text-text-muted">
+            {doneCount}/{totalCount}
+          </span>
         </div>
       )}
 
@@ -1034,13 +1610,22 @@ function CalendarDayAgenda({ day, events, tasks, updateTask, onPickDay }: {
         <div className="space-y-1.5">
           <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Events</h4>
           {events.map((event) => (
-            <div key={event.id} className="flex items-center gap-2 p-2 rounded-lg border" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-              <span className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: EVENT_META[event.type].bg, color: EVENT_META[event.type].accent }}>
+            <div
+              key={event.id}
+              className="flex items-center gap-2 p-2 rounded-lg border"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <span
+                className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: EVENT_META[event.type].bg, color: EVENT_META[event.type].accent }}
+              >
                 {event.type === 'TASK_DUE' ? <CheckSquare size={10} /> : <Timer size={10} />}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold text-text-primary truncate">{event.title}</p>
-                <p className="text-[8px] text-text-muted font-semibold">{event.allDay ? 'All day' : formatTime(new Date(event.startAt))}</p>
+                <p className="text-[8px] text-text-muted font-semibold">
+                  {event.allDay ? 'All day' : formatTime(new Date(event.startAt))}
+                </p>
               </div>
             </div>
           ))}
@@ -1052,14 +1637,24 @@ function CalendarDayAgenda({ day, events, tasks, updateTask, onPickDay }: {
         <div className="space-y-1">
           <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wide">Tasks</h4>
           {tasks.map((task, index) => (
-            <AgendaTaskRow key={task.id} task={task} isLast={index === tasks.length - 1} onToggle={() => updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })} />
+            <AgendaTaskRow
+              key={task.id}
+              task={task}
+              isLast={index === tasks.length - 1}
+              onToggle={() =>
+                updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })
+              }
+            />
           ))}
         </div>
       )}
 
       {/* Empty state */}
       {events.length === 0 && tasks.length === 0 && (
-        <div className="py-6 text-center rounded-xl border" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+        <div
+          className="py-6 text-center rounded-xl border"
+          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+        >
           <Circle size={20} className="mx-auto text-text-muted mb-1.5" />
           <p className="text-[11px] font-bold text-text-primary">Nothing scheduled here</p>
           <p className="text-[9px] text-text-muted mt-0.5">This day is available for planning.</p>

@@ -27,13 +27,17 @@ export function AIControlsPage() {
             className="relative overflow-hidden rounded-2xl sm:rounded-3xl border p-4 sm:p-6"
             style={{
               borderColor: 'var(--color-border)',
-              background: 'linear-gradient(135deg, var(--color-surface) 0%, color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)) 100%)',
+              background:
+                'linear-gradient(135deg, var(--color-surface) 0%, color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)) 100%)',
             }}
           >
             <div className="flex items-center gap-3 sm:gap-4">
               <div
                 className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 text-white"
-                style={{ background: 'var(--gradient-accent)', boxShadow: '0 8px 18px color-mix(in srgb, var(--color-accent) 35%, transparent)' }}
+                style={{
+                  background: 'var(--gradient-accent)',
+                  boxShadow: '0 8px 18px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                }}
               >
                 <BrainCircuit size={22} />
               </div>
@@ -43,8 +47,8 @@ export function AIControlsPage() {
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">AI & Tokens</h1>
                 <p className="text-xs sm:text-sm text-text-muted mt-1 max-w-lg leading-relaxed">
-                  Enable or disable AI features individually and control how frequently AI summaries refresh.
-                  Turning a feature off leaves your data untouched — it simply stops spending tokens.
+                  Enable or disable AI features individually and control how frequently AI summaries refresh. Turning a
+                  feature off leaves your data untouched — it simply stops spending tokens.
                 </p>
               </div>
             </div>
@@ -52,10 +56,7 @@ export function AIControlsPage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <AISettingsPanel
-            preferences={aiPrefs}
-            onChange={(next) => aiMutation.mutate(next)}
-          />
+          <AISettingsPanel preferences={aiPrefs} onChange={(next) => aiMutation.mutate(next)} />
         </motion.div>
       </motion.div>
     </div>

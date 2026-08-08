@@ -1,7 +1,7 @@
 // frontend/public/sw.js
 // Service Worker to receive and show background push notifications.
 
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   if (event.data) {
     try {
       const payload = event.data.json();
@@ -12,10 +12,8 @@ self.addEventListener('push', function(event) {
         data: payload.data || {},
         vibrate: [100, 50, 100],
       };
-      
-      event.waitUntil(
-        self.registration.showNotification(payload.title, options)
-      );
+
+      event.waitUntil(self.registration.showNotification(payload.title, options));
     } catch (e) {
       const text = event.data.text();
       event.waitUntil(
@@ -28,11 +26,11 @@ self.addEventListener('push', function(event) {
   }
 });
 
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   // Open the application on click
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
       if (clientList.length > 0) {
         let client = clientList[0];
         for (let i = 0; i < clientList.length; i++) {

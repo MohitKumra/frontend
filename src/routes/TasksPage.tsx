@@ -170,21 +170,29 @@ function TasksHero({
     mouseX.set((e.clientX - rect.left) / rect.width);
     mouseY.set((e.clientY - rect.top) / rect.height);
   };
-  const onMouseLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+  const onMouseLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
 
   const firstName = user?.name?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'there';
   const capacityFreePct = 100 - capacityUsedPct;
   const circumference = 2 * Math.PI * 28;
   const ringOffset = circumference - (capacityUsedPct / 100) * circumference;
-  const ringColor = capacityUsedPct > 75 ? 'var(--color-danger)' : capacityUsedPct > 50 ? 'var(--color-warning)' : 'var(--color-success)';
+  const ringColor =
+    capacityUsedPct > 75
+      ? 'var(--color-danger)'
+      : capacityUsedPct > 50
+        ? 'var(--color-warning)'
+        : 'var(--color-success)';
 
   const filterMeta: Record<TaskFilter, { icon: React.ReactNode; color: string }> = {
-    pending:   { icon: <CheckSquare size={12} />, color: 'var(--color-accent)' },
-    today:     { icon: <Zap size={12} />, color: '#F59E0B' },
-    upcoming:  { icon: <Calendar size={12} />, color: 'var(--color-info)' },
+    pending: { icon: <CheckSquare size={12} />, color: 'var(--color-accent)' },
+    today: { icon: <Zap size={12} />, color: '#F59E0B' },
+    upcoming: { icon: <Calendar size={12} />, color: 'var(--color-info)' },
     completed: { icon: <CheckCircle2 size={12} />, color: 'var(--color-success)' },
-    overdue:   { icon: <AlertTriangle size={12} />, color: 'var(--color-danger)' },
-    all:       { icon: <ListChecks size={12} />, color: 'var(--color-text-muted)' },
+    overdue: { icon: <AlertTriangle size={12} />, color: 'var(--color-danger)' },
+    all: { icon: <ListChecks size={12} />, color: 'var(--color-text-muted)' },
   };
 
   return (
@@ -207,7 +215,14 @@ function TasksHero({
         animate={{ scale: [1, 1.07, 1] }}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 11%, transparent), transparent 70%)', filter: 'blur(36px)' }} />
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 11%, transparent), transparent 70%)',
+            filter: 'blur(36px)',
+          }}
+        />
       </motion.div>
       <motion.div
         style={{ x: blob2X, y: blob2Y }}
@@ -216,7 +231,13 @@ function TasksHero({
         animate={{ scale: [1, 1.09, 1] }}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
       >
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, #22C55E 9%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background: 'radial-gradient(circle, color-mix(in srgb, #22C55E 9%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
 
       {/* Dot grid */}
@@ -231,18 +252,21 @@ function TasksHero({
 
       {/* ── Content ── */}
       <div className="relative flex flex-col gap-5 px-4 pt-6 pb-0 sm:px-6 xl:px-8">
-
         {/* ── Row 1: Eyebrow + Headline + subtitle ── */}
         <div className="flex flex-col gap-1">
           {/* Eyebrow */}
-          <div className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+          <div
+            className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
             style={{
               background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
               borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
               color: 'var(--color-accent)',
             }}
           >
-            <motion.span animate={{ rotate: [0, 12, -8, 0] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}>
+            <motion.span
+              animate={{ rotate: [0, 12, -8, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
+            >
               <CheckSquare size={11} />
             </motion.span>
             Task Command Center
@@ -253,10 +277,7 @@ function TasksHero({
             className="mt-2 font-black tracking-tight"
             style={{ fontSize: 'clamp(1.6rem, 3vw, 2.5rem)', lineHeight: 1.1, color: 'var(--color-text-primary)' }}
           >
-            Good {greeting},{' '}
-            <span style={{ color: 'var(--color-accent)' }}>
-              {firstName}.
-            </span>
+            Good {greeting}, <span style={{ color: 'var(--color-accent)' }}>{firstName}.</span>
           </h1>
 
           <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
@@ -273,17 +294,43 @@ function TasksHero({
 
         {/* ── Row 2: Stat chips + capacity ring + search + CTAs ── */}
         <div className="flex flex-wrap items-center gap-3">
-
           {/* Stat chips */}
           <div className="flex flex-wrap items-center gap-2">
             {[
-              { icon: <CheckCircle2 size={12} />, value: completedCount, label: 'done', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) 10%, transparent)' },
-              { icon: <Zap size={12} />, value: counts.today, label: 'today', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)' },
-              { icon: <Calendar size={12} />, value: counts.upcoming, label: 'upcoming', color: 'var(--color-info)', bg: 'color-mix(in srgb, var(--color-info) 10%, transparent)' },
-              { icon: <ListChecks size={12} />, value: counts.all, label: 'total', color: 'var(--color-text-muted)', bg: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)' },
+              {
+                icon: <CheckCircle2 size={12} />,
+                value: completedCount,
+                label: 'done',
+                color: 'var(--color-success)',
+                bg: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+              },
+              {
+                icon: <Zap size={12} />,
+                value: counts.today,
+                label: 'today',
+                color: '#F59E0B',
+                bg: 'rgba(245,158,11,0.10)',
+              },
+              {
+                icon: <Calendar size={12} />,
+                value: counts.upcoming,
+                label: 'upcoming',
+                color: 'var(--color-info)',
+                bg: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
+              },
+              {
+                icon: <ListChecks size={12} />,
+                value: counts.all,
+                label: 'total',
+                color: 'var(--color-text-muted)',
+                bg: 'color-mix(in srgb, var(--color-text-muted) 8%, transparent)',
+              },
             ].map((s) => (
-              <div key={s.label} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
-                style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}22` }}>
+              <div
+                key={s.label}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}22` }}
+              >
                 {s.icon}
                 <span style={{ color: 'var(--color-text-primary)' }}>{s.value}</span>
                 <span>{s.label}</span>
@@ -295,13 +342,22 @@ function TasksHero({
           <div className="flex-1" />
 
           {/* Capacity ring */}
-          <div className="flex items-center gap-2.5 rounded-2xl border px-3 py-2"
-            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+          <div
+            className="flex items-center gap-2.5 rounded-2xl border px-3 py-2"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
             <div className="relative flex-shrink-0">
               <svg width="48" height="48" viewBox="0 0 48 48" aria-label={`${capacityUsedPct}% capacity`}>
                 <circle cx="24" cy="24" r="20" fill="none" stroke="var(--color-border)" strokeWidth="5" />
-                <motion.circle cx="24" cy="24" r="20" fill="none" stroke={ringColor} strokeWidth="5.5"
-                  strokeLinecap="round" strokeDasharray={2 * Math.PI * 20}
+                <motion.circle
+                  cx="24"
+                  cy="24"
+                  r="20"
+                  fill="none"
+                  stroke={ringColor}
+                  strokeWidth="5.5"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 20}
                   transform="rotate(-90 24 24)"
                   initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
                   animate={{ strokeDashoffset: 2 * Math.PI * 20 - (capacityUsedPct / 100) * 2 * Math.PI * 20 }}
@@ -310,18 +366,28 @@ function TasksHero({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[11px] font-black" style={{ color: 'var(--color-text-primary)' }}>{capacityUsedPct}%</span>
+                <span className="text-[11px] font-black" style={{ color: 'var(--color-text-primary)' }}>
+                  {capacityUsedPct}%
+                </span>
               </div>
             </div>
             <div className="hidden sm:block">
-              <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{capacityLabel}</p>
-              <p className="text-[10px] leading-tight" style={{ color: ringColor }}>{capacityFreePct}% free · {tasksScheduledToday} tasks</p>
+              <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                {capacityLabel}
+              </p>
+              <p className="text-[10px] leading-tight" style={{ color: ringColor }}>
+                {capacityFreePct}% free · {tasksScheduledToday} tasks
+              </p>
             </div>
           </div>
 
           {/* Search */}
           <div className="relative w-[200px] sm:w-[240px]">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+            <Search
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: 'var(--color-text-muted)' }}
+            />
             <input
               ref={searchRef}
               type="text"
@@ -329,45 +395,79 @@ function TasksHero({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search… ( / )"
               className="w-full rounded-2xl border py-2 pl-9 pr-3 text-sm font-semibold focus:outline-none focus:ring-2"
-              style={{
-                background: 'var(--color-surface-raised)',
-                borderColor: 'var(--color-border)',
-                color: 'var(--color-text-primary)',
-                '--tw-ring-color': 'var(--color-accent)',
-              } as React.CSSProperties}
+              style={
+                {
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                  '--tw-ring-color': 'var(--color-accent)',
+                } as React.CSSProperties
+              }
             />
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center gap-1 rounded-2xl border p-1" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-            <button onClick={() => { setView('list'); setTaskViewPreference('list'); }}
+          <div
+            className="flex items-center gap-1 rounded-2xl border p-1"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
+            <button
+              onClick={() => {
+                setView('list');
+                setTaskViewPreference('list');
+              }}
               className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all"
-              style={view === 'list' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}>
+              style={
+                view === 'list'
+                  ? {
+                      background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                      color: 'var(--color-accent)',
+                    }
+                  : { color: 'var(--color-text-muted)' }
+              }
+            >
               <ListChecks size={13} /> List
             </button>
-            <button onClick={() => { setView('board'); setTaskViewPreference('board'); }}
+            <button
+              onClick={() => {
+                setView('board');
+                setTaskViewPreference('board');
+              }}
               className="flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-black transition-all"
-              style={view === 'board' ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' } : { color: 'var(--color-text-muted)' }}>
+              style={
+                view === 'board'
+                  ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
+                  : { color: 'var(--color-text-muted)' }
+              }
+            >
               <Columns3 size={13} /> Board
             </button>
           </div>
 
           {/* Notion import */}
           {notionConnected && (
-            <button onClick={onNotionImport}
+            <button
+              onClick={onNotionImport}
               className="inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-sm font-black transition-all hover:opacity-80 active:scale-95"
-              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
-              <BookOpen size={15} /> Notion Import 
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              <BookOpen size={15} /> Notion Import
             </button>
           )}
 
           {/* New Task CTA */}
-          <button onClick={onNewTask}
+          <button
+            onClick={onNewTask}
             className="inline-flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-black text-white transition-all hover:opacity-90 active:scale-95"
             style={{
               background: 'linear-gradient(135deg, var(--color-accent) 0%, #818CF8 100%)',
               boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 28%, transparent)',
-            }}>
+            }}
+          >
             <Plus size={15} /> New Task
           </button>
         </div>
@@ -381,8 +481,11 @@ function TasksHero({
                 return (
                   <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
                     {isActive && (
-                      <motion.div layoutId="task-pill-indicator" className="np-pill-indicator"
-                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }} />
+                      <motion.div
+                        layoutId="task-pill-indicator"
+                        className="np-pill-indicator"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                      />
                     )}
                     <span className="relative z-[1] flex items-center gap-[5px]">
                       {filterMeta[f].icon}
@@ -397,24 +500,40 @@ function TasksHero({
 
           {/* Sort */}
           <div className="relative shrink-0">
-            <button type="button" onClick={() => setSortMenuOpen((v) => !v)}
+            <button
+              type="button"
+              onClick={() => setSortMenuOpen((v) => !v)}
               className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-black whitespace-nowrap"
-              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+              style={{
+                background: 'var(--color-surface-raised)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
               Sort: {sortLabel[sortBy]}
               <ChevronDown size={12} />
             </button>
             {sortMenuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(() => false)} />
-                <div className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+                <div
+                  className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
+                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                >
                   {(Object.keys(sortLabel) as SortKey[]).map((key) => (
-                    <button key={key} onClick={() => { setSortBy(key); setSortMenuOpen(() => false); }}
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setSortBy(key);
+                        setSortMenuOpen(() => false);
+                      }}
                       className="w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors"
                       style={{
                         color: sortBy === key ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                        background: sortBy === key ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
-                      }}>
+                        background:
+                          sortBy === key ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                      }}
+                    >
                       {sortLabel[key]}
                     </button>
                   ))}
@@ -502,7 +621,9 @@ export function TasksPage() {
 
   const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({});
   const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'single'; task: TaskDTO } | { type: 'bulk'; count: number } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<
+    { type: 'single'; task: TaskDTO } | { type: 'bulk'; count: number } | null
+  >(null);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const [notionImportOpen, setNotionImportOpen] = useState(false);
 
@@ -519,7 +640,7 @@ export function TasksPage() {
   const deleteTask = useDeleteTask();
 
   const tasks = useMemo(() => tasksData?.pages.flatMap((p) => p.data) ?? [], [tasksData]);
-  const { ref: sentinelRef, inView: sentinelInView } = useInView({ 
+  const { ref: sentinelRef, inView: sentinelInView } = useInView({
     threshold: 0,
     rootMargin: '150px',
     triggerOnce: false,
@@ -527,10 +648,10 @@ export function TasksPage() {
 
   // Prevent multiple simultaneous pagination calls
   const fetchingRef = useRef(false);
-  
+
   useEffect(() => {
     const shouldFetch = sentinelInView && hasNextPage && !isFetchingNextPage && !fetchingRef.current;
-    
+
     if (shouldFetch) {
       fetchingRef.current = true;
       fetchNextPage().finally(() => {
@@ -568,14 +689,17 @@ export function TasksPage() {
 
   // ── filter + sort helpers ────────────────────────────────────────────────
 
-  const counts = useMemo(() => ({
-    pending:   tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED' && !isFutureTask(t.dueDate)).length,
-    today:     tasks.filter((t) => isToday(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
-    upcoming:  tasks.filter((t) => isUpcoming(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
-    completed: tasks.filter((t) => t.status === 'DONE').length,
-    overdue:   tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
-    all:       tasks.length,
-  }), [tasks]);
+  const counts = useMemo(
+    () => ({
+      pending: tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED' && !isFutureTask(t.dueDate)).length,
+      today: tasks.filter((t) => isToday(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
+      upcoming: tasks.filter((t) => isUpcoming(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
+      completed: tasks.filter((t) => t.status === 'DONE').length,
+      overdue: tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
+      all: tasks.length,
+    }),
+    [tasks]
+  );
 
   const analyticsWindow = useMemo(() => {
     const series = dailyAnalytics ?? [];
@@ -586,8 +710,12 @@ export function TasksPage() {
     const previousTasks = sumSeries(previous.map((item) => item.tasksCompleted));
     const recentFocus = sumSeries(recent.map((item) => item.focusMinutes));
     const previousFocus = sumSeries(previous.map((item) => item.focusMinutes));
-    const recentSignal = sumSeries(recent.map((item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8));
-    const previousSignal = sumSeries(previous.map((item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8));
+    const recentSignal = sumSeries(
+      recent.map((item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8)
+    );
+    const previousSignal = sumSeries(
+      previous.map((item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8)
+    );
 
     return {
       recent,
@@ -602,13 +730,25 @@ export function TasksPage() {
     const query = searchQuery.trim().toLowerCase();
     const base = tasks.filter((task) => {
       switch (filter) {
-        case 'pending':   if (task.status === 'DONE' || task.status === 'CANCELLED' || isFutureTask(task.dueDate)) return false; break;
-        case 'today':     if (!(isToday(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false; break;
-        case 'upcoming':  if (!(isUpcoming(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false; break;
-        case 'completed': if (task.status !== 'DONE') return false; break;
-        case 'overdue':   if (!isOverdue(task.dueDate, task.status)) return false; break;
-        case 'all':       break;
-        default: break;
+        case 'pending':
+          if (task.status === 'DONE' || task.status === 'CANCELLED' || isFutureTask(task.dueDate)) return false;
+          break;
+        case 'today':
+          if (!(isToday(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false;
+          break;
+        case 'upcoming':
+          if (!(isUpcoming(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false;
+          break;
+        case 'completed':
+          if (task.status !== 'DONE') return false;
+          break;
+        case 'overdue':
+          if (!isOverdue(task.dueDate, task.status)) return false;
+          break;
+        case 'all':
+          break;
+        default:
+          break;
       }
       if (!query) return true;
       const haystack = [
@@ -617,7 +757,9 @@ export function TasksPage() {
         task.priority,
         task.status,
         ...(task.subTasks?.map((s) => s.title) ?? []),
-      ].join(' ').toLowerCase();
+      ]
+        .join(' ')
+        .toLowerCase();
       return haystack.includes(query);
     });
 
@@ -640,11 +782,13 @@ export function TasksPage() {
   const overdueTasks = useMemo(() => tasks.filter((t) => isOverdue(t.dueDate, t.status)), [tasks]);
   const overdueMinutes = useMemo(
     () => overdueTasks.reduce((sum, t) => sum + (t.estimatedDuration ?? 0), 0),
-    [overdueTasks],
+    [overdueTasks]
   );
   const topOverdueTask = useMemo(
-    () => [...overdueTasks].sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3))[0] ?? null,
-    [overdueTasks],
+    () =>
+      [...overdueTasks].sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3))[0] ??
+      null,
+    [overdueTasks]
   );
 
   // ── selection ────────────────────────────────────────────────────────────
@@ -653,7 +797,7 @@ export function TasksPage() {
 
   const visibleSelectedTasks = useMemo(
     () => filteredTasks.filter((t) => selectedTaskIds.has(t.id)),
-    [filteredTasks, selectedTaskIds],
+    [filteredTasks, selectedTaskIds]
   );
 
   const allVisibleSelected = filteredTasks.length > 0 && visibleSelectedTasks.length === filteredTasks.length;
@@ -703,7 +847,9 @@ export function TasksPage() {
     };
   }, [searchParams, tasks, setSearchParams]);
 
-  useEffect(() => { clearSelection(); }, [filter, view, searchQuery, clearSelection]);
+  useEffect(() => {
+    clearSelection();
+  }, [filter, view, searchQuery, clearSelection]);
 
   const toggleTaskSelection = (taskId: string) => {
     setSelectedTaskIds((prev) => {
@@ -724,33 +870,47 @@ export function TasksPage() {
 
   // ── task actions ─────────────────────────────────────────────────────────
 
-  const toggleTaskStatus = useCallback((task: TaskDTO) => {
-    const nextStatus: TaskStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
-    updateTask.mutate({ id: task.id, data: { status: nextStatus } });
-  }, [updateTask]);
+  const toggleTaskStatus = useCallback(
+    (task: TaskDTO) => {
+      const nextStatus: TaskStatus = task.status === 'DONE' ? 'TODO' : 'DONE';
+      updateTask.mutate({ id: task.id, data: { status: nextStatus } });
+    },
+    [updateTask]
+  );
 
-  const changeTaskStatus = useCallback((task: TaskDTO, status: TaskStatus) => {
-    updateTask.mutate({ id: task.id, data: { status } });
-  }, [updateTask]);
+  const changeTaskStatus = useCallback(
+    (task: TaskDTO, status: TaskStatus) => {
+      updateTask.mutate({ id: task.id, data: { status } });
+    },
+    [updateTask]
+  );
 
-  const handleDeleteTask = useCallback((id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (task) {
-      setDeleteConfirmation({ type: 'single', task });
-    }
-  }, [tasks]);
+  const handleDeleteTask = useCallback(
+    (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (task) {
+        setDeleteConfirmation({ type: 'single', task });
+      }
+    },
+    [tasks]
+  );
 
-  const handleAddSubtask = useCallback(async (taskId: string) => {
-    const title = (subtaskDraft[taskId] ?? '').trim();
-    if (!title) return;
-    const task = tasks.find((t) => t.id === taskId);
-    const orders = task?.subTasks?.map((s) => s.order) ?? [];
-    const order = orders.length > 0 ? Math.max(...orders) + 1 : 0;
-    try {
-      await createSubTaskMutation.mutateAsync({ taskId, title, order });
-      setSubtaskDraft((prev) => ({ ...prev, [taskId]: '' }));
-    } catch { /* toast handled by mutation */ }
-  }, [subtaskDraft, tasks, createSubTaskMutation]);
+  const handleAddSubtask = useCallback(
+    async (taskId: string) => {
+      const title = (subtaskDraft[taskId] ?? '').trim();
+      if (!title) return;
+      const task = tasks.find((t) => t.id === taskId);
+      const orders = task?.subTasks?.map((s) => s.order) ?? [];
+      const order = orders.length > 0 ? Math.max(...orders) + 1 : 0;
+      try {
+        await createSubTaskMutation.mutateAsync({ taskId, title, order });
+        setSubtaskDraft((prev) => ({ ...prev, [taskId]: '' }));
+      } catch {
+        /* toast handled by mutation */
+      }
+    },
+    [subtaskDraft, tasks, createSubTaskMutation]
+  );
 
   const handleRescheduleAll = useCallback(async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -772,7 +932,9 @@ export function TasksPage() {
       await Promise.all(visibleSelectedTasks.map((t) => tasksApi.update(t.id, { status })));
       await invalidateTasks();
       clearSelection();
-    } finally { setBulkAction(null); }
+    } finally {
+      setBulkAction(null);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -784,21 +946,23 @@ export function TasksPage() {
 
   const handleConfirmDelete = useCallback(() => {
     if (!deleteConfirmation) return;
-    
+
     if (deleteConfirmation.type === 'single') {
       deleteTask.mutate(deleteConfirmation.task.id);
       setTaskMenuOpen(null);
     } else {
       setBulkAction('delete');
       const taskIds = Array.from(selectedTaskIds);
-      Promise.all(taskIds.map((id) => tasksApi.delete(id))).then(() => {
-        invalidateTasks();
-        clearSelection();
-      }).finally(() => {
-        setBulkAction(null);
-      });
+      Promise.all(taskIds.map((id) => tasksApi.delete(id)))
+        .then(() => {
+          invalidateTasks();
+          clearSelection();
+        })
+        .finally(() => {
+          setBulkAction(null);
+        });
     }
-    
+
     setDeleteConfirmation(null);
   }, [deleteConfirmation, deleteTask, selectedTaskIds, invalidateTasks, clearSelection]);
 
@@ -806,16 +970,23 @@ export function TasksPage() {
 
   const firstSelected = useMemo(
     () => visibleSelectedTasks[0] ?? filteredTasks[0] ?? null,
-    [visibleSelectedTasks, filteredTasks],
+    [visibleSelectedTasks, filteredTasks]
   );
 
   useTaskKeyboardShortcuts({
-    onNewTask:          () => setCreateModalOpen(true),
-    onEditSelected:     () => { if (firstSelected) setEditingTask(firstSelected); },
-    onCompleteSelected: () => { if (firstSelected) toggleTaskStatus(firstSelected); },
-    onFocusSearch:      () => searchRef.current?.focus(),
-    onFocusMode:        () => { if (firstSelected) navigate(`/focus?taskId=${firstSelected.id}&autostart=1`); else navigate('/focus?autostart=1'); },
-    isBlocked:          () => createModalOpen || editingTask !== null,
+    onNewTask: () => setCreateModalOpen(true),
+    onEditSelected: () => {
+      if (firstSelected) setEditingTask(firstSelected);
+    },
+    onCompleteSelected: () => {
+      if (firstSelected) toggleTaskStatus(firstSelected);
+    },
+    onFocusSearch: () => searchRef.current?.focus(),
+    onFocusMode: () => {
+      if (firstSelected) navigate(`/focus?taskId=${firstSelected.id}&autostart=1`);
+      else navigate('/focus?autostart=1');
+    },
+    isBlocked: () => createModalOpen || editingTask !== null,
   });
 
   // ── capacity + productivity summary numbers ─────────────────────────────
@@ -825,7 +996,7 @@ export function TasksPage() {
       tasks
         .filter((t) => isToday(t.dueDate) && t.status !== 'CANCELLED')
         .reduce((sum, t) => sum + (t.estimatedDuration ?? 0), 0),
-    [tasks],
+    [tasks]
   );
   const capacityMinutes = 8 * 60;
   const capacityUsedPct = Math.min(100, Math.round((plannedMinutesToday / capacityMinutes) * 100));
@@ -851,10 +1022,8 @@ export function TasksPage() {
     >
       {/* ── xl+: flex row wrapping header-left + sidebar-right ──────────── */}
       <div className="xl:flex xl:gap-6 xl:flex-1 xl:min-h-0">
-
         {/* ── Left column: header + task content ───────────────────────── */}
         <div className="xl:flex xl:flex-col xl:flex-1 xl:min-w-0">
-
           {/* ── PREMIUM HEADER HERO ──────────────────────────────────── */}
           <TasksHero
             user={user}
@@ -899,18 +1068,28 @@ export function TasksPage() {
               <div className="flex items-start gap-3 min-w-0">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)',
+                    color: 'var(--color-danger)',
+                  }}
                 >
                   <AlertTriangle size={16} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                    {overdueTasks.length} overdue task{overdueTasks.length !== 1 ? 's' : ''} require{overdueTasks.length === 1 ? 's' : ''} your attention
+                    {overdueTasks.length} overdue task{overdueTasks.length !== 1 ? 's' : ''} require
+                    {overdueTasks.length === 1 ? 's' : ''} your attention
                   </p>
                   <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                    {overdueMinutes > 0 && `Approximately ${overdueMinutes >= 60 ? `${Math.round(overdueMinutes / 60)}h` : `${overdueMinutes}m`} of work — `}
+                    {overdueMinutes > 0 &&
+                      `Approximately ${overdueMinutes >= 60 ? `${Math.round(overdueMinutes / 60)}h` : `${overdueMinutes}m`} of work — `}
                     all lower priority.
-                    {topOverdueTask && <> Top task: <span className="font-semibold">{topOverdueTask.title}</span></>}
+                    {topOverdueTask && (
+                      <>
+                        {' '}
+                        Top task: <span className="font-semibold">{topOverdueTask.title}</span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -930,7 +1109,11 @@ export function TasksPage() {
                   type="button"
                   onClick={handleRescheduleAll}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all shadow-sm"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                  style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                  }}
                 >
                   <RotateCcw size={13} />
                   Reschedule All
@@ -950,10 +1133,9 @@ export function TasksPage() {
           {/* Main content area (tasks) */}
           <motion.div variants={itemVariants} className="flex-1 overflow-y-auto">
             <div className="flex w-full flex-col gap-5 p-5 sm:p-7 xl:p-9">
-
               {/* Select all */}
               {view === 'list' && filteredTasks.length > 0 && (
-              <motion.div variants={itemVariants} className="flex items-center justify-end">
+                <motion.div variants={itemVariants} className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={toggleVisibleSelection}
@@ -972,7 +1154,7 @@ export function TasksPage() {
                     </span>
                     Select All
                   </button>
-              </motion.div>
+                </motion.div>
               )}
 
               {/* Bulk action bar */}
@@ -1008,7 +1190,11 @@ export function TasksPage() {
                       onClick={() => handleBulkStatusChange('TODO')}
                       disabled={bulkAction !== null}
                       className="px-4 py-2 rounded-xl text-xs font-bold border disabled:opacity-60 transition-all"
-                      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                      style={{
+                        background: 'var(--color-surface)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                      }}
                     >
                       {bulkAction === 'todo' ? 'Updating…' : 'Mark To Do'}
                     </button>
@@ -1026,7 +1212,11 @@ export function TasksPage() {
                       onClick={clearSelection}
                       disabled={bulkAction !== null}
                       className="px-4 py-2 rounded-xl text-xs font-bold border disabled:opacity-60 transition-all"
-                      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                      style={{
+                        background: 'var(--color-surface)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text-secondary)',
+                      }}
                     >
                       Clear
                     </button>
@@ -1093,9 +1283,7 @@ export function TasksPage() {
                             onToggleSubtask={(taskId, subTaskId, completed) =>
                               updateSubTaskMutation.mutate({ taskId, subTaskId, data: { completed } })
                             }
-                            onDeleteSubtask={(taskId, subTaskId) =>
-                              deleteSubTaskMutation.mutate({ taskId, subTaskId })
-                            }
+                            onDeleteSubtask={(taskId, subTaskId) => deleteSubTaskMutation.mutate({ taskId, subTaskId })}
                             onFocus={(taskId) => navigate(`/focus?taskId=${taskId}`)}
                             onOpen={(taskId) => navigate(`/tasks/${taskId}`)}
                           />
@@ -1104,16 +1292,19 @@ export function TasksPage() {
                     </div>
 
                     {/* Cursor pagination sentinel + loading indicator */}
-                    <div 
-                      ref={sentinelRef} 
+                    <div
+                      ref={sentinelRef}
                       className="w-full flex items-center justify-center py-8 min-h-[100px]"
-                      style={{ 
+                      style={{
                         visibility: hasNextPage || isFetchingNextPage ? 'visible' : 'visible',
-                        opacity: hasNextPage || isFetchingNextPage ? 1 : 0.6
+                        opacity: hasNextPage || isFetchingNextPage ? 1 : 0.6,
                       }}
                     >
                       {isFetchingNextPage ? (
-                        <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                        <div
+                          className="flex items-center gap-2 text-xs font-semibold"
+                          style={{ color: 'var(--color-text-muted)' }}
+                        >
                           <Loader2 size={16} className="animate-spin" />
                           Loading more tasks…
                         </div>
@@ -1129,31 +1320,52 @@ export function TasksPage() {
                   </>
                 )}
               </motion.div>
-
             </div>
           </motion.div>
-
         </div>
         {/* ── End left column ───────────────────────────────────────────── */}
 
         {/* ── Right: Sidebar (xl+) — aligned from header level ──────────── */}
         <aside className="hidden xl:flex xl:flex-col xl:gap-5 xl:w-[320px] 2xl:w-[360px] xl:shrink-0 xl:pt-6 xl:pr-8">
-
           {/* Productivity Engine */}
-          <motion.div variants={itemVariants} className="rounded-3xl border shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-            <ProductivityEngine context="tasks" tasks={tasks} focusSessions={[]} onOpenCreateTask={(t, d) => { setCreateModalOpen(true); }} onHighlightTask={(id) => { setHighlightedTaskId(id); setTimeout(() => setHighlightedTaskId(null), 3000); }} />
+          <motion.div
+            variants={itemVariants}
+            className="rounded-3xl border shadow-sm"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
+            <ProductivityEngine
+              context="tasks"
+              tasks={tasks}
+              focusSessions={[]}
+              onOpenCreateTask={(t, d) => {
+                setCreateModalOpen(true);
+              }}
+              onHighlightTask={(id) => {
+                setHighlightedTaskId(id);
+                setTimeout(() => setHighlightedTaskId(null), 3000);
+              }}
+            />
           </motion.div>
 
           {/* Today's Capacity */}
-          <motion.div variants={itemVariants} className="rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div
+            variants={itemVariants}
+            className="rounded-3xl border p-5 shadow-sm"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Zap size={14} style={{ color: 'var(--color-accent)' }} />
-                <h3 className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Today's Capacity</h3>
+                <h3 className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                  Today's Capacity
+                </h3>
               </div>
               <span
                 className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}
+                style={{
+                  background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                  color: 'var(--color-accent)',
+                }}
               >
                 {capacityLabel}
               </span>
@@ -1172,106 +1384,165 @@ export function TasksPage() {
             <div className="space-y-1">
               <div className="flex justify-between text-[10px]">
                 <span style={{ color: 'var(--color-text-muted)' }}>Progress</span>
-                <span className="font-bold" style={{ color: 'var(--color-text-primary)' }}>{capacityFreePct}% free</span>
+                <span className="font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                  {capacityFreePct}% free
+                </span>
               </div>
-              <div className="h-1.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}>
-                <div className="h-full rounded-full" style={{ width: `${capacityUsedPct}%`, background: 'var(--gradient-accent)' }} />
+              <div
+                className="h-1.5 rounded-full"
+                style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${capacityUsedPct}%`, background: 'var(--gradient-accent)' }}
+                />
               </div>
             </div>
           </motion.div>
 
           {/* Productivity Score */}
-          <motion.div variants={itemVariants} className="rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <motion.div
+            variants={itemVariants}
+            className="rounded-3xl border p-5 shadow-sm"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Productivity Score</h3>
-              <span className="text-[9px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>This Week</span>
+              <h3 className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                Productivity Score
+              </h3>
+              <span className="text-[9px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                This Week
+              </span>
             </div>
 
             <div className="flex flex-col gap-3">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <CheckCircle2 size={11} style={{ color: 'var(--color-success)' }} />
-                  <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Tasks</span>
+                  <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    Tasks
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>{counts.completed}</span>
+                  <span className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+                    {counts.completed}
+                  </span>
                   {dashboardSummary && (
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+                    <span
+                      className="text-[9px] font-bold px-1 py-0.5 rounded-full"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-success) 15%, transparent)',
+                        color: 'var(--color-success)',
+                      }}
+                    >
                       {analyticsWindow.tasksTrend}
                     </span>
                   )}
                 </div>
                 <div className="mt-1">
-                  <Sparkline points={analyticsWindow.recent.map((item) => item.tasksCompleted)} color="var(--color-success)" />
+                  <Sparkline
+                    points={analyticsWindow.recent.map((item) => item.tasksCompleted)}
+                    color="var(--color-success)"
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <Zap size={11} style={{ color: 'var(--color-accent)' }} />
-                  <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Focus</span>
+                  <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    Focus
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
                     {formatMinutes(dashboardSummary?.focusMinutesTotal ?? 0)}
                   </span>
                   {dashboardSummary && (
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+                    <span
+                      className="text-[9px] font-bold px-1 py-0.5 rounded-full"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)',
+                        color: 'var(--color-accent)',
+                      }}
+                    >
                       {analyticsWindow.focusTrend}
                     </span>
                   )}
                 </div>
                 <div className="mt-1">
-                  <Sparkline points={analyticsWindow.recent.map((item) => item.focusMinutes / 60)} color="var(--color-accent)" />
+                  <Sparkline
+                    points={analyticsWindow.recent.map((item) => item.focusMinutes / 60)}
+                    color="var(--color-accent)"
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp size={11} style={{ color: 'var(--color-warning)' }} />
-                  <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Score</span>
+                  <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    Score
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
-                    {(dashboardSummary?.productivityScore ?? 0)}%
+                    {dashboardSummary?.productivityScore ?? 0}%
                   </span>
                   {dashboardSummary && (
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+                    <span
+                      className="text-[9px] font-bold px-1 py-0.5 rounded-full"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-success) 15%, transparent)',
+                        color: 'var(--color-success)',
+                      }}
+                    >
                       {analyticsWindow.scoreTrend}
                     </span>
                   )}
                 </div>
                 <div className="mt-1">
                   <Sparkline
-                    points={analyticsWindow.recent.map((item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8)}
+                    points={analyticsWindow.recent.map(
+                      (item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8
+                    )}
                     color="var(--color-warning)"
                   />
                 </div>
               </div>
             </div>
           </motion.div>
-
         </aside>
         {/* ── End right: Sidebar ───────────────────────────────────────── */}
-
       </div>
       {/* ── End xl+ flex row ──────────────────────────────────────────────── */}
 
       {/* ── Below xl: stacked cards ───────────────────────────────────────── */}
       <div className="flex flex-col gap-5 px-4 py-6 sm:px-6 xl:hidden">
-        <div className="rounded-3xl border p-4 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+        <div
+          className="rounded-3xl border p-4 shadow-sm"
+          style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+        >
           <ProductivityEngine context="tasks" tasks={tasks} focusSessions={[]} onOpenCreateTask={(t, d) => {}} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <div className="lg:col-span-2 rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <div
+            className="lg:col-span-2 rounded-3xl border p-5 shadow-sm"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Zap size={16} style={{ color: 'var(--color-accent)' }} />
-                <h3 className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>Today's Capacity</h3>
+                <h3 className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                  Today's Capacity
+                </h3>
               </div>
               <span
                 className="text-[10px] font-bold px-2 py-1 rounded-full"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}
+                style={{
+                  background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                  color: 'var(--color-accent)',
+                }}
               >
                 {capacityLabel}
               </span>
@@ -1290,28 +1561,47 @@ export function TasksPage() {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span style={{ color: 'var(--color-text-muted)' }}>Progress</span>
-                <span className="font-bold" style={{ color: 'var(--color-text-primary)' }}>{capacityFreePct}% free</span>
+                <span className="font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                  {capacityFreePct}% free
+                </span>
               </div>
-              <div className="h-2 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}>
-                <div className="h-full rounded-full" style={{ width: `${capacityUsedPct}%`, background: 'var(--gradient-accent)' }} />
+              <div
+                className="h-2 rounded-full"
+                style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${capacityUsedPct}%`, background: 'var(--gradient-accent)' }}
+                />
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-3 rounded-3xl border p-5 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <div
+            className="lg:col-span-3 rounded-3xl border p-5 shadow-sm"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>Productivity Summary</h3>
-              <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>This Week</span>
+              <h3 className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                Productivity Summary
+              </h3>
+              <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                This Week
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 size={14} style={{ color: 'var(--color-success)' }} />
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Tasks Completed</span>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    Tasks Completed
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>{counts.completed}</span>
+                  <span className="text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>
+                    {counts.completed}
+                  </span>
                   {dashboardSummary && (
                     <span
                       className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
@@ -1325,14 +1615,19 @@ export function TasksPage() {
                   )}
                 </div>
                 <div className="mt-2">
-                  <Sparkline points={analyticsWindow.recent.map((item) => item.tasksCompleted)} color="var(--color-success)" />
+                  <Sparkline
+                    points={analyticsWindow.recent.map((item) => item.tasksCompleted)}
+                    color="var(--color-success)"
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Zap size={14} style={{ color: 'var(--color-accent)' }} />
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Focus Time</span>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    Focus Time
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>
@@ -1351,18 +1646,23 @@ export function TasksPage() {
                   )}
                 </div>
                 <div className="mt-2">
-                  <Sparkline points={analyticsWindow.recent.map((item) => item.focusMinutes / 60)} color="var(--color-accent)" />
+                  <Sparkline
+                    points={analyticsWindow.recent.map((item) => item.focusMinutes / 60)}
+                    color="var(--color-accent)"
+                  />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp size={14} style={{ color: 'var(--color-warning)' }} />
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Productivity Score</span>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    Productivity Score
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-black" style={{ color: 'var(--color-text-primary)' }}>
-                    {(dashboardSummary?.productivityScore ?? 0)}%
+                    {dashboardSummary?.productivityScore ?? 0}%
                   </span>
                   {dashboardSummary && (
                     <span
@@ -1378,7 +1678,9 @@ export function TasksPage() {
                 </div>
                 <div className="mt-2">
                   <Sparkline
-                    points={analyticsWindow.recent.map((item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8)}
+                    points={analyticsWindow.recent.map(
+                      (item) => item.tasksCompleted * 10 + item.focusMinutes + item.habitsCompleted * 8
+                    )}
                     color="var(--color-warning)"
                   />
                 </div>
@@ -1391,26 +1693,22 @@ export function TasksPage() {
       {/* ── Modals ────────────────────────────────────────────────────── */}
       <CreateTaskModal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} />
       <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="tasks" />
-      {editingTask && (
-        <EditTaskModal
-          isOpen
-          task={editingTask}
-          onClose={() => setEditingTask(null)}
-        />
-      )}
+      {editingTask && <EditTaskModal isOpen task={editingTask} onClose={() => setEditingTask(null)} />}
 
       {/* Delete confirmation modal */}
-      <Modal
-        open={deleteConfirmation !== null}
-        onClose={() => setDeleteConfirmation(null)}
-        title="Delete Task"
-      >
+      <Modal open={deleteConfirmation !== null} onClose={() => setDeleteConfirmation(null)} title="Delete Task">
         <div className="flex flex-col gap-5 pt-2">
           <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
             {deleteConfirmation?.type === 'single' ? (
-              <>Are you sure you want to delete <strong>{deleteConfirmation.task.title}</strong>? This action cannot be undone.</>
+              <>
+                Are you sure you want to delete <strong>{deleteConfirmation.task.title}</strong>? This action cannot be
+                undone.
+              </>
             ) : deleteConfirmation?.type === 'bulk' ? (
-              <>Are you sure you want to delete <strong>{deleteConfirmation.count}</strong> selected task{deleteConfirmation.count !== 1 ? 's' : ''}? This action cannot be undone.</>
+              <>
+                Are you sure you want to delete <strong>{deleteConfirmation.count}</strong> selected task
+                {deleteConfirmation.count !== 1 ? 's' : ''}? This action cannot be undone.
+              </>
             ) : null}
           </p>
           <div className="flex gap-3">

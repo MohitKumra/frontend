@@ -70,7 +70,7 @@ export function QuickActionsPanel() {
       <div className="p-6 sm:p-7">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6 sm:mb-7">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'var(--gradient-accent)' }}
           >
@@ -90,14 +90,14 @@ export function QuickActionsPanel() {
               type="button"
               onClick={() => navigate(route)}
               className="group relative rounded-xl p-4 text-left transition-all duration-200 active:scale-98"
-              style={{ 
-                background: 'var(--color-surface-raised)', 
-                border: '1px solid var(--color-border)' 
+              style={{
+                background: 'var(--color-surface-raised)',
+                border: '1px solid var(--color-border)',
               }}
             >
               {/* Content */}
               <div className="relative flex flex-col items-center text-center">
-                <div 
+                <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform duration-200 group-hover:scale-105 shadow-sm"
                   style={{ background: gradient }}
                 >

@@ -33,11 +33,7 @@ function LockedCard({ achievement }: { achievement: AchievementWithStatusDTO }) 
   const hasProgress = achievement.progress > 0;
 
   return (
-    <motion.div
-      className="relative"
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-    >
+    <motion.div className="relative" whileHover={{ y: -2 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
       <div
         className="relative flex flex-col items-center text-center gap-2 p-3 rounded-xl overflow-hidden"
         style={{
@@ -119,9 +115,7 @@ function LockedCard({ achievement }: { achievement: AchievementWithStatusDTO }) 
 
         {/* Title — muted so hierarchy still favors unlocked cards */}
         <div className="relative">
-          <p className="text-[12px] font-bold leading-tight text-text-muted">
-            {achievement.title}
-          </p>
+          <p className="text-[12px] font-bold leading-tight text-text-muted">{achievement.title}</p>
           <p className="text-[9px] font-medium text-text-muted leading-tight mt-0.5 opacity-70">
             {achievement.description}
           </p>
@@ -216,8 +210,8 @@ function UnlockedCard({ achievement, compact = false }: { achievement: Achieveme
                     className="absolute w-1 h-1 rounded-full"
                     style={{ background: tierColor, top: '50%', left: '50%' }}
                     animate={{
-                      x: [0, (Math.cos((i * Math.PI) / 2) * 16)],
-                      y: [0, (Math.sin((i * Math.PI) / 2) * 16)],
+                      x: [0, Math.cos((i * Math.PI) / 2) * 16],
+                      y: [0, Math.sin((i * Math.PI) / 2) * 16],
                       opacity: [1, 0],
                       scale: [1, 0],
                     }}
@@ -251,12 +245,8 @@ function UnlockedCard({ achievement, compact = false }: { achievement: Achieveme
         {/* Label */}
         {!compact && (
           <div className="relative">
-            <p className="text-[12px] font-bold leading-tight text-text-primary">
-              {achievement.title}
-            </p>
-            <p className="text-[9px] font-medium text-text-muted leading-tight mt-0.5">
-              {achievement.description}
-            </p>
+            <p className="text-[12px] font-bold leading-tight text-text-primary">{achievement.title}</p>
+            <p className="text-[9px] font-medium text-text-muted leading-tight mt-0.5">{achievement.description}</p>
           </div>
         )}
 
@@ -278,7 +268,11 @@ function UnlockedCard({ achievement, compact = false }: { achievement: Achieveme
 
 // ─── Main Gallery Component ─────────────────────────────────────────────────
 
-export function AchievementsGallery({ onClose, onBack, inline }: {
+export function AchievementsGallery({
+  onClose,
+  onBack,
+  inline,
+}: {
   onClose?: () => void;
   onBack?: () => void;
   inline?: boolean;
@@ -305,10 +299,12 @@ export function AchievementsGallery({ onClose, onBack, inline }: {
   return (
     <div className="w-full">
       {/* Header */}
-      
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+      <div
+        className="flex gap-1 mb-6 p-1 rounded-xl"
+        style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+      >
         <button
           onClick={() => setActiveTab('achievements')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold transition-all ${
@@ -386,9 +382,7 @@ export function AchievementsGallery({ onClose, onBack, inline }: {
                 {/* Summary strip — same tier-header language as the Achievements tab,
                     placed up top so it reads as context for the grid below, not a leftover */}
                 <div className="flex items-center gap-2 mb-5 flex-wrap">
-                  <span className="text-sm font-bold text-text-primary">
-                    {unlocked.length} earned
-                  </span>
+                  <span className="text-sm font-bold text-text-primary">{unlocked.length} earned</span>
                   <span className="text-text-muted opacity-40">·</span>
                   {tierOrder.map((tier) => {
                     const tierItems = unlocked.filter((a) => a.tier === tier);

@@ -1,5 +1,17 @@
 import { Link } from 'react-router-dom';
-import { Zap, ArrowLeft, Shield, Eye, Database, CalendarDays, Trash2, Mail, UserCheck, Lock, Globe2 } from 'lucide-react';
+import {
+  Zap,
+  ArrowLeft,
+  Shield,
+  Eye,
+  Database,
+  CalendarDays,
+  Trash2,
+  Mail,
+  UserCheck,
+  Lock,
+  Globe2,
+} from 'lucide-react';
 import { Card } from '../components/ui/Card';
 
 const sections = [
@@ -9,7 +21,7 @@ const sections = [
     icon: Shield,
     content: `Welcome to Finamite. Finamite is a personal management app that helps you organize your tasks, build habits, run focus sessions, keep notes, and sync it all with your Google Calendar — with achievements along the way to keep you motivated.
 
-This policy explains, in plain language, what information we collect, why we collect it, and how you can control it. By using Finamite, you agree to the practices described here. If something here doesn't sit right with you, please don't use the app, or reach out to us with your concerns first — we'd rather explain than lose your trust.`
+This policy explains, in plain language, what information we collect, why we collect it, and how you can control it. By using Finamite, you agree to the practices described here. If something here doesn't sit right with you, please don't use the app, or reach out to us with your concerns first — we'd rather explain than lose your trust.`,
   },
   {
     id: 'information-collect',
@@ -33,7 +45,7 @@ If you connect Google Calendar:
 
 Automatically, for security and reliability:
 - Basic device and browser info, and your IP address, so we can keep the app secure and catch problems
-- Which parts of the app you use, so we know what to improve`
+- Which parts of the app you use, so we know what to improve`,
   },
   {
     id: 'how-we-use',
@@ -49,7 +61,7 @@ Automatically, for security and reliability:
 - Catch and stop suspicious activity, fraud, or abuse
 - Meet our legal obligations and enforce our Terms of Service
 
-We do not sell or rent your personal information to anyone, for advertising or anything else. Finamite makes money from the app itself, not from your data.`
+We do not sell or rent your personal information to anyone, for advertising or anything else. Finamite makes money from the app itself, not from your data.`,
   },
   {
     id: 'google-calendar',
@@ -62,7 +74,7 @@ What this means in practice:
 - We only read calendar events to match them against the tasks you've created in Finamite, so sync stays accurate.
 - If you delete a task, disconnect the integration, or close your account, we remove the calendar events we created — within 30 days at the latest.
 
-Required Google disclosure: Finamite's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements. Specifically, we use Google Calendar data solely to provide the sync features described above; we do not use it for advertising, marketing, or profiling; and we do not share it with any other party except as needed to operate the sync itself or as required by law.`
+Required Google disclosure: Finamite's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements. Specifically, we use Google Calendar data solely to provide the sync features described above; we do not use it for advertising, marketing, or profiling; and we do not share it with any other party except as needed to operate the sync itself or as required by law.`,
   },
   {
     id: 'sharing-disclosure',
@@ -75,7 +87,7 @@ Required Google disclosure: Finamite's use and transfer to any other app of info
 - If we're legally required to — such as responding to a valid court order — or if it's necessary to protect the safety of you, us, or others.
 - If Finamite is ever acquired or merges with another company, in which case we'll tell you directly before anything changes.
 
-We never sell or rent your data to advertisers or data brokers.`
+We never sell or rent your data to advertisers or data brokers.`,
   },
   {
     id: 'data-retention',
@@ -88,7 +100,7 @@ We never sell or rent your data to advertisers or data brokers.`
 - Calendar events we created are removed at the same time, where possible — occasionally one may be left behind if your calendar wasn't reachable at that moment.
 - Security logs are kept for up to 12 months, purely to help us catch and investigate problems.
 
-You can ask us to delete your account and everything tied to it at any time — see "Your Rights" below.`
+You can ask us to delete your account and everything tied to it at any time — see "Your Rights" below.`,
   },
   {
     id: 'security',
@@ -102,7 +114,7 @@ You can ask us to delete your account and everything tied to it at any time — 
 - Only authorized team members can access production systems, and they need extra verification to do it.
 - We review and update our security practices regularly.
 
-No system connected to the internet can be guaranteed 100% secure, but we work hard to keep yours protected.`
+No system connected to the internet can be guaranteed 100% secure, but we work hard to keep yours protected.`,
   },
   {
     id: 'your-rights',
@@ -116,13 +128,13 @@ No system connected to the internet can be guaranteed 100% secure, but we work h
 - Manage emails: unsubscribe from any non-essential email using the link inside it, or turn off notification types in Settings.
 - Disconnect Google Calendar: turn it off any time from Settings → Integrations, or revoke access directly at https://myaccount.google.com/permissions.
 
-Questions about any of this? Reach out using the contact details in section 10.`
+Questions about any of this? Reach out using the contact details in section 10.`,
   },
   {
     id: 'children',
     title: "9. Children's Privacy",
     icon: UserCheck,
-    content: `Finamite isn't intended for children under 13, and we don't knowingly collect information from them. If we learn that someone under 13 has created an account, we'll remove their information and close the account.`
+    content: `Finamite isn't intended for children under 13, and we don't knowingly collect information from them. If we learn that someone under 13 has created an account, we'll remove their information and close the account.`,
   },
   {
     id: 'contact',
@@ -132,7 +144,7 @@ Questions about any of this? Reach out using the contact details in section 10.`
 
 Email: privacy@finamite.com
 
-We aim to reply within 14 business days. If you're not satisfied with our response, you may also have the right to raise a complaint with your local data protection authority.`
+We aim to reply within 14 business days. If you're not satisfied with our response, you may also have the right to raise a complaint with your local data protection authority.`,
   },
   {
     id: 'changes',
@@ -142,7 +154,7 @@ We aim to reply within 14 business days. If you're not satisfied with our respon
 
 Continuing to use Finamite after an update means you're okay with the change.
 
-Last updated: July 25, 2026`
+Last updated: July 25, 2026`,
   },
 ];
 
@@ -181,7 +193,8 @@ export function PrivacyPolicyPage() {
 
           <Card variant="glass" className="p-5 sm:p-6 border-accent/10">
             <p className="text-sm text-text-secondary leading-relaxed">
-              Effective date: <strong className="text-text-primary">July 25, 2026</strong>. A plain-language look at how Finamite collects, uses, and protects your information — including through Google Calendar sync.
+              Effective date: <strong className="text-text-primary">July 25, 2026</strong>. A plain-language look at how
+              Finamite collects, uses, and protects your information — including through Google Calendar sync.
             </p>
           </Card>
         </div>
@@ -222,9 +235,7 @@ export function PrivacyPolicyPage() {
                   >
                     <Icon size={18} className="text-accent" />
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight pt-1.5">
-                    {s.title}
-                  </h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight pt-1.5">{s.title}</h2>
                 </div>
                 <div className="pl-0 sm:pl-14">
                   {s.content.split('\n\n').map((para, pIdx) => (
@@ -243,9 +254,7 @@ export function PrivacyPolicyPage() {
 
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-border text-center">
-          <p className="text-xs text-text-muted">
-            ⓒ {new Date().getFullYear()} Finamite. All rights reserved.
-          </p>
+          <p className="text-xs text-text-muted">ⓒ {new Date().getFullYear()} Finamite. All rights reserved.</p>
           <div className="mt-3 flex items-center justify-center gap-4 text-xs">
             <Link to="/terms" className="text-text-muted hover:text-accent font-medium">
               Terms of Service

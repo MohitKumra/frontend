@@ -57,7 +57,7 @@ export function LongestStreakCard({ habit, streak }: LongestStreakCardProps) {
         >
           <Star size={18} className="absolute top-5 right-16 opacity-40" />
         </motion.div>
-        
+
         <motion.div
           animate={{
             y: [5, -5],
@@ -72,7 +72,7 @@ export function LongestStreakCard({ habit, streak }: LongestStreakCardProps) {
         >
           <Gem size={16} className="absolute top-12 right-6 opacity-30" />
         </motion.div>
-        
+
         <motion.div
           animate={{
             scale: [1, 1.1, 1],
@@ -102,9 +102,7 @@ export function LongestStreakCard({ habit, streak }: LongestStreakCardProps) {
             >
               <Flame className="text-white" size={20} />
             </motion.div>
-            <p className="text-[11px] font-bold uppercase tracking-wider opacity-90">
-              Longest Streak
-            </p>
+            <p className="text-[11px] font-bold uppercase tracking-wider opacity-90">Longest Streak</p>
           </div>
 
           <div className="flex items-end gap-3 mb-2">
@@ -123,7 +121,7 @@ export function LongestStreakCard({ habit, streak }: LongestStreakCardProps) {
             </motion.p>
             <p className="text-lg font-bold mb-2 opacity-90">days</p>
           </div>
-          
+
           <p className="text-[13px] font-semibold opacity-90 mb-1">{habit.title}</p>
         </div>
 

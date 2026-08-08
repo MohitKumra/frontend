@@ -10,23 +10,23 @@ interface WeekJourneyProps {
 
 export function WeekJourney({ habits }: WeekJourneyProps) {
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
-  
+
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dayShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const todayIdx = (new Date().getDay() + 6) % 7; // Monday = 0
 
   // Calculate completion data for each day
   const dayData = days.map((_, idx) => {
-    const completed = habits.filter(h => h.weekPattern && h.weekPattern[idx]).length;
+    const completed = habits.filter((h) => h.weekPattern && h.weekPattern[idx]).length;
     const total = habits.length;
     const missed = total - completed;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     const isFuture = idx > todayIdx;
     const isToday = idx === todayIdx;
-    
+
     // Mock time spent (in reality would come from focus sessions)
     const timeSpent = isFuture ? 0 : Math.floor(Math.random() * 120) + 30;
-    
+
     return { completed, total, missed, percentage, isFuture, isToday, timeSpent };
   });
 
@@ -57,9 +57,7 @@ export function WeekJourney({ habits }: WeekJourneyProps) {
           <CalendarCheck2 size={18} className="text-accent" />
           Weekly Journey
         </h3>
-        <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">
-          This Week
-        </span>
+        <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">This Week</span>
       </div>
 
       <div className="grid grid-cols-7 gap-3">
@@ -136,10 +134,7 @@ export function WeekJourney({ habits }: WeekJourneyProps) {
                       border: '2px solid var(--color-accent)',
                     }}
                     animate={{
-                      boxShadow: [
-                        '0 0 0 0 var(--color-accent)40',
-                        '0 0 0 4px var(--color-accent)00',
-                      ],
+                      boxShadow: ['0 0 0 0 var(--color-accent)40', '0 0 0 4px var(--color-accent)00'],
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                   />
@@ -180,36 +175,30 @@ export function WeekJourney({ habits }: WeekJourneyProps) {
                     }}
                   >
                     <p className="text-[11px] font-bold text-text-primary mb-2">{day}</p>
-                    
+
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-[10px] text-text-muted flex items-center gap-1">
                           <CheckCircle size={10} className="text-success" />
                           Completed
                         </span>
-                        <span className="text-[10px] font-bold text-text-primary">
-                          {data.completed}
-                        </span>
+                        <span className="text-[10px] font-bold text-text-primary">{data.completed}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-[10px] text-text-muted flex items-center gap-1">
                           <XCircle size={10} className="text-danger" />
                           Missed
                         </span>
-                        <span className="text-[10px] font-bold text-text-primary">
-                          {data.missed}
-                        </span>
+                        <span className="text-[10px] font-bold text-text-primary">{data.missed}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-[10px] text-text-muted flex items-center gap-1">
                           <Clock size={10} className="text-info" />
                           Time
                         </span>
-                        <span className="text-[10px] font-bold text-text-primary">
-                          {data.timeSpent}m
-                        </span>
+                        <span className="text-[10px] font-bold text-text-primary">{data.timeSpent}m</span>
                       </div>
                     </div>
                   </motion.div>

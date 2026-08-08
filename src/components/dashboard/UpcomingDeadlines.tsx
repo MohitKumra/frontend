@@ -43,9 +43,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
   // every row.
   const overdueCount = deadlines.filter((d) => d.daysUntilDue < 0).length;
   const dueTodayCount = deadlines.filter((d) => d.daysUntilDue === 0).length;
-  const dueThisWeekCount = deadlines.filter(
-    (d) => d.daysUntilDue > 0 && d.daysUntilDue <= 7
-  ).length;
+  const dueThisWeekCount = deadlines.filter((d) => d.daysUntilDue > 0 && d.daysUntilDue <= 7).length;
 
   return (
     // flex-1 (not h-full) so the card claims whatever space is left in its
@@ -71,9 +69,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
           </div>
           <h3 className="text-sm font-bold text-text-primary">Upcoming deadlines</h3>
         </div>
-        <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-          Overdue & upcoming
-        </span>
+        <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Overdue & upcoming</span>
       </div>
 
       {deadlines.length === 0 ? (
@@ -118,9 +114,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-text-primary mb-1 truncate">
-                          {deadline.title}
-                        </p>
+                        <p className="text-xs font-bold text-text-primary mb-1 truncate">{deadline.title}</p>
 
                         <div className="flex items-center gap-2">
                           <span
@@ -132,10 +126,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
                           >
                             {deadline.type}
                           </span>
-                          <span
-                            className="text-[10px] font-bold"
-                            style={{ color: `var(--color-${urgency})` }}
-                          >
+                          <span className="text-[10px] font-bold" style={{ color: `var(--color-${urgency})` }}>
                             {formatDeadline(deadline.daysUntilDue)}
                           </span>
                         </div>
@@ -152,15 +143,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
   );
 }
 
-function StatChip({
-  label,
-  count,
-  urgency,
-}: {
-  label: string;
-  count: number;
-  urgency: 'danger' | 'warning' | 'info';
-}) {
+function StatChip({ label, count, urgency }: { label: string; count: number; urgency: 'danger' | 'warning' | 'info' }) {
   const isZero = count === 0;
   return (
     <div
@@ -219,23 +202,9 @@ function EmptyState() {
       `}</style>
 
       <div className="deadlines-empty-float relative w-16 h-16 mb-4">
-        <svg
-          width="64"
-          height="64"
-          viewBox="0 0 64 64"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="8" y="12" width="48" height="44" rx="8" fill="var(--icon-bg-info)" />
-          <rect
-            x="8"
-            y="12"
-            width="48"
-            height="12"
-            rx="8"
-            fill="var(--icon-text-info)"
-            opacity="0.25"
-          />
+          <rect x="8" y="12" width="48" height="12" rx="8" fill="var(--icon-text-info)" opacity="0.25" />
           <rect x="18" y="6" width="4" height="10" rx="2" fill="var(--icon-text-info)" />
           <rect x="42" y="6" width="4" height="10" rx="2" fill="var(--icon-text-info)" />
           <circle cx="24" cy="38" r="2" fill="var(--icon-text-info)" opacity="0.4" />
@@ -255,9 +224,7 @@ function EmptyState() {
       </div>
 
       <p className="text-xs font-bold text-text-primary mb-1">All caught up</p>
-      <p className="text-[11px] text-text-muted max-w-[220px]">
-        No overdue or upcoming deadlines to worry about.
-      </p>
+      <p className="text-[11px] text-text-muted max-w-[220px]">No overdue or upcoming deadlines to worry about.</p>
     </div>
   );
 }

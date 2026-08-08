@@ -34,19 +34,15 @@ interface Particle {
 }
 
 const PARTICLE_COLORS = [
-  'rgba(129, 140, 248, 0.65)',  // indigo
-  'rgba(217, 70, 239, 0.5)',    // fuchsia
-  'rgba(236, 72, 153, 0.45)',   // pink
-  'rgba(96, 165, 250, 0.55)',   // blue
-  'rgba(167, 139, 250, 0.5)',   // violet
-  'rgba(199, 210, 254, 0.6)',   // pale indigo
+  'rgba(129, 140, 248, 0.65)', // indigo
+  'rgba(217, 70, 239, 0.5)', // fuchsia
+  'rgba(236, 72, 153, 0.45)', // pink
+  'rgba(96, 165, 250, 0.55)', // blue
+  'rgba(167, 139, 250, 0.5)', // violet
+  'rgba(199, 210, 254, 0.6)', // pale indigo
 ];
 
-export function MicroParticles({
-  count = 6,
-  animate = true,
-  reducedMotion = false,
-}: MicroParticlesProps) {
+export function MicroParticles({ count = 6, animate = true, reducedMotion = false }: MicroParticlesProps) {
   const particles = useMemo<Particle[]>(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -63,11 +59,7 @@ export function MicroParticles({
   if (reducedMotion) return null;
 
   return (
-    <div
-      className="pointer-events-none absolute inset-0"
-      style={{ width: 0, height: 0 }}
-      aria-hidden="true"
-    >
+    <div className="pointer-events-none absolute inset-0" style={{ width: 0, height: 0 }} aria-hidden="true">
       {particles.map((p) => (
         <motion.div
           key={p.id}

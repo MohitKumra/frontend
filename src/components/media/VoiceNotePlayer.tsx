@@ -274,7 +274,8 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
           disabled={!duration}
           className="relative flex items-center justify-center w-11 h-11 rounded-full shrink-0 transition-transform active:scale-90 disabled:opacity-50"
           style={{
-            background: 'linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, black 15%))',
+            background:
+              'linear-gradient(150deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 70%, black 15%))',
             color: 'white',
             boxShadow: '0 3px 10px -2px color-mix(in srgb, var(--color-primary) 55%, transparent)',
           }}
@@ -342,8 +343,8 @@ export function VoiceNotePlayer({ src, onDelete, compact = false }: VoiceNotePla
                     fill: isPast
                       ? 'var(--color-primary)'
                       : isHoverPast
-                      ? 'color-mix(in srgb, var(--color-primary) 55%, var(--color-text-muted) 45%)'
-                      : 'var(--color-text-muted)',
+                        ? 'color-mix(in srgb, var(--color-primary) 55%, var(--color-text-muted) 45%)'
+                        : 'var(--color-text-muted)',
                     transition: 'fill 0.15s ease',
                   }}
                 />

@@ -29,7 +29,9 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
   // re-renders the parent), re-focusing the first focusable element and
   // stealing focus away from whatever input the user is typing in.
   const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Handle initial focus, focus trapping, and body scroll lock.
   // Deps: [open] ONLY — this must run exactly once per open/close
@@ -217,10 +219,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
                 aria-modal="true"
                 aria-labelledby={title ? 'modal-title' : undefined}
                 tabIndex={-1}
-                className={[
-                  'w-full shadow-2xl flex flex-col max-h-[90dvh] border rounded-2xl',
-                  maxWidth,
-                ].join(' ')}
+                className={['w-full shadow-2xl flex flex-col max-h-[90dvh] border rounded-2xl', maxWidth].join(' ')}
                 style={{
                   background: 'var(--modal-bg)',
                   borderColor: 'var(--modal-border)',

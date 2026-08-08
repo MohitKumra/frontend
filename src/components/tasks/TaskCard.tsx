@@ -59,7 +59,9 @@ export function isToday(dateStr: string | null): boolean {
   if (!dateStr) return false;
   const today = new Date();
   const d = new Date(dateStr);
-  return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+  return (
+    d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
+  );
 }
 
 export function formatDueDate(dateStr: string | null): string | null {
@@ -68,7 +70,11 @@ export function formatDueDate(dateStr: string | null): string | null {
   if (isToday(dateStr)) return 'Today';
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (date.getDate() === tomorrow.getDate() && date.getMonth() === tomorrow.getMonth() && date.getFullYear() === tomorrow.getFullYear()) {
+  if (
+    date.getDate() === tomorrow.getDate() &&
+    date.getMonth() === tomorrow.getMonth() &&
+    date.getFullYear() === tomorrow.getFullYear()
+  ) {
     return 'Tomorrow';
   }
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -83,18 +89,18 @@ interface StatusConfig {
 }
 
 export const STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
-  TODO:        { label: 'To Do',       color: 'var(--color-info)',       icon: <Circle size={10} /> },
-  IN_PROGRESS: { label: 'In Progress', color: 'var(--color-warning)',    icon: <Play size={10} /> },
-  DONE:        { label: 'Done',        color: 'var(--color-success)',    icon: <CheckCircle2 size={10} /> },
-  CANCELLED:   { label: 'Cancelled',   color: 'var(--color-text-muted)', icon: <Ban size={10} /> },
+  TODO: { label: 'To Do', color: 'var(--color-info)', icon: <Circle size={10} /> },
+  IN_PROGRESS: { label: 'In Progress', color: 'var(--color-warning)', icon: <Play size={10} /> },
+  DONE: { label: 'Done', color: 'var(--color-success)', icon: <CheckCircle2 size={10} /> },
+  CANCELLED: { label: 'Cancelled', color: 'var(--color-text-muted)', icon: <Ban size={10} /> },
 };
 
 // ── priority config ────────────────────────────────────────────────────────
 
 export const PRIORITY_COLOR: Record<string, string> = {
-  LOW:      'var(--color-info)',
-  MEDIUM:   'var(--color-warning)',
-  HIGH:     'var(--color-danger)',
+  LOW: 'var(--color-info)',
+  MEDIUM: 'var(--color-warning)',
+  HIGH: 'var(--color-danger)',
   CRITICAL: '#7c3aed',
 };
 
@@ -106,15 +112,7 @@ function priorityAccent(priority: string, done: boolean, cancelled: boolean): st
 
 // ── small shared bits ────────────────────────────────────────────────────────
 
-function Chip({
-  children,
-  color,
-  icon,
-}: {
-  children: React.ReactNode;
-  color: string;
-  icon?: React.ReactNode;
-}) {
+function Chip({ children, color, icon }: { children: React.ReactNode; color: string; icon?: React.ReactNode }) {
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full px-1.5 py-[3px] text-[9.5px] font-bold leading-none"
@@ -215,8 +213,10 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        menuRef.current && !menuRef.current.contains(event.target as Node) &&
-        buttonRef.current && !buttonRef.current.contains(event.target as Node)
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         onToggleMenu(null);
       }
@@ -246,17 +246,17 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
           borderColor: isHighlighted
             ? 'var(--color-accent)'
             : isSelected
-            ? 'var(--color-accent)'
-            : overdue
-            ? 'color-mix(in srgb, var(--color-danger) 40%, var(--color-border))'
-            : 'var(--color-border)',
+              ? 'var(--color-accent)'
+              : overdue
+                ? 'color-mix(in srgb, var(--color-danger) 40%, var(--color-border))'
+                : 'var(--color-border)',
           background: 'var(--color-surface)',
           transform: isHighlighted ? 'translateY(-4px)' : 'none',
           boxShadow: isHighlighted
             ? '0 8px 30px color-mix(in srgb, var(--color-accent) 30%, transparent), 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent)'
             : isSelected
-            ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent)'
-            : '0 1px 2px rgba(0,0,0,0.04)',
+              ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent)'
+              : '0 1px 2px rgba(0,0,0,0.04)',
         }}
       >
         {/* slim priority/status accent line replaces the old tall gradient header */}
@@ -305,75 +305,95 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
                 <MoreVertical size={16} />
               </button>
 
-              {isMenuOpen && menuPosition && createPortal(
-                <>
-                  <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => onToggleMenu(null)} />
-                  <div
-                    ref={menuRef}
-                    className="fixed w-48 rounded-xl py-2"
-                    style={{
-                      top: `${menuPosition.top}px`,
-                      right: `${menuPosition.right}px`,
-                      background: 'var(--color-surface-raised)',
-                      border: '1px solid var(--color-border)',
-                      zIndex: 9999,
-                      boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() => { onOpen?.(task.id); onToggleMenu(null); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      style={{ color: 'var(--color-text-primary)' }}
+              {isMenuOpen &&
+                menuPosition &&
+                createPortal(
+                  <>
+                    <div className="fixed inset-0" style={{ zIndex: 9998 }} onClick={() => onToggleMenu(null)} />
+                    <div
+                      ref={menuRef}
+                      className="fixed w-48 rounded-xl py-2"
+                      style={{
+                        top: `${menuPosition.top}px`,
+                        right: `${menuPosition.right}px`,
+                        background: 'var(--color-surface-raised)',
+                        border: '1px solid var(--color-border)',
+                        zIndex: 9999,
+                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Eye size={13} style={{ color: 'var(--color-accent)' }} /> View Details
-                    </button>
-                    <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
-
-                    {task.status !== 'IN_PROGRESS' && !done && !cancelled && (
                       <button
-                        onClick={() => { onChangeStatus(task, 'IN_PROGRESS'); onToggleMenu(null); }}
+                        onClick={() => {
+                          onOpen?.(task.id);
+                          onToggleMenu(null);
+                        }}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
                         style={{ color: 'var(--color-text-primary)' }}
                       >
-                        <Play size={13} style={{ color: 'var(--color-warning)' }} /> Start Progress
+                        <Eye size={13} style={{ color: 'var(--color-accent)' }} /> View Details
                       </button>
-                    )}
-                    {task.status === 'IN_PROGRESS' && (
+                      <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
+
+                      {task.status !== 'IN_PROGRESS' && !done && !cancelled && (
+                        <button
+                          onClick={() => {
+                            onChangeStatus(task, 'IN_PROGRESS');
+                            onToggleMenu(null);
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                          style={{ color: 'var(--color-text-primary)' }}
+                        >
+                          <Play size={13} style={{ color: 'var(--color-warning)' }} /> Start Progress
+                        </button>
+                      )}
+                      {task.status === 'IN_PROGRESS' && (
+                        <button
+                          onClick={() => {
+                            onChangeStatus(task, 'TODO');
+                            onToggleMenu(null);
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                          style={{ color: 'var(--color-text-primary)' }}
+                        >
+                          <Pause size={13} style={{ color: 'var(--color-text-muted)' }} /> Pause Progress
+                        </button>
+                      )}
+
                       <button
-                        onClick={() => { onChangeStatus(task, 'TODO'); onToggleMenu(null); }}
+                        onClick={() => {
+                          onEdit(task);
+                          onToggleMenu(null);
+                        }}
                         className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
                         style={{ color: 'var(--color-text-primary)' }}
                       >
-                        <Pause size={13} style={{ color: 'var(--color-text-muted)' }} /> Pause Progress
+                        <Edit3 size={13} /> Edit Task
                       </button>
-                    )}
-
-                    <button
-                      onClick={() => { onEdit(task); onToggleMenu(null); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      <Edit3 size={13} /> Edit Task
-                    </button>
-                    <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
-                    <button
-                      onClick={() => {onDelete(task.id); onToggleMenu(null)}}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                      style={{ color: 'var(--color-danger)' }}
-                    >
-                      <Trash2 size={13} /> Delete
-                    </button>
-                  </div>
-                </>,
-                document.body,
-              )}
+                      <div className="my-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
+                      <button
+                        onClick={() => {
+                          onDelete(task.id);
+                          onToggleMenu(null);
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+                        style={{ color: 'var(--color-danger)' }}
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </div>
+                  </>,
+                  document.body
+                )}
             </div>
           </div>
 
           {/* Row 2 — description, one line max */}
           {task.description && (
-            <p className="mt-1 line-clamp-1 pl-[34px] text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            <p
+              className="mt-1 line-clamp-1 pl-[34px] text-[11px] leading-relaxed"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
               {task.description}
             </p>
           )}
@@ -381,19 +401,31 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
           {/* Row 3 — compact meta chips */}
           <div className="mt-2 flex flex-wrap items-center gap-1 pl-[34px]">
             {task.project && (
-              <Chip color="var(--color-success)" icon={<FolderKanban size={9} />}>{task.project.name}</Chip>
+              <Chip color="var(--color-success)" icon={<FolderKanban size={9} />}>
+                {task.project.name}
+              </Chip>
             )}
             {task.status !== 'TODO' && (
-              <Chip color={statusCfg.color} icon={statusCfg.icon}>{statusCfg.label}</Chip>
+              <Chip color={statusCfg.color} icon={statusCfg.icon}>
+                {statusCfg.label}
+              </Chip>
             )}
             {recurrenceLabel && (
-              <Chip color="var(--color-accent)" icon={<RefreshCw size={9} />}>{recurrenceLabel}</Chip>
+              <Chip color="var(--color-accent)" icon={<RefreshCw size={9} />}>
+                {recurrenceLabel}
+              </Chip>
             )}
-            <Chip color={PRIORITY_COLOR[task.priority] ?? 'var(--color-text-muted)'} icon={<Flag size={9} fill="currentColor" />}>
+            <Chip
+              color={PRIORITY_COLOR[task.priority] ?? 'var(--color-text-muted)'}
+              icon={<Flag size={9} fill="currentColor" />}
+            >
               {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
             </Chip>
             {dueDateLabel && (
-              <Chip color={overdue ? 'var(--color-danger)' : today ? 'var(--color-warning)' : 'var(--color-text-muted)'} icon={<Calendar size={9} />}>
+              <Chip
+                color={overdue ? 'var(--color-danger)' : today ? 'var(--color-warning)' : 'var(--color-text-muted)'}
+                icon={<Calendar size={9} />}
+              >
                 {overdue ? `Overdue · ${dueDateLabel}` : dueDateLabel}
               </Chip>
             )}
@@ -402,13 +434,18 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
           {/* Row 4 — thin subtask progress, only if there are subtasks */}
           {subTotal > 0 && (
             <div className="mt-2.5 flex items-center gap-2 pl-[50px]">
-              <div className="relative h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}>
+              <div
+                className="relative h-1.5 flex-1 overflow-hidden rounded-full"
+                style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' }}
+              >
                 <div
                   className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${subPct}%`, background: subPct === 100 ? 'var(--color-success)' : accent }}
                 />
               </div>
-              <span className="shrink-0 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{subDone}/{subTotal}</span>
+              <span className="shrink-0 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                {subDone}/{subTotal}
+              </span>
             </div>
           )}
 
@@ -424,7 +461,10 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
               >
                 <ListChecks size={12} />
                 <span>{subTotal > 0 ? `${subDone}/${subTotal}` : 'Subtasks'}</span>
-                <ChevronDown size={11} style={{ transform: subExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                <ChevronDown
+                  size={11}
+                  style={{ transform: subExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                />
               </button>
 
               {task.attachmentUrl && (
@@ -441,7 +481,10 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
               )}
 
               {duration && (
-                <span className="flex items-center gap-1 text-[10.5px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                <span
+                  className="flex items-center gap-1 text-[10.5px] font-semibold"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   <Clock size={11} />
                   {duration}
                 </span>
@@ -469,8 +512,15 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
               {task.subTasks?.map((subTask) => (
-                <div key={subTask.id} className="group/sub -mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
-                  <button type="button" onClick={() => onToggleSubtask(task.id, subTask.id, !subTask.completed)} className="shrink-0">
+                <div
+                  key={subTask.id}
+                  className="group/sub -mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onToggleSubtask(task.id, subTask.id, !subTask.completed)}
+                    className="shrink-0"
+                  >
                     {subTask.completed ? (
                       <CheckCircle2 size={15} style={{ color: 'var(--color-success)' }} />
                     ) : (
@@ -498,7 +548,9 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
                 </div>
               ))}
               {subTotal === 0 && (
-                <p className="py-1 text-center text-[11px]" style={{ color: 'var(--color-text-muted)' }}>No subtasks yet</p>
+                <p className="py-1 text-center text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                  No subtasks yet
+                </p>
               )}
 
               <div className="flex items-center gap-2 pt-1">
@@ -506,7 +558,12 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
                   type="text"
                   value={subtaskDraft}
                   onChange={(e) => onSubtaskDraftChange(task.id, e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onAddSubtask(task.id); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      onAddSubtask(task.id);
+                    }
+                  }}
                   placeholder="Add a subtask…"
                   className="flex-1 bg-transparent text-[11.5px] font-medium focus:outline-none"
                   style={{ color: 'var(--color-text-primary)' }}

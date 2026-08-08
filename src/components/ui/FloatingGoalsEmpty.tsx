@@ -24,13 +24,7 @@ export function FloatingGoalsEmpty({
         style={{ width: 220, height: 180 }}
       >
         {/* Dashed orbit ring */}
-        <svg
-          className="absolute inset-0"
-          width="220"
-          height="180"
-          viewBox="0 0 220 180"
-          fill="none"
-        >
+        <svg className="absolute inset-0" width="220" height="180" viewBox="0 0 220 180" fill="none">
           <motion.ellipse
             cx="110"
             cy="90"
@@ -57,7 +51,14 @@ export function FloatingGoalsEmpty({
           animate={{ y: [0, -6, 0], rotate: [-4, -6, -4] }}
           transition={{ duration: 4.4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
         >
-          <circle cx="34" cy="34" r="32" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <circle
+            cx="34"
+            cy="34"
+            r="32"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Faint bullseye rings */}
           <circle cx="34" cy="34" r="22" fill="none" stroke="var(--color-border)" strokeWidth="1" opacity="0.5" />
           <circle cx="34" cy="34" r="13" fill="none" stroke="var(--color-border)" strokeWidth="1" opacity="0.35" />
@@ -178,22 +179,32 @@ export function FloatingGoalsEmpty({
             animate={{ r: [10, 14, 10] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           />
-          <circle
-            cx="54"
-            cy="54"
-            r="7"
-            fill="var(--color-accent)"
-            filter="url(#goalGlow)"
-            opacity="0.9"
-          />
+          <circle cx="54" cy="54" r="7" fill="var(--color-accent)" filter="url(#goalGlow)" opacity="0.9" />
 
           {/* Arrow pointing to center */}
           <motion.g
             animate={{ x: [0, 3, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
           >
-            <line x1="18" y1="54" x2="40" y2="54" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-            <path d="M34 48 L42 54 L34 60" fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+            <line
+              x1="18"
+              y1="54"
+              x2="40"
+              y2="54"
+              stroke="var(--color-accent)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              opacity="0.7"
+            />
+            <path
+              d="M34 48 L42 54 L34 60"
+              fill="none"
+              stroke="var(--color-accent)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.7"
+            />
           </motion.g>
 
           {/* Milestone tick marks */}
@@ -237,17 +248,25 @@ export function FloatingGoalsEmpty({
           viewBox="0 0 150 18"
           fill="none"
         >
-          <ellipse cx="75" cy="9" rx="65" ry="6" fill="currentColor" opacity="0.07" style={{ color: 'var(--color-text-muted)' }} />
+          <ellipse
+            cx="75"
+            cy="9"
+            rx="65"
+            ry="6"
+            fill="currentColor"
+            opacity="0.07"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
         </svg>
 
         {/* Floating sparkle dots */}
         {[
-          { x: 16,  y: 14,  delay: 0,   size: 6 },
-          { x: 188, y: 22,  delay: 0.4, size: 5 },
-          { x: 38,  y: 148, delay: 0.8, size: 5 },
+          { x: 16, y: 14, delay: 0, size: 6 },
+          { x: 188, y: 22, delay: 0.4, size: 5 },
+          { x: 38, y: 148, delay: 0.8, size: 5 },
           { x: 174, y: 136, delay: 1.2, size: 6 },
-          { x: 106, y: 4,   delay: 0.6, size: 4 },
-          { x: 8,   y: 88,  delay: 1.0, size: 4 },
+          { x: 106, y: 4, delay: 0.6, size: 4 },
+          { x: 8, y: 88, delay: 1.0, size: 4 },
         ].map((dot, i) => (
           <motion.div
             key={i}
@@ -258,11 +277,7 @@ export function FloatingGoalsEmpty({
               left: dot.x,
               top: dot.y,
               background:
-                i % 3 === 0
-                  ? 'var(--color-accent)'
-                  : i % 3 === 1
-                  ? 'var(--color-warning)'
-                  : 'var(--color-success)',
+                i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-warning)' : 'var(--color-success)',
             }}
             animate={{
               scale: [1, 1.7, 1],
@@ -286,17 +301,13 @@ export function FloatingGoalsEmpty({
         transition={{ duration: 0.5, delay: 0.35 }}
         className="mt-6 text-center flex flex-col items-center"
       >
-        <p className="text-sm sm:text-base font-black text-text-primary mb-1.5">
-          {title}
-        </p>
-        <p className="text-xs sm:text-sm text-text-muted mb-5 max-w-xs leading-relaxed">
-          {description}
-        </p>
+        <p className="text-sm sm:text-base font-black text-text-primary mb-1.5">{title}</p>
+        <p className="text-xs sm:text-sm text-text-muted mb-5 max-w-xs leading-relaxed">{description}</p>
 
         {/* Feature hint pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
           {[
-            { label: 'Link Habits',   color: 'var(--color-accent)' },
+            { label: 'Link Habits', color: 'var(--color-accent)' },
             { label: 'Track Progress', color: 'var(--color-warning)' },
             { label: 'Hit Milestones', color: 'var(--color-success)' },
           ].map((hint, i) => (
@@ -311,10 +322,7 @@ export function FloatingGoalsEmpty({
                 color: hint.color,
               }}
             >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: hint.color, opacity: 0.8 }}
-              />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: hint.color, opacity: 0.8 }} />
               {hint.label}
             </motion.span>
           ))}

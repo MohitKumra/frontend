@@ -15,13 +15,7 @@ export interface Point {
  * Cubic bezier curve evaluation at parameter t (0-1).
  * Uses de Casteljau's algorithm for numerical stability.
  */
-export function cubicBezier(
-  t: number,
-  p0: Point,
-  p1: Point,
-  p2: Point,
-  p3: Point,
-): Point {
+export function cubicBezier(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
   const mt = 1 - t;
   const mt2 = mt * mt;
   const mt3 = mt2 * mt;
@@ -41,7 +35,7 @@ export function cubicBezier(
 export function generateFlightPath(
   start: Point,
   end: Point,
-  height: number = 60,
+  height: number = 60
 ): { p0: Point; p1: Point; p2: Point; p3: Point } {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
@@ -70,12 +64,7 @@ export function generateFlightPath(
 /**
  * Samples a bezier curve into an array of points for animation.
  */
-export function sampleBezier(
-  start: Point,
-  end: Point,
-  steps: number = 30,
-  height: number = 60,
-): Point[] {
+export function sampleBezier(start: Point, end: Point, steps: number = 30, height: number = 60): Point[] {
   const { p0, p1, p2, p3 } = generateFlightPath(start, end, height);
   const points: Point[] = [];
 
@@ -117,12 +106,7 @@ export function easeOutQuint(t: number): number {
  * eased progress `t` (0-1). Height auto-scales with travel distance so short
  * hops don't over-arc and long hops don't feel flat.
  */
-export function flightPointAt(
-  start: Point,
-  end: Point,
-  t: number,
-  heightOverride?: number,
-): Point {
+export function flightPointAt(start: Point, end: Point, t: number, heightOverride?: number): Point {
   const distance = Math.hypot(end.x - start.x, end.y - start.y);
   const height = heightOverride ?? Math.min(90, Math.max(24, distance * 0.22));
   const { p0, p1, p2, p3 } = generateFlightPath(start, end, height);

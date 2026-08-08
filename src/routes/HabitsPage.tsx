@@ -1,15 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
-import {
-  Search,
-  Grid3x3,
-  List,
-  LayoutList,
-  Zap,
-  Clock,
-  CheckCircle2,
-} from 'lucide-react';
+import { Search, Grid3x3, List, LayoutList, Zap, Clock, CheckCircle2 } from 'lucide-react';
 import { useHabits, useCreateHabit, useStreakStatus } from '../features/habits/hooks/useHabits';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useFocusSessions } from '../features/habits/hooks/useFocusSessions';
@@ -81,13 +73,13 @@ export function HabitsPage() {
   const streakDays = habits.length > 0 ? Math.max(...habits.map((h) => h.currentStreak)) : 0;
   const activeStreaks = habits.filter((h) => h.currentStreak > 0).length;
   const xpEarned = gamification?.totalPoints ?? 0;
-  const successRate = habits.length > 0
-    ? Math.round(
-        (habits.reduce((sum, h) => sum + h.completionsThisWeek / Math.max(h.targetPerWeek, 1), 0) /
-          habits.length) *
-          100
-      )
-    : 0;
+  const successRate =
+    habits.length > 0
+      ? Math.round(
+          (habits.reduce((sum, h) => sum + h.completionsThisWeek / Math.max(h.targetPerWeek, 1), 0) / habits.length) *
+            100
+        )
+      : 0;
 
   const longestStreakHabit = useMemo(() => {
     if (habits.length === 0) return null;
@@ -100,15 +92,30 @@ export function HabitsPage() {
   const filteredHabits = useMemo(() => {
     let list = habits.filter((h) => h.title.toLowerCase().includes(searchQuery.toLowerCase()));
     switch (filter) {
-      case 'active': list = list.filter((h) => h.currentStreak > 0); break;
-      case 'pending': list = list.filter((h) => !h.completedToday); break;
-      case 'completed': list = list.filter((h) => h.completedToday); break;
+      case 'active':
+        list = list.filter((h) => h.currentStreak > 0);
+        break;
+      case 'pending':
+        list = list.filter((h) => !h.completedToday);
+        break;
+      case 'completed':
+        list = list.filter((h) => h.completedToday);
+        break;
     }
     const sorted = [...list];
     switch (sort) {
-      case 'name': sorted.sort((a, b) => a.title.localeCompare(b.title)); break;
-      case 'progress': sorted.sort((a, b) => b.completionsThisWeek / Math.max(b.targetPerWeek, 1) - a.completionsThisWeek / Math.max(a.targetPerWeek, 1)); break;
-      case 'streak': sorted.sort((a, b) => b.currentStreak - a.currentStreak); break;
+      case 'name':
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'progress':
+        sorted.sort(
+          (a, b) =>
+            b.completionsThisWeek / Math.max(b.targetPerWeek, 1) - a.completionsThisWeek / Math.max(a.targetPerWeek, 1)
+        );
+        break;
+      case 'streak':
+        sorted.sort((a, b) => b.currentStreak - a.currentStreak);
+        break;
     }
     return sorted;
   }, [habits, searchQuery, filter, sort]);
@@ -191,7 +198,7 @@ export function HabitsPage() {
     focusSessions,
     onOpenCreateTask: handleOpenCreateTask,
     onOpenCreateHabit: handleOpenCreateHabit,
-    onNavigateFocus: () => window.location.href = '/focus',
+    onNavigateFocus: () => (window.location.href = '/focus'),
     onFocusHabit: handleFocusHabit,
   };
 
@@ -207,18 +214,23 @@ export function HabitsPage() {
       >
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-black text-text-primary">Your Habits</h2>
-          <div className="flex gap-1 p-1.5 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+          <div
+            className="flex gap-1 p-1.5 rounded-xl"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          >
             <motion.button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-accent text-white' : 'text-text-muted'}`}
-              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               <Grid3x3 size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
             </motion.button>
             <motion.button
               onClick={() => setViewMode('list')}
               className={`p-1.5 sm:p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-accent text-white' : 'text-text-muted'}`}
-              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               <List size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5" />
             </motion.button>
@@ -227,18 +239,32 @@ export function HabitsPage() {
 
         <div className="flex flex-col sm:flex-row items-stretch gap-2">
           <div className="relative flex-1">
-            <Search size={14} className="sm:w-4 sm:h-4 w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+            <Search
+              size={14}
+              className="sm:w-4 sm:h-4 w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+            />
             <input
-              type="text" placeholder="Search habits..." value={searchQuery}
+              type="text"
+              placeholder="Search habits..."
+              value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+              }}
             />
           </div>
           <select
-            value={sort} onChange={(e) => setSort(e.target.value as HabitSort)}
+            value={sort}
+            onChange={(e) => setSort(e.target.value as HabitSort)}
             className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold border focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+            style={{
+              background: 'var(--color-surface)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+            }}
           >
             <option value="custom">Sort: Custom</option>
             <option value="streak">Sort: Streak</option>
@@ -258,11 +284,7 @@ export function HabitsPage() {
                 completed: <CheckCircle2 size={12} />,
               };
               return (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`np-pill ${isActive ? 'is-active' : ''}`}
-                >
+                <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
                   {isActive && (
                     <motion.div
                       layoutId="habit-pill-indicator"
@@ -342,7 +364,7 @@ export function HabitsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_320px] items-stretch gap-4 sm:gap-6">
-                  <WeekOverview habits={habits} />
+              <WeekOverview habits={habits} />
               {longestStreakHabit && (
                 <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
               )}
@@ -428,8 +450,24 @@ export function HabitsPage() {
       {/* Create Habit Wizard Modal */}
       <AnimatePresence>
         {showCreate && (
-          <Modal open={showCreate} onClose={() => { setShowCreate(false); setHabitPrefill({ title: '', time: '' }); }} title="New Habit" maxWidth="max-w-md">
-            <CreateHabitWizard open={showCreate} onClose={() => { setShowCreate(false); setHabitPrefill({ title: '', time: '' }); }} initialTitle={habitPrefill.title} initialReminderTime={habitPrefill.time} />
+          <Modal
+            open={showCreate}
+            onClose={() => {
+              setShowCreate(false);
+              setHabitPrefill({ title: '', time: '' });
+            }}
+            title="New Habit"
+            maxWidth="max-w-md"
+          >
+            <CreateHabitWizard
+              open={showCreate}
+              onClose={() => {
+                setShowCreate(false);
+                setHabitPrefill({ title: '', time: '' });
+              }}
+              initialTitle={habitPrefill.title}
+              initialReminderTime={habitPrefill.time}
+            />
           </Modal>
         )}
       </AnimatePresence>
@@ -464,7 +502,6 @@ export function HabitsPage() {
       />
     </motion.div>
   );
-
 }
 
 export default HabitsPage;

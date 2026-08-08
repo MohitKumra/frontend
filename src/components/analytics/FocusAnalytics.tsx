@@ -50,7 +50,11 @@ export function FocusAnalytics({ data }: { data: FocusAnalyticsData | null }) {
 
         <div className="grid grid-cols-2 gap-3">
           <StatTile label="Shortest" value={formatTime(data.shortestSessionMinutes)} />
-          <StatTile label="Interruptions" value={data.interruptions} tone={data.interruptions > 0 ? 'warning' : 'success'} />
+          <StatTile
+            label="Interruptions"
+            value={data.interruptions}
+            tone={data.interruptions > 0 ? 'warning' : 'success'}
+          />
         </div>
 
         <MiniMetricRow
@@ -62,7 +66,11 @@ export function FocusAnalytics({ data }: { data: FocusAnalyticsData | null }) {
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Cancelled" value={data.cancelledSessions} tone={data.cancelledSessions > 0 ? 'danger' : 'success'} />
+          <StatTile
+            label="Cancelled"
+            value={data.cancelledSessions}
+            tone={data.cancelledSessions > 0 ? 'danger' : 'success'}
+          />
           <StatTile label="Break time" value={formatTime(data.breakMinutes)} tone="warning" />
         </div>
 

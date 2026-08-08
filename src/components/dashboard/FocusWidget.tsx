@@ -48,7 +48,7 @@ export function FocusWidget({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div 
+            <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: 'var(--gradient-info)' }}
             >
@@ -62,19 +62,15 @@ export function FocusWidget({
         </div>
 
         {/* Today's Focus Time - Large Display */}
-        <div 
+        <div
           className="rounded-xl p-5 mb-4"
-          style={{ 
+          style={{
             background: 'var(--gradient-info)',
           }}
         >
           <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/80 mb-2">
-              Today's Focus Time
-            </p>
-            <p className="text-4xl font-black text-white mb-1">
-              {formatMinutes(todayMinutes)}
-            </p>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/80 mb-2">Today's Focus Time</p>
+            <p className="text-4xl font-black text-white mb-1">{formatMinutes(todayMinutes)}</p>
             <p className="text-xs text-white/70 font-bold">
               {totalMinutes > 0 ? `${formatMinutes(totalMinutes)} total` : 'Start your first session'}
             </p>
@@ -92,7 +88,7 @@ export function FocusWidget({
                 style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div 
+                  <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center"
                     style={{ background: colors.bg, color: colors.text }}
                   >
@@ -118,9 +114,7 @@ export function FocusWidget({
         </button>
 
         {/* Tip */}
-        <p className="text-xs text-center text-text-muted mt-4">
-          25-minute Pomodoro sessions recommended
-        </p>
+        <p className="text-xs text-center text-text-muted mt-4">25-minute Pomodoro sessions recommended</p>
       </div>
     </Card>
   );

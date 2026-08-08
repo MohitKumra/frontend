@@ -40,12 +40,7 @@ export function AgendaTaskRow({ task, onToggle, isLast = false }: AgendaTaskRowP
             boxShadow: `0 0 0 3px color-mix(in srgb, ${dotColor[task.status]} 18%, transparent)`,
           }}
         />
-        {!isLast && (
-          <div
-            className="w-px flex-1 mt-2 min-h-[8px]"
-            style={{ background: 'var(--color-border)' }}
-          />
-        )}
+        {!isLast && <div className="w-px flex-1 mt-2 min-h-[8px]" style={{ background: 'var(--color-border)' }} />}
       </div>
 
       {/* Card */}
@@ -75,16 +70,14 @@ export function AgendaTaskRow({ task, onToggle, isLast = false }: AgendaTaskRowP
             </p>
 
             {task.description && (
-              <p className="text-xs text-text-secondary mt-1 line-clamp-2 leading-relaxed">
-                {task.description}
-              </p>
+              <p className="text-xs text-text-secondary mt-1 line-clamp-2 leading-relaxed">{task.description}</p>
             )}
 
             <div className="flex items-center flex-wrap gap-2 mt-2.5">
               <PriorityBadge priority={task.priority} />
               <StatusBadge status={task.status} />
               {task.dueDate && (
-              <span className="flex items-center gap-1.5 text-[11px] text-text-muted font-bold">
+                <span className="flex items-center gap-1.5 text-[11px] text-text-muted font-bold">
                   <Clock size={11} /> {task.dueDate ? formatTime(task.dueDate) : formatTime(task.createdAt)}
                 </span>
               )}

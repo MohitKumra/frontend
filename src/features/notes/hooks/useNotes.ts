@@ -9,8 +9,7 @@ const DEFAULT_LIMIT = 20;
 export function useNotes(filters?: Omit<NoteListParams, 'page' | 'limit'>) {
   return useInfiniteQuery({
     queryKey: [...NOTES_KEY, filters],
-    queryFn: ({ pageParam = 1 }) =>
-      notesApi.list({ ...filters, page: pageParam as number, limit: DEFAULT_LIMIT }),
+    queryFn: ({ pageParam = 1 }) => notesApi.list({ ...filters, page: pageParam as number, limit: DEFAULT_LIMIT }),
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.meta;
       return page < totalPages ? page + 1 : undefined;

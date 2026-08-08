@@ -25,13 +25,7 @@ export function FloatingTasksEmpty({
         style={{ width: 200, height: 160 }}
       >
         {/* Dashed Orbit Ring */}
-        <svg
-          className="absolute inset-0"
-          width="200"
-          height="160"
-          viewBox="0 0 200 160"
-          fill="none"
-        >
+        <svg className="absolute inset-0" width="200" height="160" viewBox="0 0 200 160" fill="none">
           <motion.ellipse
             cx="100"
             cy="80"
@@ -58,7 +52,16 @@ export function FloatingTasksEmpty({
           animate={{ y: [0, -6, 0], rotate: [-4, -6, -4] }}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
-          <rect x="2" y="2" width="72" height="62" rx="8" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="72"
+            height="62"
+            rx="8"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           <circle cx="14" cy="18" r="5" fill="none" stroke="var(--color-border)" strokeWidth="1.5" />
           <rect x="25" y="16" width="38" height="4" rx="2" fill="var(--color-border)" opacity="0.6" />
           <circle cx="14" cy="34" r="5" fill="none" stroke="var(--color-border)" strokeWidth="1.5" />
@@ -78,10 +81,32 @@ export function FloatingTasksEmpty({
           animate={{ y: [0, -9, 0], rotate: [2, 4, 2] }}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
-          <rect x="2" y="2" width="82" height="68" rx="9" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="82"
+            height="68"
+            rx="9"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Checkbox completed */}
-          <circle cx="16" cy="20" r="6" fill="color-mix(in srgb, var(--color-success) 30%, transparent)" stroke="var(--color-success)" strokeWidth="1.5" />
-          <path d="M13 20 L15 22 L19 18" stroke="var(--color-success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle
+            cx="16"
+            cy="20"
+            r="6"
+            fill="color-mix(in srgb, var(--color-success) 30%, transparent)"
+            stroke="var(--color-success)"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M13 20 L15 22 L19 18"
+            stroke="var(--color-success)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
           <rect x="28" y="18" width="46" height="4" rx="2" fill="var(--color-border)" opacity="0.7" />
           {/* Checkbox pending */}
           <circle cx="16" cy="38" r="6" fill="none" stroke="var(--color-border)" strokeWidth="1.5" />
@@ -113,12 +138,37 @@ export function FloatingTasksEmpty({
           </defs>
 
           {/* Card body */}
-          <rect x="2" y="2" width="96" height="84" rx="10" fill="url(#taskCardGrad)" stroke="var(--color-accent)" strokeWidth="2" filter="url(#taskCardShadow)" />
+          <rect
+            x="2"
+            y="2"
+            width="96"
+            height="84"
+            rx="10"
+            fill="url(#taskCardGrad)"
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            filter="url(#taskCardShadow)"
+          />
 
           {/* Top header accent bar */}
           <rect x="12" y="12" width="32" height="5" rx="2.5" fill="var(--color-accent)" opacity="0.8" />
-          <rect x="70" y="12" width="18" height="14" rx="4" fill="color-mix(in srgb, var(--color-accent) 20%, transparent)" stroke="var(--color-accent)" strokeWidth="1" />
-          <path d="M76 19 L79 22 L83 16" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <rect
+            x="70"
+            y="12"
+            width="18"
+            height="14"
+            rx="4"
+            fill="color-mix(in srgb, var(--color-accent) 20%, transparent)"
+            stroke="var(--color-accent)"
+            strokeWidth="1"
+          />
+          <path
+            d="M76 19 L79 22 L83 16"
+            stroke="var(--color-accent)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
 
           {/* Task item 1 with animated check */}
           <motion.g
@@ -126,7 +176,13 @@ export function FloatingTasksEmpty({
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           >
             <circle cx="20" cy="34" r="7" fill="var(--color-accent)" />
-            <path d="M16.5 34 L19 36.5 L23.5 31.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M16.5 34 L19 36.5 L23.5 31.5"
+              stroke="white"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
             <rect x="34" y="32" width="50" height="4.5" rx="2" fill="var(--color-text-primary)" opacity="0.75" />
           </motion.g>
 
@@ -148,7 +204,15 @@ export function FloatingTasksEmpty({
           viewBox="0 0 140 16"
           fill="none"
         >
-          <ellipse cx="70" cy="8" rx="60" ry="5" fill="currentColor" opacity="0.07" style={{ color: 'var(--color-text-muted)' }} />
+          <ellipse
+            cx="70"
+            cy="8"
+            rx="60"
+            ry="5"
+            fill="currentColor"
+            opacity="0.07"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
         </svg>
 
         {/* Floating sparkle dots */}
@@ -167,11 +231,8 @@ export function FloatingTasksEmpty({
               height: i % 2 === 0 ? 6 : 5,
               left: dot.x,
               top: dot.y,
-              background: i % 3 === 0
-                ? 'var(--color-accent)'
-                : i % 3 === 1
-                ? 'var(--color-info)'
-                : 'var(--color-warning)',
+              background:
+                i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
             animate={{
               scale: [1, 1.6, 1],
@@ -195,12 +256,8 @@ export function FloatingTasksEmpty({
         transition={{ duration: 0.5, delay: 0.35 }}
         className="mt-5 text-center flex flex-col items-center max-w-sm px-4"
       >
-        <p className="text-base sm:text-lg font-bold text-text-primary mb-1">
-          {title}
-        </p>
-        <p className="text-xs sm:text-sm text-text-muted mb-6 leading-relaxed">
-          {description}
-        </p>
+        <p className="text-base sm:text-lg font-bold text-text-primary mb-1">{title}</p>
+        <p className="text-xs sm:text-sm text-text-muted mb-6 leading-relaxed">{description}</p>
 
         {suggestions && suggestions.length > 0 ? (
           <div className="flex flex-wrap items-center justify-center gap-2.5">

@@ -35,21 +35,21 @@
   --ease-book: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Note Colors */
-  --note-yellow: #FEF3C7;
-  --note-blue: #DBEAFE;
-  --note-pink: #FCE7F3;
-  --note-green: #DCFCE7;
+  --note-yellow: #fef3c7;
+  --note-blue: #dbeafe;
+  --note-pink: #fce7f3;
+  --note-green: #dcfce7;
 }
 
 [data-theme='dark'] {
-  --journal-darker: #0A0E1A;
-  --journal-dark: #1A2335;
-  --journal-paper: #E8DCC8;
+  --journal-darker: #0a0e1a;
+  --journal-dark: #1a2335;
+  --journal-paper: #e8dcc8;
 
-  --note-yellow: #4A3F1A;
-  --note-blue: #1E3A5F;
-  --note-pink: #4A2545;
-  --note-green: #1A4A2E;
+  --note-yellow: #4a3f1a;
+  --note-blue: #1e3a5f;
+  --note-pink: #4a2545;
+  --note-green: #1a4a2e;
 }
 
 /* ============================================================
@@ -111,9 +111,13 @@
   top: 5%;
   bottom: 5%;
   width: 7px;
-  background: repeating-linear-gradient(180deg,
-      var(--journal-paper), var(--journal-paper) 2px,
-      var(--journal-paper-shadow) 2px, var(--journal-paper-shadow) 3px);
+  background: repeating-linear-gradient(
+    180deg,
+    var(--journal-paper),
+    var(--journal-paper) 2px,
+    var(--journal-paper-shadow) 2px,
+    var(--journal-paper-shadow) 3px
+  );
   border-radius: 0 2px 2px 0;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.25);
   z-index: 0;
@@ -201,9 +205,13 @@
   top: 5%;
   bottom: 5%;
   width: 7px;
-  background: repeating-linear-gradient(180deg,
-      var(--journal-paper), var(--journal-paper) 2px,
-      var(--journal-paper-shadow) 2px, var(--journal-paper-shadow) 3px);
+  background: repeating-linear-gradient(
+    180deg,
+    var(--journal-paper),
+    var(--journal-paper) 2px,
+    var(--journal-paper-shadow) 2px,
+    var(--journal-paper-shadow) 3px
+  );
   border-radius: 0 2px 2px 0;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.25);
   z-index: 0;
@@ -414,7 +422,8 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 25% 15%, rgba(255, 255, 255, 0.15), transparent 55%),
+  background:
+    radial-gradient(circle at 25% 15%, rgba(255, 255, 255, 0.15), transparent 55%),
     radial-gradient(circle at 90% 90%, rgba(0, 0, 0, 0.25), transparent 60%);
   pointer-events: none;
 }
@@ -500,7 +509,14 @@
   display: flex;
   flex-direction: column;
   padding: 9% 8%;
-  background-image: repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 111, 71, 0.03) 2px, rgba(139, 111, 71, 0.03) 4px),
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 111, 71, 0.03) 2px,
+      rgba(139, 111, 71, 0.03) 4px
+    ),
     radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.06), transparent 45%),
     radial-gradient(circle at 85% 85%, rgba(92, 64, 51, 0.05), transparent 45%);
   box-shadow: inset 0 0 40px rgba(92, 64, 51, 0.12);
@@ -837,7 +853,9 @@
   /* room for the pin to poke above the sheet */
   background: linear-gradient(160deg, #fff9c4 0%, #fff59d 55%, #ffee8c 100%);
   border-radius: 4px;
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.12);
   padding: clamp(24px, 4vw, 44px);
   transform: translateY(24px) scale(0.97);
   opacity: 0;
@@ -989,7 +1007,9 @@
   color: var(--entry-close-color);
   border: 1px solid var(--entry-close-border);
   box-shadow: var(--entry-close-shadow, none);
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .entry-close-btn:hover {
@@ -1031,7 +1051,10 @@
   font-size: 13px;
   font-weight: 700;
   border: 2px solid transparent;
-  transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
   backdrop-filter: blur(6px);
 }
 
@@ -1198,7 +1221,6 @@
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
-
   .journal-overlay,
   .journal-book-stage,
   .note-overlay,
@@ -1244,7 +1266,9 @@
   box-shadow:
     0 10px 18px rgba(0, 0, 0, 0.18),
     0 2px 4px rgba(0, 0, 0, 0.12);
-  transition: transform 0.25s var(--ease-book), box-shadow 0.25s var(--ease-book);
+  transition:
+    transform 0.25s var(--ease-book),
+    box-shadow 0.25s var(--ease-book);
 }
 
 .sticky-note:nth-child(3n + 1) {
@@ -1369,9 +1393,17 @@
   padding-left: calc(clamp(28px, 5vw, 52px) + 22px);
   background: var(--journal-paper);
   border-radius: 4px 10px 10px 4px;
-  box-shadow: inset 0 0 40px rgba(92, 64, 51, 0.12), 0 30px 70px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 0 40px rgba(92, 64, 51, 0.12),
+    0 30px 70px rgba(0, 0, 0, 0.5);
   background-image:
-    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 111, 71, 0.03) 2px, rgba(139, 111, 71, 0.03) 4px),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 111, 71, 0.03) 2px,
+      rgba(139, 111, 71, 0.03) 4px
+    ),
     radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.06), transparent 45%),
     radial-gradient(circle at 85% 85%, rgba(92, 64, 51, 0.05), transparent 45%);
   overflow: hidden;
@@ -1385,7 +1417,9 @@
   bottom: 0;
   width: 14px;
   background: linear-gradient(90deg, var(--journal-darker), var(--journal-dark));
-  box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.5), 2px 0 8px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    inset -2px 0 4px rgba(0, 0, 0, 0.5),
+    2px 0 8px rgba(0, 0, 0, 0.25);
 }
 
 .journal-edit-header {
@@ -1539,7 +1573,9 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--entry-toggle-text);
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
   white-space: nowrap;
 }
 
@@ -1575,17 +1611,17 @@
 /* Override the generic surface/border tokens inside note sheets so
    the media field matches the yellow sticky-note palette instead of
    clashing with dark navy cards. */
-.note-sheet .note-media-field-wrap>div {
+.note-sheet .note-media-field-wrap > div {
   background: transparent !important;
 }
 
-.note-sheet .rounded-2xl[style*="surface-raised"] {
+.note-sheet .rounded-2xl[style*='surface-raised'] {
   background: rgba(74, 60, 0, 0.08) !important;
   border-color: rgba(74, 60, 0, 0.2) !important;
 }
 
 .note-sheet .note-media-field-wrap .rounded-xl,
-.note-sheet .note-media-field-wrap button[style*="surface"] {
+.note-sheet .note-media-field-wrap button[style*='surface'] {
   background: rgba(255, 255, 255, 0.5) !important;
   border-color: rgba(74, 60, 0, 0.18) !important;
   color: #4a3c00 !important;
@@ -1602,16 +1638,16 @@
 }
 
 /* View modal — media preview inside note-sheet */
-.note-sheet .mt-5 .rounded-2xl[style*="border"] {
+.note-sheet .mt-5 .rounded-2xl[style*='border'] {
   border-color: rgba(74, 60, 0, 0.2) !important;
 }
 
-.note-sheet .mt-5 .text-xs[style*="text-muted"],
-.note-sheet .mt-5 p[style*="text-muted"] {
+.note-sheet .mt-5 .text-xs[style*='text-muted'],
+.note-sheet .mt-5 p[style*='text-muted'] {
   color: #7a6420 !important;
 }
 
-.note-sheet .mt-5 .rounded-2xl[style*="surface"] {
+.note-sheet .mt-5 .rounded-2xl[style*='surface'] {
   background: rgba(255, 255, 255, 0.45) !important;
   border-color: rgba(74, 60, 0, 0.18) !important;
 }
@@ -1624,13 +1660,13 @@
   margin-top: 16px;
 }
 
-.journal-edit-page .journal-media-field-wrap>div {
+.journal-edit-page .journal-media-field-wrap > div {
   background: rgba(139, 111, 71, 0.1) !important;
   border-color: rgba(92, 64, 51, 0.25) !important;
 }
 
 .journal-edit-page .journal-media-field-wrap .rounded-xl,
-.journal-edit-page .journal-media-field-wrap button[style*="surface"] {
+.journal-edit-page .journal-media-field-wrap button[style*='surface'] {
   background: rgba(244, 232, 216, 0.6) !important;
   border-color: rgba(92, 64, 51, 0.2) !important;
   color: var(--journal-text) !important;
@@ -1692,11 +1728,11 @@
   color: #7a6420 !important;
 }
 
-.note-sheet .note-media-field-wrap span[style*="text-muted"] {
+.note-sheet .note-media-field-wrap span[style*='text-muted'] {
   color: #7a6420 !important;
 }
 
-.note-sheet .note-media-field-wrap span[style*="text-primary"] {
+.note-sheet .note-media-field-wrap span[style*='text-primary'] {
   color: #4a3c00 !important;
 }
 
@@ -1721,11 +1757,11 @@
   color: var(--journal-accent) !important;
 }
 
-.journal-edit-page .journal-media-field-wrap span[style*="text-muted"] {
+.journal-edit-page .journal-media-field-wrap span[style*='text-muted'] {
   color: var(--journal-accent) !important;
 }
 
-.journal-edit-page .journal-media-field-wrap span[style*="text-primary"] {
+.journal-edit-page .journal-media-field-wrap span[style*='text-primary'] {
   color: var(--journal-text) !important;
 }
 
@@ -2248,7 +2284,9 @@
   flex-direction: column;
   min-height: 176px;
   cursor: pointer;
-  transition: transform 0.22s var(--ease-book), box-shadow 0.22s ease;
+  transition:
+    transform 0.22s var(--ease-book),
+    box-shadow 0.22s ease;
   box-shadow: 0 1px 2px rgba(20, 20, 43, 0.05);
 }
 
@@ -2276,7 +2314,10 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
   flex-shrink: 0;
   opacity: 1;
   /* Always visible */
@@ -2300,7 +2341,9 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
   flex-shrink: 0;
 }
 
@@ -2367,7 +2410,9 @@
   justify-content: center;
   color: var(--color-text-muted);
   opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
 }
 
 .np-card:hover .np-card-menu-btn {
@@ -2634,7 +2679,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .np-card,
   .np-pill {
     transition: none !important;

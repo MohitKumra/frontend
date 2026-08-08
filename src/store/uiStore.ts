@@ -10,7 +10,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { setTheme as applyTheme, type Theme, type ThemePreference } from '../platform/theme';
-import { applyLayoutPreference as applyShellLayout, type LayoutPreference as ShellLayoutPreference } from '../platform/layout';
+import {
+  applyLayoutPreference as applyShellLayout,
+  type LayoutPreference as ShellLayoutPreference,
+} from '../platform/layout';
 import type { TaskViewPreference } from '../types';
 
 interface UIState {
@@ -77,15 +80,17 @@ export const useUIStore = create<UIState>()(
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setFocusMode: (open) => set({ focusMode: open }),
       toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
-      dismissStreakPopup: (brokenAt) => set({
-        streakPopupDismissed: true,
-        streakPopupDismissedAt: brokenAt ?? new Date().toISOString(),
-      }),
-      resetStreakPopup: () => set({
-        streakPopupDismissed: false,
-        streakPopupDismissedAt: null,
-      }),
+      dismissStreakPopup: (brokenAt) =>
+        set({
+          streakPopupDismissed: true,
+          streakPopupDismissedAt: brokenAt ?? new Date().toISOString(),
+        }),
+      resetStreakPopup: () =>
+        set({
+          streakPopupDismissed: false,
+          streakPopupDismissedAt: null,
+        }),
     }),
-    { name: 'ui-store' },
-  ),
+    { name: 'ui-store' }
+  )
 );

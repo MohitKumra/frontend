@@ -1,19 +1,19 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
-export type TimerMode = 'focus' | 'short_break' | 'long_break'
+export type TimerMode = 'focus' | 'short_break' | 'long_break';
 
 type SceneTheme = {
-  sky: [string, string, string, string]
-  sun: { core: string; mid: string; edge: string }
-  hills: { back: string; mid: string; front: string }
-  pine: string
-  pineMid: string
-  water: [string, string]
-  haze: string
-  particle: 'bird' | 'petal' | 'star'
-}
+  sky: [string, string, string, string];
+  sun: { core: string; mid: string; edge: string };
+  hills: { back: string; mid: string; front: string };
+  pine: string;
+  pineMid: string;
+  water: [string, string];
+  haze: string;
+  particle: 'bird' | 'petal' | 'star';
+};
 
 const SCENE_THEME: Record<TimerMode, SceneTheme> = {
   focus: {
@@ -46,21 +46,18 @@ const SCENE_THEME: Record<TimerMode, SceneTheme> = {
     haze: '#e9d5ff',
     particle: 'star',
   },
-}
+};
 
 /* ─── Geometry (viewBox 0 0 600 1000, horizon = 620) ─── */
 
-const HORIZON = 620
+const HORIZON = 620;
 
 // Hazy back range — tall peak toward the right edge, like the reference.
-const BACK_HILLS =
-  'M0 620 L70 500 L140 570 L230 440 L320 555 L410 400 L500 330 L600 290 L600 620 Z'
+const BACK_HILLS = 'M0 620 L70 500 L140 570 L230 440 L320 555 L410 400 L500 330 L600 290 L600 620 Z';
 // Mid range — slightly deeper, undulating toward the lake.
-const MID_HILLS =
-  'M60 620 L180 505 L270 580 L380 455 L470 545 L545 430 L600 460 L600 620 Z'
+const MID_HILLS = 'M60 620 L180 505 L270 580 L380 455 L470 545 L545 430 L600 460 L600 620 Z';
 // Front ridge — anchored to the right, slopes down to the waterline.
-const FRONT_HILLS =
-  'M240 620 L370 515 L455 585 L545 480 L600 510 L600 620 Z'
+const FRONT_HILLS = 'M240 620 L370 515 L455 585 L545 480 L600 510 L600 620 Z';
 
 function Pine({ x, y, s, color }: { x: number; y: number; s: number; color: string }) {
   return (
@@ -68,7 +65,7 @@ function Pine({ x, y, s, color }: { x: number; y: number; s: number; color: stri
       <path d="M0 -34 L11 -12 L5 -12 L14 6 L7 6 L16 24 L-16 24 L-7 6 L-14 6 L-5 -12 L-11 -12 Z" />
       <rect x={-2.5} y={24} width={5} height={10} />
     </g>
-  )
+  );
 }
 
 const PINES: Array<{ x: number; y: number; s: number; front?: boolean }> = [
@@ -83,7 +80,7 @@ const PINES: Array<{ x: number; y: number; s: number; front?: boolean }> = [
   { x: 516, y: 566, s: 0.85, front: true },
   { x: 548, y: 588, s: 1.0, front: true },
   { x: 578, y: 574, s: 0.9, front: true },
-]
+];
 
 /**
  * Full-height ambient scene anchored to the right edge of the screen.
@@ -92,22 +89,22 @@ const PINES: Array<{ x: number; y: number; s: number; front?: boolean }> = [
  * a soft CSS radial mask so there is no hard rectangular seam.
  */
 export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
-  const [reduceMotion, setReduceMotion] = useState(false)
+  const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setReduceMotion(mq.matches)
-    const handler = () => setReduceMotion(mq.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduceMotion(mq.matches);
+    const handler = () => setReduceMotion(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
-  const t = SCENE_THEME[mode]
-  const uid = mode
-  const isNight = mode === 'long_break'
+  const t = SCENE_THEME[mode];
+  const uid = mode;
+  const isNight = mode === 'long_break';
 
-  const sunCx = 470
-  const sunCy = isNight ? 250 : 448
-  const sunR = isNight ? 34 : 58
+  const sunCx = 470;
+  const sunCy = isNight ? 250 : 448;
+  const sunR = isNight ? 34 : 58;
 
   const stars = Array.from({ length: 40 }).map((_, i) => ({
     x: (i * 89) % 600,
@@ -115,17 +112,17 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
     r: 0.6 + (i % 5) * 0.3,
     d: 2.4 + (i % 5) * 0.5,
     delay: (i % 7) * 0.5,
-  }))
+  }));
 
   const maskImage =
-    'radial-gradient(108% 92% at 100% 58%, black 0%, black 38%, rgba(0,0,0,0.6) 58%, rgba(0,0,0,0.15) 76%, transparent 90%)'
+    'radial-gradient(108% 92% at 100% 58%, black 0%, black 38%, rgba(0,0,0,0.6) 58%, rgba(0,0,0,0.15) 76%, transparent 90%)';
 
   return (
     <div
       className="pointer-events-none fixed inset-y-0 right-0"
       aria-hidden="true"
       style={{
-        width: 'clamp(220px, 55vw, 720px)',   
+        width: 'clamp(220px, 55vw, 720px)',
         WebkitMaskImage: maskImage,
         maskImage,
         WebkitMaskRepeat: 'no-repeat',
@@ -178,13 +175,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
             <rect x="0" y={HORIZON} width="600" height={1000 - HORIZON} />
           </clipPath>
           <mask id={`j-refl-mask-${uid}`}>
-            <rect
-              x="0"
-              y={HORIZON}
-              width="600"
-              height={1000 - HORIZON}
-              fill={`url(#j-refl-fade-${uid})`}
-            />
+            <rect x="0" y={HORIZON} width="600" height={1000 - HORIZON} fill={`url(#j-refl-fade-${uid})`} />
           </mask>
         </defs>
 
@@ -202,9 +193,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
               fill="#ffffff"
               opacity={0.15 + (i % 5) * 0.11}
               style={
-                !reduceMotion
-                  ? { animation: `j-twinkle-${uid} ${s.d}s ease-in-out ${s.delay}s infinite` }
-                  : undefined
+                !reduceMotion ? { animation: `j-twinkle-${uid} ${s.d}s ease-in-out ${s.delay}s infinite` } : undefined
               }
             />
           ))}
@@ -237,9 +226,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
               fill="none"
               opacity="0.4"
               style={
-                !reduceMotion
-                  ? { animation: `j-drift-${uid} ${9 + i}s ease-in-out ${i * 0.6}s infinite` }
-                  : undefined
+                !reduceMotion ? { animation: `j-drift-${uid} ${9 + i}s ease-in-out ${i * 0.6}s infinite` } : undefined
               }
             />
           ))}
@@ -253,9 +240,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
               fill="#ffe3ef"
               opacity="0.7"
               style={
-                !reduceMotion
-                  ? { animation: `j-float-${uid} ${7 + i}s ease-in-out ${i * 0.8}s infinite` }
-                  : undefined
+                !reduceMotion ? { animation: `j-float-${uid} ${7 + i}s ease-in-out ${i * 0.8}s infinite` } : undefined
               }
             />
           ))}
@@ -269,9 +254,7 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
               fill="#ffffff"
               opacity="0.9"
               style={
-                !reduceMotion
-                  ? { animation: `j-shoot-${uid} ${10 + i * 4}s linear ${2 + i * 3}s infinite` }
-                  : undefined
+                !reduceMotion ? { animation: `j-shoot-${uid} ${10 + i * 4}s linear ${2 + i * 3}s infinite` } : undefined
               }
             />
           ))}
@@ -355,5 +338,5 @@ export function JournalAmbientScene({ mode }: { mode: TimerMode }) {
         `}</style>
       </svg>
     </div>
-  )
+  );
 }

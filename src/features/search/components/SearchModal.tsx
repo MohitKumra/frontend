@@ -68,10 +68,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     <DraggableModal isOpen={isOpen} onClose={onClose} title="Search">
       <div className="flex flex-col gap-4">
         <div className="relative">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
-          />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
           <input
             ref={inputRef}
             type="text"
@@ -90,9 +87,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             query.trim().length > 0 ? (
               <div className="py-8 text-center text-text-muted text-sm">No results found</div>
             ) : (
-              <div className="py-8 text-center text-text-muted text-sm">
-                Start typing to search
-              </div>
+              <div className="py-8 text-center text-text-muted text-sm">Start typing to search</div>
             )
           ) : (
             <div className="flex flex-col gap-1">
@@ -105,9 +100,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <div className="mt-0.5 shrink-0">{getIconForType(result.type)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-text-primary truncate">{result.title}</div>
-                    {result.description && (
-                      <div className="text-sm text-text-muted truncate">{result.description}</div>
-                    )}
+                    {result.description && <div className="text-sm text-text-muted truncate">{result.description}</div>}
                   </div>
                 </button>
               ))}

@@ -30,10 +30,10 @@ const SPRING_SHEET = { type: 'spring', damping: 34, stiffness: 320, mass: 0.85 }
 
 const FEATURE_LABELS = [
   { label: 'Dashboard', emoji: '⚡' },
-  { label: 'Tasks',     emoji: '✅' },
-  { label: 'Planner',   emoji: '📅' },
-  { label: 'Habits',    emoji: '🔥' },
-  { label: 'Settings',  emoji: '⚙️' },
+  { label: 'Tasks', emoji: '✅' },
+  { label: 'Planner', emoji: '📅' },
+  { label: 'Habits', emoji: '🔥' },
+  { label: 'Settings', emoji: '⚙️' },
 ];
 
 // ─── Gradient accent bar ──────────────────────────────────────────────────────
@@ -54,10 +54,7 @@ function AccentBar() {
 function SheetHandle() {
   return (
     <div className="flex justify-center pt-3 pb-1">
-      <div
-        className="w-10 h-1 rounded-full"
-        style={{ background: 'var(--onboarding-sheet-handle)' }}
-      />
+      <div className="w-10 h-1 rounded-full" style={{ background: 'var(--onboarding-sheet-handle)' }} />
     </div>
   );
 }
@@ -65,21 +62,13 @@ function SheetHandle() {
 // ─── Inner component that consumes context ────────────────────────────────────
 
 function OnboardingInner({ children }: { children: React.ReactNode }) {
-  const {
-    isActive,
-    isFinishing,
-    currentStep,
-    direction,
-    progress,
-    actions,
-    prefersReducedMotion,
-  } = useOnboarding();
+  const { isActive, isFinishing, currentStep, direction, progress, actions, prefersReducedMotion } = useOnboarding();
 
-  const [guidePos, setGuidePos]           = useState({ x: 0, y: 0 });
-  const [guideTilt, setGuideTilt]         = useState(0);
-  const [showWelcome, setShowWelcome]     = useState(true);
+  const [guidePos, setGuidePos] = useState({ x: 0, y: 0 });
+  const [guideTilt, setGuideTilt] = useState(0);
+  const [showWelcome, setShowWelcome] = useState(true);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
-  const [isMobile, setIsMobile]           = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -88,9 +77,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const stepConfig = isActive && currentStep < ONBOARDING_STEPS.length
-    ? ONBOARDING_STEPS[currentStep]
-    : null;
+  const stepConfig = isActive && currentStep < ONBOARDING_STEPS.length ? ONBOARDING_STEPS[currentStep] : null;
 
   const targetSelector = stepConfig ? getStepTargetSelector(stepConfig, isMobile) : null;
   const [targetRect, setTargetRect] = useState<SpotlightRect | null>(null);
@@ -139,12 +126,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!targetRect || !stepConfig) return;
 
-    const pos = calculateGuidePosition(
-      targetRect,
-      stepConfig.position,
-      isMobile ? 56 : 80,
-      isMobile ? 8 : 16,
-    );
+    const pos = calculateGuidePosition(targetRect, stepConfig.position, isMobile ? 56 : 80, isMobile ? 8 : 16);
 
     const offset = stepConfig.offset ?? { x: 0, y: 0 };
 
@@ -153,11 +135,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
       y: pos.y + offset.y,
     });
 
-    const tilt = calculateAngleToTarget(
-      pos.x + (isMobile ? 28 : 40),
-      pos.y + (isMobile ? 28 : 40),
-      targetRect,
-    );
+    const tilt = calculateAngleToTarget(pos.x + (isMobile ? 28 : 40), pos.y + (isMobile ? 28 : 40), targetRect);
     setGuideTilt(tilt);
   }, [targetRect, stepConfig, isMobile]);
 
@@ -177,30 +155,30 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
 
   // ─── Derived visibility flags ───────────────────────────────────────────────
 
-  const shouldShowOverlay  = isActive && !showWelcome && !isFinishing;
-  const shouldShowGuide    = shouldShowOverlay && targetRect !== null;
-  const shouldShowTooltip  = shouldShowOverlay && stepConfig !== null && targetRect !== null;
-  const isFirst            = currentStep === 0;
-  const isLast             = currentStep === ONBOARDING_STEPS.length - 1;
+  const shouldShowOverlay = isActive && !showWelcome && !isFinishing;
+  const shouldShowGuide = shouldShowOverlay && targetRect !== null;
+  const shouldShowTooltip = shouldShowOverlay && stepConfig !== null && targetRect !== null;
+  const isFirst = currentStep === 0;
+  const isLast = currentStep === ONBOARDING_STEPS.length - 1;
 
   // ─── Animation variants (modal vs sheet) ────────────────────────────────────
 
   const backdropVariants = {
-    hidden:  { opacity: 0 },
+    hidden: { opacity: 0 },
     visible: { opacity: 1 },
-    exit:    { opacity: 0 },
+    exit: { opacity: 0 },
   };
 
   const modalVariants = isMobile
     ? {
-        hidden:  prefersReducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
+        hidden: prefersReducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
         visible: prefersReducedMotion ? { opacity: 1 } : { y: 0, opacity: 1 },
-        exit:    prefersReducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
+        exit: prefersReducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
       }
     : {
-        hidden:  prefersReducedMotion ? { opacity: 0 } : { scale: 0.88, opacity: 0, y: 24, filter: 'blur(4px)' },
-        visible: prefersReducedMotion ? { opacity: 1 } : { scale: 1,    opacity: 1, y: 0,  filter: 'blur(0px)' },
-        exit:    prefersReducedMotion ? { opacity: 0 } : { scale: 0.9,  opacity: 0, y: 16, filter: 'blur(2px)' },
+        hidden: prefersReducedMotion ? { opacity: 0 } : { scale: 0.88, opacity: 0, y: 24, filter: 'blur(4px)' },
+        visible: prefersReducedMotion ? { opacity: 1 } : { scale: 1, opacity: 1, y: 0, filter: 'blur(0px)' },
+        exit: prefersReducedMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0, y: 16, filter: 'blur(2px)' },
       };
 
   const cardTransition = isMobile ? SPRING_SHEET : SPRING_ENTER;
@@ -214,11 +192,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
       {createPortal(
         <>
           {/* Spotlight Overlay */}
-          <SpotlightOverlay
-            visible={shouldShowOverlay}
-            targetRect={targetRect}
-            reducedMotion={prefersReducedMotion}
-          />
+          <SpotlightOverlay visible={shouldShowOverlay} targetRect={targetRect} reducedMotion={prefersReducedMotion} />
 
           {/* AI Guide orb */}
           {shouldShowGuide && (
@@ -307,9 +281,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                     <div
                       style={{
                         padding: isMobile ? '20px 24px 32px' : '36px 32px 32px',
-                        paddingBottom: isMobile
-                          ? 'calc(28px + env(safe-area-inset-bottom))'
-                          : '32px',
+                        paddingBottom: isMobile ? 'calc(28px + env(safe-area-inset-bottom))' : '32px',
                         textAlign: 'center',
                       }}
                     >
@@ -321,11 +293,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.1, ...SPRING_ENTER }}
                       >
-                        <PremiumOrb
-                          size={isMobile ? 76 : 96}
-                          reducedMotion={prefersReducedMotion}
-                          showSparkles
-                        />
+                        <PremiumOrb size={isMobile ? 76 : 96} reducedMotion={prefersReducedMotion} showSparkles />
                       </motion.div>
 
                       {/* Title */}
@@ -426,13 +394,15 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                             boxShadow: '0 8px 28px rgba(99, 102, 241, 0.38), 0 2px 8px rgba(168, 85, 247, 0.2)',
                             transition: 'transform 120ms ease, box-shadow 120ms ease',
                           }}
-                          onMouseEnter={e => {
+                          onMouseEnter={(e) => {
                             (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
-                            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 36px rgba(99, 102, 241, 0.45), 0 4px 12px rgba(168, 85, 247, 0.28)';
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                              '0 12px 36px rgba(99, 102, 241, 0.45), 0 4px 12px rgba(168, 85, 247, 0.28)';
                           }}
-                          onMouseLeave={e => {
+                          onMouseLeave={(e) => {
                             (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-                            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 28px rgba(99, 102, 241, 0.38), 0 2px 8px rgba(168, 85, 247, 0.2)';
+                            (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                              '0 8px 28px rgba(99, 102, 241, 0.38), 0 2px 8px rgba(168, 85, 247, 0.2)';
                           }}
                         >
                           {WELCOME_MESSAGE.startButton} →
@@ -453,8 +423,12 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                             cursor: 'pointer',
                             transition: 'opacity 120ms ease',
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.7'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.opacity = '0.7';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+                          }}
                         >
                           {WELCOME_MESSAGE.skipButton}
                         </button>
@@ -506,7 +480,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                         }}
                         animate={{
                           y: [0, window.innerHeight + 30],
-                          x: [0, (i % 7 - 3) * 45],
+                          x: [0, ((i % 7) - 3) * 45],
                           rotate: [0, 360],
                           opacity: [1, 0],
                         }}
@@ -524,11 +498,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                 {/* Card / Sheet */}
                 <motion.div
                   className="relative z-10"
-                  style={
-                    isMobile
-                      ? { width: '100%' }
-                      : { width: '100%', maxWidth: '400px', margin: '0 16px' }
-                  }
+                  style={isMobile ? { width: '100%' } : { width: '100%', maxWidth: '400px', margin: '0 16px' }}
                   variants={modalVariants}
                   transition={cardTransition}
                 >
@@ -551,9 +521,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
                     <div
                       style={{
                         padding: isMobile ? '20px 24px 32px' : '36px 32px 32px',
-                        paddingBottom: isMobile
-                          ? 'calc(28px + env(safe-area-inset-bottom))'
-                          : '32px',
+                        paddingBottom: isMobile ? 'calc(28px + env(safe-area-inset-bottom))' : '32px',
                       }}
                     >
                       {/* Waving orb */}
@@ -633,7 +601,7 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
             )}
           </AnimatePresence>
         </>,
-        document.body,
+        document.body
       )}
     </>
   );

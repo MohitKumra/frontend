@@ -75,7 +75,7 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
       <div className="p-5 sm:p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
           >
@@ -107,7 +107,7 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
                 <div key={activity.id} className="relative">
                   {/* Timeline Line */}
                   {!isLast && (
-                    <div 
+                    <div
                       className="absolute left-4 top-10 w-0.5 h-full -ml-px"
                       style={{ background: 'var(--color-border)' }}
                     />
@@ -115,7 +115,7 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
 
                   {/* Activity Item */}
                   <div className={`flex items-start gap-3 ${isActionable ? 'opacity-90' : ''}`}>
-                    <div 
+                    <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative z-10"
                       style={{ background: colors.bg, color: colors.text }}
                     >
@@ -123,11 +123,9 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-text-primary mb-0.5">
-                          {activity.title}
-                        </p>
+                        <p className="text-sm font-bold text-text-primary mb-0.5">{activity.title}</p>
                         {isActionable && (
-                          <span 
+                          <span
                             className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
                             style={{ background: '#fef3c7', color: '#d97706' }}
                           >
@@ -136,20 +134,14 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
                         )}
                       </div>
                       {activity.description && (
-                        <p className="text-xs text-text-secondary mb-1">
-                          {activity.description}
-                        </p>
+                        <p className="text-xs text-text-secondary mb-1">{activity.description}</p>
                       )}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-text-muted">
-                          {getRelativeTime(activity.timestamp)}
-                        </span>
+                        <span className="text-xs font-bold text-text-muted">{getRelativeTime(activity.timestamp)}</span>
                         {activity.metadata?.durationMin && (
                           <>
                             <span className="text-text-muted">•</span>
-                            <span className="text-xs text-text-muted">
-                              {activity.metadata.durationMin} minutes
-                            </span>
+                            <span className="text-xs text-text-muted">{activity.metadata.durationMin} minutes</span>
                           </>
                         )}
                       </div>
@@ -160,11 +152,11 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
             })}
           </div>
         ) : !isLoading ? (
-          <div 
+          <div
             className="rounded-xl border p-8 text-center"
             style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
           >
-            <div 
+            <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
               style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
             >

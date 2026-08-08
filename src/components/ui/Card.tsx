@@ -41,9 +41,7 @@ export function Card({
       className={[
         'rounded-2xl transition-all duration-200 ease-out',
         variantStyles[variant],
-        hoverable
-          ? 'hover:shadow-lg dark:hover:shadow-2xl hover:-translate-y-1 hover:border-border-strong'
-          : '',
+        hoverable ? 'hover:shadow-lg dark:hover:shadow-2xl hover:-translate-y-1 hover:border-border-strong' : '',
         className,
       ].join(' ')}
       style={{
@@ -63,11 +61,7 @@ interface CardHeaderProps {
 }
 
 Card.Header = function CardHeader({ children, className = '' }: CardHeaderProps) {
-  return (
-    <div className={['px-6 py-5 border-b border-border-subtle', className].join(' ')}>
-      {children}
-    </div>
-  );
+  return <div className={['px-6 py-5 border-b border-border-subtle', className].join(' ')}>{children}</div>;
 };
 
 interface CardContentProps {
@@ -76,11 +70,7 @@ interface CardContentProps {
 }
 
 Card.Content = function CardContent({ children, className = '' }: CardContentProps) {
-  return (
-    <div className={['px-6 py-5', className].join(' ')}>
-      {children}
-    </div>
-  );
+  return <div className={['px-6 py-5', className].join(' ')}>{children}</div>;
 };
 
 interface CardFooterProps {
@@ -89,11 +79,5 @@ interface CardFooterProps {
 }
 
 Card.Footer = function CardFooter({ children, className = '' }: CardFooterProps) {
-  return (
-    <div className={['px-6 py-5 border-t border-border-subtle', className].join(' ')}>
-      {children}
-    </div>
-  );
+  return <div className={['px-6 py-5 border-t border-border-subtle', className].join(' ')}>{children}</div>;
 };
-
-

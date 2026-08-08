@@ -69,12 +69,12 @@ const SETTINGS_TABS: Array<{
   label: string;
   icon: ReactNode;
 }> = [
-    { id: 'appearance', label: 'Appearance', icon: <Palette size={14} /> },
-    { id: 'notifications', label: 'Notifications', icon: <BellRing size={14} /> },
-    { id: 'integrations', label: 'Integrations', icon: <Cloud size={14} /> },
-    { id: 'security', label: 'Security', icon: <ShieldCheck size={14} /> },
-    { id: 'ai', label: 'AI & Tokens', icon: <BrainCircuit size={14} /> },
-  ];
+  { id: 'appearance', label: 'Appearance', icon: <Palette size={14} /> },
+  { id: 'notifications', label: 'Notifications', icon: <BellRing size={14} /> },
+  { id: 'integrations', label: 'Integrations', icon: <Cloud size={14} /> },
+  { id: 'security', label: 'Security', icon: <ShieldCheck size={14} /> },
+  { id: 'ai', label: 'AI & Tokens', icon: <BrainCircuit size={14} /> },
+];
 
 const APPEARANCE_OPTIONS: Array<{
   id: ThemePreference;
@@ -82,10 +82,10 @@ const APPEARANCE_OPTIONS: Array<{
   description: string;
   icon: ReactNode;
 }> = [
-    { id: 'LIGHT', label: 'Light', description: 'Bright, paper-like surfaces', icon: <SunMedium size={16} /> },
-    { id: 'DARK', label: 'Dark', description: 'Low-light focus mode', icon: <Moon size={16} /> },
-    { id: 'SYSTEM', label: 'System', description: 'Follow the device setting', icon: <Monitor size={16} /> },
-  ];
+  { id: 'LIGHT', label: 'Light', description: 'Bright, paper-like surfaces', icon: <SunMedium size={16} /> },
+  { id: 'DARK', label: 'Dark', description: 'Low-light focus mode', icon: <Moon size={16} /> },
+  { id: 'SYSTEM', label: 'System', description: 'Follow the device setting', icon: <Monitor size={16} /> },
+];
 
 const LAYOUT_OPTIONS: Array<{
   id: LayoutPreference;
@@ -93,21 +93,21 @@ const LAYOUT_OPTIONS: Array<{
   description: string;
   scale: number;
 }> = [
-    { id: 'COMPACT', label: 'Compact', description: 'More content, less spacing', scale: 0.8 },
-    { id: 'COMFORTABLE', label: 'Comfortable', description: 'Balanced spacing', scale: 1 },
-    { id: 'EXPANDED', label: 'Expanded', description: 'Roomier, editorial layout', scale: 1.2 },
-  ];
+  { id: 'COMPACT', label: 'Compact', description: 'More content, less spacing', scale: 0.8 },
+  { id: 'COMFORTABLE', label: 'Comfortable', description: 'Balanced spacing', scale: 1 },
+  { id: 'EXPANDED', label: 'Expanded', description: 'Roomier, editorial layout', scale: 1.2 },
+];
 
 const CALENDAR_VIEW_OPTIONS: Array<{
   id: CalendarView;
   label: string;
   description: string;
 }> = [
-    { id: 'day', label: 'Day', description: 'Focused daily view' },
-    { id: 'week', label: 'Week', description: 'Work across the week' },
-    { id: 'month', label: 'Month', description: 'Big-picture planning' },
-    { id: 'agenda', label: 'Agenda', description: 'Linear task-first view' },
-  ];
+  { id: 'day', label: 'Day', description: 'Focused daily view' },
+  { id: 'week', label: 'Week', description: 'Work across the week' },
+  { id: 'month', label: 'Month', description: 'Big-picture planning' },
+  { id: 'agenda', label: 'Agenda', description: 'Linear task-first view' },
+];
 
 function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
   return (
@@ -221,14 +221,47 @@ function SettingsHero({
     mouseX.set((e.clientX - r.left) / r.width);
     mouseY.set((e.clientY - r.top) / r.height);
   };
-  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+  const onLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
 
   const modules: Array<{ id: SettingsTab; label: string; icon: ReactNode; colorVar: string; desc: string }> = [
-    { id: 'appearance',    label: 'Appearance',    icon: <Palette size={16} />,      colorVar: TAB_COLOR.appearance,    desc: 'Theme · Layout · Views' },
-    { id: 'notifications', label: 'Notifications', icon: <BellRing size={16} />,     colorVar: TAB_COLOR.notifications, desc: 'Alerts · Reminders' },
-    { id: 'integrations',  label: 'Integrations',  icon: <Cloud size={16} />,        colorVar: TAB_COLOR.integrations,  desc: 'Calendar · Notion' },
-    { id: 'security',      label: 'Security',      icon: <ShieldCheck size={16} />,  colorVar: TAB_COLOR.security,      desc: 'Password · Recovery' },
-    { id: 'ai',            label: 'AI & Tokens',   icon: <BrainCircuit size={16} />, colorVar: TAB_COLOR.ai,            desc: 'Features · Budget' },
+    {
+      id: 'appearance',
+      label: 'Appearance',
+      icon: <Palette size={16} />,
+      colorVar: TAB_COLOR.appearance,
+      desc: 'Theme · Layout · Views',
+    },
+    {
+      id: 'notifications',
+      label: 'Notifications',
+      icon: <BellRing size={16} />,
+      colorVar: TAB_COLOR.notifications,
+      desc: 'Alerts · Reminders',
+    },
+    {
+      id: 'integrations',
+      label: 'Integrations',
+      icon: <Cloud size={16} />,
+      colorVar: TAB_COLOR.integrations,
+      desc: 'Calendar · Notion',
+    },
+    {
+      id: 'security',
+      label: 'Security',
+      icon: <ShieldCheck size={16} />,
+      colorVar: TAB_COLOR.security,
+      desc: 'Password · Recovery',
+    },
+    {
+      id: 'ai',
+      label: 'AI & Tokens',
+      icon: <BrainCircuit size={16} />,
+      colorVar: TAB_COLOR.ai,
+      desc: 'Features · Budget',
+    },
   ];
 
   return (
@@ -240,41 +273,91 @@ function SettingsHero({
       style={{
         borderColor: 'var(--color-border)',
         background: 'var(--color-surface)',
-        boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
+        boxShadow:
+          '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 20px 60px -12px rgba(0,0,0,0.08)',
       }}
     >
       {/* Ambient blobs */}
-      <motion.div style={{ x: blob1X, y: blob1Y }} className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.07, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}>
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      <motion.div
+        style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.07, 1] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
-      <motion.div style={{ x: blob2X }} className="pointer-events-none absolute -bottom-16 -right-10 h-64 w-64 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}>
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-info) 10%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      <motion.div
+        style={{ x: blob2X }}
+        className="pointer-events-none absolute -bottom-16 -right-10 h-64 w-64 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-info) 10%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
 
       {/* Dot grid */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.025]" aria-hidden="true"
-        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        aria-hidden="true"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
 
       {/* Content */}
       <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:p-8">
-
         {/* Top row: eyebrow + save status */}
         <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))', borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>
+          <div
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+            style={{
+              background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+              color: 'var(--color-accent)',
+            }}
+          >
             <SlidersHorizontal size={11} />
             Control deck
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
-            style={{ background: isSaving ? 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))' : 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))', borderColor: isSaving ? 'color-mix(in srgb, var(--color-warning) 20%, transparent)' : 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
-            <motion.span className="h-1.5 w-1.5 rounded-full shrink-0"
+          <div
+            className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
+            style={{
+              background: isSaving
+                ? 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))'
+                : 'color-mix(in srgb, var(--color-success) 8%, var(--color-surface))',
+              borderColor: isSaving
+                ? 'color-mix(in srgb, var(--color-warning) 20%, transparent)'
+                : 'color-mix(in srgb, var(--color-success) 20%, transparent)',
+            }}
+          >
+            <motion.span
+              className="h-1.5 w-1.5 rounded-full shrink-0"
               style={{ background: isSaving ? 'var(--color-warning)' : 'var(--color-success)' }}
               animate={{ opacity: isSaving ? [1, 0.3, 1] : 1 }}
-              transition={{ duration: 1.2, repeat: isSaving ? Infinity : 0 }} />
-            <span className="text-[11px] font-bold" style={{ color: isSaving ? 'var(--color-warning)' : 'var(--color-success)' }}>
+              transition={{ duration: 1.2, repeat: isSaving ? Infinity : 0 }}
+            />
+            <span
+              className="text-[11px] font-bold"
+              style={{ color: isSaving ? 'var(--color-warning)' : 'var(--color-success)' }}
+            >
               {isSaving ? 'Saving…' : 'All synced'}
             </span>
           </div>
@@ -283,8 +366,10 @@ function SettingsHero({
         {/* Headline + sub + stat chips */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="font-black tracking-tight"
-              style={{ fontSize: 'clamp(1.9rem, 3.5vw, 3rem)', lineHeight: 1.06, color: 'var(--color-text-primary)' }}>
+            <h1
+              className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.9rem, 3.5vw, 3rem)', lineHeight: 1.06, color: 'var(--color-text-primary)' }}
+            >
               Settings
             </h1>
             <p className="mt-2 max-w-sm text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
@@ -295,18 +380,30 @@ function SettingsHero({
           {/* Stat chips */}
           <div className="flex flex-wrap gap-2">
             {[
-              { label: 'Theme',    value: stats.theme,   colorVar: TAB_COLOR.appearance },
-              { label: 'Density',  value: stats.density, colorVar: TAB_COLOR.appearance },
-              { label: 'Alerts',   value: stats.alerts,  colorVar: TAB_COLOR.notifications },
-              { label: 'Linked',   value: stats.linked,  colorVar: TAB_COLOR.integrations },
+              { label: 'Theme', value: stats.theme, colorVar: TAB_COLOR.appearance },
+              { label: 'Density', value: stats.density, colorVar: TAB_COLOR.appearance },
+              { label: 'Alerts', value: stats.alerts, colorVar: TAB_COLOR.notifications },
+              { label: 'Linked', value: stats.linked, colorVar: TAB_COLOR.integrations },
             ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2 rounded-xl border px-3 py-2"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
-                <span className="h-1.5 w-1.5 rounded-full shrink-0"
-                  style={{ background: `var(${s.colorVar})`, boxShadow: `0 0 5px var(${s.colorVar})` }} />
+              <div
+                key={s.label}
+                className="flex items-center gap-2 rounded-xl border px-3 py-2"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full shrink-0"
+                  style={{ background: `var(${s.colorVar})`, boxShadow: `0 0 5px var(${s.colorVar})` }}
+                />
                 <div>
-                  <div className="text-[9px] font-mono uppercase tracking-wider leading-none" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
-                  <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{s.value}</div>
+                  <div
+                    className="text-[9px] font-mono uppercase tracking-wider leading-none"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {s.label}
+                  </div>
+                  <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
+                    {s.value}
+                  </div>
                 </div>
               </div>
             ))}
@@ -318,24 +415,36 @@ function SettingsHero({
           {modules.map((mod) => {
             const isActive = activeTab === mod.id;
             return (
-              <div key={mod.id}
+              <div
+                key={mod.id}
                 className="flex flex-col gap-2 rounded-2xl border p-3 transition-all"
                 style={{
-                  borderColor: isActive ? `color-mix(in srgb, var(${mod.colorVar}) 40%, transparent)` : 'var(--color-border)',
-                  background: isActive ? `color-mix(in srgb, var(${mod.colorVar}) 6%, var(--color-surface-raised))` : 'var(--color-surface-raised)',
+                  borderColor: isActive
+                    ? `color-mix(in srgb, var(${mod.colorVar}) 40%, transparent)`
+                    : 'var(--color-border)',
+                  background: isActive
+                    ? `color-mix(in srgb, var(${mod.colorVar}) 6%, var(--color-surface-raised))`
+                    : 'var(--color-surface-raised)',
                   boxShadow: isActive ? `0 0 0 1px color-mix(in srgb, var(${mod.colorVar}) 20%, transparent)` : 'none',
-                }}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl"
+                }}
+              >
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{
                     background: `linear-gradient(135deg, var(${mod.colorVar}), color-mix(in srgb, var(${mod.colorVar}) 60%, white))`,
                     boxShadow: `0 4px 10px color-mix(in srgb, var(${mod.colorVar}) 30%, transparent)`,
                     color: 'white',
-                  }}>
+                  }}
+                >
                   {mod.icon}
                 </div>
                 <div>
-                  <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{mod.label}</p>
-                  <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{mod.desc}</p>
+                  <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                    {mod.label}
+                  </p>
+                  <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                    {mod.desc}
+                  </p>
                 </div>
               </div>
             );
@@ -364,7 +473,10 @@ function SectionHeader({
       <Badge3D icon={icon} size={44} colorVar={colorVar} rotation={8} />
       <div className="min-w-0 flex-1">
         {code && (
-          <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5" style={{ color: `var(${colorVar})` }}>
+          <div
+            className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5"
+            style={{ color: `var(${colorVar})` }}
+          >
             {code}
           </div>
         )}
@@ -525,7 +637,7 @@ export function SettingsPage() {
 
   const previewScale = useMemo(
     () => LAYOUT_OPTIONS.find((option) => option.id === appearance.layoutPreference)?.scale ?? 1,
-    [appearance.layoutPreference],
+    [appearance.layoutPreference]
   );
 
   const heroStats = useMemo(() => {
@@ -550,27 +662,20 @@ export function SettingsPage() {
     setAppearance(merged);
 
     if (isThemeChanging) {
-      void setTheme(
-        next.themePreference === 'SYSTEM'
-          ? 'system'
-          : next.themePreference === 'DARK'
-            ? 'dark'
-            : 'light',
-        {
-          animate: true,
-          onMutate: () => {
-            if (next.layoutPreference) {
-              useUIStore.getState().setLayoutPreference(next.layoutPreference);
-            }
-            if (next.calendarView) {
-              useUIStore.getState().setCalendarViewPreference(next.calendarView);
-            }
-            if (next.taskView) {
-              useUIStore.getState().setTaskViewPreference(next.taskView as TaskViewPreference);
-            }
-          },
+      void setTheme(next.themePreference === 'SYSTEM' ? 'system' : next.themePreference === 'DARK' ? 'dark' : 'light', {
+        animate: true,
+        onMutate: () => {
+          if (next.layoutPreference) {
+            useUIStore.getState().setLayoutPreference(next.layoutPreference);
+          }
+          if (next.calendarView) {
+            useUIStore.getState().setCalendarViewPreference(next.calendarView);
+          }
+          if (next.taskView) {
+            useUIStore.getState().setTaskViewPreference(next.taskView as TaskViewPreference);
+          }
         },
-      );
+      });
     } else {
       if (next.layoutPreference) {
         useUIStore.getState().setLayoutPreference(next.layoutPreference);
@@ -596,7 +701,10 @@ export function SettingsPage() {
       const result = await googleStart.mutateAsync('/settings?integration=google-calendar');
       window.location.href = result.url;
     } catch (err) {
-      toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google Calendar could not be started.');
+      toast.error(
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
+          'Google Calendar could not be started.'
+      );
     }
   };
 
@@ -622,7 +730,10 @@ export function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      toast.error((error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Failed to update password');
+      toast.error(
+        (error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
+          'Failed to update password'
+      );
     }
   };
 
@@ -662,7 +773,7 @@ export function SettingsPage() {
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
             }}
           >
             <style>{`
@@ -685,9 +796,7 @@ export function SettingsPage() {
                         onClick={() => handleTabChange(tab.id)}
                         className={[
                           'relative px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center gap-1.5 sm:gap-2 tap-target whitespace-nowrap',
-                          isActive
-                            ? 'text-text-primary'
-                            : 'text-text-secondary hover:text-text-primary',
+                          isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
                         ].join(' ')}
                       >
                         <span
@@ -721,7 +830,11 @@ export function SettingsPage() {
         <motion.div variants={itemVariants}>
           <AnimatePresence mode="wait" initial={false}>
             {activeTab === 'appearance' && (
-              <TabPanel key="appearance" panelKey="appearance" className="grid xl:grid-cols-[1.1fr_0.9fr] gap-4 sm:gap-5">
+              <TabPanel
+                key="appearance"
+                panelKey="appearance"
+                className="grid xl:grid-cols-[1.1fr_0.9fr] gap-4 sm:gap-5"
+              >
                 <div id="settings-appearance-panel" data-onboarding="settings-appearance">
                   <Card className="p-4 sm:p-5 lg:p-6" variant="default">
                     <SectionHeader
@@ -835,63 +948,73 @@ export function SettingsPage() {
                     className="mt-4 sm:mt-5 rounded-xl sm:rounded-2xl overflow-hidden border relative"
                     style={{
                       borderColor: 'var(--color-border)',
-                      background: 'linear-gradient(145deg, color-mix(in srgb, var(--color-surface) 92%, var(--color-accent) 8%) 0%, color-mix(in srgb, var(--color-surface) 86%, var(--color-info) 14%) 50%, color-mix(in srgb, var(--color-surface) 80%, var(--color-accent) 20%) 100%)',
-                      minHeight: appearance.layoutPreference === 'COMPACT' ? '280px' : appearance.layoutPreference === 'EXPANDED' ? '340px' : '310px',
+                      background:
+                        'linear-gradient(145deg, color-mix(in srgb, var(--color-surface) 92%, var(--color-accent) 8%) 0%, color-mix(in srgb, var(--color-surface) 86%, var(--color-info) 14%) 50%, color-mix(in srgb, var(--color-surface) 80%, var(--color-accent) 20%) 100%)',
+                      minHeight:
+                        appearance.layoutPreference === 'COMPACT'
+                          ? '280px'
+                          : appearance.layoutPreference === 'EXPANDED'
+                            ? '340px'
+                            : '310px',
                     }}
                   >
                     {/* Animated gradient orbs */}
                     <motion.div
                       animate={{ x: [0, 15, 0], y: [0, -10, 0], scale: [1, 1.1, 1] }}
                       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                        style={{
-                          position: 'absolute',
-                          top: '-20%',
-                          right: '-10%',
-                          width: '180px',
-                          height: '180px',
-                          borderRadius: '50%',
-                          background: 'color-mix(in srgb, var(--color-accent) 60%, var(--color-info) 40%)',
-                          opacity: 0.18,
-                          filter: 'blur(50px)',
-                          pointerEvents: 'none',
-                        }}
-                      />
+                      style={{
+                        position: 'absolute',
+                        top: '-20%',
+                        right: '-10%',
+                        width: '180px',
+                        height: '180px',
+                        borderRadius: '50%',
+                        background: 'color-mix(in srgb, var(--color-accent) 60%, var(--color-info) 40%)',
+                        opacity: 0.18,
+                        filter: 'blur(50px)',
+                        pointerEvents: 'none',
+                      }}
+                    />
                     <motion.div
                       animate={{ x: [0, -12, 0], y: [0, 15, 0], scale: [1, 1.15, 1] }}
                       transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                        style={{
-                          position: 'absolute',
-                          bottom: '-15%',
-                          left: '-5%',
-                          width: '150px',
-                          height: '150px',
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 72%, white 28%), color-mix(in srgb, var(--color-info) 68%, white 32%))',
-                          opacity: 0.18,
-                          filter: 'blur(45px)',
-                          pointerEvents: 'none',
-                        }}
-                      />
+                      style={{
+                        position: 'absolute',
+                        bottom: '-15%',
+                        left: '-5%',
+                        width: '150px',
+                        height: '150px',
+                        borderRadius: '50%',
+                        background:
+                          'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 72%, white 28%), color-mix(in srgb, var(--color-info) 68%, white 32%))',
+                        opacity: 0.18,
+                        filter: 'blur(45px)',
+                        pointerEvents: 'none',
+                      }}
+                    />
                     <motion.div
                       animate={{ x: [0, 8, 0], y: [0, -8, 0] }}
                       transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-                        style={{
-                          position: 'absolute',
-                          top: '40%',
-                          left: '50%',
-                          width: '100px',
-                          height: '100px',
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 78%, white 22%), color-mix(in srgb, var(--color-accent) 72%, white 28%))',
-                          opacity: 0.14,
-                          filter: 'blur(40px)',
-                          pointerEvents: 'none',
-                        }}
-                      />
+                      style={{
+                        position: 'absolute',
+                        top: '40%',
+                        left: '50%',
+                        width: '100px',
+                        height: '100px',
+                        borderRadius: '50%',
+                        background:
+                          'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 78%, white 22%), color-mix(in srgb, var(--color-accent) 72%, white 28%))',
+                        opacity: 0.14,
+                        filter: 'blur(40px)',
+                        pointerEvents: 'none',
+                      }}
+                    />
 
                     {/* Content layer */}
-                    <div className="relative z-10 flex flex-col items-center justify-center h-full p-4 sm:p-6" style={{ minHeight: 'inherit' }}>
-
+                    <div
+                      className="relative z-10 flex flex-col items-center justify-center h-full p-4 sm:p-6"
+                      style={{ minHeight: 'inherit' }}
+                    >
                       {/* Central workspace illustration */}
                       <motion.div
                         initial={{ opacity: 0, y: 12 }}
@@ -903,17 +1026,28 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, -4, 0] }}
                           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                        style={{
-                          width: appearance.layoutPreference === 'COMPACT' ? '220px' : appearance.layoutPreference === 'EXPANDED' ? '280px' : '250px',
-                          borderRadius: '16px',
-                          background: 'color-mix(in srgb, var(--color-surface-raised) 86%, transparent)',
-                          backdropFilter: 'blur(20px)',
-                          WebkitBackdropFilter: 'blur(20px)',
-                          border: '1px solid color-mix(in srgb, var(--color-border) 75%, transparent)',
-                          boxShadow: '0 20px 60px color-mix(in srgb, var(--color-accent) 10%, transparent), 0 4px 16px color-mix(in srgb, var(--color-info) 8%, transparent)',
-                          padding: appearance.layoutPreference === 'COMPACT' ? '12px' : appearance.layoutPreference === 'EXPANDED' ? '18px' : '15px',
-                        }}
-                      >
+                          style={{
+                            width:
+                              appearance.layoutPreference === 'COMPACT'
+                                ? '220px'
+                                : appearance.layoutPreference === 'EXPANDED'
+                                  ? '280px'
+                                  : '250px',
+                            borderRadius: '16px',
+                            background: 'color-mix(in srgb, var(--color-surface-raised) 86%, transparent)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid color-mix(in srgb, var(--color-border) 75%, transparent)',
+                            boxShadow:
+                              '0 20px 60px color-mix(in srgb, var(--color-accent) 10%, transparent), 0 4px 16px color-mix(in srgb, var(--color-info) 8%, transparent)',
+                            padding:
+                              appearance.layoutPreference === 'COMPACT'
+                                ? '12px'
+                                : appearance.layoutPreference === 'EXPANDED'
+                                  ? '18px'
+                                  : '15px',
+                          }}
+                        >
                           {/* Window titlebar */}
                           <div className="flex items-center gap-1.5 mb-3">
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f57' }} />
@@ -931,7 +1065,17 @@ export function SettingsPage() {
                           </div>
 
                           {/* Simulated content lines */}
-                          <div className="flex flex-col" style={{ gap: appearance.layoutPreference === 'COMPACT' ? '6px' : appearance.layoutPreference === 'EXPANDED' ? '10px' : '8px' }}>
+                          <div
+                            className="flex flex-col"
+                            style={{
+                              gap:
+                                appearance.layoutPreference === 'COMPACT'
+                                  ? '6px'
+                                  : appearance.layoutPreference === 'EXPANDED'
+                                    ? '10px'
+                                    : '8px',
+                            }}
+                          >
                             <div className="flex items-center gap-2">
                               <div
                                 style={{
@@ -953,18 +1097,30 @@ export function SettingsPage() {
                             </div>
                             <div className="flex gap-2">
                               <div
-                              className="rounded-lg flex-1"
-                              style={{
-                                  height: appearance.layoutPreference === 'COMPACT' ? '28px' : appearance.layoutPreference === 'EXPANDED' ? '40px' : '34px',
-                                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 18%, transparent), color-mix(in srgb, var(--color-info) 12%, transparent))',
+                                className="rounded-lg flex-1"
+                                style={{
+                                  height:
+                                    appearance.layoutPreference === 'COMPACT'
+                                      ? '28px'
+                                      : appearance.layoutPreference === 'EXPANDED'
+                                        ? '40px'
+                                        : '34px',
+                                  background:
+                                    'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 18%, transparent), color-mix(in srgb, var(--color-info) 12%, transparent))',
                                   border: '1px solid color-mix(in srgb, var(--color-accent) 24%, transparent)',
                                 }}
                               />
                               <div
                                 className="rounded-lg flex-1"
                                 style={{
-                                  height: appearance.layoutPreference === 'COMPACT' ? '28px' : appearance.layoutPreference === 'EXPANDED' ? '40px' : '34px',
-                                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 18%, transparent), color-mix(in srgb, var(--color-accent) 12%, transparent))',
+                                  height:
+                                    appearance.layoutPreference === 'COMPACT'
+                                      ? '28px'
+                                      : appearance.layoutPreference === 'EXPANDED'
+                                        ? '40px'
+                                        : '34px',
+                                  background:
+                                    'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 18%, transparent), color-mix(in srgb, var(--color-accent) 12%, transparent))',
                                   border: '1px solid color-mix(in srgb, var(--color-info) 24%, transparent)',
                                 }}
                               />
@@ -994,23 +1150,29 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, -6, 0], x: [0, 3, 0] }}
                           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                            style={{
-                              position: 'absolute',
-                              top: '-16px',
-                              right: '-20px',
-                              width: appearance.layoutPreference === 'COMPACT' ? '64px' : '76px',
-                              padding: '8px',
-                              borderRadius: '12px',
-                              background: 'color-mix(in srgb, var(--color-accent) 16%, transparent)',
-                              backdropFilter: 'blur(16px)',
-                              WebkitBackdropFilter: 'blur(16px)',
-                              border: '1px solid color-mix(in srgb, var(--color-accent) 26%, transparent)',
-                              boxShadow: '0 8px 24px color-mix(in srgb, var(--color-accent) 14%, transparent)',
-                            }}
+                          style={{
+                            position: 'absolute',
+                            top: '-16px',
+                            right: '-20px',
+                            width: appearance.layoutPreference === 'COMPACT' ? '64px' : '76px',
+                            padding: '8px',
+                            borderRadius: '12px',
+                            background: 'color-mix(in srgb, var(--color-accent) 16%, transparent)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid color-mix(in srgb, var(--color-accent) 26%, transparent)',
+                            boxShadow: '0 8px 24px color-mix(in srgb, var(--color-accent) 14%, transparent)',
+                          }}
                         >
                           <svg width="100%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="20" cy="14" r="8" fill="var(--color-accent)" opacity="0.3" />
-                            <path d="M12 28c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                            <path
+                              d="M12 28c0-4.418 3.582-8 8-8s8 3.582 8 8"
+                              stroke="var(--color-accent)"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              fill="none"
+                            />
                             <circle cx="20" cy="14" r="4" fill="var(--color-accent)" opacity="0.7" />
                           </svg>
                         </motion.div>
@@ -1019,22 +1181,22 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, 5, 0], x: [0, -4, 0] }}
                           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-                            style={{
-                              position: 'absolute',
-                              bottom: '-16px',
-                              left: '-20px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              padding: '6px 12px',
-                              borderRadius: '20px',
-                              background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
-                              backdropFilter: 'blur(16px)',
-                              WebkitBackdropFilter: 'blur(16px)',
-                              border: '1px solid color-mix(in srgb, var(--color-success) 24%, transparent)',
-                              boxShadow: '0 6px 20px color-mix(in srgb, var(--color-success) 12%, transparent)',
-                            }}
-                          >
+                          style={{
+                            position: 'absolute',
+                            bottom: '-16px',
+                            left: '-20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            borderRadius: '20px',
+                            background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid color-mix(in srgb, var(--color-success) 24%, transparent)',
+                            boxShadow: '0 6px 20px color-mix(in srgb, var(--color-success) 12%, transparent)',
+                          }}
+                        >
                           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} />
                           <div
                             className="rounded-full"
@@ -1050,20 +1212,26 @@ export function SettingsPage() {
                         <motion.div
                           animate={{ y: [0, 4, 0], x: [0, -2, 0] }}
                           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
-                            style={{
-                              position: 'absolute',
-                              bottom: '-16px',
-                              right: '-20px',
-                              padding: '8px 10px',
-                              borderRadius: '10px',
-                              background: 'color-mix(in srgb, var(--color-surface-raised) 76%, transparent)',
-                              backdropFilter: 'blur(16px)',
-                              WebkitBackdropFilter: 'blur(16px)',
-                              border: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
-                              boxShadow: '0 6px 20px color-mix(in srgb, var(--color-text-primary) 8%, transparent)',
-                            }}
+                          style={{
+                            position: 'absolute',
+                            bottom: '-16px',
+                            right: '-20px',
+                            padding: '8px 10px',
+                            borderRadius: '10px',
+                            background: 'color-mix(in srgb, var(--color-surface-raised) 76%, transparent)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid color-mix(in srgb, var(--color-border) 80%, transparent)',
+                            boxShadow: '0 6px 20px color-mix(in srgb, var(--color-text-primary) 8%, transparent)',
+                          }}
                         >
-                          <svg width="48" height="28" viewBox="0 0 48 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg
+                            width="48"
+                            height="28"
+                            viewBox="0 0 48 28"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
                             <path
                               d="M2 22 L10 16 L18 20 L26 8 L34 12 L42 4 L46 6"
                               stroke="var(--color-accent)"
@@ -1146,17 +1314,23 @@ export function SettingsPage() {
                       }}
                     >
                       <span className="flex items-center gap-1.5">
-                        <span style={{
-                          display: 'inline-block',
-                          width: 6,
-                          height: 6,
-                          borderRadius: '50%',
-                          background: 'var(--color-accent)',
-                          boxShadow: '0 0 6px var(--color-accent)',
-                        }} />
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background: 'var(--color-accent)',
+                            boxShadow: '0 0 6px var(--color-accent)',
+                          }}
+                        />
                         Live Preview
                         {' · '}
-                        {appearance.layoutPreference === 'COMPACT' ? 'Compact' : appearance.layoutPreference === 'EXPANDED' ? 'Expanded' : 'Comfortable'}
+                        {appearance.layoutPreference === 'COMPACT'
+                          ? 'Compact'
+                          : appearance.layoutPreference === 'EXPANDED'
+                            ? 'Expanded'
+                            : 'Comfortable'}
                       </span>
                       <span style={{ opacity: 0.7 }}>Live Preview</span>
                     </div>
@@ -1167,10 +1341,7 @@ export function SettingsPage() {
 
             {activeTab === 'ai' && (
               <TabPanel key="ai" panelKey="ai" className="w-full">
-                <AISettingsPanel
-                  preferences={data?.ai}
-                  onChange={(next) => aiMutation.mutate(next)}
-                />
+                <AISettingsPanel preferences={data?.ai} onChange={(next) => aiMutation.mutate(next)} />
               </TabPanel>
             )}
 
@@ -1207,7 +1378,10 @@ export function SettingsPage() {
                             <Toggle
                               checked={notifications[key as keyof typeof notifications]}
                               onToggle={() => {
-                                const next = { ...notifications, [key]: !notifications[key as keyof typeof notifications] };
+                                const next = {
+                                  ...notifications,
+                                  [key]: !notifications[key as keyof typeof notifications],
+                                };
                                 saveNotifications(next);
                               }}
                             />
@@ -1221,7 +1395,11 @@ export function SettingsPage() {
             )}
 
             {activeTab === 'integrations' && (
-              <TabPanel key="integrations" panelKey="integrations" className="grid lg:grid-cols-[1.05fr_0.95fr] gap-4 sm:gap-5">
+              <TabPanel
+                key="integrations"
+                panelKey="integrations"
+                className="grid lg:grid-cols-[1.05fr_0.95fr] gap-4 sm:gap-5"
+              >
                 <div id="settings-integrations-panel" data-onboarding="settings-integrations">
                   <Card className="p-4 sm:p-5 lg:p-6" variant="default">
                     <SectionHeader
@@ -1233,7 +1411,10 @@ export function SettingsPage() {
                     />
 
                     <div className="mt-4 sm:mt-5 space-y-4 sm:space-y-5">
-                      <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+                      <div
+                        className="rounded-xl sm:rounded-2xl border p-4"
+                        style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-text-primary">Google Calendar</p>
@@ -1244,7 +1425,10 @@ export function SettingsPage() {
                             </p>
                           </div>
                           <div className="shrink-0">
-                            <StatusPill label={googleCalendar?.connected ? 'Connected' : 'Not connected'} active={Boolean(googleCalendar?.connected)} />
+                            <StatusPill
+                              label={googleCalendar?.connected ? 'Connected' : 'Not connected'}
+                              active={Boolean(googleCalendar?.connected)}
+                            />
                           </div>
                         </div>
 
@@ -1291,7 +1475,10 @@ export function SettingsPage() {
                       <NotionSettingsPanel />
 
                       {/* Push Notifications Section */}
-                      <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+                      <div
+                        className="rounded-xl sm:rounded-2xl border p-4"
+                        style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-text-primary">Browser Push Notifications</p>
@@ -1359,18 +1546,27 @@ export function SettingsPage() {
                   />
 
                   <div className="mt-4 sm:mt-5 grid gap-2.5 sm:gap-3">
-                    <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+                    <div
+                      className="rounded-xl sm:rounded-2xl border p-4"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
                       <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Account link</div>
                       <div className="mt-2 text-sm font-bold text-text-primary">
                         {security?.hasGoogle ? 'Linked to Google' : 'Not linked to Google'}
                       </div>
                       <p className="mt-1 text-xs text-text-muted leading-snug">
-                        Use Google sign-in to create or access the account. Calendar sync still needs the separate integration step.
+                        Use Google sign-in to create or access the account. Calendar sync still needs the separate
+                        integration step.
                       </p>
                     </div>
 
-                    <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Recovery email</div>
+                    <div
+                      className="rounded-xl sm:rounded-2xl border p-4"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                        Recovery email
+                      </div>
                       <div className="mt-2 text-sm font-bold text-text-primary break-words">
                         {recoveryEmail.trim() ? recoveryEmail : 'No recovery email saved'}
                       </div>
@@ -1396,21 +1592,34 @@ export function SettingsPage() {
                     />
 
                     <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 mb-4 sm:mb-5">
-                      <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Password status</div>
+                      <div
+                        className="rounded-xl sm:rounded-2xl border p-3 sm:p-4"
+                        style={{ borderColor: 'var(--color-border)' }}
+                      >
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                          Password status
+                        </div>
                         <div className="mt-2 text-sm font-bold text-text-primary">
                           {security?.hasPassword ? 'Password set' : 'No password yet'}
                         </div>
                       </div>
-                      <div className="rounded-xl sm:rounded-2xl border p-3 sm:p-4" style={{ borderColor: 'var(--color-border)' }}>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Google sign-in</div>
+                      <div
+                        className="rounded-xl sm:rounded-2xl border p-3 sm:p-4"
+                        style={{ borderColor: 'var(--color-border)' }}
+                      >
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                          Google sign-in
+                        </div>
                         <div className="mt-2 text-sm font-bold text-text-primary">
                           {security?.hasGoogle ? 'Linked' : 'Not linked'}
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
+                    <div
+                      className="rounded-xl sm:rounded-2xl border p-4"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
                       <div className="flex items-start gap-3">
                         <div
                           className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"

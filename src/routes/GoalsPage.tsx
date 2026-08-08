@@ -87,10 +87,26 @@ type TouchedFields = Partial<Record<keyof GoalFormState, boolean>>;
 const goalStatuses: GoalFilter[] = ['ALL', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'];
 
 const statusMeta: Record<GoalStatus, { label: string; color: string; bg: string }> = {
-  ACTIVE: { label: 'Active', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)' },
-  PAUSED: { label: 'Paused', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning) 12%, transparent)' },
-  COMPLETED: { label: 'Completed', color: 'var(--color-info)', bg: 'color-mix(in srgb, var(--color-info) 12%, transparent)' },
-  ARCHIVED: { label: 'Archived', color: 'var(--color-text-muted)', bg: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)' },
+  ACTIVE: {
+    label: 'Active',
+    color: 'var(--color-success)',
+    bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+  },
+  PAUSED: {
+    label: 'Paused',
+    color: 'var(--color-warning)',
+    bg: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
+  },
+  COMPLETED: {
+    label: 'Completed',
+    color: 'var(--color-info)',
+    bg: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
+  },
+  ARCHIVED: {
+    label: 'Archived',
+    color: 'var(--color-text-muted)',
+    bg: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)',
+  },
 };
 
 const categoryMeta = [
@@ -251,10 +267,10 @@ function buildRoadmap(goal: GoalDTO): Array<{ label: string; date: string; done:
   if (goal.targetDate) {
     const created = new Date(goal.createdAt);
     const target = new Date(goal.targetDate);
-    const midpoint = new Date(created.getTime() + ((target.getTime() - created.getTime()) / 2));
+    const midpoint = new Date(created.getTime() + (target.getTime() - created.getTime()) / 2);
     fallback.push(
       { label: 'Midpoint', date: formatDate(midpoint.toISOString()), done: goal.progress >= 50 },
-      { label: 'Target', date: formatDate(goal.targetDate), done: goal.status === 'COMPLETED' || goal.progress >= 100 },
+      { label: 'Target', date: formatDate(goal.targetDate), done: goal.status === 'COMPLETED' || goal.progress >= 100 }
     );
   }
 
@@ -305,7 +321,7 @@ export function GoalsPage() {
 
   const updateGoal = useUpdateGoal(editingGoal?.id ?? '');
   const errors = useMemo(() => validateForm(form), [form]);
-  const fieldError = (key: keyof GoalFormState) => (touched[key] || submitAttempted) ? errors[key] : undefined;
+  const fieldError = (key: keyof GoalFormState) => (touched[key] || submitAttempted ? errors[key] : undefined);
 
   const filteredGoals = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -340,9 +356,7 @@ export function GoalsPage() {
   const paceDelta = useMemo(() => {
     const paceGoals = goals.filter((goal) => !!goal.targetDate);
     if (paceGoals.length === 0) return null;
-    const deltas = paceGoals
-      .map((goal) => goalProgressVsPace(goal))
-      .filter((value): value is number => value !== null);
+    const deltas = paceGoals.map((goal) => goalProgressVsPace(goal)).filter((value): value is number => value !== null);
     if (deltas.length === 0) return null;
     return Math.round(deltas.reduce((sum, value) => sum + value, 0) / deltas.length);
   }, [goals]);
@@ -376,7 +390,9 @@ export function GoalsPage() {
         map.set(key, { label: meta.label, count: 1, color: meta.color, icon: meta.icon });
       }
     }
-    return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+    return Array.from(map.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
   }, [goals]);
 
   const recentAchievements = dashboardData?.gamification.recentAchievements ?? [];
@@ -384,10 +400,7 @@ export function GoalsPage() {
   const upcomingDeadlines = dashboardData?.upcomingDeadlines ?? [];
   const weeklyProgress = dashboardData?.weeklyProgress ?? [];
 
-  const topOrbitGoals = useMemo(
-    () => [...goals].sort((a, b) => b.progress - a.progress).slice(0, 4),
-    [goals],
-  );
+  const topOrbitGoals = useMemo(() => [...goals].sort((a, b) => b.progress - a.progress).slice(0, 4), [goals]);
 
   const openCreate = () => {
     setEditingGoal(null);
@@ -416,11 +429,12 @@ export function GoalsPage() {
   const toggleSelected = (kind: 'habits' | 'tasks' | 'projects', id: string) => {
     setForm((current) => {
       const next = { ...current };
-      const target = kind === 'habits'
-        ? new Set(current.linkedHabitIds)
-        : kind === 'tasks'
-          ? new Set(current.linkedTaskIds)
-          : new Set(current.linkedProjectIds);
+      const target =
+        kind === 'habits'
+          ? new Set(current.linkedHabitIds)
+          : kind === 'tasks'
+            ? new Set(current.linkedTaskIds)
+            : new Set(current.linkedProjectIds);
       if (target.has(id)) target.delete(id);
       else target.add(id);
       if (kind === 'habits') next.linkedHabitIds = target;
@@ -463,8 +477,14 @@ export function GoalsPage() {
 
   const displayName = user?.name ?? user?.email?.split('@')[0] ?? 'there';
   const currentYear = new Date().getFullYear();
-  const mainChart = smallSpark(weeklyProgress.slice(-7).map((entry) => Math.max(entry.tasksCompleted * 12 + entry.habitsCompleted * 8, 8)), 'var(--color-accent)');
-  const focusChart = smallSpark(weeklyProgress.slice(-7).map((entry) => Math.max(entry.focusMinutes, 5)), 'var(--color-success)');
+  const mainChart = smallSpark(
+    weeklyProgress.slice(-7).map((entry) => Math.max(entry.tasksCompleted * 12 + entry.habitsCompleted * 8, 8)),
+    'var(--color-accent)'
+  );
+  const focusChart = smallSpark(
+    weeklyProgress.slice(-7).map((entry) => Math.max(entry.focusMinutes, 5)),
+    'var(--color-success)'
+  );
   const selectedRoadmap = selectedGoal ? buildRoadmap(selectedGoal) : [];
 
   return (
@@ -476,7 +496,6 @@ export function GoalsPage() {
       style={{ background: 'var(--color-bg)' }}
     >
       <div className="relative z-10 flex flex-col gap-6 p-4 sm:p-6 lg:p-8 xl:p-10">
-
         {/* ── PREMIUM HERO ──────────────────────────────────────────── */}
         <GoalsHero
           displayName={displayName}
@@ -491,13 +510,51 @@ export function GoalsPage() {
         />
 
         <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard title="Goals" value={stats.total} sub={`${stats.active} active this month`} icon={<Target size={18} />} accent="var(--color-accent)" spark={mainChart} />
-          <KpiCard title="Progress" value={`${stats.avgProgress}%`} sub="Across all goals" icon={<Layers size={18} />} accent="var(--color-info)" spark={focusChart} />
-          <KpiCard title="Focus Score" value={dashboardData?.productivityScore ?? 0} sub={dashboardData ? 'Real productivity score' : 'From backend summary'} icon={<Activity size={18} />} accent="var(--color-success)" spark={smallSpark(weeklyProgress.slice(-7).map((entry) => Math.max(entry.focusMinutes / 2, 8)), 'var(--color-success)')} />
-          <KpiCard title="Milestones" value={stats.totalMilestones} sub={`${stats.dueSoon} upcoming deadlines`} icon={<Calendar size={18} />} accent="var(--color-warning)" spark={smallSpark(weeklyProgress.slice(-7).map((entry) => Math.max(entry.projectsCompleted * 14, 6)), 'var(--color-warning)')} />
+          <KpiCard
+            title="Goals"
+            value={stats.total}
+            sub={`${stats.active} active this month`}
+            icon={<Target size={18} />}
+            accent="var(--color-accent)"
+            spark={mainChart}
+          />
+          <KpiCard
+            title="Progress"
+            value={`${stats.avgProgress}%`}
+            sub="Across all goals"
+            icon={<Layers size={18} />}
+            accent="var(--color-info)"
+            spark={focusChart}
+          />
+          <KpiCard
+            title="Focus Score"
+            value={dashboardData?.productivityScore ?? 0}
+            sub={dashboardData ? 'Real productivity score' : 'From backend summary'}
+            icon={<Activity size={18} />}
+            accent="var(--color-success)"
+            spark={smallSpark(
+              weeklyProgress.slice(-7).map((entry) => Math.max(entry.focusMinutes / 2, 8)),
+              'var(--color-success)'
+            )}
+          />
+          <KpiCard
+            title="Milestones"
+            value={stats.totalMilestones}
+            sub={`${stats.dueSoon} upcoming deadlines`}
+            icon={<Calendar size={18} />}
+            accent="var(--color-warning)"
+            spark={smallSpark(
+              weeklyProgress.slice(-7).map((entry) => Math.max(entry.projectsCompleted * 14, 6)),
+              'var(--color-warning)'
+            )}
+          />
         </motion.div>
 
-        <motion.div variants={itemVariants} className="rounded-xl border p-4 sm:p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+        <motion.div
+          variants={itemVariants}
+          className="rounded-xl border p-4 sm:p-5"
+          style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+        >
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -506,22 +563,43 @@ export function GoalsPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search goals..."
                 className="w-full rounded-2xl border py-3 pl-10 pr-4 text-sm outline-none transition-colors focus:ring-2"
-                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)', '--tw-ring-color': 'var(--color-accent)' } as CSSProperties}
+                style={
+                  {
+                    background: 'var(--color-surface-raised)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                    '--tw-ring-color': 'var(--color-accent)',
+                  } as CSSProperties
+                }
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <ChipSelect label="Status" value={filter} options={goalStatuses.map((status) => ({ value: status, label: filterLabel(status) }))} onChange={(value) => setFilter(value as GoalFilter)} />
-              <ChipSelect label="Sort" value={sortKey} options={[
-                { value: 'latest', label: 'Latest' },
-                { value: 'progress', label: 'Progress' },
-                { value: 'name', label: 'Name' },
-                { value: 'oldest', label: 'Oldest' },
-              ]} onChange={(value) => setSortKey(value as SortKey)} />
+              <ChipSelect
+                label="Status"
+                value={filter}
+                options={goalStatuses.map((status) => ({ value: status, label: filterLabel(status) }))}
+                onChange={(value) => setFilter(value as GoalFilter)}
+              />
+              <ChipSelect
+                label="Sort"
+                value={sortKey}
+                options={[
+                  { value: 'latest', label: 'Latest' },
+                  { value: 'progress', label: 'Progress' },
+                  { value: 'name', label: 'Name' },
+                  { value: 'oldest', label: 'Oldest' },
+                ]}
+                onChange={(value) => setSortKey(value as SortKey)}
+              />
               <button
                 type="button"
-                onClick={() => setViewMode((current) => current === 'grid' ? 'list' : 'grid')}
+                onClick={() => setViewMode((current) => (current === 'grid' ? 'list' : 'grid'))}
                 className="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold"
-                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-secondary)',
+                }}
               >
                 {viewMode === 'grid' ? <Grid2x2 size={15} /> : <List size={15} />}
                 {viewMode === 'grid' ? 'Grid' : 'List'}
@@ -530,7 +608,11 @@ export function GoalsPage() {
                 type="button"
                 onClick={() => setPlannerOpen(true)}
                 className="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 9%, var(--color-surface-raised))', borderColor: 'color-mix(in srgb, var(--color-accent) 20%, transparent)', color: 'var(--color-accent)' }}
+                style={{
+                  background: 'color-mix(in srgb, var(--color-accent) 9%, var(--color-surface-raised))',
+                  borderColor: 'color-mix(in srgb, var(--color-accent) 20%, transparent)',
+                  color: 'var(--color-accent)',
+                }}
               >
                 <Sparkles size={15} />
                 AI Coach
@@ -546,11 +628,18 @@ export function GoalsPage() {
                   key={category.label}
                   type="button"
                   className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: category.color }}
+                  style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: category.color,
+                  }}
                 >
                   <Icon size={14} />
                   {category.label}
-                  <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: 'color-mix(in srgb, currentColor 12%, transparent)' }}>
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px]"
+                    style={{ background: 'color-mix(in srgb, currentColor 12%, transparent)' }}
+                  >
                     {category.count}
                   </span>
                 </button>
@@ -559,7 +648,10 @@ export function GoalsPage() {
           </div>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]">
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]"
+        >
           <div className="min-w-0">
             <SectionHeader
               title="Active Goals"
@@ -572,7 +664,11 @@ export function GoalsPage() {
               {filteredGoals.length === 0 ? (
                 <FloatingGoalsEmpty
                   title={search || filter !== 'ALL' ? 'No matching goals' : 'No goals yet'}
-                  description={search || filter !== 'ALL' ? 'Try adjusting your search or filter.' : 'Create a goal and start linking habits, tasks, and projects.'}
+                  description={
+                    search || filter !== 'ALL'
+                      ? 'Try adjusting your search or filter.'
+                      : 'Create a goal and start linking habits, tasks, and projects.'
+                  }
                   ctaText="Create goal"
                   onCreateGoal={openCreate}
                 />
@@ -594,47 +690,94 @@ export function GoalsPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <CoachPanel insights={insights} upcomingDeadlines={upcomingDeadlines} updatedAt={dashboardData?.gamification.recentPoints?.[0]?.createdAt ?? null} />
+            <CoachPanel
+              insights={insights}
+              upcomingDeadlines={upcomingDeadlines}
+              updatedAt={dashboardData?.gamification.recentPoints?.[0]?.createdAt ?? null}
+            />
             <RecentAchievementsPanel achievements={recentAchievements} />
           </div>
         </motion.div>
 
         <motion.div variants={itemVariants} className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <div
+            className="rounded-xl border p-5"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>Weekly velocity</h2>
+                <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+                  Weekly velocity
+                </h2>
                 <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
                   Real weekly output from tasks, habits, and focus sessions
                 </p>
               </div>
-              <span className="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+              <span
+                className="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]"
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
                 {currentYear}
               </span>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-2xl border" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <div
+              className="mt-5 overflow-hidden rounded-2xl border"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+            >
               <WeeklyProgressChart data={weeklyProgress} />
             </div>
           </div>
-          <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <div
+            className="rounded-xl border p-5"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>Progress Analytics</h2>
-                <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>Expected vs actual progress from your real activity</p>
+                <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+                  Progress Analytics
+                </h2>
+                <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                  Expected vs actual progress from your real activity
+                </p>
               </div>
-              <div className="rounded-2xl border px-3 py-2 text-xs font-bold" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+              <div
+                className="rounded-2xl border px-3 py-2 text-xs font-bold"
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
                 This month
               </div>
             </div>
 
             <div className="mt-5">
-              <AnalyticsLineChart values={weeklyProgress.slice(-8).map((entry, index) => Math.max(entry.tasksCompleted * 18 + entry.habitsCompleted * 10 + index * 2, 5))} />
+              <AnalyticsLineChart
+                values={weeklyProgress
+                  .slice(-8)
+                  .map((entry, index) =>
+                    Math.max(entry.tasksCompleted * 18 + entry.habitsCompleted * 10 + index * 2, 5)
+                  )}
+              />
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <MetricBox label="Weekly velocity" value={`${weeklyProgress.slice(-1)[0]?.tasksCompleted ?? 0} tasks`} sub={`Across ${weeklyProgress.length} weeks`} />
-              <MetricBox label="Focus time" value={`${Math.floor((weeklyProgress.reduce((sum, item) => sum + item.focusMinutes, 0)) / 60)}h`} sub="Logged this period" />
+              <MetricBox
+                label="Weekly velocity"
+                value={`${weeklyProgress.slice(-1)[0]?.tasksCompleted ?? 0} tasks`}
+                sub={`Across ${weeklyProgress.length} weeks`}
+              />
+              <MetricBox
+                label="Focus time"
+                value={`${Math.floor(weeklyProgress.reduce((sum, item) => sum + item.focusMinutes, 0) / 60)}h`}
+                sub="Logged this period"
+              />
               <MetricBox label="Upcoming" value={`${upcomingDeadlines.length}`} sub="Deadlines in queue" />
               <MetricBox label="Categories" value={`${categorySummary.length}`} sub="Distinct goal groups" />
             </div>
@@ -659,7 +802,11 @@ export function GoalsPage() {
         toggleSelected={toggleSelected}
       />
 
-      <GoalPlannerModal open={plannerOpen} onClose={() => setPlannerOpen(false)} onCreated={(goalId) => navigate(`/goals/${goalId}`)} />
+      <GoalPlannerModal
+        open={plannerOpen}
+        onClose={() => setPlannerOpen(false)}
+        onCreated={(goalId) => navigate(`/goals/${goalId}`)}
+      />
       {deletingGoal && (
         <GoalDeleteModal
           open={!!deletingGoal}
@@ -761,7 +908,8 @@ function GoalsHero({
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
-        boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 24px 64px -12px rgba(0,0,0,0.10)',
+        boxShadow:
+          '0 0 0 1px color-mix(in srgb, var(--color-accent) 6%, transparent), 0 24px 64px -12px rgba(0,0,0,0.10)',
       }}
     >
       {/* ── Animated ambient blobs ── */}
@@ -772,7 +920,14 @@ function GoalsHero({
         animate={{ scale: [1, 1.06, 1] }}
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%)', filter: 'blur(32px)' }} />
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%)',
+            filter: 'blur(32px)',
+          }}
+        />
       </motion.div>
       <motion.div
         style={{ x: blob2X, y: blob2Y }}
@@ -781,11 +936,16 @@ function GoalsHero({
         animate={{ scale: [1, 1.08, 1] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
       >
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, #3B82F6 12%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background: 'radial-gradient(circle, color-mix(in srgb, #3B82F6 12%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
       {/* ── Main content ── */}
       <div className="relative flex flex-col gap-8 p-6 sm:p-8 lg:p-10 xl:flex-row xl:items-center xl:gap-12">
-
         {/* Left column: text + cta + pace badge */}
         <div className="min-w-0 flex-1 xl:max-w-[480px]">
           {/* Eyebrow */}
@@ -803,7 +963,10 @@ function GoalsHero({
             >
               <Sparkles size={13} style={{ color: 'var(--color-accent)' }} />
             </motion.span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: 'var(--color-accent)' }}>
+            <span
+              className="text-[11px] font-bold uppercase tracking-[0.22em]"
+              style={{ color: 'var(--color-accent)' }}
+            >
               Goals Cockpit
             </span>
           </motion.div>
@@ -914,21 +1077,24 @@ function GoalsHero({
               { icon: <Target size={14} />, label: `${stats.total} goals`, color: 'var(--color-accent)' },
               { icon: <CheckCircle2 size={14} />, label: `${stats.completed} done`, color: 'var(--color-success)' },
               { icon: <Clock size={14} />, label: `${stats.dueSoon} due soon`, color: 'var(--color-warning)' },
-              { icon: <BarChart3 size={14} />, label: `${stats.totalMilestones} milestones`, color: 'var(--color-info)' },
+              {
+                icon: <BarChart3 size={14} />,
+                label: `${stats.totalMilestones} milestones`,
+                color: 'var(--color-info)',
+              },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-1.5">
                 <span style={{ color: item.color }}>{item.icon}</span>
-                <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>{item.label}</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                  {item.label}
+                </span>
               </div>
             ))}
           </motion.div>
         </div>
 
         {/* Right column: Radial dial + goal cards + momentum bars */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-col gap-5 xl:min-w-[420px] xl:max-w-[520px]"
-        >
+        <motion.div variants={itemVariants} className="flex flex-col gap-5 xl:min-w-[420px] xl:max-w-[520px]">
           {/* Top row: radial dial + two stat pills */}
           <div className="flex items-center gap-5">
             {/* Radial dial */}
@@ -985,7 +1151,10 @@ function GoalsHero({
                 >
                   {stats.avgProgress}%
                 </motion.p>
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>
+                <p
+                  className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.15em]"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   avg
                 </p>
               </div>
@@ -1021,9 +1190,15 @@ function GoalsHero({
                   className="flex items-center gap-3 rounded-2xl px-4 py-2.5"
                   style={{ background: s.bg, border: `1px solid ${s.color}22` }}
                 >
-                  <span className="flex-shrink-0" style={{ color: s.color }}>{s.icon}</span>
-                  <span className="text-base font-black" style={{ color: 'var(--color-text-primary)' }}>{s.value}</span>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>{s.label}</span>
+                  <span className="flex-shrink-0" style={{ color: s.color }}>
+                    {s.icon}
+                  </span>
+                  <span className="text-base font-black" style={{ color: 'var(--color-text-primary)' }}>
+                    {s.value}
+                  </span>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                    {s.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -1032,7 +1207,10 @@ function GoalsHero({
           {/* Featured goal cards */}
           {featuredGoals.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--color-text-muted)' }}>
+              <p
+                className="text-[11px] font-bold uppercase tracking-[0.2em]"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 Top goals by progress
               </p>
               <div className="grid gap-2">
@@ -1053,7 +1231,9 @@ function GoalsHero({
                       {/* Color swatch */}
                       <div
                         className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-white"
-                        style={{ background: `linear-gradient(135deg, ${goal.color || meta.color}, ${goal.color || meta.color}99)` }}
+                        style={{
+                          background: `linear-gradient(135deg, ${goal.color || meta.color}, ${goal.color || meta.color}99)`,
+                        }}
                       >
                         <meta.icon size={14} />
                       </div>
@@ -1062,7 +1242,10 @@ function GoalsHero({
                           {goal.title}
                         </p>
                         {/* Progress bar */}
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--color-border)' }}>
+                        <div
+                          className="mt-1.5 h-1.5 overflow-hidden rounded-full"
+                          style={{ background: 'var(--color-border)' }}
+                        >
                           <motion.div
                             className="h-full rounded-full"
                             initial={{ width: 0 }}
@@ -1119,21 +1302,24 @@ function GoalsHero({
                         background: isToday
                           ? 'linear-gradient(180deg, var(--color-accent), #818CF8)'
                           : 'color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
-                        boxShadow: isToday ? '0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent)' : 'none',
+                        boxShadow: isToday
+                          ? '0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent)'
+                          : 'none',
                         borderRadius: '4px 4px 0 0',
                       }}
                     />
                   );
                 })}
               </div>
-              <div className="mt-2 flex items-center gap-4 text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+              <div
+                className="mt-2 flex items-center gap-4 text-[11px] font-semibold"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 <span className="flex items-center gap-1">
                   <span className="inline-block h-2 w-2 rounded-full" style={{ background: 'var(--color-accent)' }} />
                   Today
                 </span>
-                <span>
-                  {barData.reduce((s, v) => s + v, 0)} actions total
-                </span>
+                <span>{barData.reduce((s, v) => s + v, 0)} actions total</span>
               </div>
             </div>
           )}
@@ -1161,27 +1347,45 @@ function KpiCard({
   spark: { path: string; fillPath: string; color: string };
 }) {
   return (
-    <div className="rounded-[24px] border p-4 shadow-sm" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+    <div
+      className="rounded-[24px] border p-4 shadow-sm"
+      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent }}>
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-2xl"
+            style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent }}
+          >
             {icon}
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--color-text-muted)' }}>
+            <p
+              className="text-xs font-semibold uppercase tracking-[0.2em]"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
               {title}
             </p>
             <p className="mt-1 text-3xl font-black" style={{ color: 'var(--color-text-primary)' }}>
               {value}
             </p>
-            <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>
+            <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              {sub}
+            </p>
           </div>
         </div>
       </div>
       <div className="mt-3 h-10">
         <svg viewBox="0 0 100 30" className="h-full w-full" preserveAspectRatio="none" aria-hidden="true">
           <path d={spark.fillPath} fill={`color-mix(in srgb, ${spark.color} 12%, transparent)`} />
-          <path d={spark.path} fill="none" stroke={spark.color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d={spark.path}
+            fill="none"
+            stroke={spark.color}
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
     </div>
@@ -1204,7 +1408,11 @@ function ChipSelect({
     <button
       type="button"
       className="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold"
-      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+      style={{
+        background: 'var(--color-surface-raised)',
+        borderColor: 'var(--color-border)',
+        color: 'var(--color-text-secondary)',
+      }}
       onClick={() => {
         const currentIndex = options.findIndex((option) => option.value === value);
         const next = options[(currentIndex + 1) % options.length];
@@ -1237,7 +1445,12 @@ function SectionHeader({
           {title} <span className="text-text-muted text-base font-semibold">{count}</span>
         </h2>
       </div>
-      <button type="button" onClick={onAction} className="inline-flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>
+      <button
+        type="button"
+        onClick={onAction}
+        className="inline-flex items-center gap-2 text-sm font-semibold"
+        style={{ color: 'var(--color-accent)' }}
+      >
         {actionLabel} <ArrowRight size={14} />
       </button>
     </div>
@@ -1254,54 +1467,99 @@ function CoachPanel({
   updatedAt: string | null;
 }) {
   return (
-    <div className="rounded-xl border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+    <div
+      className="rounded-xl border p-5"
+      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Sparkles size={18} className="text-accent" />
-          <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>AI Coach</h2>
+          <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+            AI Coach
+          </h2>
         </div>
         <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
           Updated {formatRelativeTime(updatedAt)}
         </span>
       </div>
 
-      <div className="mt-4 rounded-2xl border p-4" style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))', borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)' }}>
+      <div
+        className="mt-4 rounded-2xl border p-4"
+        style={{
+          background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))',
+          borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
+        }}
+      >
         <p className="text-sm font-semibold leading-6" style={{ color: 'var(--color-text-secondary)' }}>
           You are progressing faster than expected. Keep it up.
         </p>
       </div>
 
       <div className="mt-5 space-y-3">
-        <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Suggestions</p>
+        <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+          Suggestions
+        </p>
         {insights.slice(0, 3).map((insight) => (
-          <div key={insight.id} className="flex items-start gap-3 rounded-2xl border p-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-            <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)', color: 'var(--color-info)' }}>
+          <div
+            key={insight.id}
+            className="flex items-start gap-3 rounded-2xl border p-3"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
+            <span
+              className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl"
+              style={{
+                background: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
+                color: 'var(--color-info)',
+              }}
+            >
               <Brain size={14} />
             </span>
             <div className="min-w-0">
-              <p className="text-sm leading-6" style={{ color: 'var(--color-text-secondary)' }}>{insight.text}</p>
+              <p className="text-sm leading-6" style={{ color: 'var(--color-text-secondary)' }}>
+                {insight.text}
+              </p>
             </div>
           </div>
         ))}
       </div>
 
       <div className="mt-5 space-y-3">
-        <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Upcoming Deadlines</p>
+        <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+          Upcoming Deadlines
+        </p>
         {upcomingDeadlines.slice(0, 3).map((deadline) => (
-          <div key={`${deadline.type}-${deadline.id}`} className="flex items-center justify-between gap-3 rounded-2xl border p-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+          <div
+            key={`${deadline.type}-${deadline.id}`}
+            className="flex items-center justify-between gap-3 rounded-2xl border p-3"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
             <div className="min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{deadline.title}</p>
+              <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                {deadline.title}
+              </p>
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 {deadline.type.toUpperCase()} - {deadline.daysUntilDue} day{deadline.daysUntilDue === 1 ? '' : 's'} left
               </p>
             </div>
-            <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: deadline.daysUntilDue <= 1 ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)' : 'color-mix(in srgb, var(--color-warning) 12%, transparent)', color: deadline.daysUntilDue <= 1 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+            <span
+              className="rounded-full px-2.5 py-1 text-[11px] font-bold"
+              style={{
+                background:
+                  deadline.daysUntilDue <= 1
+                    ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
+                    : 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
+                color: deadline.daysUntilDue <= 1 ? 'var(--color-danger)' : 'var(--color-warning)',
+              }}
+            >
               {formatDate(deadline.dueDate)}
             </span>
           </div>
         ))}
         {upcomingDeadlines.length === 0 && (
-          <div className="rounded-2xl border border-dashed p-4 text-sm" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+          <div
+            className="rounded-2xl border border-dashed p-4 text-sm"
+            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+          >
             No upcoming deadlines. Your plan is clear for now.
           </div>
         )}
@@ -1315,9 +1573,7 @@ function RecentAchievementsPanel({
 }: {
   achievements: EnhancedDashboardDTO['gamification']['recentAchievements'];
 }) {
-  return (
-    <AchievementsPanel />
-  );
+  return <AchievementsPanel />;
 }
 
 function AnalyticsLineChart({ values }: { values: number[] }) {
@@ -1327,10 +1583,25 @@ function AnalyticsLineChart({ values }: { values: number[] }) {
   return (
     <svg viewBox="0 0 640 260" className="h-[260px] w-full" preserveAspectRatio="none" aria-hidden="true">
       {[0, 1, 2, 3, 4].map((line) => (
-        <line key={line} x1="0" y1={`${52 * line + 20}`} x2="640" y2={`${52 * line + 20}`} stroke="var(--color-border)" strokeDasharray="6 8" />
+        <line
+          key={line}
+          x1="0"
+          y1={`${52 * line + 20}`}
+          x2="640"
+          y2={`${52 * line + 20}`}
+          stroke="var(--color-border)"
+          strokeDasharray="6 8"
+        />
       ))}
       <path d={fillPath} fill="url(#chartFill)" opacity="0.7" />
-      <path d={path} fill="none" stroke="var(--color-accent)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={path}
+        fill="none"
+        stroke="var(--color-accent)"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <defs>
         <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.25" />
@@ -1343,10 +1614,19 @@ function AnalyticsLineChart({ values }: { values: number[] }) {
 
 function MetricBox({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border p-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-      <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
-      <p className="mt-2 text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
-      <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>
+    <div
+      className="rounded-2xl border p-3"
+      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+    >
+      <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--color-text-muted)' }}>
+        {label}
+      </p>
+      <p className="mt-2 text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+        {value}
+      </p>
+      <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+        {sub}
+      </p>
     </div>
   );
 }
@@ -1357,7 +1637,11 @@ function GoalsSkeleton() {
       <div className="h-72 rounded-[32px] animate-pulse" style={{ background: 'var(--color-surface-raised)' }} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-32 rounded-[24px] animate-pulse" style={{ background: 'var(--color-surface-raised)' }} />
+          <div
+            key={index}
+            className="h-32 rounded-[24px] animate-pulse"
+            style={{ background: 'var(--color-surface-raised)' }}
+          />
         ))}
       </div>
       <div className="h-20 rounded-xl animate-pulse" style={{ background: 'var(--color-surface-raised)' }} />

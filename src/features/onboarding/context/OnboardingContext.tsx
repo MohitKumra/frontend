@@ -3,19 +3,9 @@
  * React Context provider for onboarding tour state management.
  */
 
-import React, {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type {
-  OnboardingActions,
-  OnboardingState,
-  SpotlightRect,
-} from '../types';
+import type { OnboardingActions, OnboardingState, SpotlightRect } from '../types';
 import { ONBOARDING_STEPS, TOTAL_STEPS } from '../config/steps';
 import { hasCompletedOnboarding, markOnboardingComplete } from '../utils/storage';
 import { getTargetRect, scrollToTarget } from '../utils/spotlight';
@@ -42,9 +32,7 @@ const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 export function useOnboardingContext(): OnboardingContextValue {
   const ctx = React.useContext(OnboardingContext);
   if (!ctx) {
-    throw new Error(
-      'useOnboardingContext must be used within an OnboardingProvider',
-    );
+    throw new Error('useOnboardingContext must be used within an OnboardingProvider');
   }
   return ctx;
 }
@@ -57,10 +45,7 @@ export interface OnboardingProviderProps {
   autoStart?: boolean;
 }
 
-export function OnboardingProvider({
-  children,
-  autoStart = false,
-}: OnboardingProviderProps) {
+export function OnboardingProvider({ children, autoStart = false }: OnboardingProviderProps) {
   const navigate = useNavigate();
   const [state, setState] = useState<OnboardingState>({
     isActive: false,
@@ -93,8 +78,7 @@ export function OnboardingProvider({
   // Compute target rect when step changes
   const currentStepConfig = useMemo(() => {
     if (!state.isActive || state.isFinishing) return null;
-    if (state.currentStep < 0 || state.currentStep >= TOTAL_STEPS)
-      return null;
+    if (state.currentStep < 0 || state.currentStep >= TOTAL_STEPS) return null;
     return ONBOARDING_STEPS[state.currentStep];
   }, [state.isActive, state.currentStep, state.isFinishing]);
 
@@ -178,6 +162,7 @@ export function OnboardingProvider({
   }, []);
 
   const handleSkip = useCallback(() => {
+    markOnboardingComplete();
     setState((prev) => ({
       ...prev,
       isActive: false,
@@ -236,15 +221,7 @@ export function OnboardingProvider({
       goToStep: handleGoToStep,
       reset: handleReset,
     }),
-    [
-      handleStart,
-      handleNext,
-      handlePrev,
-      handleSkip,
-      handleFinish,
-      handleGoToStep,
-      handleReset,
-    ],
+    [handleStart, handleNext, handlePrev, handleSkip, handleFinish, handleGoToStep, handleReset]
   );
 
   const value: OnboardingContextValue = useMemo(
@@ -259,18 +236,8 @@ export function OnboardingProvider({
       },
       prefersReducedMotion,
     }),
-    [
-      state,
-      actions,
-      targetRect,
-      currentStepConfig,
-      prefersReducedMotion,
-    ],
+    [state, actions, targetRect, currentStepConfig, prefersReducedMotion]
   );
 
-  return (
-    <OnboardingContext.Provider value={value}>
-      {children}
-    </OnboardingContext.Provider>
-  );
+  return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;
 }

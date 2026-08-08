@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { goalsApi } from '../api';
-import type { CreateGoalRequest, UpdateGoalRequest, CreateGoalMilestoneRequest, UpdateGoalMilestoneRequest } from '../../../types';
+import type {
+  CreateGoalRequest,
+  UpdateGoalRequest,
+  CreateGoalMilestoneRequest,
+  UpdateGoalMilestoneRequest,
+} from '../../../types';
 
 const GOALS_KEY = ['goals'] as const;
 

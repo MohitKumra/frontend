@@ -73,6 +73,6 @@ export function withMockPhase1Fields(task: TaskDTO): TaskDTOPhase1 {
     ...task,
     project: seed % 3 === 0 ? null : MOCK_PROJECTS[seed % MOCK_PROJECTS.length],
     labels: seed % 4 === 0 ? [] : [MOCK_LABELS[seed % MOCK_LABELS.length]],
-  estimatedDurationMin: seed % 5 === 0 ? null : (seed % 6) * 30 + 30,
+    estimatedDurationMin: seed % 5 === 0 ? null : (seed % 6) * 30 + 30,
   };
 }

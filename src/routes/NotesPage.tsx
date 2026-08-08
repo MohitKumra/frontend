@@ -28,7 +28,14 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
-import { useNotes, useDeleteNote, useUpdateNote, useTogglePin, useArchiveNote, useUnarchiveNote } from '../features/notes/hooks/useNotes';
+import {
+  useNotes,
+  useDeleteNote,
+  useUpdateNote,
+  useTogglePin,
+  useArchiveNote,
+  useUnarchiveNote,
+} from '../features/notes/hooks/useNotes';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
@@ -107,17 +114,20 @@ export function NotesPage() {
   const { data: notionStatus } = useNotionStatus();
 
   // Build query filters
-  const queryFilters = useMemo(() => ({
-    isJournal: filter === 'journal' ? true : filter === 'notes' ? false : undefined,
-    archived: showArchived ? true : undefined,
-    search: debouncedSearchQuery || undefined,
-    sortField,
-    sortOrder,
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-    mood: filterMood || undefined,
-    tags: filterTags.length > 0 ? filterTags : undefined,
-  }), [filter, debouncedSearchQuery, sortField, sortOrder, dateFrom, dateTo, filterMood, filterTags, showArchived]);
+  const queryFilters = useMemo(
+    () => ({
+      isJournal: filter === 'journal' ? true : filter === 'notes' ? false : undefined,
+      archived: showArchived ? true : undefined,
+      search: debouncedSearchQuery || undefined,
+      sortField,
+      sortOrder,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      mood: filterMood || undefined,
+      tags: filterTags.length > 0 ? filterTags : undefined,
+    }),
+    [filter, debouncedSearchQuery, sortField, sortOrder, dateFrom, dateTo, filterMood, filterTags, showArchived]
+  );
 
   const {
     data: pagesData,
@@ -131,14 +141,11 @@ export function NotesPage() {
   const isNotesRefreshing = (isSearchSettling || (isFetching && !isFetchingNextPage)) && !isInitialNotesLoading;
 
   // Flatten all pages into a single array
-  const allNotes = useMemo(
-    () => pagesData?.pages.flatMap((page) => page.data) ?? [],
-    [pagesData]
-  );
+  const allNotes = useMemo(() => pagesData?.pages.flatMap((page) => page.data) ?? [], [pagesData]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
@@ -169,9 +176,7 @@ export function NotesPage() {
     () =>
       filteredNotes
         .filter((n) => n.isJournal)
-        .sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ),
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [filteredNotes]
   );
 
@@ -360,7 +365,11 @@ export function NotesPage() {
             <Icon size={18} />
           </div>
           <div className="flex items-center gap-1">
-            {moodEmoji && <span className="text-sm" title={`Mood: ${note.mood}`}>{moodEmoji}</span>}
+            {moodEmoji && (
+              <span className="text-sm" title={`Mood: ${note.mood}`}>
+                {moodEmoji}
+              </span>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -473,8 +482,14 @@ export function NotesPage() {
             setViewMode={setViewMode}
             notionConnected={!!notionStatus?.connected}
             onNotionImport={() => setNotionImportOpen(true)}
-            onNewNote={() => { setCreateModalIsJournal(false); setCreateModalOpen(true); }}
-            onNewJournal={() => { setCreateModalIsJournal(true); setCreateModalOpen(true); }}
+            onNewNote={() => {
+              setCreateModalIsJournal(false);
+              setCreateModalOpen(true);
+            }}
+            onNewJournal={() => {
+              setCreateModalIsJournal(true);
+              setCreateModalOpen(true);
+            }}
             newMenuOpen={newMenuOpen}
             setNewMenuOpen={setNewMenuOpen}
           />
@@ -516,11 +531,7 @@ export function NotesPage() {
                     archived: <Archive size={12} />,
                   };
                   return (
-                    <button
-                      key={f}
-                      onClick={() => setFilter(f)}
-                      className={`np-pill ${isActive ? 'is-active' : ''}`}
-                    >
+                    <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
                       {isActive && (
                         <motion.div
                           layoutId="pill-indicator"
@@ -576,10 +587,7 @@ export function NotesPage() {
                         </button>
                       ))}
                     </div>
-                    <button
-                      onClick={toggleSortOrder}
-                      className="np-filter-order-btn"
-                    >
+                    <button onClick={toggleSortOrder} className="np-filter-order-btn">
                       <ArrowUpDown size={13} />
                       {sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
                     </button>
@@ -616,16 +624,17 @@ export function NotesPage() {
                 {/* Tag filter */}
                 <div className="np-filter-section">
                   <label className="np-filter-label">Tags</label>
-                  <TagInput
-                    tags={filterTags}
-                    onChange={setFilterTags}
-                    placeholder="Filter by tag..."
-                  />
+                  <TagInput tags={filterTags} onChange={setFilterTags} placeholder="Filter by tag..." />
                 </div>
               </div>
 
               {/* Clear filters */}
-              {(dateFrom || dateTo || filterMood || filterTags.length > 0 || sortField !== 'updatedAt' || sortOrder !== 'desc') && (
+              {(dateFrom ||
+                dateTo ||
+                filterMood ||
+                filterTags.length > 0 ||
+                sortField !== 'updatedAt' ||
+                sortOrder !== 'desc') && (
                 <button
                   onClick={() => {
                     setDateFrom('');
@@ -678,19 +687,19 @@ export function NotesPage() {
                   showArchived
                     ? 'No archived notes'
                     : filter === 'all'
-                    ? 'No Journal / Notes found'
-                    : filter === 'journal'
-                    ? 'No Journal entries found'
-                    : 'No notes found'
+                      ? 'No Journal / Notes found'
+                      : filter === 'journal'
+                        ? 'No Journal entries found'
+                        : 'No notes found'
                 }
                 description={
                   showArchived
                     ? 'Archived notes will appear here when you archive them.'
                     : filter === 'all'
-                    ? 'Get started by creating your first note or journal entry.'
-                    : searchQuery
-                    ? 'No notes match your search keyword.'
-                    : `No ${filter} entries yet. Create one to get started.`
+                      ? 'Get started by creating your first note or journal entry.'
+                      : searchQuery
+                        ? 'No notes match your search keyword.'
+                        : `No ${filter} entries yet. Create one to get started.`
                 }
                 onCreateNote={
                   !showArchived
@@ -704,8 +713,8 @@ export function NotesPage() {
                   filter === 'all'
                     ? 'Create Journal / Note'
                     : filter === 'journal'
-                    ? 'Create Journal Entry'
-                    : 'Create Note'
+                      ? 'Create Journal Entry'
+                      : 'Create Note'
                 }
                 isJournal={filter === 'journal'}
               />
@@ -734,7 +743,11 @@ export function NotesPage() {
                     <div className="flex-1 min-w-0">
                       {/* Title Row */}
                       <div className="flex items-center gap-2 mb-2">
-                        {moodEmoji && <span className="text-base" title={`Mood: ${note.mood}`}>{moodEmoji}</span>}
+                        {moodEmoji && (
+                          <span className="text-base" title={`Mood: ${note.mood}`}>
+                            {moodEmoji}
+                          </span>
+                        )}
                         <h4 className="np-list-title">
                           {note.title && !note.title.startsWith('Journal Entry —')
                             ? note.title
@@ -751,9 +764,7 @@ export function NotesPage() {
                       {/* Date */}
                       <div className="flex items-center gap-2 mb-2">
                         <Clock size={12} className="shrink-0 opacity-70" />
-                        <span className="np-list-date">
-                          {note.createdAt ? formatFullDate(note.createdAt) : ''}
-                        </span>
+                        <span className="np-list-date">{note.createdAt ? formatFullDate(note.createdAt) : ''}</span>
                         <CardMediaIcons note={note} />
                       </div>
 
@@ -766,7 +777,9 @@ export function NotesPage() {
                       {note.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-3">
                           {note.tags.slice(0, 5).map((tag) => (
-                            <span key={tag} className="np-list-tag">{tag}</span>
+                            <span key={tag} className="np-list-tag">
+                              {tag}
+                            </span>
                           ))}
                           {note.tags.length > 5 && (
                             <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -864,12 +877,12 @@ export function NotesPage() {
           )}
 
           {/* Featured journal entry panel */}
-          {!showArchived && journalNotes.length > 0 && viewMode === 'grid' &&
+          {!showArchived &&
+            journalNotes.length > 0 &&
+            viewMode === 'grid' &&
             (() => {
               const entry = journalNotes[featuredIndex % journalNotes.length];
-              const words = entry.content
-                ? entry.content.trim().split(/\s+/).filter(Boolean).length
-                : 0;
+              const words = entry.content ? entry.content.trim().split(/\s+/).filter(Boolean).length : 0;
               const hasMedia = Boolean(entry.attachmentUrl || entry.voiceNoteUrl);
               const moodEmoji = entry.mood ? MOOD_EMOJI[entry.mood] : null;
               const menuKey = `featured-${entry.id}`;
@@ -919,151 +932,169 @@ export function NotesPage() {
                       </div>
                     </div>
 
-                  <div
-                    className="np-featured-body cursor-pointer"
-                    onClick={(e) => {
-                      setOriginRect(e.currentTarget.getBoundingClientRect());
-                      setViewingNote(entry);
-                    }}
-                  >
-                    <h3 className="relative z-10 text-xl sm:text-2xl font-black mb-3" style={{ color: 'var(--color-text-primary)' }}>
-                      {entry.title && !entry.title.startsWith('Journal Entry —')
-                        ? entry.title
-                        : 'Daily Reflection'}
-                    </h3>
-                    <p className="relative z-10 text-sm leading-relaxed max-w-xl" style={{ color: 'var(--color-text-secondary)' }}>
-                      {entry.content.length > 200
-                        ? entry.content.slice(0, 200) + '…'
-                        : entry.content}
-                    </p>
-
-                    {/* Tags */}
-                    {entry.tags.length > 0 && (
-                      <div className="relative z-10 flex flex-wrap gap-1.5 mt-3">
-                        {entry.tags.map((tag) => (
-                          <span key={tag} className="np-list-tag">{tag}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="np-featured-stats">
-                      <div className="np-stat">
-                        <div className="np-stat-icon">
-                          <Clock size={14} />
-                        </div>
-                        <div>
-                          <div className="np-stat-label">Time</div>
-                          <div className="np-stat-value">
-                            {entry.createdAt ? formatTime(entry.createdAt) : '—'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="np-stat">
-                        <div className="np-stat-icon">
-                          <FileText size={14} />
-                        </div>
-                        <div>
-                          <div className="np-stat-label">Words</div>
-                          <div className="np-stat-value">{words}</div>
-                        </div>
-                      </div>
-                      <div className="np-stat">
-                        <div className="np-stat-icon">
-                          {hasMedia ? <Paperclip size={14} /> : <Edit3 size={14} />}
-                        </div>
-                        <div>
-                          <div className="np-stat-label">{hasMedia ? 'Attached' : 'Updated'}</div>
-                          <div className="np-stat-value">
-                            {hasMedia ? 'Media file' : entry.updatedAt ? formatDate(entry.updatedAt) : '—'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <svg
-                      className="np-featured-illustration"
-                      viewBox="0 0 460 300"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
+                    <div
+                      className="np-featured-body cursor-pointer"
+                      onClick={(e) => {
+                        setOriginRect(e.currentTarget.getBoundingClientRect());
+                        setViewingNote(entry);
+                      }}
                     >
-                      <defs>
-                        <linearGradient id="npj-sky" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#FDEEE3" />
-                          <stop offset="38%" stopColor="#F1E1F1" />
-                          <stop offset="68%" stopColor="#DBD1F6" />
-                          <stop offset="100%" stopColor="#C6BAEE" />
-                        </linearGradient>
-                        <radialGradient id="npj-sun-glow" cx="70%" cy="20%" r="42%">
-                          <stop offset="0%" stopColor="#FFDDB0" stopOpacity="0.9" />
-                          <stop offset="50%" stopColor="#F6C6C4" stopOpacity="0.45" />
-                          <stop offset="100%" stopColor="#F6C6C4" stopOpacity="0" />
-                        </radialGradient>
-                        <linearGradient id="npj-m1" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#CBC1EF" />
-                          <stop offset="100%" stopColor="#AFA1E0" />
-                        </linearGradient>
-                        <linearGradient id="npj-m2" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#9C8DD9" />
-                          <stop offset="100%" stopColor="#8477C9" />
-                        </linearGradient>
-                        <linearGradient id="npj-m3" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#7A6BC3" />
-                          <stop offset="100%" stopColor="#584C9E" />
-                        </linearGradient>
-                        <linearGradient id="npj-lake" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#E9E1F8" stopOpacity="0.9" />
-                          <stop offset="100%" stopColor="#B6A8E5" stopOpacity="0.25" />
-                        </linearGradient>
-                        <radialGradient id="npj-fade" cx="78%" cy="80%" r="78%">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-                          <stop offset="58%" stopColor="#ffffff" stopOpacity="0.92" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                        </radialGradient>
-                        <mask id="npj-edge-mask">
-                          <rect x="0" y="0" width="460" height="300" fill="url(#npj-fade)" />
-                        </mask>
-                        <clipPath id="npj-lake-clip">
-                          <rect x="0" y="228" width="460" height="72" />
-                        </clipPath>
-                        <filter id="npj-blur-sm" x="-30%" y="-30%" width="160%" height="160%">
-                          <feGaussianBlur stdDeviation="2.4" />
-                        </filter>
-                        <filter id="npj-blur-lg" x="-40%" y="-40%" width="180%" height="180%">
-                          <feGaussianBlur stdDeviation="6" />
-                        </filter>
-                      </defs>
+                      <h3
+                        className="relative z-10 text-xl sm:text-2xl font-black mb-3"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {entry.title && !entry.title.startsWith('Journal Entry —') ? entry.title : 'Daily Reflection'}
+                      </h3>
+                      <p
+                        className="relative z-10 text-sm leading-relaxed max-w-xl"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                      >
+                        {entry.content.length > 200 ? entry.content.slice(0, 200) + '…' : entry.content}
+                      </p>
 
-                      <g mask="url(#npj-edge-mask)">
-                        <rect x="0" y="0" width="460" height="300" fill="url(#npj-sky)" />
-                        <circle cx="322" cy="64" r="72" fill="url(#npj-sun-glow)" />
-                        <circle cx="322" cy="64" r="18" fill="#FFE6C2" filter="url(#npj-blur-sm)" />
-                        <g filter="url(#npj-blur-sm)" opacity="0.8">
-                          <ellipse cx="118" cy="52" rx="32" ry="10" fill="#FFFFFF" />
-                          <ellipse cx="146" cy="47" rx="22" ry="8" fill="#FFFFFF" />
-                          <ellipse cx="246" cy="92" rx="24" ry="7" fill="#FFFFFF" />
+                      {/* Tags */}
+                      {entry.tags.length > 0 && (
+                        <div className="relative z-10 flex flex-wrap gap-1.5 mt-3">
+                          {entry.tags.map((tag) => (
+                            <span key={tag} className="np-list-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="np-featured-stats">
+                        <div className="np-stat">
+                          <div className="np-stat-icon">
+                            <Clock size={14} />
+                          </div>
+                          <div>
+                            <div className="np-stat-label">Time</div>
+                            <div className="np-stat-value">{entry.createdAt ? formatTime(entry.createdAt) : '—'}</div>
+                          </div>
+                        </div>
+                        <div className="np-stat">
+                          <div className="np-stat-icon">
+                            <FileText size={14} />
+                          </div>
+                          <div>
+                            <div className="np-stat-label">Words</div>
+                            <div className="np-stat-value">{words}</div>
+                          </div>
+                        </div>
+                        <div className="np-stat">
+                          <div className="np-stat-icon">{hasMedia ? <Paperclip size={14} /> : <Edit3 size={14} />}</div>
+                          <div>
+                            <div className="np-stat-label">{hasMedia ? 'Attached' : 'Updated'}</div>
+                            <div className="np-stat-value">
+                              {hasMedia ? 'Media file' : entry.updatedAt ? formatDate(entry.updatedAt) : '—'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <svg
+                        className="np-featured-illustration"
+                        viewBox="0 0 460 300"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <defs>
+                          <linearGradient id="npj-sky" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#FDEEE3" />
+                            <stop offset="38%" stopColor="#F1E1F1" />
+                            <stop offset="68%" stopColor="#DBD1F6" />
+                            <stop offset="100%" stopColor="#C6BAEE" />
+                          </linearGradient>
+                          <radialGradient id="npj-sun-glow" cx="70%" cy="20%" r="42%">
+                            <stop offset="0%" stopColor="#FFDDB0" stopOpacity="0.9" />
+                            <stop offset="50%" stopColor="#F6C6C4" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#F6C6C4" stopOpacity="0" />
+                          </radialGradient>
+                          <linearGradient id="npj-m1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#CBC1EF" />
+                            <stop offset="100%" stopColor="#AFA1E0" />
+                          </linearGradient>
+                          <linearGradient id="npj-m2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#9C8DD9" />
+                            <stop offset="100%" stopColor="#8477C9" />
+                          </linearGradient>
+                          <linearGradient id="npj-m3" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#7A6BC3" />
+                            <stop offset="100%" stopColor="#584C9E" />
+                          </linearGradient>
+                          <linearGradient id="npj-lake" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#E9E1F8" stopOpacity="0.9" />
+                            <stop offset="100%" stopColor="#B6A8E5" stopOpacity="0.25" />
+                          </linearGradient>
+                          <radialGradient id="npj-fade" cx="78%" cy="80%" r="78%">
+                            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+                            <stop offset="58%" stopColor="#ffffff" stopOpacity="0.92" />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                          </radialGradient>
+                          <mask id="npj-edge-mask">
+                            <rect x="0" y="0" width="460" height="300" fill="url(#npj-fade)" />
+                          </mask>
+                          <clipPath id="npj-lake-clip">
+                            <rect x="0" y="228" width="460" height="72" />
+                          </clipPath>
+                          <filter id="npj-blur-sm" x="-30%" y="-30%" width="160%" height="160%">
+                            <feGaussianBlur stdDeviation="2.4" />
+                          </filter>
+                          <filter id="npj-blur-lg" x="-40%" y="-40%" width="180%" height="180%">
+                            <feGaussianBlur stdDeviation="6" />
+                          </filter>
+                        </defs>
+
+                        <g mask="url(#npj-edge-mask)">
+                          <rect x="0" y="0" width="460" height="300" fill="url(#npj-sky)" />
+                          <circle cx="322" cy="64" r="72" fill="url(#npj-sun-glow)" />
+                          <circle cx="322" cy="64" r="18" fill="#FFE6C2" filter="url(#npj-blur-sm)" />
+                          <g filter="url(#npj-blur-sm)" opacity="0.8">
+                            <ellipse cx="118" cy="52" rx="32" ry="10" fill="#FFFFFF" />
+                            <ellipse cx="146" cy="47" rx="22" ry="8" fill="#FFFFFF" />
+                            <ellipse cx="246" cy="92" rx="24" ry="7" fill="#FFFFFF" />
+                          </g>
+                          <path
+                            d="M0 208 L68 126 L118 168 L172 106 L248 172 L318 116 L398 172 L460 148 L460 232 L0 232 Z"
+                            fill="url(#npj-m1)"
+                            filter="url(#npj-blur-sm)"
+                          />
+                          <path
+                            d="M0 224 L88 146 L148 192 L228 128 L298 198 L368 148 L460 198 L460 240 L0 240 Z"
+                            fill="url(#npj-m2)"
+                          />
+                          <path
+                            d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z"
+                            fill="url(#npj-m3)"
+                          />
+                          <g fill="#463B85">
+                            <path d="M366 176 L376 203 L356 203 Z" />
+                            <path d="M383 188 L394 216 L372 216 Z" />
+                            <path d="M400 174 L411 201 L389 201 Z" />
+                            <path d="M418 192 L429 218 L407 218 Z" />
+                            <rect x="371" y="201" width="4" height="9" />
+                            <rect x="389" y="214" width="4" height="9" />
+                            <rect x="405" y="199" width="4" height="9" />
+                            <rect x="423" y="216" width="4" height="9" />
+                          </g>
+                          <rect x="0" y="228" width="460" height="72" fill="url(#npj-lake)" />
+                          <g
+                            clipPath="url(#npj-lake-clip)"
+                            transform="translate(0 456) scale(1 -1)"
+                            opacity="0.38"
+                            filter="url(#npj-blur-lg)"
+                          >
+                            <path
+                              d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z"
+                              fill="url(#npj-m3)"
+                            />
+                            <circle cx="322" cy="64" r="18" fill="#FFE6C2" />
+                          </g>
                         </g>
-                        <path d="M0 208 L68 126 L118 168 L172 106 L248 172 L318 116 L398 172 L460 148 L460 232 L0 232 Z" fill="url(#npj-m1)" filter="url(#npj-blur-sm)" />
-                        <path d="M0 224 L88 146 L148 192 L228 128 L298 198 L368 148 L460 198 L460 240 L0 240 Z" fill="url(#npj-m2)" />
-                        <path d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z" fill="url(#npj-m3)" />
-                        <g fill="#463B85">
-                          <path d="M366 176 L376 203 L356 203 Z" />
-                          <path d="M383 188 L394 216 L372 216 Z" />
-                          <path d="M400 174 L411 201 L389 201 Z" />
-                          <path d="M418 192 L429 218 L407 218 Z" />
-                          <rect x="371" y="201" width="4" height="9" />
-                          <rect x="389" y="214" width="4" height="9" />
-                          <rect x="405" y="199" width="4" height="9" />
-                          <rect x="423" y="216" width="4" height="9" />
-                        </g>
-                        <rect x="0" y="228" width="460" height="72" fill="url(#npj-lake)" />
-                        <g clipPath="url(#npj-lake-clip)" transform="translate(0 456) scale(1 -1)" opacity="0.38" filter="url(#npj-blur-lg)">
-                          <path d="M118 238 L214 138 L268 193 L328 148 L408 218 L460 193 L460 250 L98 250 Z" fill="url(#npj-m3)" />
-                          <circle cx="322" cy="64" r="18" fill="#FFE6C2" />
-                        </g>
-                      </g>
-                    </svg>
+                      </svg>
+                    </div>
                   </div>
-                </div>
                 </div>
               );
             })()}
@@ -1075,8 +1106,10 @@ export function NotesPage() {
           <div ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage && (
               <div className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-                  style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+                <div
+                  className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
+                />
                 Loading more...
               </div>
             )}
@@ -1101,7 +1134,10 @@ export function NotesPage() {
           isOpen
           note={viewingNote}
           originRect={originRect}
-          onClose={() => { setViewingNote(null); setOriginRect(null); }}
+          onClose={() => {
+            setViewingNote(null);
+            setOriginRect(null);
+          }}
           onEdit={() => {
             setEditingNote(viewingNote);
             setViewingNote(null);
@@ -1109,27 +1145,20 @@ export function NotesPage() {
           onDelete={() => handleDeleteNote(viewingNote.id)}
         />
       )}
-      {editingNote && (
-        <EntryFormModal
-          isOpen
-          mode="edit"
-          note={editingNote}
-          onClose={() => setEditingNote(null)}
-        />
-      )}
+      {editingNote && <EntryFormModal isOpen mode="edit" note={editingNote} onClose={() => setEditingNote(null)} />}
 
       {/* Delete confirmation modal */}
-      <Modal
-        open={deleteConfirmation !== null}
-        onClose={() => setDeleteConfirmation(null)}
-        title="Confirm Deletion"
-      >
+      <Modal open={deleteConfirmation !== null} onClose={() => setDeleteConfirmation(null)} title="Confirm Deletion">
         <div className="flex flex-col gap-5 pt-2">
           <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
             {(() => {
               const note = allNotes.find((n) => n.id === deleteConfirmation);
               return note ? (
-                <>Are you sure you want to delete <strong>{ note.title || (note.isJournal  ? 'This Journal' : 'This Note') }</strong>? This action cannot be undone.</>
+                <>
+                  Are you sure you want to delete{' '}
+                  <strong>{note.title || (note.isJournal ? 'This Journal' : 'This Note')}</strong>? This action cannot
+                  be undone.
+                </>
               ) : (
                 <>Are you sure you want to delete this? This action cannot be undone.</>
               );
@@ -1195,11 +1224,14 @@ function NotesHero({
     mouseX.set((e.clientX - r.left) / r.width);
     mouseY.set((e.clientY - r.top) / r.height);
   };
-  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+  const onLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
 
   // Mini bar data — proportional widths
   const barTotal = Math.max(noteCount + journalCount, 1);
-  const noteBarPct  = Math.round((noteCount  / barTotal) * 100);
+  const noteBarPct = Math.round((noteCount / barTotal) * 100);
   const journalBarPct = 100 - noteBarPct;
 
   return (
@@ -1216,35 +1248,64 @@ function NotesHero({
       }}
     >
       {/* Ambient blobs */}
-      <motion.div style={{ x: blob1X, y: blob1Y }}
-        className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}>
-        <div className="h-full w-full rounded-full"
-          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 70%)', filter: 'blur(36px)' }} />
+      <motion.div
+        style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.08, 1] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 70%)',
+            filter: 'blur(36px)',
+          }}
+        />
       </motion.div>
-      <motion.div style={{ x: blob2X }}
-        className="pointer-events-none absolute -bottom-10 -right-10 h-56 w-56 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}>
-        <div className="h-full w-full rounded-full"
-          style={{ background: 'radial-gradient(circle, color-mix(in srgb, #EC4899 10%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      <motion.div
+        style={{ x: blob2X }}
+        className="pointer-events-none absolute -bottom-10 -right-10 h-56 w-56 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background: 'radial-gradient(circle, color-mix(in srgb, #EC4899 10%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
 
       {/* Dot grid */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.022]" aria-hidden="true"
-        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.022]"
+        aria-hidden="true"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
 
       <div className="relative flex flex-col gap-5 p-5 sm:p-7 lg:p-5">
-
         {/* Row 1: eyebrow + CTAs */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+          <div
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
             style={{
               background: 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))',
               borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
               color: 'var(--color-accent)',
-            }}>
-            <motion.span animate={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}>
+            }}
+          >
+            <motion.span
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
+            >
               <FileText size={11} />
             </motion.span>
             Notes &amp; Journal
@@ -1253,14 +1314,21 @@ function NotesHero({
           {/* Right controls */}
           <div className="flex items-center gap-2">
             {/* View toggle */}
-            <div className="flex items-center gap-1 rounded-2xl border p-1"
-              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <div
+              className="flex items-center gap-1 rounded-2xl border p-1"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+            >
               {(['grid', 'list'] as ViewMode[]).map((vm) => (
-                <button key={vm} onClick={() => setViewMode(vm)}
+                <button
+                  key={vm}
+                  onClick={() => setViewMode(vm)}
                   className="flex items-center justify-center rounded-xl p-2 transition-all"
-                  style={viewMode === vm
-                    ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
-                    : { color: 'var(--color-text-muted)' }}>
+                  style={
+                    viewMode === vm
+                      ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: 'white' }
+                      : { color: 'var(--color-text-muted)' }
+                  }
+                >
                   {vm === 'grid' ? <Grid3x3 size={14} /> : <List size={14} />}
                 </button>
               ))}
@@ -1268,21 +1336,30 @@ function NotesHero({
 
             {/* Notion import */}
             {notionConnected && (
-              <button onClick={onNotionImport}
+              <button
+                onClick={onNotionImport}
                 className="inline-flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 text-xs font-black transition-all hover:opacity-80 active:scale-95"
-                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                style={{
+                  background: 'var(--color-surface)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
                 <BookOpen size={14} /> Notion Import
               </button>
             )}
 
             {/* Split create button */}
-            <div className="relative flex items-stretch"
-              style={{ boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 28%, transparent)' }}>
+            <div
+              className="relative flex items-stretch"
+              style={{ boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 28%, transparent)' }}
+            >
               <div className="flex items-stretch overflow-hidden rounded-2xl">
                 <button
                   onClick={onNewNote}
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white transition-all hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, var(--color-accent), #818CF8)' }}>
+                  style={{ background: 'linear-gradient(135deg, var(--color-accent), #818CF8)' }}
+                >
                   <Plus size={14} /> New Note
                 </button>
                 <button
@@ -1291,22 +1368,37 @@ function NotesHero({
                   style={{
                     background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
                     borderColor: 'rgba(255,255,255,0.25)',
-                  }}>
+                  }}
+                >
                   <ChevronDown size={13} />
                 </button>
               </div>
               {newMenuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-40 overflow-hidden rounded-2xl border shadow-lg z-30"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-                  <button type="button" onClick={() => { onNewNote(); setNewMenuOpen(() => false); }}
+                <div
+                  className="absolute right-0 top-full mt-1.5 w-40 overflow-hidden rounded-2xl border shadow-lg z-30"
+                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNewNote();
+                      setNewMenuOpen(() => false);
+                    }}
                     className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-bold text-left transition-colors hover:opacity-80"
-                    style={{ color: 'var(--color-text-primary)' }}>
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
                     <StickyNote size={13} style={{ color: 'var(--color-accent)' }} />
                     New Note
                   </button>
-                  <button type="button" onClick={() => { onNewJournal(); setNewMenuOpen(() => false); }}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNewJournal();
+                      setNewMenuOpen(() => false);
+                    }}
                     className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-bold text-left transition-colors hover:opacity-80"
-                    style={{ color: 'var(--color-text-primary)' }}>
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
                     <BookOpen size={13} style={{ color: '#EC4899' }} />
                     New Journal
                   </button>
@@ -1320,13 +1412,11 @@ function NotesHero({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Left: headline + sub */}
           <div className="min-w-0">
-            <h1 className="font-black tracking-tight"
-              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}>
-              Your{' '}
-              <span style={{ color: 'var(--color-accent)' }}>
-                thoughts,
-              </span>{' '}
-              captured.
+            <h1
+              className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}
+            >
+              Your <span style={{ color: 'var(--color-accent)' }}>thoughts,</span> captured.
             </h1>
             <p className="mt-2 text-sm leading-relaxed max-w-sm" style={{ color: 'var(--color-text-secondary)' }}>
               {totalCount > 0
@@ -1338,12 +1428,17 @@ function NotesHero({
             {totalCount > 0 && (
               <div className="mt-4 max-w-xs">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Composition</span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    Composition
+                  </span>
                   <span className="text-[11px] font-black" style={{ color: 'var(--color-text-primary)' }}>
                     {noteCount} notes · {journalCount} journals
                   </span>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden flex" style={{ background: 'var(--color-border-subtle)' }}>
+                <div
+                  className="h-2 rounded-full overflow-hidden flex"
+                  style={{ background: 'var(--color-border-subtle)' }}
+                >
                   <motion.div
                     className="h-full rounded-l-full"
                     initial={{ width: 0 }}
@@ -1362,11 +1457,15 @@ function NotesHero({
                 <div className="mt-1.5 flex items-center gap-4">
                   <div className="flex items-center gap-1">
                     <span className="h-2 w-2 rounded-full" style={{ background: 'var(--color-accent)' }} />
-                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Notes</span>
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                      Notes
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="h-2 w-2 rounded-full" style={{ background: '#EC4899' }} />
-                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Journal</span>
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                      Journal
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1374,18 +1473,25 @@ function NotesHero({
           </div>
 
           {/* Right: inline stats strip */}
-          <div className="flex items-center divide-x overflow-hidden rounded-2xl border lg:shrink-0"
-            style={{ borderColor: 'var(--color-border)' }}>
+          <div
+            className="flex items-center divide-x overflow-hidden rounded-2xl border lg:shrink-0"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
             {[
-              { value: noteCount,    label: 'Notes',    color: 'var(--color-accent)' },
+              { value: noteCount, label: 'Notes', color: 'var(--color-accent)' },
               { value: journalCount, label: 'Journals', color: '#EC4899' },
-              { value: pinnedCount,  label: 'Pinned',   color: 'var(--color-warning)' },
-              { value: totalCount,   label: 'Total',    color: 'var(--color-text-primary)' },
+              { value: pinnedCount, label: 'Pinned', color: 'var(--color-warning)' },
+              { value: totalCount, label: 'Total', color: 'var(--color-text-primary)' },
             ].map((s, i) => (
-              <div key={s.label}
+              <div
+                key={s.label}
                 className="flex flex-col items-center gap-0.5 px-5 py-3 min-w-[72px]"
-                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-                <span className="text-[11px] font-mono uppercase tracking-[0.15em] leading-none" style={{ color: 'var(--color-text-muted)' }}>
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+              >
+                <span
+                  className="text-[11px] font-mono uppercase tracking-[0.15em] leading-none"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   {s.label}
                 </span>
                 <motion.span

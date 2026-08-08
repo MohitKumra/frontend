@@ -27,7 +27,10 @@ export function SignupForm() {
       const { url } = await authApi.googleStart('signin', '/google/callback');
       window.location.href = url;
     } catch (err) {
-      toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-up is not available right now.');
+      toast.error(
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
+          'Google sign-up is not available right now.'
+      );
     }
   };
 
@@ -35,7 +38,8 @@ export function SignupForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-[14px]">
       {signup.error && (
         <div className="rounded-[10px] border border-red-400/25 bg-red-500/10 p-2.5 text-[13px] font-semibold text-red-500">
-          {(signup.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Signup failed. Please try again.'}
+          {(signup.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+            ?.message ?? 'Signup failed. Please try again.'}
         </div>
       )}
 
@@ -101,18 +105,30 @@ export function SignupForm() {
         />
         <span className="text-[13px] font-medium leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
           I agree to the{' '}
-          <Link to="/terms" className="font-bold transition-opacity hover:opacity-80" style={{ color: 'var(--color-accent)' }}>
+          <Link
+            to="/terms"
+            className="font-bold transition-opacity hover:opacity-80"
+            style={{ color: 'var(--color-accent)' }}
+          >
             Terms of Service
           </Link>{' '}
           and{' '}
-          <Link to="/privacy" className="font-bold transition-opacity hover:opacity-80" style={{ color: 'var(--color-accent)' }}>
+          <Link
+            to="/privacy"
+            className="font-bold transition-opacity hover:opacity-80"
+            style={{ color: 'var(--color-accent)' }}
+          >
             Privacy Policy
           </Link>
           .
         </span>
       </label>
 
-      <button type="submit" className="auth-primary-button flex w-full items-center justify-center" disabled={signup.isPending}>
+      <button
+        type="submit"
+        className="auth-primary-button flex w-full items-center justify-center"
+        disabled={signup.isPending}
+      >
         {signup.isPending ? (
           <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
         ) : (
@@ -142,10 +158,14 @@ export function SignupForm() {
 
       <p className="text-center text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
         Already have an account?{' '}
-        <Link to="/login" className="font-bold transition-opacity hover:opacity-80" style={{ color: 'var(--color-accent)' }}>
+        <Link
+          to="/login"
+          className="font-bold transition-opacity hover:opacity-80"
+          style={{ color: 'var(--color-accent)' }}
+        >
           Sign in
         </Link>
       </p>
     </form>
   );
-} 
+}

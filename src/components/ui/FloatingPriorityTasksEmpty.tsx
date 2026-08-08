@@ -22,13 +22,7 @@ export function FloatingPriorityTasksEmpty({
         style={{ width: 180, height: 140 }}
       >
         {/* Dashed Orbit Ring */}
-        <svg
-          className="absolute inset-0"
-          width="180"
-          height="140"
-          viewBox="0 0 180 140"
-          fill="none"
-        >
+        <svg className="absolute inset-0" width="180" height="140" viewBox="0 0 180 140" fill="none">
           <motion.ellipse
             cx="90"
             cy="70"
@@ -55,9 +49,27 @@ export function FloatingPriorityTasksEmpty({
           animate={{ y: [0, -5, 0], rotate: [-3, -5, -3] }}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
-          <rect x="2" y="2" width="62" height="54" rx="7" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="62"
+            height="54"
+            rx="7"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Low priority flag */}
-          <rect x="10" y="12" width="16" height="14" rx="3" fill="color-mix(in srgb, var(--color-success) 15%, transparent)" stroke="var(--color-success)" strokeWidth="1" />
+          <rect
+            x="10"
+            y="12"
+            width="16"
+            height="14"
+            rx="3"
+            fill="color-mix(in srgb, var(--color-success) 15%, transparent)"
+            stroke="var(--color-success)"
+            strokeWidth="1"
+          />
           <path d="M14 16 L18 16 L20 19 L18 22 L14 22" fill="var(--color-success)" opacity="0.6" />
           <rect x="10" y="32" width="42" height="3" rx="1.5" fill="var(--color-border)" opacity="0.5" />
           <rect x="10" y="40" width="30" height="3" rx="1.5" fill="var(--color-border)" opacity="0.35" />
@@ -74,9 +86,27 @@ export function FloatingPriorityTasksEmpty({
           animate={{ y: [0, -8, 0], rotate: [1, 3, 1] }}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
-          <rect x="2" y="2" width="72" height="60" rx="8" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="72"
+            height="60"
+            rx="8"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Medium priority flag */}
-          <rect x="12" y="14" width="18" height="16" rx="4" fill="color-mix(in srgb, var(--color-info) 20%, transparent)" stroke="var(--color-info)" strokeWidth="1.2" />
+          <rect
+            x="12"
+            y="14"
+            width="18"
+            height="16"
+            rx="4"
+            fill="color-mix(in srgb, var(--color-info) 20%, transparent)"
+            stroke="var(--color-info)"
+            strokeWidth="1.2"
+          />
           <path d="M16 18 L22 18 L25 22 L22 26 L16 26" fill="var(--color-info)" opacity="0.5" />
           <rect x="12" y="36" width="50" height="3.5" rx="1.75" fill="var(--color-border)" opacity="0.5" />
           <rect x="12" y="44" width="36" height="3.5" rx="1.75" fill="var(--color-border)" opacity="0.35" />
@@ -102,16 +132,26 @@ export function FloatingPriorityTasksEmpty({
               <feDropShadow dx="0" dy="5" stdDeviation="8" floodOpacity="0.18" />
             </filter>
             <filter id="priorityGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
               <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
 
           {/* Card body */}
-          <rect x="2" y="2" width="86" height="72" rx="9" fill="url(#priorityCardGrad)" stroke="var(--color-danger)" strokeWidth="2" filter="url(#priorityCardShadow)" />
+          <rect
+            x="2"
+            y="2"
+            width="86"
+            height="72"
+            rx="9"
+            fill="url(#priorityCardGrad)"
+            stroke="var(--color-danger)"
+            strokeWidth="2"
+            filter="url(#priorityCardShadow)"
+          />
 
           {/* Priority flag icon with glow */}
           <g transform="translate(12, 12)">
@@ -130,7 +170,16 @@ export function FloatingPriorityTasksEmpty({
 
           {/* Target icon with rings */}
           <g transform="translate(56, 12)">
-            <circle cx="10" cy="10" r="9" fill="none" stroke="var(--color-warning)" strokeWidth="1" strokeDasharray="2 2" opacity="0.4" />
+            <circle
+              cx="10"
+              cy="10"
+              r="9"
+              fill="none"
+              stroke="var(--color-warning)"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+              opacity="0.4"
+            />
             <circle cx="10" cy="10" r="6" fill="none" stroke="var(--color-warning)" strokeWidth="1.2" opacity="0.6" />
             <motion.circle
               cx="10"
@@ -169,7 +218,15 @@ export function FloatingPriorityTasksEmpty({
           viewBox="0 0 130 16"
           fill="none"
         >
-          <ellipse cx="65" cy="8" rx="55" ry="5" fill="currentColor" opacity="0.07" style={{ color: 'var(--color-text-muted)' }} />
+          <ellipse
+            cx="65"
+            cy="8"
+            rx="55"
+            ry="5"
+            fill="currentColor"
+            opacity="0.07"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
         </svg>
 
         {/* Floating sparkle dots */}
@@ -188,11 +245,8 @@ export function FloatingPriorityTasksEmpty({
               height: i % 2 === 0 ? 5 : 4,
               left: dot.x,
               top: dot.y,
-              background: i % 3 === 0
-                ? 'var(--color-danger)'
-                : i % 3 === 1
-                ? 'var(--color-warning)'
-                : 'var(--color-accent)',
+              background:
+                i % 3 === 0 ? 'var(--color-danger)' : i % 3 === 1 ? 'var(--color-warning)' : 'var(--color-accent)',
             }}
             animate={{
               scale: [1, 1.6, 1],
@@ -217,19 +271,15 @@ export function FloatingPriorityTasksEmpty({
         className="mt-4 text-center flex flex-col items-center max-w-xs px-4"
       >
         <div className="flex items-center gap-2 mb-2">
-          <div 
+          <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--icon-bg-success)', color: 'var(--icon-text-success)' }}
           >
             <Target size={14} />
           </div>
-          <p className="text-sm sm:text-base font-bold text-text-primary">
-            {title}
-          </p>
+          <p className="text-sm sm:text-base font-bold text-text-primary">{title}</p>
         </div>
-        <p className="text-xs sm:text-sm text-text-muted mb-5 leading-relaxed">
-          {description}
-        </p>
+        <p className="text-xs sm:text-sm text-text-muted mb-5 leading-relaxed">{description}</p>
 
         {/* Feature hints */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
@@ -267,7 +317,13 @@ export function FloatingPriorityTasksEmpty({
           >
             <span>View all tasks</span>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3 6 H9 M7 4 L9 6 L7 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M3 6 H9 M7 4 L9 6 L7 8"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </motion.button>
         )}

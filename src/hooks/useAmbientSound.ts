@@ -31,7 +31,7 @@ const FADE_INTERVAL_MS = CROSSFADE_DURATION_MS / FADE_STEPS;
 export function useAmbientSound(
   sound: AmbientSound,
   playing: boolean,
-  volume: number = 0.3,
+  volume: number = 0.3
 ): { loading: boolean; error: boolean } {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playingRef = useRef(playing);
@@ -79,34 +79,37 @@ export function useAmbientSound(
     }
   }, []);
 
-  const fadeVolume = useCallback((from: number, to: number, callback?: () => void) => {
-    clearFadeTimer();
-    const audio = audioRef.current;
-    if (!audio) {
-      callback?.();
-      return;
-    }
-
-    const step = (to - from) / FADE_STEPS;
-    let currentStep = 0;
-
-    audio.volume = from;
-
-    fadeTimerRef.current = setInterval(() => {
-      currentStep++;
-      if (!audioRef.current) {
-        clearFadeTimer();
+  const fadeVolume = useCallback(
+    (from: number, to: number, callback?: () => void) => {
+      clearFadeTimer();
+      const audio = audioRef.current;
+      if (!audio) {
+        callback?.();
         return;
       }
-      if (currentStep >= FADE_STEPS) {
-        audioRef.current.volume = to;
-        clearFadeTimer();
-        callback?.();
-      } else {
-        audioRef.current.volume = from + step * currentStep;
-      }
-    }, FADE_INTERVAL_MS);
-  }, [clearFadeTimer]);
+
+      const step = (to - from) / FADE_STEPS;
+      let currentStep = 0;
+
+      audio.volume = from;
+
+      fadeTimerRef.current = setInterval(() => {
+        currentStep++;
+        if (!audioRef.current) {
+          clearFadeTimer();
+          return;
+        }
+        if (currentStep >= FADE_STEPS) {
+          audioRef.current.volume = to;
+          clearFadeTimer();
+          callback?.();
+        } else {
+          audioRef.current.volume = from + step * currentStep;
+        }
+      }, FADE_INTERVAL_MS);
+    },
+    [clearFadeTimer]
+  );
 
   const startPlayback = useCallback((audio: HTMLAudioElement) => {
     audio.play().catch((err) => {

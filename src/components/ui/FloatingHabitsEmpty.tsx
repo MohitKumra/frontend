@@ -24,13 +24,7 @@ export function FloatingHabitsEmpty({
         style={{ width: 220, height: 170 }}
       >
         {/* Dashed Orbit Ring */}
-        <svg
-          className="absolute inset-0"
-          width="220"
-          height="170"
-          viewBox="0 0 220 170"
-          fill="none"
-        >
+        <svg className="absolute inset-0" width="220" height="170" viewBox="0 0 220 170" fill="none">
           <motion.ellipse
             cx="110"
             cy="85"
@@ -57,9 +51,24 @@ export function FloatingHabitsEmpty({
           animate={{ y: [0, -7, 0], rotate: [-5, -7, -5] }}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
-          <rect x="2" y="2" width="76" height="64" rx="8" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="76"
+            height="64"
+            rx="8"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Flame outline background */}
-          <path d="M40 14 C44 22 52 26 52 36 C52 45 46 50 40 50 C34 50 28 45 28 36 C28 28 34 22 40 14 Z" fill="color-mix(in srgb, var(--color-warning) 25%, transparent)" stroke="var(--color-warning)" strokeWidth="1.5" opacity="0.7" />
+          <path
+            d="M40 14 C44 22 52 26 52 36 C52 45 46 50 40 50 C34 50 28 45 28 36 C28 28 34 22 40 14 Z"
+            fill="color-mix(in srgb, var(--color-warning) 25%, transparent)"
+            stroke="var(--color-warning)"
+            strokeWidth="1.5"
+            opacity="0.7"
+          />
           <circle cx="20" cy="20" r="4" fill="var(--color-border)" opacity="0.4" />
           <circle cx="60" cy="20" r="4" fill="var(--color-border)" opacity="0.4" />
         </motion.svg>
@@ -75,7 +84,16 @@ export function FloatingHabitsEmpty({
           animate={{ y: [0, -9, 0], rotate: [2, 4, 2] }}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
-          <rect x="2" y="2" width="86" height="72" rx="9" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="86"
+            height="72"
+            rx="9"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* 7 Days tracker row */}
           {[16, 28, 40, 52, 64, 76].map((x, idx) => (
             <circle
@@ -115,10 +133,29 @@ export function FloatingHabitsEmpty({
           </defs>
 
           {/* Card body */}
-          <rect x="2" y="2" width="102" height="90" rx="10" fill="url(#habitCardGrad)" stroke="var(--color-accent)" strokeWidth="2" filter="url(#habitCardShadow)" />
+          <rect
+            x="2"
+            y="2"
+            width="102"
+            height="90"
+            rx="10"
+            fill="url(#habitCardGrad)"
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            filter="url(#habitCardShadow)"
+          />
 
           {/* Target concentric rings */}
-          <circle cx="34" cy="38" r="22" fill="none" stroke="var(--color-border)" strokeWidth="2" strokeDasharray="3 3" opacity="0.6" />
+          <circle
+            cx="34"
+            cy="38"
+            r="22"
+            fill="none"
+            stroke="var(--color-border)"
+            strokeWidth="2"
+            strokeDasharray="3 3"
+            opacity="0.6"
+          />
           <circle cx="34" cy="38" r="15" fill="none" stroke="var(--color-accent)" strokeWidth="2" opacity="0.4" />
           <motion.circle
             cx="34"
@@ -131,8 +168,20 @@ export function FloatingHabitsEmpty({
 
           {/* Streak Flame Badge */}
           <g transform="translate(68, 14)">
-            <rect x="0" y="0" width="24" height="24" rx="7" fill="color-mix(in srgb, var(--color-warning) 20%, transparent)" stroke="var(--color-warning)" strokeWidth="1.2" />
-            <path d="M12 4 C14.5 9 19.5 11.5 19.5 16 C19.5 20.1 16.1 22 12 22 C7.9 22 4.5 20.1 4.5 16 C4.5 11.5 9.5 9 12 4 Z" fill="var(--color-warning)" />
+            <rect
+              x="0"
+              y="0"
+              width="24"
+              height="24"
+              rx="7"
+              fill="color-mix(in srgb, var(--color-warning) 20%, transparent)"
+              stroke="var(--color-warning)"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M12 4 C14.5 9 19.5 11.5 19.5 16 C19.5 20.1 16.1 22 12 22 C7.9 22 4.5 20.1 4.5 16 C4.5 11.5 9.5 9 12 4 Z"
+              fill="var(--color-warning)"
+            />
           </g>
 
           {/* Habit title line */}
@@ -161,7 +210,15 @@ export function FloatingHabitsEmpty({
           viewBox="0 0 150 16"
           fill="none"
         >
-          <ellipse cx="75" cy="8" rx="65" ry="5" fill="currentColor" opacity="0.07" style={{ color: 'var(--color-text-muted)' }} />
+          <ellipse
+            cx="75"
+            cy="8"
+            rx="65"
+            ry="5"
+            fill="currentColor"
+            opacity="0.07"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
         </svg>
 
         {/* Floating particle sparkles */}
@@ -180,11 +237,8 @@ export function FloatingHabitsEmpty({
               height: i % 2 === 0 ? 6 : 5,
               left: dot.x,
               top: dot.y,
-              background: i % 3 === 0
-                ? 'var(--color-accent)'
-                : i % 3 === 1
-                ? 'var(--color-info)'
-                : 'var(--color-warning)',
+              background:
+                i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
             animate={{
               scale: [1, 1.6, 1],
@@ -208,12 +262,8 @@ export function FloatingHabitsEmpty({
         transition={{ duration: 0.5, delay: 0.3 }}
         className="flex flex-col items-center max-w-md px-4"
       >
-        <h3 className="text-xl sm:text-2xl font-black text-text-primary mb-2">
-          {title}
-        </h3>
-        <p className="text-xs sm:text-sm text-text-muted mb-6 leading-relaxed max-w-sm">
-          {description}
-        </p>
+        <h3 className="text-xl sm:text-2xl font-black text-text-primary mb-2">{title}</h3>
+        <p className="text-xs sm:text-sm text-text-muted mb-6 leading-relaxed max-w-sm">{description}</p>
 
         {/* Interactive Feature Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mb-8">

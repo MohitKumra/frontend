@@ -16,9 +16,7 @@ interface QuoteCardProps {
 }
 
 function useIsDarkMode() {
-  const [isDark, setIsDark] = React.useState(() =>
-    document.documentElement.getAttribute('data-theme') === 'dark'
-  );
+  const [isDark, setIsDark] = React.useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   React.useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
@@ -61,14 +59,8 @@ function SceneDecoration({ isDark }: { isDark: boolean }) {
 
       <circle cx="330" cy="210" r="70" fill="url(#qc-sun)" />
 
-      <path
-        d="M60,235 Q120,165 170,210 T270,200 Q330,155 420,215 L420,300 L60,300 Z"
-        fill="url(#qc-mtn-back)"
-      />
-      <path
-        d="M0,265 Q90,205 160,248 T300,235 Q360,205 420,248 L420,300 L0,300 Z"
-        fill="url(#qc-mtn-front)"
-      />
+      <path d="M60,235 Q120,165 170,210 T270,200 Q330,155 420,215 L420,300 L60,300 Z" fill="url(#qc-mtn-back)" />
+      <path d="M0,265 Q90,205 160,248 T300,235 Q360,205 420,248 L420,300 L0,300 Z" fill="url(#qc-mtn-front)" />
 
       {/* birds */}
       <g stroke={isDark ? '#5A5590' : '#B3A8EF'} strokeWidth="2.5" strokeLinecap="round" fill="none">
@@ -96,8 +88,7 @@ export function QuoteCard({
 
   const scheduleNext = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    const delay =
-      Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval;
+    const delay = Math.floor(Math.random() * (maxInterval - minInterval + 1)) + minInterval;
     timerRef.current = setTimeout(() => {
       setIndex((prev) => (prev + 1) % quotes.length);
     }, delay);
@@ -119,22 +110,22 @@ export function QuoteCard({
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       className={`relative min-h-[180px] sm:min-h-[220px] overflow-hidden ${className || ''}`}
-      style={{
-        containerType: 'inline-size',
-        containerName: 'quotecard',
-        borderRadius: 'clamp(14px, 6cqw, 26px)',
-        padding: 'clamp(12px, 6cqw, 28px)',
-        background: isDark
-          ? 'radial-gradient(circle at 88% 18%, rgba(139, 131, 255, 0.12), transparent 30%), linear-gradient(150deg, #1A2335 0%, #1E2840 48%, #242D4F 100%)'
-          : 'radial-gradient(circle at 88% 18%, rgba(124, 92, 255, 0.14), transparent 30%), linear-gradient(150deg, #FFFFFF 0%, #FBFAFF 48%, #F2EDFF 100%)',
-        border: isDark
-          ? '1px solid rgba(139, 131, 255, 0.20)'
-          : '1px solid rgba(124, 92, 255, 0.16)',
-        boxShadow: isDark
-          ? '0 22px 46px -26px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.04)'
-          : '0 22px 46px -26px rgba(109, 92, 246, 0.38), inset 0 1px 0 rgba(255,255,255,0.86)',
-        ...style,
-      } as React.CSSProperties}
+      style={
+        {
+          containerType: 'inline-size',
+          containerName: 'quotecard',
+          borderRadius: 'clamp(14px, 6cqw, 26px)',
+          padding: 'clamp(12px, 6cqw, 28px)',
+          background: isDark
+            ? 'radial-gradient(circle at 88% 18%, rgba(139, 131, 255, 0.12), transparent 30%), linear-gradient(150deg, #1A2335 0%, #1E2840 48%, #242D4F 100%)'
+            : 'radial-gradient(circle at 88% 18%, rgba(124, 92, 255, 0.14), transparent 30%), linear-gradient(150deg, #FFFFFF 0%, #FBFAFF 48%, #F2EDFF 100%)',
+          border: isDark ? '1px solid rgba(139, 131, 255, 0.20)' : '1px solid rgba(124, 92, 255, 0.16)',
+          boxShadow: isDark
+            ? '0 22px 46px -26px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.04)'
+            : '0 22px 46px -26px rgba(109, 92, 246, 0.38), inset 0 1px 0 rgba(255,255,255,0.86)',
+          ...style,
+        } as React.CSSProperties
+      }
     >
       <SceneDecoration isDark={isDark} />
       <div
@@ -172,7 +163,12 @@ export function QuoteCard({
             <Quote
               size={18}
               strokeWidth={1.5}
-              style={{ fill: '#FFFFFF', stroke: '#FFFFFF', width: 'clamp(14px, 5cqw, 22px)', height: 'clamp(14px, 5cqw, 22px)' }}
+              style={{
+                fill: '#FFFFFF',
+                stroke: '#FFFFFF',
+                width: 'clamp(14px, 5cqw, 22px)',
+                height: 'clamp(14px, 5cqw, 22px)',
+              }}
             />
           </div>
 
@@ -215,12 +211,8 @@ export function QuoteCard({
             height: 'clamp(26px, 9cqw, 44px)',
             borderRadius: 999,
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.72)',
-            border: isDark
-              ? '1px solid rgba(139, 131, 255, 0.20)'
-              : '1px solid rgba(124, 92, 255, 0.16)',
-            boxShadow: isDark
-              ? '0 4px 10px -4px rgba(0, 0, 0, 0.4)'
-              : '0 4px 10px -4px rgba(108, 92, 240, 0.25)',
+            border: isDark ? '1px solid rgba(139, 131, 255, 0.20)' : '1px solid rgba(124, 92, 255, 0.16)',
+            boxShadow: isDark ? '0 4px 10px -4px rgba(0, 0, 0, 0.4)' : '0 4px 10px -4px rgba(108, 92, 240, 0.25)',
           }}
         >
           {/* Same fix applied here for consistency: fill/stroke forced via
@@ -308,10 +300,7 @@ export function QuoteCard({
 
       {/* Rotation indicator, kept subtle to preserve the reference look */}
       {quotes.length > 1 && (
-        <div
-          className="relative z-10 flex gap-1.5"
-          style={{ marginTop: 'clamp(8px, 3cqw, 20px)' }}
-        >
+        <div className="relative z-10 flex gap-1.5" style={{ marginTop: 'clamp(8px, 3cqw, 20px)' }}>
           {quotes.map((_, i) => (
             <span
               key={i}
@@ -319,9 +308,8 @@ export function QuoteCard({
                 width: i === index ? 18 : 6,
                 height: 6,
                 borderRadius: 999,
-                background: i === index
-                  ? (isDark ? '#A39DFF' : '#6C5CF0')
-                  : (isDark ? 'rgba(163, 157, 255, 0.20)' : '#E4E0FA'),
+                background:
+                  i === index ? (isDark ? '#A39DFF' : '#6C5CF0') : isDark ? 'rgba(163, 157, 255, 0.20)' : '#E4E0FA',
                 transition: 'width 0.3s ease',
                 display: 'inline-block',
               }}

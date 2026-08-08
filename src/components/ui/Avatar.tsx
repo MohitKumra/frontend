@@ -32,15 +32,7 @@ const iconSizeMap = {
  * Avatar component that displays user profile picture or initials fallback.
  * Shows first letter of name or email if no avatar is available.
  */
-export function Avatar({
-  src,
-  name,
-  email,
-  size = 'md',
-  className = '',
-  showBorder = false,
-  onClick,
-}: AvatarProps) {
+export function Avatar({ src, name, email, size = 'md', className = '', showBorder = false, onClick }: AvatarProps) {
   const getInitials = (): string => {
     if (name) {
       const parts = name.trim().split(/\s+/);
@@ -93,11 +85,7 @@ export function Avatar({
 
   // No avatar - show initials or icon
   return (
-    <div
-      className={baseClasses}
-      style={{ background: 'var(--gradient-accent)' }}
-      onClick={onClick}
-    >
+    <div className={baseClasses} style={{ background: 'var(--gradient-accent)' }} onClick={onClick}>
       {name || email ? (
         <span className="text-text-onaccent">{getInitials()}</span>
       ) : (

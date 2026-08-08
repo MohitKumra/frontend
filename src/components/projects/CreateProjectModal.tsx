@@ -80,9 +80,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         >
           <Folder size={20} className="text-white" />
         </div>
-        <p className="text-xs text-text-muted font-medium">
-          Fill in the details below to create a new project.
-        </p>
+        <p className="text-xs text-text-muted font-medium">Fill in the details below to create a new project.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -104,9 +102,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            Description
-          </label>
+          <label className="block text-xs font-bold text-text-primary mb-2">Description</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -144,16 +140,16 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
           >
             <option value="">No goal</option>
             {goals.map((g) => (
-              <option key={g.id} value={g.id}>{g.title}</option>
+              <option key={g.id} value={g.id}>
+                {g.title}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Color Picker */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            Project Color
-          </label>
+          <label className="block text-xs font-bold text-text-primary mb-2">Project Color</label>
           <div className="flex items-center gap-2 flex-wrap">
             {PROJECT_COLORS.map((color) => (
               <button
@@ -161,9 +157,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
                 type="button"
                 onClick={() => setFormData({ ...formData, color })}
                 className={`w-10 h-10 rounded-lg transition-all ${
-                  formData.color === color
-                    ? 'ring-2 ring-offset-2 ring-accent scale-110'
-                    : 'hover:scale-105'
+                  formData.color === color ? 'ring-2 ring-offset-2 ring-accent scale-110' : 'hover:scale-105'
                 }`}
                 style={{ background: color }}
                 aria-label={`Select color ${color}`}

@@ -58,14 +58,17 @@ export function ResetPasswordPage() {
                 Your password is ready to use. You can sign in again now.
               </p>
               <Link to="/login" className="mt-6 inline-block">
-                <Button variant="secondary" size="sm">Back to login</Button>
+                <Button variant="secondary" size="sm">
+                  Back to login
+                </Button>
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {reset.error && (
                 <div className="p-3 rounded-md bg-danger/10 border border-danger/20 text-sm text-danger">
-                  {(reset.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Reset failed. Please try again.'}
+                  {(reset.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+                    ?.message ?? 'Reset failed. Please try again.'}
                 </div>
               )}
 
@@ -78,7 +81,12 @@ export function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 leftIcon={<Lock size={16} />}
                 rightIcon={
-                  <button type="button" onClick={() => setShowPass((v) => !v)} className="tap-target flex items-center" tabIndex={-1}>
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((v) => !v)}
+                    className="tap-target flex items-center"
+                    tabIndex={-1}
+                  >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 }

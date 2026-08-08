@@ -61,13 +61,19 @@ function MediaThumb({ url }: { url: string }) {
   const isImage = isImageUrl(url);
   if (isImage) {
     return (
-      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border" style={{ borderColor: 'var(--color-border)' }}>
+      <div
+        className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
       </div>
     );
   }
   return (
-    <div className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
+    <div
+      className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
+      style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
+    >
       <Paperclip size={16} />
     </div>
   );
@@ -180,7 +186,9 @@ export function TaskDetailPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const preferredMime =
         ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
-      const recorder = preferredMime ? new MediaRecorder(stream, { mimeType: preferredMime }) : new MediaRecorder(stream);
+      const recorder = preferredMime
+        ? new MediaRecorder(stream, { mimeType: preferredMime })
+        : new MediaRecorder(stream);
       chunksRef.current = [];
       recordingStartRef.current = Date.now();
       recorder.ondataavailable = (e) => {
@@ -221,10 +229,11 @@ export function TaskDetailPage() {
   };
 
   const timeMutation = useMutation({
-    mutationFn: () => tasksApi.createTimeEntry(id, {
-      minutes: Number(timeMinutes),
-      note: timeNote.trim() || undefined,
-    }),
+    mutationFn: () =>
+      tasksApi.createTimeEntry(id, {
+        minutes: Number(timeMinutes),
+        note: timeNote.trim() || undefined,
+      }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tasks', id] });
       setTimeMinutes('');
@@ -248,7 +257,9 @@ export function TaskDetailPage() {
       <div className="max-w-4xl mx-auto">
         <Card className="p-8 text-center">
           <p className="text-text-muted">Task not found</p>
-          <Button onClick={() => navigate('/tasks')} className="mt-4">Back to Tasks</Button>
+          <Button onClick={() => navigate('/tasks')} className="mt-4">
+            Back to Tasks
+          </Button>
         </Card>
       </div>
     );
@@ -259,23 +270,44 @@ export function TaskDetailPage() {
   const attachments = [
     ...(taskWithMedia.attachments ?? []),
     ...(task.attachmentUrl && !(taskWithMedia.attachments ?? []).some((m: MediaItemDTO) => m.url === task.attachmentUrl)
-      ? [{ id: 'legacy-attachment', url: task.attachmentUrl, type: 'attachment' as const, fileName: null, mimeType: null, size: null, createdAt: '' }]
+      ? [
+          {
+            id: 'legacy-attachment',
+            url: task.attachmentUrl,
+            type: 'attachment' as const,
+            fileName: null,
+            mimeType: null,
+            size: null,
+            createdAt: '',
+          },
+        ]
       : []),
   ];
   const voiceNotes = [
     ...(taskWithMedia.voiceNotes ?? []),
     ...(task.voiceNoteUrl && !(taskWithMedia.voiceNotes ?? []).some((m: MediaItemDTO) => m.url === task.voiceNoteUrl)
-      ? [{ id: 'legacy-voice', url: task.voiceNoteUrl, type: 'voice_note' as const, fileName: null, mimeType: null, size: null, createdAt: '' }]
+      ? [
+          {
+            id: 'legacy-voice',
+            url: task.voiceNoteUrl,
+            type: 'voice_note' as const,
+            fileName: null,
+            mimeType: null,
+            size: null,
+            createdAt: '',
+          },
+        ]
       : []),
   ];
 
-  const statusBadgeVariant = task.status === 'DONE'
-    ? 'success'
-    : task.status === 'CANCELLED'
-      ? 'default'
-      : task.status === 'IN_PROGRESS'
-        ? 'accent'
-        : 'default';
+  const statusBadgeVariant =
+    task.status === 'DONE'
+      ? 'success'
+      : task.status === 'CANCELLED'
+        ? 'default'
+        : task.status === 'IN_PROGRESS'
+          ? 'accent'
+          : 'default';
   const recurrenceLabel = getRecurrenceLabel(task.recurrenceRule);
   const duration = formatDuration(task.estimatedDuration);
   const overdue = isOverdue(task.dueDate, task.status);
@@ -298,9 +330,15 @@ export function TaskDetailPage() {
           Back to tasks
         </button>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add Note</Button>
-          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add Journal</Button>
-          <Button size="sm" onClick={() => navigate(`/focus?taskId=${task.id}`)}>Focus</Button>
+          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>
+            Add Note
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>
+            Add Journal
+          </Button>
+          <Button size="sm" onClick={() => navigate(`/focus?taskId=${task.id}`)}>
+            Focus
+          </Button>
         </div>
       </motion.div>
 
@@ -310,10 +348,27 @@ export function TaskDetailPage() {
             <div className="flex-1 min-w-0 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <PageHeader icon={<ListChecks size={20} />} title={task.title} subtitle={task.description ?? 'Task detail'} />
+                  <PageHeader
+                    icon={<ListChecks size={20} />}
+                    title={task.title}
+                    subtitle={task.description ?? 'Task detail'}
+                  />
                   <div className="flex flex-wrap items-center gap-2 mt-3">
-                    <Badge variant={statusBadgeVariant} size="sm">{statusLabel(task.status)}</Badge>
-                    <Badge variant={task.priority === 'CRITICAL' ? 'danger' : task.priority === 'HIGH' ? 'warning' : task.priority === 'MEDIUM' ? 'info' : 'default'} size="sm">
+                    <Badge variant={statusBadgeVariant} size="sm">
+                      {statusLabel(task.status)}
+                    </Badge>
+                    <Badge
+                      variant={
+                        task.priority === 'CRITICAL'
+                          ? 'danger'
+                          : task.priority === 'HIGH'
+                            ? 'warning'
+                            : task.priority === 'MEDIUM'
+                              ? 'info'
+                              : 'default'
+                      }
+                      size="sm"
+                    >
                       {task.priority}
                     </Badge>
                     {project && (
@@ -321,20 +376,35 @@ export function TaskDetailPage() {
                         type="button"
                         onClick={() => navigate(`/projects/${project.id}`)}
                         className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
-                        style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}
+                        style={{
+                          background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+                          color: 'var(--color-success)',
+                        }}
                       >
                         <FolderKanban size={12} />
                         {project.name}
                       </button>
                     )}
                     {recurrenceLabel && (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}>
+                      <span
+                        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                        style={{
+                          background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+                          color: 'var(--color-accent)',
+                        }}
+                      >
                         <Repeat size={12} />
                         {recurrenceLabel}
                       </span>
                     )}
                     {overdue && (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)' }}>
+                      <span
+                        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                        style={{
+                          background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                          color: 'var(--color-danger)',
+                        }}
+                      >
                         Overdue
                       </span>
                     )}
@@ -349,13 +419,18 @@ export function TaskDetailPage() {
                 <div className="rounded-xl border p-4" style={{ borderColor: 'var(--color-border)' }}>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                      Attachments {attachments.length > 0 && <span className="text-accent">({attachments.length})</span>}
+                      Attachments{' '}
+                      {attachments.length > 0 && <span className="text-accent">({attachments.length})</span>}
                     </p>
                   </div>
                   {attachments.length > 0 && (
                     <div className="space-y-2 mb-3">
                       {attachments.map((media: MediaItemDTO) => (
-                        <div key={media.id} className="flex items-center gap-3 rounded-lg border p-2" style={{ borderColor: 'var(--color-border)' }}>
+                        <div
+                          key={media.id}
+                          className="flex items-center gap-3 rounded-lg border p-2"
+                          style={{ borderColor: 'var(--color-border)' }}
+                        >
                           <MediaThumb url={media.url} />
                           <a
                             href={media.url}
@@ -427,10 +502,27 @@ export function TaskDetailPage() {
                   )}
                   <div className="flex items-center gap-2">
                     {isRecording ? (
-                      <div className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold" style={{ color: '#e53935', background: 'rgba(229, 57, 53, 0.08)', border: '1px solid rgba(229, 57, 53, 0.25)' }}>
-                        <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#e53935', animation: 'recording-pulse 1.2s ease-in-out infinite' }} />
-                        <span>REC {Math.floor(recordingElapsed / 60)}:{String(recordingElapsed % 60).padStart(2, '0')}</span>
-                        <button type="button" onClick={stopRecording} className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-red-100 transition-colors" title="Stop recording">
+                      <div
+                        className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold"
+                        style={{
+                          color: '#e53935',
+                          background: 'rgba(229, 57, 53, 0.08)',
+                          border: '1px solid rgba(229, 57, 53, 0.25)',
+                        }}
+                      >
+                        <span
+                          className="inline-block w-2 h-2 rounded-full"
+                          style={{ backgroundColor: '#e53935', animation: 'recording-pulse 1.2s ease-in-out infinite' }}
+                        />
+                        <span>
+                          REC {Math.floor(recordingElapsed / 60)}:{String(recordingElapsed % 60).padStart(2, '0')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={stopRecording}
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-red-100 transition-colors"
+                          title="Stop recording"
+                        >
                           <Square size={10} fill="#e53935" />
                         </button>
                       </div>
@@ -472,11 +564,20 @@ export function TaskDetailPage() {
                   <p className="text-sm font-bold">Quick Actions</p>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Button size="sm" onClick={() => updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })}>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      updateTask.mutate({ id: task.id, data: { status: task.status === 'DONE' ? 'TODO' : 'DONE' } })
+                    }
+                  >
                     {task.status === 'DONE' ? 'Reopen' : 'Mark Done'}
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add linked note</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>
+                    Add linked note
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>
+                    Add journal entry
+                  </Button>
                 </div>
               </Card>
             </div>
@@ -494,17 +595,29 @@ export function TaskDetailPage() {
             <p className="text-xs text-text-muted">{task.subTasks?.length ?? 0} items</p>
           </div>
           <div className="space-y-2">
-            {task.subTasks?.length ? task.subTasks.map((subTask) => (
-              <div key={subTask.id} className="flex items-center gap-3 rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-                <button
-                  type="button"
-                  onClick={() => subtaskMutation.mutate({ subTaskId: subTask.id, completed: !subTask.completed })}
+            {task.subTasks?.length ? (
+              task.subTasks.map((subTask) => (
+                <div
+                  key={subTask.id}
+                  className="flex items-center gap-3 rounded-xl border p-3"
+                  style={{ borderColor: 'var(--color-border)' }}
                 >
-                  <CheckCircle2 size={16} className={subTask.completed ? 'text-success' : 'text-text-muted'} />
-                </button>
-                <span className={`flex-1 text-sm ${subTask.completed ? 'line-through text-text-muted' : 'text-text-primary'}`}>{subTask.title}</span>
-              </div>
-            )) : <p className="text-sm text-text-muted">No subtasks yet</p>}
+                  <button
+                    type="button"
+                    onClick={() => subtaskMutation.mutate({ subTaskId: subTask.id, completed: !subTask.completed })}
+                  >
+                    <CheckCircle2 size={16} className={subTask.completed ? 'text-success' : 'text-text-muted'} />
+                  </button>
+                  <span
+                    className={`flex-1 text-sm ${subTask.completed ? 'line-through text-text-muted' : 'text-text-primary'}`}
+                  >
+                    {subTask.title}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-text-muted">No subtasks yet</p>
+            )}
           </div>
         </Card>
       </motion.div>
@@ -539,15 +652,23 @@ export function TaskDetailPage() {
             Log time
           </Button>
           <div className="mt-4 space-y-2">
-            {task.timeEntries.length ? task.timeEntries.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">{item.minutes} min</p>
-                  {item.note && <p className="text-xs text-text-muted">{item.note}</p>}
+            {task.timeEntries.length ? (
+              task.timeEntries.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border p-3"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-text-primary">{item.minutes} min</p>
+                    {item.note && <p className="text-xs text-text-muted">{item.note}</p>}
+                  </div>
+                  <p className="text-[10px] text-text-muted">{new Date(item.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-[10px] text-text-muted">{new Date(item.createdAt).toLocaleString()}</p>
-              </div>
-            )) : <p className="text-sm text-text-muted">No time entries yet</p>}
+              ))
+            ) : (
+              <p className="text-sm text-text-muted">No time entries yet</p>
+            )}
           </div>
         </Card>
       </motion.div>
@@ -560,8 +681,12 @@ export function TaskDetailPage() {
               <p className="text-sm font-bold">Linked Notes & Journal</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Note</Button>
-              <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Journal</Button>
+              <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>
+                Note
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>
+                Journal
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -569,7 +694,9 @@ export function TaskDetailPage() {
               <div key={note.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <p className="text-sm font-semibold text-text-primary truncate">{note.title ?? 'Untitled'}</p>
-                  <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">{note.isJournal ? 'Journal' : 'Note'}</Badge>
+                  <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">
+                    {note.isJournal ? 'Journal' : 'Note'}
+                  </Badge>
                 </div>
                 <p className="text-xs text-text-secondary line-clamp-3">{note.content}</p>
               </div>

@@ -103,9 +103,7 @@ export function EditProjectModal({ isOpen, project, onClose }: EditProjectModalP
           <label className="block text-xs font-bold text-text-primary mb-2">Status</label>
           <select
             value={formData.status}
-            onChange={(e) =>
-              setFormData({ ...formData, status: e.target.value as ProjectStatus })
-            }
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as ProjectStatus })}
             className={inputCls}
             style={inputStyle}
           >
@@ -119,17 +117,13 @@ export function EditProjectModal({ isOpen, project, onClose }: EditProjectModalP
 
         {/* Progress */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            Progress: {formData.progress ?? 0}%
-          </label>
+          <label className="block text-xs font-bold text-text-primary mb-2">Progress: {formData.progress ?? 0}%</label>
           <input
             type="range"
             min="0"
             max="100"
             value={formData.progress ?? 0}
-            onChange={(e) =>
-              setFormData({ ...formData, progress: parseInt(e.target.value) })
-            }
+            onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
             className="w-full h-2 rounded-lg appearance-none cursor-pointer"
             style={{
               background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${formData.progress}%, var(--color-border) ${formData.progress}%, var(--color-border) 100%)`,
@@ -139,9 +133,7 @@ export function EditProjectModal({ isOpen, project, onClose }: EditProjectModalP
 
         {/* Color Picker */}
         <div>
-          <label className="block text-xs font-bold text-text-primary mb-2">
-            Project Color
-          </label>
+          <label className="block text-xs font-bold text-text-primary mb-2">Project Color</label>
           <div className="flex items-center gap-2 flex-wrap">
             {PROJECT_COLORS.map((color) => (
               <button
@@ -149,9 +141,7 @@ export function EditProjectModal({ isOpen, project, onClose }: EditProjectModalP
                 type="button"
                 onClick={() => setFormData({ ...formData, color })}
                 className={`w-10 h-10 rounded-lg transition-all ${
-                  formData.color === color
-                    ? 'ring-2 ring-offset-2 ring-accent scale-110'
-                    : 'hover:scale-105'
+                  formData.color === color ? 'ring-2 ring-offset-2 ring-accent scale-110' : 'hover:scale-105'
                 }`}
                 style={{ background: color }}
                 aria-label={`Select color ${color}`}

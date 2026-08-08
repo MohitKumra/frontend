@@ -28,9 +28,7 @@ function clamp(v: number, min: number, max: number) {
 }
 
 function daysBetween(from: string | Date, to: string | Date) {
-  return Math.round(
-    (new Date(to).getTime() - new Date(from).getTime()) / 86_400_000,
-  );
+  return Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86_400_000);
 }
 
 function formatDateShort(value: string | null | undefined): string {
@@ -55,29 +53,21 @@ function formatRelativeTime(value: string | null | undefined): string {
 function getGoalMeta(goal: GoalDTO): { label: string; Icon: LucideIcon; color: string } {
   const src = `${goal.category ?? ''} ${goal.icon ?? ''} ${goal.title}`.toLowerCase();
   const table = [
-    { match: ['revenue', 'finance', 'money', 'sales'], label: 'Finance',    Icon: TrendingUp, color: '#10B981' },
-    { match: ['launch', 'ship', 'release', 'build'],   label: 'Launch',     Icon: Rocket,     color: '#7C3AED' },
-    { match: ['growth', 'scale', 'expand'],            label: 'Growth',     Icon: TrendingUp, color: '#4F46E5' },
-    { match: ['health', 'fitness', 'wellness'],        label: 'Wellness',   Icon: Flame,      color: '#EF4444' },
-    { match: ['learn', 'study', 'book', 'research'],   label: 'Learning',   Icon: BookOpen,   color: '#0EA5E9' },
-    { match: ['design', 'brand', 'creative'],          label: 'Creative',   Icon: Rocket,     color: '#EC4899' },
-    { match: ['ops', 'operations', 'system'],          label: 'Operations', Icon: Target,     color: '#F59E0B' },
-    { match: ['code', 'tech', 'engineering', 'software'], label: 'Build',   Icon: TrendingUp, color: '#8B5CF6' },
+    { match: ['revenue', 'finance', 'money', 'sales'], label: 'Finance', Icon: TrendingUp, color: '#10B981' },
+    { match: ['launch', 'ship', 'release', 'build'], label: 'Launch', Icon: Rocket, color: '#7C3AED' },
+    { match: ['growth', 'scale', 'expand'], label: 'Growth', Icon: TrendingUp, color: '#4F46E5' },
+    { match: ['health', 'fitness', 'wellness'], label: 'Wellness', Icon: Flame, color: '#EF4444' },
+    { match: ['learn', 'study', 'book', 'research'], label: 'Learning', Icon: BookOpen, color: '#0EA5E9' },
+    { match: ['design', 'brand', 'creative'], label: 'Creative', Icon: Rocket, color: '#EC4899' },
+    { match: ['ops', 'operations', 'system'], label: 'Operations', Icon: Target, color: '#F59E0B' },
+    { match: ['code', 'tech', 'engineering', 'software'], label: 'Build', Icon: TrendingUp, color: '#8B5CF6' },
   ].find((row) => row.match.some((p) => src.includes(p)));
   return table ?? { label: goal.category || 'Goal', Icon: Target, color: goal.color || '#4F46E5' };
 }
 
 /* ─── inline SVG ring ──────────────────────────────────────── */
 
-function ProgressRing({
-  progress,
-  color,
-  size = 68,
-}: {
-  progress: number;
-  color: string;
-  size?: number;
-}) {
+function ProgressRing({ progress, color, size = 68 }: { progress: number; color: string; size?: number }) {
   const stroke = 5;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
@@ -86,15 +76,12 @@ function ProgressRing({
   const cy = size / 2;
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      style={{ flexShrink: 0, display: 'block' }}
-    >
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0, display: 'block' }}>
       {/* track */}
       <circle
-        cx={cx} cy={cy} r={r}
+        cx={cx}
+        cy={cy}
+        r={r}
         fill="none"
         stroke="var(--color-border)"
         strokeWidth={stroke}
@@ -102,7 +89,9 @@ function ProgressRing({
       />
       {/* progress arc */}
       <circle
-        cx={cx} cy={cy} r={r}
+        cx={cx}
+        cy={cy}
+        r={r}
         fill="none"
         stroke={color}
         strokeWidth={stroke}
@@ -112,7 +101,8 @@ function ProgressRing({
       />
       {/* label */}
       <text
-        x={cx} y={cy}
+        x={cx}
+        y={cy}
         textAnchor="middle"
         dominantBaseline="central"
         style={{
@@ -140,30 +130,21 @@ interface GoalCardViewProps {
   onDelete: () => void;
 }
 
-export function GoalCardView({
-  goal,
-  selected,
-  onSelect,
-  onOpen,
-  onEdit,
-  onDelete,
-}: GoalCardViewProps) {
+export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelete }: GoalCardViewProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const meta = getGoalMeta(goal);
   const { Icon } = meta;
   const accent = goal.color || meta.color;
 
-  const daysLeft = goal.targetDate
-    ? daysBetween(new Date(), goal.targetDate)
-    : null;
+  const daysLeft = goal.targetDate ? daysBetween(new Date(), goal.targetDate) : null;
 
   /* status */
   const statusMap: Record<string, { label: string; color: string }> = {
-    ACTIVE:    { label: 'On Track',  color: 'var(--color-success)'    },
-    PAUSED:    { label: 'Paused',    color: 'var(--color-warning)'    },
-    COMPLETED: { label: 'Completed', color: 'var(--color-info)'       },
-    ARCHIVED:  { label: 'Archived',  color: 'var(--color-text-muted)' },
+    ACTIVE: { label: 'On Track', color: 'var(--color-success)' },
+    PAUSED: { label: 'Paused', color: 'var(--color-warning)' },
+    COMPLETED: { label: 'Completed', color: 'var(--color-info)' },
+    ARCHIVED: { label: 'Archived', color: 'var(--color-text-muted)' },
   };
   const status = statusMap[goal.status] ?? statusMap['ACTIVE'];
 
@@ -178,16 +159,16 @@ export function GoalCardView({
 
   /* stat row */
   const stats: { label: string; value: number; Icon: LucideIcon; color: string }[] = [
-    { label: 'Tasks',    value: goal.taskCount,    Icon: ListChecks,   color: 'var(--color-accent)'  },
-    { label: 'Projects', value: goal.projectCount, Icon: FolderKanban, color: 'var(--color-info)'    },
-    { label: 'Habits',   value: goal.habitCount,   Icon: Flame,        color: 'var(--color-success)' },
-    { label: 'Journal',  value: 0,                 Icon: BookOpen,     color: 'var(--color-warning)' },
-    { label: 'Focus',    value: 0,                 Icon: Timer,        color: '#8B5CF6'              },
+    { label: 'Tasks', value: goal.taskCount, Icon: ListChecks, color: 'var(--color-accent)' },
+    { label: 'Projects', value: goal.projectCount, Icon: FolderKanban, color: 'var(--color-info)' },
+    { label: 'Habits', value: goal.habitCount, Icon: Flame, color: 'var(--color-success)' },
+    { label: 'Journal', value: 0, Icon: BookOpen, color: 'var(--color-warning)' },
+    { label: 'Focus', value: 0, Icon: Timer, color: '#8B5CF6' },
   ];
 
   /* avatar stack */
   const linkedCount = goal.taskCount + goal.habitCount + goal.projectCount;
-  const extraCount  = Math.max(0, linkedCount - 3);
+  const extraCount = Math.max(0, linkedCount - 3);
 
   return (
     <motion.div
@@ -210,7 +191,6 @@ export function GoalCardView({
     >
       {/* ── TOP ROW: icon · content · ring · menu ─────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'start', gap: 10 }}>
-
         {/* icon square */}
         <div
           style={{
@@ -231,10 +211,10 @@ export function GoalCardView({
 
         {/* content block – grows to fill */}
         <div style={{ flex: 1, minWidth: 0 }}>
-
           {/* title + ring + menu on same row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', alignItems: 'start', gap: 10 }}>
-
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', alignItems: 'start', gap: 10 }}
+          >
             {/* title stretches */}
             <h3
               style={{
@@ -257,7 +237,10 @@ export function GoalCardView({
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen((v) => !v);
+                }}
                 className="flex items-center justify-center rounded-lg border transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 style={{
                   width: 30,
@@ -294,7 +277,10 @@ export function GoalCardView({
                   >
                     <button
                       type="button"
-                      onClick={() => { onEdit(); setMenuOpen(false); }}
+                      onClick={() => {
+                        onEdit();
+                        setMenuOpen(false);
+                      }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-raised)]"
                       style={{ color: 'var(--color-text-secondary)' }}
                     >
@@ -302,7 +288,10 @@ export function GoalCardView({
                     </button>
                     <button
                       type="button"
-                      onClick={() => { onDelete(); setMenuOpen(false); }}
+                      onClick={() => {
+                        onDelete();
+                        setMenuOpen(false);
+                      }}
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-raised)]"
                       style={{ color: 'var(--color-danger)' }}
                     >
@@ -329,7 +318,8 @@ export function GoalCardView({
                 color: accent,
               }}
             >
-              {goal.priority === 'CRITICAL' ? '⚡ High Priority'
+              {goal.priority === 'CRITICAL'
+                ? '⚡ High Priority'
                 : `${goal.priority.charAt(0)}${goal.priority.slice(1).toLowerCase()} Priority`}
             </span>
             <span
@@ -403,24 +393,23 @@ export function GoalCardView({
               }}
             >
               <Calendar size={12} />
-              <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>Due:</span>
-              {' '}{goal.targetDate ? formatDateShort(goal.targetDate) : 'No deadline'}
+              <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>Due:</span>{' '}
+              {goal.targetDate ? formatDateShort(goal.targetDate) : 'No deadline'}
             </span>
 
             {daysLeft !== null && (
               <span
                 style={{
                   fontWeight: 600,
-                  color: daysLeft < 0
-                    ? 'var(--color-danger)'
-                    : daysLeft < 14
-                      ? 'var(--color-warning)'
-                      : 'var(--color-text-muted)',
+                  color:
+                    daysLeft < 0
+                      ? 'var(--color-danger)'
+                      : daysLeft < 14
+                        ? 'var(--color-warning)'
+                        : 'var(--color-text-muted)',
                 }}
               >
-                {daysLeft < 0
-                  ? `${Math.abs(daysLeft)} days overdue`
-                  : `${daysLeft} days left`}
+                {daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`}
               </span>
             )}
 
@@ -487,7 +476,9 @@ export function GoalCardView({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-primary)', flexShrink: 0 }}>Milestones</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-primary)', flexShrink: 0 }}>
+              Milestones
+            </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
               {Array.from({ length: totalMs }).map((_, i) => {
                 const done = i < completedMs;
@@ -562,7 +553,18 @@ export function GoalCardView({
               borderLeft: idx === 0 ? 'none' : '1px solid var(--color-border)',
             }}
           >
-            <span style={{ width: 20, height: 20, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `color-mix(in srgb, ${color} 12%, transparent)`, color }}>
+            <span
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: `color-mix(in srgb, ${color} 12%, transparent)`,
+                color,
+              }}
+            >
               <SIcon size={12} />
             </span>
             <span
@@ -591,7 +593,16 @@ export function GoalCardView({
       </div>
 
       {/* ── FOOTER ──────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginTop: 10,
+          flexWrap: 'wrap',
+        }}
+      >
         <span
           style={{
             display: 'inline-flex',

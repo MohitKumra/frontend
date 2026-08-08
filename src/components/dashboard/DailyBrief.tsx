@@ -49,7 +49,8 @@ export function DailyBrief() {
             </div>
           </div>
           <p className="text-sm font-medium text-text-secondary mb-4 leading-relaxed">
-            Start your day by reviewing your tasks and habits. Complete your highest priority items first to build momentum.
+            Start your day by reviewing your tasks and habits. Complete your highest priority items first to build
+            momentum.
           </p>
           <div className="mt-4 text-center">
             <span
@@ -99,18 +100,14 @@ export function DailyBrief() {
         </div>
 
         {/* Summary */}
-        <p className="text-sm font-medium text-text-primary mb-4 leading-relaxed">
-          {brief.summary}
-        </p>
+        <p className="text-sm font-medium text-text-primary mb-4 leading-relaxed">{brief.summary}</p>
 
         {/* Priorities */}
         {brief.priorities.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-2">
               <ListChecks size={12} className="text-accent" />
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                Today's Priorities
-              </span>
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Today's Priorities</span>
             </div>
             <div className="space-y-1.5">
               {brief.priorities.map((priority, i) => (
@@ -122,10 +119,7 @@ export function DailyBrief() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
                 >
-                  <div
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: 'var(--color-accent)' }}
-                  />
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--color-accent)' }} />
                   <span className="text-xs font-medium text-text-primary">{priority}</span>
                 </motion.div>
               ))}
@@ -143,9 +137,7 @@ export function DailyBrief() {
             }}
           >
             <Brain size={14} className="text-accent shrink-0 mt-0.5" />
-            <p className="text-xs font-medium text-text-secondary leading-relaxed">
-              {brief.focusTip}
-            </p>
+            <p className="text-xs font-medium text-text-secondary leading-relaxed">{brief.focusTip}</p>
           </div>
         )}
 

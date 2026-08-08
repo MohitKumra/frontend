@@ -86,7 +86,10 @@ export function BrandVisual() {
               {done ? (
                 <CheckCircle2 size={15} className="text-white/70 flex-shrink-0" />
               ) : (
-                <span className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 15, height: 15 }}>
+                <span
+                  className="relative flex-shrink-0 flex items-center justify-center"
+                  style={{ width: 15, height: 15 }}
+                >
                   <Circle size={15} className="text-white/50" />
                   {active && (
                     <span

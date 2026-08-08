@@ -47,7 +47,7 @@ async function completeGoogleSession(): Promise<{ accessToken: string; user: any
     throw new Error(payload?.error?.message ?? 'Google sign-in could not be completed.');
   }
 
-  const refreshData = await refreshResponse.json() as { accessToken: string };
+  const refreshData = (await refreshResponse.json()) as { accessToken: string };
 
   const meResponse = await fetch(`${VITE_BACKEND_URL}/auth/me`, {
     credentials: 'include',

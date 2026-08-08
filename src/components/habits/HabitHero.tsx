@@ -43,13 +43,13 @@ function FloatingStatCard({ icon, iconColor, label, value, suffix, trend, delay 
       }}
     >
       {/* Gradient overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-0 transition-opacity duration-300 hover:opacity-100"
         style={{
           background: `radial-gradient(circle at top right, ${iconColor}08, transparent 70%)`,
         }}
       />
-      
+
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
           <div
@@ -70,7 +70,7 @@ function FloatingStatCard({ icon, iconColor, label, value, suffix, trend, delay 
             </span>
           )}
         </div>
-        
+
         <p className="text-[24px] sm:text-[28px] md:text-[32px] font-black text-text-primary leading-none tracking-tight mb-1">
           {value}
         </p>
@@ -94,13 +94,13 @@ export function HabitHero({
   onCreateHabit,
 }: HabitHeroProps) {
   const gradientId = React.useId();
-  
+
   // Circular progress ring math
   const radius = 105;
   const circumference = 2 * Math.PI * radius;
   const clampedProgress = Math.min(Math.max(dailyProgress, 0), 100);
   const offset = circumference - (clampedProgress / 100) * circumference;
-  
+
   return (
     <motion.div
       variants={containerVariants}
@@ -139,7 +139,7 @@ export function HabitHero({
           >
             {greeting}, {userName}! 👋
           </motion.p>
-          
+
           <motion.h1
             variants={itemVariants}
             className="text-[24px] sm:text-[28px] md:text-[32px] lg:text-[36px] xl:text-[40px] font-black text-text-primary mb-2 sm:mb-3 leading-[1.1] tracking-[-0.03em]"
@@ -150,19 +150,20 @@ export function HabitHero({
               backgroundClip: 'text',
             }}
           >
-            Build better habits,<br />build a better you.
+            Build better habits,
+            <br />
+            build a better you.
           </motion.h1>
-          
+
           <motion.p variants={itemVariants} className="text-xs sm:text-sm text-text-secondary font-normal mb-4 sm:mb-6">
-            {totalHabits > 0 
+            {totalHabits > 0
               ? `You're doing better than ${Math.min(dailyProgress + 10, 95)}% of last week.`
-              : 'Start building consistency with your first habit.'
-            }
+              : 'Start building consistency with your first habit.'}
           </motion.p>
 
           <motion.div variants={itemVariants}>
-            <Button 
-              onClick={onCreateHabit} 
+            <Button
+              onClick={onCreateHabit}
               leftIcon={<Plus size={16} className="sm:w-[18px] sm:h-[18px]" />}
               className="font-bold text-xs sm:text-sm px-4 sm:px-6 py-2.5 sm:py-3"
             >
@@ -179,18 +180,15 @@ export function HabitHero({
               className="relative w-[160px] h-[160px] sm:w-[180px] sm:h-[180px] md:w-[200px] md:h-[200px] lg:w-[220px] lg:h-[220px] xl:w-[240px] xl:h-[240px]"
             >
               {/* Background glow */}
-              <div 
+              <div
                 className="absolute inset-0 rounded-full opacity-30"
                 style={{
                   background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)',
-                  filter: 'blur(20px)'
+                  filter: 'blur(20px)',
                 }}
               />
-              
-              <svg 
-                className="transform -rotate-90 absolute inset-0 w-full h-full" 
-                viewBox="0 0 240 240"
-              >
+
+              <svg className="transform -rotate-90 absolute inset-0 w-full h-full" viewBox="0 0 240 240">
                 <defs>
                   <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#8B5CF6" />
@@ -198,17 +196,10 @@ export function HabitHero({
                     <stop offset="100%" stopColor="#6366F1" />
                   </linearGradient>
                 </defs>
-                
+
                 {/* Background circle */}
-                <circle
-                  cx="120"
-                  cy="120"
-                  r="105"
-                  fill="none"
-                  stroke="var(--color-border)"
-                  strokeWidth="8"
-                />
-                
+                <circle cx="120" cy="120" r="105" fill="none" stroke="var(--color-border)" strokeWidth="8" />
+
                 {/* Progress circle */}
                 <motion.circle
                   cx="120"
@@ -223,15 +214,13 @@ export function HabitHero({
                   animate={{ strokeDashoffset: offset }}
                   transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
                   style={{
-                    filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.5))'
+                    filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.5))',
                   }}
                 />
               </svg>
 
               {/* Center text */}
-              <div 
-                className="absolute inset-0 flex flex-col items-center justify-center text-center"
-              >
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <motion.p
                   className="text-[36px] sm:text-[40px] md:text-[44px] lg:text-[48px] xl:text-[52px] font-black text-text-primary leading-none tracking-tight"
                   initial={{ scale: 0.5, opacity: 0 }}
@@ -254,10 +243,7 @@ export function HabitHero({
         {/* Column 3: Stat Cards - 2x2 grid */}
         {totalHabits > 0 && (
           <div className="flex-1 flex flex-col items-center justify-center w-full lg:w-auto order-3 md:order-3 lg:order-3">
-            <motion.div
-              variants={containerVariants}
-              className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-[320px]"
-            >
+            <motion.div variants={containerVariants} className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-[320px]">
               <motion.div variants={itemVariants} custom={0}>
                 <FloatingStatCard
                   icon={<Flame size={14} className="sm:w-4 sm:h-4" />}

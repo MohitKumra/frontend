@@ -33,25 +33,18 @@ function setLastSeenTimestamp(timestamp: string): void {
 }
 
 export function useActivityFeed() {
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ['activity-feed'],
-    queryFn: ({ pageParam = 1 }) => notificationsApi.getActivityFeed(pageParam, PAGE_SIZE),
-    getNextPageParam: (lastPage) => {
-      return lastPage.meta.hasMore ? lastPage.meta.page + 1 : undefined;
-    },
-    initialPageParam: 1,
-    staleTime: 30000, // 30 seconds - consider data fresh for half a minute
-    refetchInterval: 60000, // Auto-refetch every minute to catch new activities
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error, refetch } = useInfiniteQuery(
+    {
+      queryKey: ['activity-feed'],
+      queryFn: ({ pageParam = 1 }) => notificationsApi.getActivityFeed(pageParam, PAGE_SIZE),
+      getNextPageParam: (lastPage) => {
+        return lastPage.meta.hasMore ? lastPage.meta.page + 1 : undefined;
+      },
+      initialPageParam: 1,
+      staleTime: 30000, // 30 seconds - consider data fresh for half a minute
+      refetchInterval: 60000, // Auto-refetch every minute to catch new activities
+    }
+  );
 
   // Flatten all pages into a single array of notifications
   const notifications = useMemo(() => {
@@ -136,27 +129,27 @@ export function useActivityFeed() {
     // Data
     notifications,
     groupedNotifications,
-    
+
     // Server-known totals (available immediately from page 1 response)
     totalCount: serverTotals.total,
     totalActionable: serverTotals.totalActionable,
     totalActivity: serverTotals.totalActivity,
-    
+
     // Pagination
     hasNextPage,
     isFetchingNextPage,
     loadMore,
-    
+
     // Loading states
     isLoading,
     isError,
     error,
-    
+
     // Unread tracking
     hasUnread,
     unreadCount,
     markAllAsSeen,
-    
+
     // Utilities
     refetch,
   };

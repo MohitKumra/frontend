@@ -20,8 +20,7 @@ export function useProject(id: string) {
 export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateProjectRequest) =>
-      apiClient.post<ProjectDTO>('/projects', data).then((r) => r.data),
+    mutationFn: (data: CreateProjectRequest) => apiClient.post<ProjectDTO>('/projects', data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['goals'] });

@@ -51,9 +51,7 @@ export function AchievementsWidget({ profile }: { profile: GamificationProfileDT
       <div className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">
-              Rewards
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted">Rewards</p>
             <h3 className="mt-1 text-lg font-black text-text-primary">Level {profile.level}</h3>
           </div>
           <div
@@ -113,9 +111,14 @@ export function AchievementsWidget({ profile }: { profile: GamificationProfileDT
             );
           })}
           {recentBadges.length === 0 && (
-            <div className="col-span-2 rounded-xl border p-4 text-center" style={{ borderColor: 'var(--color-border)' }}>
+            <div
+              className="col-span-2 rounded-xl border p-4 text-center"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
               <p className="text-sm font-bold text-text-primary">No badges yet</p>
-              <p className="mt-1 text-xs text-text-secondary">Complete a task, habit, or focus session to unlock the first one.</p>
+              <p className="mt-1 text-xs text-text-secondary">
+                Complete a task, habit, or focus session to unlock the first one.
+              </p>
             </div>
           )}
         </div>

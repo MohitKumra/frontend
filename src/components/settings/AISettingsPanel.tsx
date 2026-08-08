@@ -13,32 +13,72 @@ interface AIFeatureDef {
 }
 
 const REFRESH_OPTIONS = [
-  { value: 5,    label: 'Every 5 minutes' },
-  { value: 15,   label: 'Every 15 minutes' },
-  { value: 30,   label: 'Every 30 minutes' },
-  { value: 60,   label: 'Every hour' },
-  { value: 180,  label: 'Every 3 hours' },
-  { value: 360,  label: 'Every 6 hours' },
-  { value: 720,  label: 'Every 12 hours' },
+  { value: 5, label: 'Every 5 minutes' },
+  { value: 15, label: 'Every 15 minutes' },
+  { value: 30, label: 'Every 30 minutes' },
+  { value: 60, label: 'Every hour' },
+  { value: 180, label: 'Every 3 hours' },
+  { value: 360, label: 'Every 6 hours' },
+  { value: 720, label: 'Every 12 hours' },
   { value: 1440, label: 'Once a day' },
 ];
 
 const AI_FEATURES: AIFeatureDef[] = [
-  { key: 'dailyBriefEnabled',      title: 'Daily Brief',                    description: 'AI greeting, priorities and focus tip for your day.',                  tokenLevel: 'high' },
-  { key: 'journalWeeklyEnabled',   title: 'Weekly Journal Summary',         description: 'Analyzes every journal entry from the past week into themes.',          tokenLevel: 'very-high' },
-  { key: 'insightsEnabled',        title: 'Smart Insights',                 description: 'Data-driven insights about your productivity on the dashboard.',        tokenLevel: 'medium' },
-  { key: 'coachEnabled',           title: 'AI Coach',                       description: 'Personal motivation and coaching messages.',                            tokenLevel: 'medium' },
-  { key: 'journalAnalysisEnabled', title: 'Entry Analysis',                 description: 'Mood, themes and reflection prompts for each journal entry.',           tokenLevel: 'medium' },
-  { key: 'goalSummaryEnabled',     title: 'Goal AI Summary',                description: 'Generated summary when creating goal workspaces.',                      tokenLevel: 'medium' },
-  { key: 'taskParserEnabled',      title: 'Natural Language Task Parser',   description: 'Turn plain text into structured tasks with AI.',                        tokenLevel: 'low' },
-  { key: 'goalPlannerEnabled',     title: 'Goal Planner',                   description: 'Full AI workspace generation from a single prompt.',                    tokenLevel: 'very-high' },
+  {
+    key: 'dailyBriefEnabled',
+    title: 'Daily Brief',
+    description: 'AI greeting, priorities and focus tip for your day.',
+    tokenLevel: 'high',
+  },
+  {
+    key: 'journalWeeklyEnabled',
+    title: 'Weekly Journal Summary',
+    description: 'Analyzes every journal entry from the past week into themes.',
+    tokenLevel: 'very-high',
+  },
+  {
+    key: 'insightsEnabled',
+    title: 'Smart Insights',
+    description: 'Data-driven insights about your productivity on the dashboard.',
+    tokenLevel: 'medium',
+  },
+  {
+    key: 'coachEnabled',
+    title: 'AI Coach',
+    description: 'Personal motivation and coaching messages.',
+    tokenLevel: 'medium',
+  },
+  {
+    key: 'journalAnalysisEnabled',
+    title: 'Entry Analysis',
+    description: 'Mood, themes and reflection prompts for each journal entry.',
+    tokenLevel: 'medium',
+  },
+  {
+    key: 'goalSummaryEnabled',
+    title: 'Goal AI Summary',
+    description: 'Generated summary when creating goal workspaces.',
+    tokenLevel: 'medium',
+  },
+  {
+    key: 'taskParserEnabled',
+    title: 'Natural Language Task Parser',
+    description: 'Turn plain text into structured tasks with AI.',
+    tokenLevel: 'low',
+  },
+  {
+    key: 'goalPlannerEnabled',
+    title: 'Goal Planner',
+    description: 'Full AI workspace generation from a single prompt.',
+    tokenLevel: 'very-high',
+  },
 ];
 
 const TOKEN_BADGE: Record<TokenLevel, { label: string; color: string; dots: number }> = {
-  low:       { label: 'Low',       color: '#22c55e', dots: 1 },
-  medium:    { label: 'Medium',    color: '#eab308', dots: 2 },
-  high:      { label: 'High',      color: '#f97316', dots: 3 },
-  'very-high': { label: 'Max',     color: '#ef4444', dots: 4 },
+  low: { label: 'Low', color: '#22c55e', dots: 1 },
+  medium: { label: 'Medium', color: '#eab308', dots: 2 },
+  high: { label: 'High', color: '#f97316', dots: 3 },
+  'very-high': { label: 'Max', color: '#ef4444', dots: 4 },
 };
 
 // ─── shared primitives copied from SettingsPage (kept local so the panel
@@ -157,9 +197,7 @@ function TokenBadge({ level }: { level: TokenLevel }) {
             key={i}
             className="w-1 h-1 rounded-full"
             style={{
-              background: i < badge.dots
-                ? badge.color
-                : 'color-mix(in srgb, var(--color-border) 60%, transparent)',
+              background: i < badge.dots ? badge.color : 'color-mix(in srgb, var(--color-border) 60%, transparent)',
             }}
           />
         ))}
@@ -185,7 +223,7 @@ export function AISettingsPanel({
   if (!ai) return null;
 
   const enabledCount = AI_FEATURES.filter((f) => Boolean(ai[f.key as keyof AIPreferenceDTO])).length;
-  const totalCount   = AI_FEATURES.length;
+  const totalCount = AI_FEATURES.length;
 
   const update = (patch: Partial<AIPreferenceDTO>) => {
     const merged = { ...ai, ...patch };
@@ -193,12 +231,10 @@ export function AISettingsPanel({
     onChange(merged);
   };
 
-  const currentRefreshLabel =
-    REFRESH_OPTIONS.find((o) => o.value === ai.summaryRefreshMinutes)?.label ?? 'Custom';
+  const currentRefreshLabel = REFRESH_OPTIONS.find((o) => o.value === ai.summaryRefreshMinutes)?.label ?? 'Custom';
 
   return (
     <div className="space-y-4 sm:space-y-5">
-
       {/* ── Section header — same pattern as MOD.01 / MOD.02 / MOD.03 / MOD.04 ── */}
       <Card className="p-4 sm:p-5 lg:p-6" variant="default">
         <SectionHeader
@@ -250,7 +286,10 @@ export function AISettingsPanel({
                 }}
               />
               <div className="min-w-0">
-                <div className="text-[9px] font-mono uppercase tracking-wider leading-none" style={{ color: 'var(--color-text-muted)' }}>
+                <div
+                  className="text-[9px] font-mono uppercase tracking-wider leading-none"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   {s.label}
                 </div>
                 <div className="text-xs font-bold mt-1 truncate" style={{ color: 'var(--color-text-primary)' }}>
@@ -267,7 +306,10 @@ export function AISettingsPanel({
         <div className="flex items-start gap-2.5 sm:gap-3 mb-4">
           <Badge3D icon={<Zap size={16} />} size={36} colorVar="--color-success" rotation={7} />
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5" style={{ color: 'var(--color-success)' }}>
+            <div
+              className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5"
+              style={{ color: 'var(--color-success)' }}
+            >
               MOD.05b — CONSUMPTION
             </div>
             <p className="text-sm font-extrabold text-text-primary">Token usage</p>
@@ -297,11 +339,15 @@ export function AISettingsPanel({
                 }}
               />
               <div className="min-w-0">
-                <div className="text-[9px] font-mono uppercase tracking-wider leading-none" style={{ color: 'var(--color-text-muted)' }}>
+                <div
+                  className="text-[9px] font-mono uppercase tracking-wider leading-none"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   {s.label}
                 </div>
                 <div className="text-xs font-bold mt-1 truncate" style={{ color: 'var(--color-text-primary)' }}>
-                  {Number(s.value ?? 0).toLocaleString()} <span className="font-normal text-[10px] text-text-muted">{s.sub}</span>
+                  {Number(s.value ?? 0).toLocaleString()}{' '}
+                  <span className="font-normal text-[10px] text-text-muted">{s.sub}</span>
                 </div>
               </div>
             </div>
@@ -309,7 +355,10 @@ export function AISettingsPanel({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 rounded-full border px-3 py-1.5" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+          <div
+            className="flex items-center gap-2 rounded-full border px-3 py-1.5"
+            style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+          >
             <CheckCircle2 size={12} style={{ color: 'var(--color-accent)' }} />
             <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
               {Number(ai.aiCallsTotal ?? 0).toLocaleString()} AI calls
@@ -328,7 +377,10 @@ export function AISettingsPanel({
         <div className="flex items-start gap-2.5 sm:gap-3 mb-4">
           <Badge3D icon={<Gauge size={16} />} size={36} colorVar="--color-info" rotation={7} />
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5" style={{ color: 'var(--color-info)' }}>
+            <div
+              className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5"
+              style={{ color: 'var(--color-info)' }}
+            >
               REFRESH CADENCE
             </div>
             <p className="text-sm font-extrabold text-text-primary">AI Summary Refresh</p>
@@ -349,7 +401,9 @@ export function AISettingsPanel({
           onChange={(e) => update({ summaryRefreshMinutes: Number(e.target.value) })}
         >
           {REFRESH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       </Card>
@@ -359,7 +413,10 @@ export function AISettingsPanel({
         <div className="flex items-start gap-2.5 sm:gap-3 mb-4">
           <Badge3D icon={<Zap size={16} />} size={36} colorVar="--color-warning" rotation={7} />
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5" style={{ color: 'var(--color-warning)' }}>
+            <div
+              className="text-[9px] font-mono font-bold uppercase tracking-widest mb-0.5"
+              style={{ color: 'var(--color-warning)' }}
+            >
               FEATURE CONTROLS
             </div>
             <p className="text-sm font-extrabold text-text-primary">Individual AI features</p>

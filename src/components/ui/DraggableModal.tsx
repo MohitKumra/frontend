@@ -58,7 +58,7 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
         onClose();
       }
     },
-    [onClose],
+    [onClose]
   );
 
   /**
@@ -129,10 +129,7 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
                 onPointerDown={handlePointerDown}
                 style={{ touchAction: 'none' }}
               >
-                <div
-                  className="w-10 h-1.5 rounded-full"
-                  style={{ background: 'var(--color-border)' }}
-                />
+                <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--color-border)' }} />
               </div>
 
               {title && (
@@ -210,6 +207,6 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
         </>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 }

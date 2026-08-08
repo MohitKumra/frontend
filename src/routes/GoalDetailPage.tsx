@@ -1,7 +1,18 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, CheckCircle2, Circle, FolderKanban, Plus, Target, Trash2, Timer, Link2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Circle,
+  FolderKanban,
+  Plus,
+  Target,
+  Trash2,
+  Timer,
+  Link2,
+} from 'lucide-react';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -9,7 +20,13 @@ import { Button } from '../components/ui/Button';
 import { Input, Textarea } from '../components/ui/Input';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { PageHeader } from '../components/ui/PageHeader';
-import { useGoal, useGoalMilestones, useCreateGoalMilestone, useUpdateGoalMilestone, useDeleteGoalMilestone } from '../features/goals/hooks/useGoals';
+import {
+  useGoal,
+  useGoalMilestones,
+  useCreateGoalMilestone,
+  useUpdateGoalMilestone,
+  useDeleteGoalMilestone,
+} from '../features/goals/hooks/useGoals';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useHabits } from '../features/habits/hooks/useHabits';
 import { useProjects } from '../features/projects/hooks/useProjects';
@@ -67,15 +84,26 @@ export function GoalDetailPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-text-muted">Goal not found</p>
-        <Button onClick={() => navigate('/goals')} className="mt-4">Back to Goals</Button>
+        <Button onClick={() => navigate('/goals')} className="mt-4">
+          Back to Goals
+        </Button>
       </Card>
     );
   }
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-6xl mx-auto flex flex-col gap-5 sm:gap-6"
+    >
       <motion.div variants={itemVariants} className="flex items-center justify-between gap-3 flex-wrap">
-        <button type="button" onClick={() => navigate('/goals')} className="flex items-center gap-2 text-sm font-bold text-text-muted hover:text-text-primary transition-colors">
+        <button
+          type="button"
+          onClick={() => navigate('/goals')}
+          className="flex items-center gap-2 text-sm font-bold text-text-muted hover:text-text-primary transition-colors"
+        >
           <ArrowLeft size={16} />
           Back to goals
         </button>
@@ -93,21 +121,55 @@ export function GoalDetailPage() {
             <div className="min-w-0 flex-1">
               <PageHeader icon={<Target size={24} />} title={goal.title} subtitle={goal.description ?? 'Goal detail'} />
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <Badge variant={goal.status === 'COMPLETED' ? 'success' : goal.status === 'PAUSED' ? 'warning' : 'accent'} size="sm">{goal.status}</Badge>
-                <Badge variant={goal.priority === 'CRITICAL' ? 'danger' : goal.priority === 'HIGH' ? 'warning' : goal.priority === 'MEDIUM' ? 'info' : 'default'} size="sm">
+                <Badge
+                  variant={goal.status === 'COMPLETED' ? 'success' : goal.status === 'PAUSED' ? 'warning' : 'accent'}
+                  size="sm"
+                >
+                  {goal.status}
+                </Badge>
+                <Badge
+                  variant={
+                    goal.priority === 'CRITICAL'
+                      ? 'danger'
+                      : goal.priority === 'HIGH'
+                        ? 'warning'
+                        : goal.priority === 'MEDIUM'
+                          ? 'info'
+                          : 'default'
+                  }
+                  size="sm"
+                >
                   {goal.priority}
                 </Badge>
                 {goal.targetDate && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{
+                      background: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
+                      color: 'var(--color-info)',
+                    }}
+                  >
                     <Calendar size={12} />
                     {new Date(goal.targetDate).toLocaleDateString()}
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}>
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+                    color: 'var(--color-success)',
+                  }}
+                >
                   <CheckCircle2 size={12} />
                   {goal.progress}% complete
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)', color: 'var(--color-warning)' }}>
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
+                    color: 'var(--color-warning)',
+                  }}
+                >
                   <Timer size={12} />
                   {daysRemaining !== null ? `${daysRemaining} days left` : 'No target date'}
                 </span>
@@ -135,7 +197,9 @@ export function GoalDetailPage() {
               <p className="text-sm font-bold">Progress Breakdown</p>
               <p className="text-xs text-text-muted">How this goal's progress is calculated from real activity</p>
             </div>
-            <Badge variant="accent" size="sm">{goal.progress}%</Badge>
+            <Badge variant="accent" size="sm">
+              {goal.progress}%
+            </Badge>
           </div>
           <ProgressBreakdown goal={goal} />
         </Card>
@@ -148,53 +212,79 @@ export function GoalDetailPage() {
               <p className="text-sm font-bold">Timeline</p>
               <p className="text-xs text-text-muted">Milestones and delivery markers for this goal</p>
             </div>
-            <Badge variant="default" size="sm">{milestones.length} milestones</Badge>
+            <Badge variant="default" size="sm">
+              {milestones.length} milestones
+            </Badge>
           </div>
 
           <div className="space-y-4">
-            {milestones.length ? milestones.map((milestone, index) => (
-              <div key={milestone.id} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3.5 h-3.5 rounded-full ${milestone.status === 'COMPLETED' ? 'bg-success' : milestone.status === 'SKIPPED' ? 'bg-warning' : 'bg-accent'}`} />
-                  {index < milestones.length - 1 && <div className="w-px flex-1 min-h-8 bg-border" />}
-                </div>
-                <div className="flex-1 rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-text-primary">{milestone.title}</p>
-                      {milestone.description && <p className="text-xs text-text-secondary mt-1">{milestone.description}</p>}
+            {milestones.length ? (
+              milestones.map((milestone, index) => (
+                <div key={milestone.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full ${milestone.status === 'COMPLETED' ? 'bg-success' : milestone.status === 'SKIPPED' ? 'bg-warning' : 'bg-accent'}`}
+                    />
+                    {index < milestones.length - 1 && <div className="w-px flex-1 min-h-8 bg-border" />}
+                  </div>
+                  <div
+                    className="flex-1 rounded-2xl border p-4"
+                    style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-text-primary">{milestone.title}</p>
+                        {milestone.description && (
+                          <p className="text-xs text-text-secondary mt-1">{milestone.description}</p>
+                        )}
+                      </div>
+                      <Badge
+                        variant={
+                          milestone.status === 'COMPLETED'
+                            ? 'success'
+                            : milestone.status === 'SKIPPED'
+                              ? 'warning'
+                              : 'default'
+                        }
+                        size="sm"
+                      >
+                        {milestone.status}
+                      </Badge>
                     </div>
-                    <Badge variant={milestone.status === 'COMPLETED' ? 'success' : milestone.status === 'SKIPPED' ? 'warning' : 'default'} size="sm">
-                      {milestone.status}
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-3">
-                    {milestone.dueDate && (
-                      <span className="text-xs font-semibold text-text-muted">
-                        Due {new Date(milestone.dueDate).toLocaleDateString('en-GB')}
-                      </span>
-                    )}
-                    {milestone.completedAt && (
-                      <span className="text-xs font-semibold text-success">
-                        Completed {new Date(milestone.completedAt).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-4 flex items-center gap-2 flex-wrap">
-                    <Button size="sm" variant="secondary" onClick={() => toggleMilestone(milestone, milestone.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED')}>
-                      {milestone.status === 'COMPLETED' ? 'Reopen' : 'Complete'}
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => toggleMilestone(milestone, 'SKIPPED')}>
-                      Skip
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => deleteMilestone.mutate(milestone.id)}>
-                      <Trash2 size={14} />
-                      Delete
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      {milestone.dueDate && (
+                        <span className="text-xs font-semibold text-text-muted">
+                          Due {new Date(milestone.dueDate).toLocaleDateString('en-GB')}
+                        </span>
+                      )}
+                      {milestone.completedAt && (
+                        <span className="text-xs font-semibold text-success">
+                          Completed {new Date(milestone.completedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          toggleMilestone(milestone, milestone.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED')
+                        }
+                      >
+                        {milestone.status === 'COMPLETED' ? 'Reopen' : 'Complete'}
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => toggleMilestone(milestone, 'SKIPPED')}>
+                        Skip
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => deleteMilestone.mutate(milestone.id)}>
+                        <Trash2 size={14} />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )) : (
+              ))
+            ) : (
               <p className="text-sm text-text-muted">No milestones yet. Add the first checkpoint on the right.</p>
             )}
           </div>
@@ -206,10 +296,28 @@ export function GoalDetailPage() {
             <p className="text-sm font-bold">Add Milestone</p>
           </div>
           <div className="space-y-3">
-            <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ship beta launch" />
-            <Textarea label="Description" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What needs to happen?" />
-            <Input label="Due Date" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
-            <Button onClick={addMilestone} loading={createMilestone.isPending}>Add milestone</Button>
+            <Input
+              label="Title"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Ship beta launch"
+            />
+            <Textarea
+              label="Description"
+              rows={4}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="What needs to happen?"
+            />
+            <Input
+              label="Due Date"
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+            />
+            <Button onClick={addMilestone} loading={createMilestone.isPending}>
+              Add milestone
+            </Button>
           </div>
         </Card>
       </motion.div>
@@ -255,16 +363,32 @@ export function GoalDetailPage() {
 
 function GoalMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl p-3 text-center border" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+    <div
+      className="rounded-xl p-3 text-center border"
+      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+    >
       <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{label}</p>
       <p className="text-base font-black text-text-primary mt-1">{value}</p>
     </div>
   );
 }
 
-function ProgressBreakdown({ goal }: { goal: { progress: number; milestones: GoalMilestoneDTO[]; taskCount: number; habitCount: number; projectCount: number } }) {
+function ProgressBreakdown({
+  goal,
+}: {
+  goal: {
+    progress: number;
+    milestones: GoalMilestoneDTO[];
+    taskCount: number;
+    habitCount: number;
+    projectCount: number;
+  };
+}) {
   const activeMilestones = goal.milestones.filter((m) => m.status !== 'SKIPPED');
-  const milestoneScore = activeMilestones.length === 0 ? 0 : Math.round((activeMilestones.filter((m) => m.status === 'COMPLETED').length / activeMilestones.length) * 100);
+  const milestoneScore =
+    activeMilestones.length === 0
+      ? 0
+      : Math.round((activeMilestones.filter((m) => m.status === 'COMPLETED').length / activeMilestones.length) * 100);
   const taskScore = goal.taskCount === 0 ? 0 : 0; // task completion % not available on detail DTO; show count
   const projectScore = goal.projectCount === 0 ? 0 : 0;
   const habitScore = goal.habitCount === 0 ? 0 : 0;
@@ -278,7 +402,10 @@ function ProgressBreakdown({ goal }: { goal: { progress: number; milestones: Goa
 
   return (
     <div className="space-y-4">
-      <div className="flex h-3 w-full overflow-hidden rounded-full" style={{ background: 'var(--color-border-subtle)' }}>
+      <div
+        className="flex h-3 w-full overflow-hidden rounded-full"
+        style={{ background: 'var(--color-border-subtle)' }}
+      >
         {factors.map((factor) => (
           <div
             key={factor.label}
@@ -289,10 +416,16 @@ function ProgressBreakdown({ goal }: { goal: { progress: number; milestones: Goa
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {factors.map((factor) => (
-          <div key={factor.label} className="rounded-2xl border p-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+          <div
+            key={factor.label}
+            className="rounded-2xl border p-3"
+            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+          >
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: factor.color }} />
-              <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>{factor.label}</p>
+              <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                {factor.label}
+              </p>
             </div>
             <p className="mt-2 text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
               {factor.value}%
@@ -304,7 +437,8 @@ function ProgressBreakdown({ goal }: { goal: { progress: number; milestones: Goa
         ))}
       </div>
       <p className="text-xs leading-5" style={{ color: 'var(--color-text-muted)' }}>
-        Progress is calculated automatically from completed milestones, finished tasks, project progress, and 4-week habit consistency. No manual input.
+        Progress is calculated automatically from completed milestones, finished tasks, project progress, and 4-week
+        habit consistency. No manual input.
       </p>
     </div>
   );
@@ -328,21 +462,25 @@ function LinkedSection({
           {icon}
           <p className="text-sm font-bold">{title}</p>
         </div>
-        <Badge variant="default" size="sm">{count}</Badge>
+        <Badge variant="default" size="sm">
+          {count}
+        </Badge>
       </div>
       <div className="space-y-2">
-        {items.length ? items.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={item.action}
-            className="w-full text-left rounded-xl border p-3 transition-colors hover:bg-surface-secondary"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            <p className="text-sm font-semibold text-text-primary truncate">{item.title}</p>
-            <p className="text-xs text-text-muted mt-1 truncate">{item.meta}</p>
-          </button>
-        )) : (
+        {items.length ? (
+          items.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={item.action}
+              className="w-full text-left rounded-xl border p-3 transition-colors hover:bg-surface-secondary"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <p className="text-sm font-semibold text-text-primary truncate">{item.title}</p>
+              <p className="text-xs text-text-muted mt-1 truncate">{item.meta}</p>
+            </button>
+          ))
+        ) : (
           <p className="text-sm text-text-muted">Nothing linked yet.</p>
         )}
       </div>

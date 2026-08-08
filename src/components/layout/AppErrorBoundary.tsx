@@ -28,7 +28,9 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
           <Card className="p-8 text-center">
             <p className="text-lg font-bold text-text-primary">Something went wrong</p>
             <p className="text-sm text-text-muted mt-2">Try refreshing the page or going back to the dashboard.</p>
-            <Button className="mt-5" onClick={() => window.location.assign('/')}>Go Home</Button>
+            <Button className="mt-5" onClick={() => window.location.assign('/')}>
+              Go Home
+            </Button>
           </Card>
         </div>
       );

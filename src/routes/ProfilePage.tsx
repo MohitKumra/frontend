@@ -117,11 +117,7 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-text-primary mb-2">Profile</h1>
@@ -136,13 +132,7 @@ export function ProfilePage() {
           {/* Avatar Section */}
           <div className="flex flex-col items-center mb-8 pb-8 border-b" style={{ borderColor: 'var(--color-border)' }}>
             <div className="relative group">
-              <Avatar
-                src={user.avatarUrl}
-                name={user.name}
-                email={user.email}
-                size="2xl"
-                showBorder
-              />
+              <Avatar src={user.avatarUrl} name={user.name} email={user.email} size="2xl" showBorder />
 
               {/* Hover overlay */}
               <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -156,13 +146,7 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
             <div className="flex gap-2 mt-4">
               <button

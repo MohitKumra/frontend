@@ -34,7 +34,7 @@ export function AchievementCelebrationModal({ open, achievement, onClose }: Achi
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
         width: 4 + Math.random() * 5,
       })),
-    [achievement?.key, open],
+    [achievement?.key, open]
   );
 
   useEffect(() => {
@@ -157,12 +157,8 @@ export function AchievementCelebrationModal({ open, achievement, onClose }: Achi
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-text-muted mb-2">
               Achievement unlocked
             </p>
-            <h3 className="text-2xl font-black text-text-primary mb-2 leading-tight">
-              {achievement.title}
-            </h3>
-            <p className="text-sm text-text-secondary leading-relaxed mb-5">
-              {achievement.description}
-            </p>
+            <h3 className="text-2xl font-black text-text-primary mb-2 leading-tight">{achievement.title}</h3>
+            <p className="text-sm text-text-secondary leading-relaxed mb-5">{achievement.description}</p>
 
             <div className="flex items-center justify-center gap-2 flex-wrap mb-5">
               <span
@@ -202,6 +198,6 @@ export function AchievementCelebrationModal({ open, achievement, onClose }: Achi
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 }

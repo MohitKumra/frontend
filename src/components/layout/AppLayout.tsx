@@ -3,10 +3,21 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
-  LayoutDashboard, CheckSquare, CalendarDays, Target, FileText,
-  Timer, LogOut, X, Sparkles,
-  Search, Plus, Settings2, FolderKanban,
-  Keyboard, Flag
+  LayoutDashboard,
+  CheckSquare,
+  CalendarDays,
+  Target,
+  FileText,
+  Timer,
+  LogOut,
+  X,
+  Sparkles,
+  Search,
+  Plus,
+  Settings2,
+  FolderKanban,
+  Keyboard,
+  Flag,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -41,18 +52,16 @@ function fetchTasksPage(pageParam?: string): Promise<TaskListPage> {
 }
 
 const navItems = [
-  { to: '/',          icon: LayoutDashboard, label: 'Dashboard', onboarding: 'dashboard' },
-  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',     badgeKey: 'tasks', onboarding: 'tasks' },
-  { to: '/calendar',  icon: CalendarDays,    label: 'Calendar',  onboarding: 'calendar' },
-  { to: '/habits',    icon: Target,          label: 'Habits',    badgeKey: 'habits', onboarding: 'habits' },
-  { to: '/notes',     icon: FileText,        label: 'Notes',     onboarding: 'notes' },
-  { to: '/focus',     icon: Timer,           label: 'Focus',     onboarding: 'focus' },
-  { to: '/projects',  icon: FolderKanban,    label: 'Projects',  onboarding: 'projects' },
-  { to: '/goals',     icon: Flag,            label: 'Goals',     onboarding: 'goals' },
-  { to: '/settings',  icon: Settings2,       label: 'Settings',  onboarding: 'settings' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', onboarding: 'dashboard' },
+  { to: '/tasks', icon: CheckSquare, label: 'Tasks', badgeKey: 'tasks', onboarding: 'tasks' },
+  { to: '/calendar', icon: CalendarDays, label: 'Calendar', onboarding: 'calendar' },
+  { to: '/habits', icon: Target, label: 'Habits', badgeKey: 'habits', onboarding: 'habits' },
+  { to: '/notes', icon: FileText, label: 'Notes', onboarding: 'notes' },
+  { to: '/focus', icon: Timer, label: 'Focus', onboarding: 'focus' },
+  { to: '/projects', icon: FolderKanban, label: 'Projects', onboarding: 'projects' },
+  { to: '/goals', icon: Flag, label: 'Goals', onboarding: 'goals' },
+  { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings' },
 ];
-
-
 
 function warmRouteData(route: string): void {
   switch (route) {
@@ -113,16 +122,31 @@ function warmRouteData(route: string): void {
       });
       break;
     case '/analytics':
-      void queryClient.prefetchQuery({ queryKey: ['analytics', 'summary'], queryFn: () => apiClient.get('/analytics/summary').then((r) => r.data) });
-      void queryClient.prefetchQuery({ queryKey: ['analytics', 'daily'], queryFn: () => apiClient.get('/analytics/daily').then((r) => r.data) });
-      void queryClient.prefetchQuery({ queryKey: ['analytics', 'projects'], queryFn: () => apiClient.get('/analytics/projects').then((r) => r.data) });
-      void queryClient.prefetchQuery({ queryKey: ['analytics', 'weekly'], queryFn: () => apiClient.get('/analytics/weekly').then((r) => r.data) });
+      void queryClient.prefetchQuery({
+        queryKey: ['analytics', 'summary'],
+        queryFn: () => apiClient.get('/analytics/summary').then((r) => r.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['analytics', 'daily'],
+        queryFn: () => apiClient.get('/analytics/daily').then((r) => r.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['analytics', 'projects'],
+        queryFn: () => apiClient.get('/analytics/projects').then((r) => r.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['analytics', 'weekly'],
+        queryFn: () => apiClient.get('/analytics/weekly').then((r) => r.data),
+      });
       break;
     case '/settings':
       void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
       break;
     case '/profile':
-      void queryClient.prefetchQuery({ queryKey: ['auth', 'me'], queryFn: () => apiClient.get('/auth/me').then((r) => r.data) });
+      void queryClient.prefetchQuery({
+        queryKey: ['auth', 'me'],
+        queryFn: () => apiClient.get('/auth/me').then((r) => r.data),
+      });
       break;
     default:
       break;
@@ -143,7 +167,18 @@ export function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const location = useLocation();
-  const { sidebarOpen, setSidebarOpen, toggleSidebar, theme, toggleTheme, layoutPreference, setTheme, setLayoutPreference, setCalendarViewPreference, setTaskViewPreference } = useUIStore();
+  const {
+    sidebarOpen,
+    setSidebarOpen,
+    toggleSidebar,
+    theme,
+    toggleTheme,
+    layoutPreference,
+    setTheme,
+    setLayoutPreference,
+    setCalendarViewPreference,
+    setTaskViewPreference,
+  } = useUIStore();
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -153,15 +188,14 @@ export function AppLayout() {
   const { data: achievements } = useAchievements();
   const { data: settings } = useSettings();
   const seenAchievementKeysRef = useRef<Set<string> | null>(null);
-    const [showShortcuts, setShowShortcuts] = useState(false);
-
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setSearchOpen(prev => !prev);
+        setSearchOpen((prev) => !prev);
       }
     };
 
@@ -174,7 +208,19 @@ export function AppLayout() {
   }, [layoutPreference]);
 
   useEffect(() => {
-    const routesToWarm = ['/', '/tasks', '/projects', '/goals', '/calendar', '/habits', '/notes', '/focus', '/analytics', '/profile', '/settings'];
+    const routesToWarm = [
+      '/',
+      '/tasks',
+      '/projects',
+      '/goals',
+      '/calendar',
+      '/habits',
+      '/notes',
+      '/focus',
+      '/analytics',
+      '/profile',
+      '/settings',
+    ];
     const timer = window.setTimeout(() => {
       routesToWarm.forEach((route) => warmRouteData(route));
     }, 500);
@@ -215,11 +261,14 @@ export function AppLayout() {
   useEffect(() => {
     if (!settings) return;
 
-    void setTheme(settings.appearance.themePreference === 'SYSTEM'
-      ? 'system'
-      : settings.appearance.themePreference === 'DARK'
-        ? 'dark'
-        : 'light', { animate: false });
+    void setTheme(
+      settings.appearance.themePreference === 'SYSTEM'
+        ? 'system'
+        : settings.appearance.themePreference === 'DARK'
+          ? 'dark'
+          : 'light',
+      { animate: false }
+    );
     setLayoutPreference(settings.appearance.layoutPreference);
     const mappedView = settings.appearance.calendarView === 'agenda' ? 'week' : settings.appearance.calendarView;
     setCalendarViewPreference(mappedView);
@@ -230,15 +279,7 @@ export function AppLayout() {
     if (user && user.recoveryEmail !== settings.security.recoveryEmail) {
       setUser({ ...user, recoveryEmail: settings.security.recoveryEmail });
     }
-  }, [
-    settings,
-    setCalendarViewPreference,
-    setLayoutPreference,
-    setTaskViewPreference,
-    setTheme,
-    setUser,
-    user,
-  ]);
+  }, [settings, setCalendarViewPreference, setLayoutPreference, setTaskViewPreference, setTheme, setUser, user]);
 
   // ── Global keyboard shortcuts ──────────────────────────────────────────────
   //
@@ -278,9 +319,18 @@ export function AppLayout() {
 
       // Escape → close open modals
       if (e.key === 'Escape') {
-        if (showShortcuts) { setShowShortcuts(false); return; }
-        if (searchOpen) { setSearchOpen(false); return; }
-        if (mobileMoreOpen) { setMobileMoreOpen(false); return; }
+        if (showShortcuts) {
+          setShowShortcuts(false);
+          return;
+        }
+        if (searchOpen) {
+          setSearchOpen(false);
+          return;
+        }
+        if (mobileMoreOpen) {
+          setMobileMoreOpen(false);
+          return;
+        }
         return;
       }
 
@@ -288,7 +338,9 @@ export function AppLayout() {
       if (e.key === 'g' || e.key === 'G') {
         gPressed = true;
         if (gTimeout) clearTimeout(gTimeout);
-        gTimeout = setTimeout(() => { gPressed = false; }, 500);
+        gTimeout = setTimeout(() => {
+          gPressed = false;
+        }, 500);
         e.preventDefault();
         return;
       }
@@ -298,12 +350,12 @@ export function AppLayout() {
         gPressed = false;
 
         const navMap: Record<string, string> = {
-          d: '/',       // Dashboard
-          t: '/tasks',  // Tasks
+          d: '/', // Dashboard
+          t: '/tasks', // Tasks
           c: '/calendar', // Calendar
           h: '/habits', // Habits
-          n: '/notes',  // Notes
-          f: '/focus',  // Focus
+          n: '/notes', // Notes
+          f: '/focus', // Focus
           p: '/projects', // Projects
           o: '/goals', // Goals
           s: '/settings', // Settings
@@ -386,10 +438,7 @@ export function AppLayout() {
 
       {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={[
-          'sidebar-rail hidden md:flex flex-col shrink-0 border-r',
-          sidebarOpen ? 'w-64' : 'w-20',
-        ].join(' ')}
+        className={['sidebar-rail hidden md:flex flex-col shrink-0 border-r', sidebarOpen ? 'w-64' : 'w-20'].join(' ')}
         style={{
           background: 'var(--sidebar-bg)',
           borderColor: 'var(--sidebar-border)',
@@ -489,32 +538,17 @@ export function AppLayout() {
               className="px-3 py-2.5 rounded-lg border flex items-center gap-3 min-w-0 transition-colors hover:bg-[var(--sidebar-item-hover)]"
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
-              <Avatar
-                src={user.avatarUrl}
-                name={user.name}
-                email={user.email}
-                size="sm"
-              />
+              <Avatar src={user.avatarUrl} name={user.name} email={user.email} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-text-primary truncate">
-                  {user.name ?? user.email.split('@')[0]}
-                </p>
+                <p className="text-xs font-bold text-text-primary truncate">{user.name ?? user.email.split('@')[0]}</p>
               </div>
             </NavLink>
           )}
-          
+
           {!sidebarOpen && user && (
             <Tooltip content="Profile" side="right">
-              <NavLink
-                to="/profile"
-                className="flex justify-center py-2"
-              >
-                <Avatar
-                  src={user.avatarUrl}
-                  name={user.name}
-                  email={user.email}
-                  size="sm"
-                />
+              <NavLink to="/profile" className="flex justify-center py-2">
+                <Avatar src={user.avatarUrl} name={user.name} email={user.email} size="sm" />
               </NavLink>
             </Tooltip>
           )}
@@ -534,10 +568,13 @@ export function AppLayout() {
       <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         <header
           className={`flex items-center justify-between border-b shrink-0 gap-4 ${headerPaddingClass}`}
-          style={{ height: 'var(--topbar-height)', background: 'var(--topbar-bg)', borderColor: 'var(--topbar-border)' }}
+          style={{
+            height: 'var(--topbar-height)',
+            background: 'var(--topbar-bg)',
+            borderColor: 'var(--topbar-border)',
+          }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-initial">
-
             <div className="md:hidden flex items-center gap-2.5 min-w-0">
               <div
                 className="w-8.5 h-8.5 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
@@ -563,30 +600,44 @@ export function AppLayout() {
           </button>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
-              <button
-                  type="button"
-                  onClick={() => setShowShortcuts(true)}
-                  className="hidden items-center gap-1.5 rounded-2xl border px-3 py-2.5 text-xs font-black sm:flex"
-                  style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                >
-                  <Keyboard size={14} />
-                  Shortcuts
-                </button>
+            <button
+              type="button"
+              onClick={() => setShowShortcuts(true)}
+              className="hidden items-center gap-1.5 rounded-2xl border px-3 py-2.5 text-xs font-black sm:flex"
+              style={{
+                background: 'var(--color-surface-raised)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <Keyboard size={14} />
+              Shortcuts
+            </button>
 
-             <button
-            onClick={() => setSearchOpen(true)}
-            className="hidden sm:flex relative items-center max-w-md w-64 md:w-80 transition-all duration-300"
-          >
-            <Search size={16} className="absolute left-3.5 text-text-muted" />
-            <div className="w-full pl-10 pr-4 py-2 text-xs font-bold border rounded-xl text-left"
-                 style={{ background: 'var(--topbar-search-bg)', borderColor: 'var(--topbar-search-border)', color: 'var(--color-text-muted)' }}>
-              Search tasks, habits...
-            </div>
-            <div className="absolute right-3 flex items-center gap-1 text-[10px] text-text-muted font-bold">
-              <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>⌘</span>
-              <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>K</span>
-            </div>
-          </button>
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="hidden sm:flex relative items-center max-w-md w-64 md:w-80 transition-all duration-300"
+            >
+              <Search size={16} className="absolute left-3.5 text-text-muted" />
+              <div
+                className="w-full pl-10 pr-4 py-2 text-xs font-bold border rounded-xl text-left"
+                style={{
+                  background: 'var(--topbar-search-bg)',
+                  borderColor: 'var(--topbar-search-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                Search tasks, habits...
+              </div>
+              <div className="absolute right-3 flex items-center gap-1 text-[10px] text-text-muted font-bold">
+                <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>
+                  ⌘
+                </span>
+                <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>
+                  K
+                </span>
+              </div>
+            </button>
             <div className="p-1">
               <NotificationCenter />
             </div>
@@ -597,13 +648,7 @@ export function AppLayout() {
                 className="flex items-center gap-3 pl-1 sm:pl-2 border-l transition-opacity hover:opacity-80"
                 style={{ borderColor: 'var(--color-border)' }}
               >
-                <Avatar
-                  src={user.avatarUrl}
-                  name={user.name}
-                  email={user.email}
-                  size="md"
-                  showBorder
-                />
+                <Avatar src={user.avatarUrl} name={user.name} email={user.email} size="md" showBorder />
                 <div className="hidden lg:flex flex-col min-w-0">
                   <span className="text-xs font-bold text-text-primary leading-tight truncate">
                     {user.name ?? user.email.split('@')[0]}
@@ -620,10 +665,7 @@ export function AppLayout() {
               leaving the content area blank until a refresh. A plain keyed
               PageTransition unmounts the old page and mounts the new one
               instantly — content can never get stuck or flicker. */}
-          <PageTransition
-            key={location.pathname}
-            className={contentPaddingClass}
-          >
+          <PageTransition key={location.pathname} className={contentPaddingClass}>
             <Outlet />
           </PageTransition>
         </div>
@@ -632,8 +674,8 @@ export function AppLayout() {
       {/* ── Mobile Bottom Navigation - Enhanced Design ─────────────────────────── */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 border-t z-40 safe-area-pb overflow-visible"
-        style={{ 
-          background: 'var(--bottomnav-bg)', 
+        style={{
+          background: 'var(--bottomnav-bg)',
           borderColor: 'var(--bottomnav-border)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -641,7 +683,7 @@ export function AppLayout() {
       >
         <div className="px-2 pb-safe pt-1.5 flex items-end justify-around relative overflow-visible">
           {/* Animated indicator line */}
-          <div 
+          <div
             className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-300"
             style={{ background: 'var(--color-accent)' }}
           />
@@ -658,17 +700,19 @@ export function AppLayout() {
                 onFocus={() => warmRouteData(to)}
                 onPointerDown={() => warmRouteData(to)}
                 {...mobileOnboardingAttr}
-                className={({ isActive }) => [
-                  'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
-                  isActive ? 'text-accent' : 'text-text-muted'
-                ].join(' ')}
+                className={({ isActive }) =>
+                  [
+                    'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
+                    isActive ? 'text-accent' : 'text-text-muted',
+                  ].join(' ')
+                }
               >
                 {({ isActive }) => (
                   <>
                     <div
                       className={[
                         'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
-                        isActive ? 'scale-110' : 'scale-100'
+                        isActive ? 'scale-110' : 'scale-100',
                       ].join(' ')}
                       style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
                     >
@@ -716,17 +760,19 @@ export function AppLayout() {
                 onFocus={() => warmRouteData(to)}
                 onPointerDown={() => warmRouteData(to)}
                 {...mobileOnboardingAttr}
-                className={({ isActive }) => [
-                  'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
-                  isActive ? 'text-accent' : 'text-text-muted'
-                ].join(' ')}
+                className={({ isActive }) =>
+                  [
+                    'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
+                    isActive ? 'text-accent' : 'text-text-muted',
+                  ].join(' ')
+                }
               >
                 {({ isActive }) => (
                   <>
                     <div
                       className={[
                         'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
-                        isActive ? 'scale-110' : 'scale-100'
+                        isActive ? 'scale-110' : 'scale-100',
                       ].join(' ')}
                       style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
                     >
@@ -752,21 +798,15 @@ export function AppLayout() {
         <div className="flex flex-col gap-5">
           {/* User Profile Card - Hero Style */}
           {user && (
-            <div 
-              className="relative overflow-hidden rounded-2xl p-5"
-              style={{ background: 'var(--gradient-accent)' }}
-            >
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: 'var(--gradient-accent)' }}>
               {/* Ambient glow effect */}
               <div
                 className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
                 style={{ background: 'radial-gradient(circle, white, transparent 70%)' }}
               />
-              
+
               <div className="relative flex items-center gap-4">
-                <NavLink
-                  to="/profile"
-                  onClick={() => setMobileMoreOpen(false)}
-                >
+                <NavLink to="/profile" onClick={() => setMobileMoreOpen(false)}>
                   <Avatar
                     src={user.avatarUrl}
                     name={user.name}
@@ -796,17 +836,17 @@ export function AppLayout() {
           <div className="grid grid-cols-3 gap-4">
             {mobileOverflowItems.map(({ to, icon: Icon, label, badgeKey }) => {
               const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
-              
+
               const gradientMap: Record<string, string> = {
-                '/notes':     'var(--gradient-info)',
-                '/focus':     'var(--gradient-success)',
+                '/notes': 'var(--gradient-info)',
+                '/focus': 'var(--gradient-success)',
                 '/analytics': 'var(--gradient-danger)',
-                '/goals':     'var(--gradient-accent)',
-                '/projects':  'var(--gradient-accent)',
-                '/settings':  'linear-gradient(135deg, #6b7280, #4b5563)',
+                '/goals': 'var(--gradient-accent)',
+                '/projects': 'var(--gradient-accent)',
+                '/settings': 'linear-gradient(135deg, #6b7280, #4b5563)',
               };
               const gradient = gradientMap[to] ?? 'var(--gradient-accent)';
-              
+
               return (
                 <NavLink
                   key={to}
@@ -816,20 +856,20 @@ export function AppLayout() {
                   onPointerDown={() => warmRouteData(to)}
                   onClick={() => setMobileMoreOpen(false)}
                   className="relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-transform active:scale-95"
-                  style={{ 
+                  style={{
                     background: 'var(--color-surface-raised)',
-                    border: '1px solid var(--color-border)'
+                    border: '1px solid var(--color-border)',
                   }}
                 >
                   <div className="relative">
-                    <div 
+                    <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
                       style={{ background: gradient }}
                     >
                       <Icon size={20} className="text-white" />
                     </div>
                     {badgeValue && badgeValue > 0 && (
-                      <div 
+                      <div
                         className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shadow-md"
                         style={{ background: 'var(--color-danger)' }}
                       >
@@ -837,14 +877,11 @@ export function AppLayout() {
                       </div>
                     )}
                   </div>
-                  <span className="text-[11px] font-bold text-text-primary text-center leading-tight">
-                    {label}
-                  </span>
+                  <span className="text-[11px] font-bold text-text-primary text-center leading-tight">{label}</span>
                 </NavLink>
               );
             })}
           </div>
-
         </div>
       </DraggableModal>
 
@@ -892,7 +929,10 @@ export function AppLayout() {
                 </div>
                 <div className="flex flex-col gap-2.5">
                   <button
-                    onClick={() => { setLogoutConfirmOpen(false); logout.mutate(); }}
+                    onClick={() => {
+                      setLogoutConfirmOpen(false);
+                      logout.mutate();
+                    }}
                     className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-transform active:scale-95"
                     style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}
                   >
@@ -914,7 +954,7 @@ export function AppLayout() {
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body,
+        document.body
       )}
 
       <AchievementCelebrationModal
@@ -923,53 +963,64 @@ export function AppLayout() {
         onClose={closeAchievementCelebration}
       />
 
-       {showShortcuts && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowShortcuts(false)}>
+      {showShortcuts &&
+        createPortal(
           <div
-            className="w-full max-w-sm rounded-2xl border p-5"
-            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.4)' }}
+            onClick={() => setShowShortcuts(false)}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>Keyboard shortcuts</h3>
-              <button onClick={() => setShowShortcuts(false)} style={{ color: 'var(--color-text-muted)' }}>
-                <X size={16} />
-              </button>
+            <div
+              className="w-full max-w-sm rounded-2xl border p-5"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>
+                  Keyboard shortcuts
+                </h3>
+                <button onClick={() => setShowShortcuts(false)} style={{ color: 'var(--color-text-muted)' }}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="space-y-2.5 text-xs">
+                {[
+                  ['Q', 'New task'],
+                  ['E', 'Edit selected task'],
+                  ['Space', 'Toggle complete'],
+                  ['/', 'Focus search'],
+                  ['F', 'Start focus mode'],
+                  ['?', 'Show this help'],
+                  ['Esc', 'Close modals'],
+                  ['G + D', 'Go to Dashboard'],
+                  ['G + T', 'Go to Tasks'],
+                  ['G + C', 'Go to Calendar'],
+                  ['G + H', 'Go to Habits'],
+                  ['G + N', 'Go to Notes'],
+                  ['G + F', 'Go to Focus'],
+                  ['G + P', 'Go to Projects'],
+                  ['G + O', 'Go to Goals'],
+                  ['G + S', 'Go to Settings'],
+                ].map(([key, label]) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+                    <kbd
+                      className="px-2 py-1 rounded-md text-[10px] font-bold border"
+                      style={{
+                        background: 'var(--color-bg)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                      }}
+                    >
+                      {key}
+                    </kbd>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2.5 text-xs">
-               {[
-                ['Q', 'New task'],
-                ['E', 'Edit selected task'],
-                ['Space', 'Toggle complete'],
-                ['/', 'Focus search'],
-                ['F', 'Start focus mode'],
-                ['?', 'Show this help'],
-                ['Esc', 'Close modals'],
-                ['G + D', 'Go to Dashboard'],
-                ['G + T', 'Go to Tasks'],
-                ['G + C', 'Go to Calendar'],
-                ['G + H', 'Go to Habits'],
-                ['G + N', 'Go to Notes'],
-                ['G + F', 'Go to Focus'],
-                ['G + P', 'Go to Projects'],
-                ['G + O', 'Go to Goals'],
-                ['G + S', 'Go to Settings'],
-              ].map(([key, label]) => (
-                <div key={key} className="flex items-center justify-between">
-                  <span style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-                  <kbd
-                    className="px-2 py-1 rounded-md text-[10px] font-bold border"
-                    style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                  >
-                    {key}
-                  </kbd>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* Search Modal */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

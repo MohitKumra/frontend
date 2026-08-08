@@ -22,14 +22,7 @@ function CircularProgress({ value, size = 120 }: { value: number; size?: number 
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-      <circle 
-        cx={size / 2} 
-        cy={size / 2} 
-        r={radius} 
-        fill="none" 
-        stroke="var(--color-border)" 
-        strokeWidth="8" 
-      />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-border)" strokeWidth="8" />
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -74,7 +67,7 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
       <div className="p-6 sm:p-7 flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center gap-3 mb-7">
-          <div 
+          <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'var(--gradient-accent)' }}
           >
@@ -99,7 +92,7 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
             {overallScore >= 80 && '🎯 Excellent productivity!'}
             {overallScore >= 60 && overallScore < 80 && '📈 Good progress'}
             {overallScore >= 40 && overallScore < 60 && '💪 Room for improvement'}
-            {overallScore < 40 && '🚀 Let\'s build momentum'}
+            {overallScore < 40 && "🚀 Let's build momentum"}
           </p>
         </div>
 
@@ -115,11 +108,11 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
                 <span className="text-xs font-black text-text-primary">{value}%</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                <div 
+                <div
                   className="h-full rounded-full transition-all duration-700"
-                  style={{ 
-                    width: `${value}%`, 
-                    background: colorMap[color as keyof typeof colorMap] 
+                  style={{
+                    width: `${value}%`,
+                    background: colorMap[color as keyof typeof colorMap],
                   }}
                 />
               </div>
@@ -128,11 +121,11 @@ export function DashboardScore({ overallScore, breakdown }: DashboardScoreProps)
         </div>
 
         {/* Tip */}
-        <div 
+        <div
           className="rounded-xl p-4 mt-5"
-          style={{ 
-            background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))', 
-            border: '1px solid var(--color-accent-border)' 
+          style={{
+            background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))',
+            border: '1px solid var(--color-accent-border)',
           }}
         >
           <p className="text-xs text-text-secondary text-center leading-relaxed">

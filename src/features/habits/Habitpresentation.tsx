@@ -22,12 +22,54 @@ export interface CategoryMeta {
 }
 
 const CATEGORIES: Record<string, CategoryMeta> = {
-  health: { key: 'health', name: 'Health', icon: Droplet, color: 'var(--color-info)', bg: 'var(--icon-bg-info)', description: 'Stay hydrated and healthy' },
-  fitness: { key: 'fitness', name: 'Fitness', icon: Dumbbell, color: 'var(--color-danger)', bg: 'var(--icon-bg-danger)', description: 'Build strength and consistency' },
-  learning: { key: 'learning', name: 'Learning', icon: BookOpen, color: 'var(--color-accent)', bg: 'var(--icon-bg-accent)', description: 'Expand your mind' },
-  mindfulness: { key: 'mindfulness', name: 'Mindfulness', icon: Brain, color: 'var(--color-success)', bg: 'var(--icon-bg-success, var(--icon-bg-info))', description: 'Find your center' },
-  rest: { key: 'rest', name: 'Rest', icon: Moon, color: 'var(--color-info)', bg: 'var(--icon-bg-info)', description: 'Recharge and recover' },
-  productivity: { key: 'productivity', name: 'Productivity', icon: Target, color: 'var(--color-warning)', bg: 'var(--icon-bg-warning, var(--icon-bg-danger))', description: 'Build strength and consistency' },
+  health: {
+    key: 'health',
+    name: 'Health',
+    icon: Droplet,
+    color: 'var(--color-info)',
+    bg: 'var(--icon-bg-info)',
+    description: 'Stay hydrated and healthy',
+  },
+  fitness: {
+    key: 'fitness',
+    name: 'Fitness',
+    icon: Dumbbell,
+    color: 'var(--color-danger)',
+    bg: 'var(--icon-bg-danger)',
+    description: 'Build strength and consistency',
+  },
+  learning: {
+    key: 'learning',
+    name: 'Learning',
+    icon: BookOpen,
+    color: 'var(--color-accent)',
+    bg: 'var(--icon-bg-accent)',
+    description: 'Expand your mind',
+  },
+  mindfulness: {
+    key: 'mindfulness',
+    name: 'Mindfulness',
+    icon: Brain,
+    color: 'var(--color-success)',
+    bg: 'var(--icon-bg-success, var(--icon-bg-info))',
+    description: 'Find your center',
+  },
+  rest: {
+    key: 'rest',
+    name: 'Rest',
+    icon: Moon,
+    color: 'var(--color-info)',
+    bg: 'var(--icon-bg-info)',
+    description: 'Recharge and recover',
+  },
+  productivity: {
+    key: 'productivity',
+    name: 'Productivity',
+    icon: Target,
+    color: 'var(--color-warning)',
+    bg: 'var(--icon-bg-warning, var(--icon-bg-danger))',
+    description: 'Build strength and consistency',
+  },
 };
 
 const KEYWORD_MAP: [RegExp, string][] = [

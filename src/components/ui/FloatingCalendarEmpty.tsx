@@ -22,7 +22,7 @@ export function FloatingCalendarEmpty() {
           transition={{
             duration: 3,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         >
           {/* Shadow */}
@@ -64,13 +64,7 @@ export function FloatingCalendarEmpty() {
             transition={{ duration: 0.4, delay: 0.3 }}
             style={{ transformOrigin: 'left center' }}
           />
-          <rect
-            x="20"
-            y="35"
-            width="80"
-            height="8"
-            fill="var(--color-accent)"
-          />
+          <rect x="20" y="35" width="80" height="8" fill="var(--color-accent)" />
 
           {/* Binding rings */}
           <motion.circle
@@ -109,10 +103,34 @@ export function FloatingCalendarEmpty() {
 
           {/* Calendar grid dots */}
           {[
-            [30, 52], [40, 52], [50, 52], [60, 52], [70, 52], [80, 52], [90, 52],
-            [30, 62], [40, 62], [50, 62], [60, 62], [70, 62], [80, 62], [90, 62],
-            [30, 72], [40, 72], [50, 72], [60, 72], [70, 72], [80, 72], [90, 72],
-            [30, 82], [40, 82], [50, 82], [60, 82], [70, 82], [80, 82], [90, 82],
+            [30, 52],
+            [40, 52],
+            [50, 52],
+            [60, 52],
+            [70, 52],
+            [80, 52],
+            [90, 52],
+            [30, 62],
+            [40, 62],
+            [50, 62],
+            [60, 62],
+            [70, 62],
+            [80, 62],
+            [90, 62],
+            [30, 72],
+            [40, 72],
+            [50, 72],
+            [60, 72],
+            [70, 72],
+            [80, 72],
+            [90, 72],
+            [30, 82],
+            [40, 82],
+            [50, 82],
+            [60, 82],
+            [70, 82],
+            [80, 82],
+            [90, 82],
           ].map(([x, y], index) => (
             <motion.circle
               key={`${x}-${y}`}
@@ -157,7 +175,7 @@ export function FloatingCalendarEmpty() {
               duration: 2 + i * 0.3,
               repeat: Infinity,
               delay: i * 0.2,
-              ease: "easeInOut",
+              ease: 'easeInOut',
             }}
           />
         ))}
@@ -170,16 +188,10 @@ export function FloatingCalendarEmpty() {
         transition={{ duration: 0.6, delay: 0.8 }}
         className="mt-6 text-center"
       >
-        <h3
-          className="text-base font-bold mb-1"
-          style={{ color: 'var(--color-text-primary)' }}
-        >
+        <h3 className="text-base font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>
           No tasks planned for today
         </h3>
-        <p
-          className="text-sm font-medium"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
+        <p className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>
           Add a due date to see your plan here
         </p>
       </motion.div>

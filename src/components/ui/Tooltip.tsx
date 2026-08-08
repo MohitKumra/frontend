@@ -13,7 +13,6 @@ interface TooltipProps {
  * Uses CSS token-based styling for consistent theming.
  */
 
-
 export function Tooltip({ content, children, side = 'right', className = '' }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -28,7 +27,9 @@ export function Tooltip({ content, children, side = 'right', className = '' }: T
   };
 
   useEffect(() => {
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, []);
 
   const positionClasses: Record<string, string> = {

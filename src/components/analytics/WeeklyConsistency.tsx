@@ -70,11 +70,7 @@ function DayRing({ day, score, best, worst }: { day: DayData; score: number; bes
       <span
         className="text-[9px] font-bold uppercase tracking-[0.14em]"
         style={{
-          color: isBest
-            ? 'var(--color-success)'
-            : isWorst
-            ? 'var(--color-danger)'
-            : 'var(--color-text-muted)',
+          color: isBest ? 'var(--color-success)' : isWorst ? 'var(--color-danger)' : 'var(--color-text-muted)',
         }}
       >
         {day.day}

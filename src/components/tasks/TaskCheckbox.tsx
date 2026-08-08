@@ -18,11 +18,7 @@ interface TaskCheckboxProps {
 export function TaskCheckbox({ checked, onToggle, size = 21, 'aria-label': ariaLabel }: TaskCheckboxProps) {
   const [hovered, setHovered] = useState(false);
 
-  const boxColor = checked
-    ? 'var(--color-success)'
-    : hovered
-    ? 'var(--color-accent)'
-    : 'var(--color-border)';
+  const boxColor = checked ? 'var(--color-success)' : hovered ? 'var(--color-accent)' : 'var(--color-border)';
 
   return (
     <button
@@ -52,8 +48,7 @@ export function TaskCheckbox({ checked, onToggle, size = 21, 'aria-label': ariaL
             fill: checked ? 'var(--color-success)' : 'transparent',
             stroke: boxColor,
             strokeWidth: 2,
-            transition:
-              'fill 200ms cubic-bezier(0.16,1,0.3,1), stroke 180ms ease',
+            transition: 'fill 200ms cubic-bezier(0.16,1,0.3,1), stroke 180ms ease',
           }}
         />
         <path

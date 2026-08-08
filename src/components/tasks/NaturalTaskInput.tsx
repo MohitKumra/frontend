@@ -165,9 +165,11 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
       <div
         className="relative overflow-hidden rounded-[20px]"
         style={{
-          background: 'linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 5%, var(--color-surface)) 0%, var(--color-surface) 60%)',
+          background:
+            'linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 5%, var(--color-surface)) 0%, var(--color-surface) 60%)',
           border: '1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border))',
-          boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-accent) 8%, transparent), 0 4px 24px color-mix(in srgb, var(--color-accent) 8%, transparent)',
+          boxShadow:
+            '0 0 0 1px color-mix(in srgb, var(--color-accent) 8%, transparent), 0 4px 24px color-mix(in srgb, var(--color-accent) 8%, transparent)',
         }}
       >
         {/* Ambient glow */}
@@ -175,7 +177,8 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
           className="pointer-events-none absolute -top-8 -left-8 h-32 w-32 rounded-full"
           aria-hidden="true"
           style={{
-            background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent 70%)',
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent 70%)',
             filter: 'blur(20px)',
           }}
         />
@@ -192,7 +195,8 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
               <motion.div
                 className="absolute inset-y-0 w-24"
                 style={{
-                  background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent)',
+                  background:
+                    'linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent)',
                 }}
                 initial={{ left: '-10%' }}
                 animate={{ left: '110%' }}
@@ -251,20 +255,22 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
             onKeyDown={handleKeyDown}
             placeholder={
               taskBuilderEnabled
-                ? "e.g. \"Prepare client report by Friday, high priority, 2 hours\""
+                ? 'e.g. "Prepare client report by Friday, high priority, 2 hours"'
                 : 'Enter a task title…'
             }
             rows={2}
             disabled={taskParser.isPending}
             className="w-full resize-none rounded-2xl border bg-transparent px-3.5 py-3 text-sm font-medium leading-relaxed outline-none transition-all focus:ring-2 placeholder:text-[var(--color-text-muted)]"
-            style={{
-              background: 'color-mix(in srgb, var(--color-accent) 4%, var(--color-surface-raised))',
-              borderColor: hasContent
-                ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)'
-                : 'color-mix(in srgb, var(--color-border) 80%, transparent)',
-              color: 'var(--color-text-primary)',
-              '--tw-ring-color': 'color-mix(in srgb, var(--color-accent) 35%, transparent)',
-            } as React.CSSProperties}
+            style={
+              {
+                background: 'color-mix(in srgb, var(--color-accent) 4%, var(--color-surface-raised))',
+                borderColor: hasContent
+                  ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)'
+                  : 'color-mix(in srgb, var(--color-border) 80%, transparent)',
+                color: 'var(--color-text-primary)',
+                '--tw-ring-color': 'color-mix(in srgb, var(--color-accent) 35%, transparent)',
+              } as React.CSSProperties
+            }
           />
           {input && (
             <button
@@ -281,7 +287,10 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
         {/* Example prompts */}
         {!hasContent && !showResult && (
           <div className="px-4 pb-3">
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--color-text-muted)' }}>
+            <p
+              className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.18em]"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
               Try an example
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -306,9 +315,19 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
         )}
 
         {/* Submit button row */}
-        <div className="flex items-center justify-between gap-3 border-t px-4 py-3" style={{ borderColor: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-border))' }}>
+        <div
+          className="flex items-center justify-between gap-3 border-t px-4 py-3"
+          style={{ borderColor: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-border))' }}
+        >
           <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-            Press <kbd className="rounded-md border px-1 py-0.5 font-mono text-[10px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>↵ Enter</kbd> to parse
+            Press{' '}
+            <kbd
+              className="rounded-md border px-1 py-0.5 font-mono text-[10px]"
+              style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+            >
+              ↵ Enter
+            </kbd>{' '}
+            to parse
           </p>
           <button
             type="button"
@@ -348,11 +367,15 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
             style={{
               background: 'var(--color-surface)',
               border: '1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-border))',
-              boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-success) 8%, transparent), 0 4px 20px color-mix(in srgb, var(--color-success) 6%, transparent)',
+              boxShadow:
+                '0 0 0 1px color-mix(in srgb, var(--color-success) 8%, transparent), 0 4px 20px color-mix(in srgb, var(--color-success) 6%, transparent)',
             }}
           >
             {/* Result header */}
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b" style={{ borderColor: 'color-mix(in srgb, var(--color-success) 15%, var(--color-border))' }}>
+            <div
+              className="flex items-center gap-2.5 px-4 py-3 border-b"
+              style={{ borderColor: 'color-mix(in srgb, var(--color-success) 15%, var(--color-border))' }}
+            >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -363,7 +386,10 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
                 <CheckCircle2 size={14} style={{ color: 'var(--color-success)' }} />
               </motion.div>
               <div className="flex-1">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--color-success)' }}>
+                <p
+                  className="text-[11px] font-black uppercase tracking-[0.18em]"
+                  style={{ color: 'var(--color-success)' }}
+                >
                   AI parsed your task
                 </p>
                 <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
@@ -456,17 +482,32 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
 
             {/* Subtask preview */}
             {parsedResult.subTasks && parsedResult.subTasks.length > 0 && (
-              <div className="mx-4 mb-3 rounded-xl border divide-y overflow-hidden" style={{ borderColor: 'var(--color-border)' }}>
+              <div
+                className="mx-4 mb-3 rounded-xl border divide-y overflow-hidden"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
                 {parsedResult.subTasks.slice(0, 4).map((st, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-2" style={{ background: 'var(--color-surface-raised)' }}>
-                    <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[9px] font-black" style={{ background: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 px-3 py-2"
+                    style={{ background: 'var(--color-surface-raised)' }}
+                  >
+                    <span
+                      className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[9px] font-black"
+                      style={{ background: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                    >
                       {i + 1}
                     </span>
-                    <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{st.title}</span>
+                    <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                      {st.title}
+                    </span>
                   </div>
                 ))}
                 {parsedResult.subTasks.length > 4 && (
-                  <div className="px-3 py-1.5 text-[10px] font-semibold" style={{ background: 'var(--color-surface-raised)', color: 'var(--color-text-muted)' }}>
+                  <div
+                    className="px-3 py-1.5 text-[10px] font-semibold"
+                    style={{ background: 'var(--color-surface-raised)', color: 'var(--color-text-muted)' }}
+                  >
                     +{parsedResult.subTasks.length - 4} more subtasks
                   </div>
                 )}
@@ -474,7 +515,10 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-2 border-t px-4 py-3" style={{ borderColor: 'color-mix(in srgb, var(--color-success) 15%, var(--color-border))' }}>
+            <div
+              className="flex gap-2 border-t px-4 py-3"
+              style={{ borderColor: 'color-mix(in srgb, var(--color-success) 15%, var(--color-border))' }}
+            >
               <button
                 type="button"
                 onClick={handleDiscard}

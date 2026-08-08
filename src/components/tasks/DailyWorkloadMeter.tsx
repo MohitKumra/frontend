@@ -22,18 +22,43 @@ interface StatusInfo {
 }
 
 const STATUS_INFO: Record<WorkloadStatus, StatusInfo> = {
-  empty:      { label: 'Nothing Planned', color: 'var(--color-text-muted)',  icon: <CheckCircle2 size={13} />, tip: 'No tasks scheduled today. A great time to plan ahead.' },
-  light:      { label: 'Light Day',       color: 'var(--color-info)',        icon: <CheckCircle2 size={13} />, tip: 'You have plenty of room for today.' },
-  healthy:    { label: 'Healthy',         color: 'var(--color-success)',     icon: <CheckCircle2 size={13} />, tip: 'Today\'s workload looks balanced.' },
-  busy:       { label: 'Busy',            color: 'var(--color-warning)',     icon: <TrendingUp size={13} />,   tip: 'Getting close to capacity. Consider deferring lower-priority work.' },
-  overloaded: { label: 'Overloaded',      color: 'var(--color-danger)',      icon: <AlertTriangle size={13} />, tip: 'Too much planned today. Move some tasks to tomorrow.' },
+  empty: {
+    label: 'Nothing Planned',
+    color: 'var(--color-text-muted)',
+    icon: <CheckCircle2 size={13} />,
+    tip: 'No tasks scheduled today. A great time to plan ahead.',
+  },
+  light: {
+    label: 'Light Day',
+    color: 'var(--color-info)',
+    icon: <CheckCircle2 size={13} />,
+    tip: 'You have plenty of room for today.',
+  },
+  healthy: {
+    label: 'Healthy',
+    color: 'var(--color-success)',
+    icon: <CheckCircle2 size={13} />,
+    tip: "Today's workload looks balanced.",
+  },
+  busy: {
+    label: 'Busy',
+    color: 'var(--color-warning)',
+    icon: <TrendingUp size={13} />,
+    tip: 'Getting close to capacity. Consider deferring lower-priority work.',
+  },
+  overloaded: {
+    label: 'Overloaded',
+    color: 'var(--color-danger)',
+    icon: <AlertTriangle size={13} />,
+    tip: 'Too much planned today. Move some tasks to tomorrow.',
+  },
 };
 
 function getStatus(pct: number): WorkloadStatus {
-  if (pct === 0)   return 'empty';
-  if (pct <= 40)   return 'light';
-  if (pct <= 75)   return 'healthy';
-  if (pct <= 100)  return 'busy';
+  if (pct === 0) return 'empty';
+  if (pct <= 40) return 'light';
+  if (pct <= 75) return 'healthy';
+  if (pct <= 100) return 'busy';
   return 'overloaded';
 }
 
@@ -41,9 +66,7 @@ export function DailyWorkloadMeter({ tasks, capacityHours = DEFAULT_CAPACITY_HOU
   const capacityMin = capacityHours * 60;
 
   // Tasks due today and not done/cancelled
-  const todayTasks = tasks.filter(
-    (t) => isToday(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED'
-  );
+  const todayTasks = tasks.filter((t) => isToday(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED');
 
   const plannedMin = todayTasks.reduce((sum, t) => sum + (t.estimatedDuration ?? DEFAULT_DURATION_MIN), 0);
   const plannedHours = (plannedMin / 60).toFixed(1);
@@ -58,10 +81,10 @@ export function DailyWorkloadMeter({ tasks, capacityHours = DEFAULT_CAPACITY_HOU
     status === 'overloaded'
       ? 'linear-gradient(90deg, var(--color-warning), var(--color-danger))'
       : status === 'busy'
-      ? 'linear-gradient(90deg, var(--color-success), var(--color-warning))'
-      : status === 'healthy'
-      ? 'var(--gradient-accent)'
-      : 'var(--color-info)';
+        ? 'linear-gradient(90deg, var(--color-success), var(--color-warning))'
+        : status === 'healthy'
+          ? 'var(--gradient-accent)'
+          : 'var(--color-info)';
 
   return (
     <div
@@ -78,8 +101,12 @@ export function DailyWorkloadMeter({ tasks, capacityHours = DEFAULT_CAPACITY_HOU
             <Zap size={15} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>Today's Capacity</p>
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} scheduled</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>
+              Today's Capacity
+            </p>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+              {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} scheduled
+            </p>
           </div>
         </div>
         <span
@@ -95,7 +122,10 @@ export function DailyWorkloadMeter({ tasks, capacityHours = DEFAULT_CAPACITY_HOU
       </div>
 
       {/* Bar */}
-      <div className="relative h-3 rounded-full overflow-hidden mb-2" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 15%, transparent)' }}>
+      <div
+        className="relative h-3 rounded-full overflow-hidden mb-2"
+        style={{ background: 'color-mix(in srgb, var(--color-text-muted) 15%, transparent)' }}
+      >
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
           style={{ width: `${fillPct}%`, background: barGradient }}

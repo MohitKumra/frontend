@@ -23,14 +23,15 @@ export const goalsApi = {
   create: (data: CreateGoalRequest) => apiClient.post<GoalDTO>('/goals', data).then((r) => r.data),
   update: (id: string, data: UpdateGoalRequest) => apiClient.patch<GoalDTO>(`/goals/${id}`, data).then((r) => r.data),
   // Axios requires `data` config key to send a body on DELETE
-  delete: (id: string, options: DeleteGoalOptions = {}) =>
-    apiClient.delete(`/goals/${id}`, { data: options }),
-  listMilestones: (goalId: string) => apiClient.get<GoalMilestoneDTO[]>(`/goals/${goalId}/milestones`).then((r) => r.data),
+  delete: (id: string, options: DeleteGoalOptions = {}) => apiClient.delete(`/goals/${id}`, { data: options }),
+  listMilestones: (goalId: string) =>
+    apiClient.get<GoalMilestoneDTO[]>(`/goals/${goalId}/milestones`).then((r) => r.data),
   createMilestone: (goalId: string, data: CreateGoalMilestoneRequest) =>
     apiClient.post<GoalMilestoneDTO>(`/goals/${goalId}/milestones`, data).then((r) => r.data),
   updateMilestone: (goalId: string, milestoneId: string, data: UpdateGoalMilestoneRequest) =>
     apiClient.patch<GoalMilestoneDTO>(`/goals/${goalId}/milestones/${milestoneId}`, data).then((r) => r.data),
-  deleteMilestone: (goalId: string, milestoneId: string) => apiClient.delete(`/goals/${goalId}/milestones/${milestoneId}`),
+  deleteMilestone: (goalId: string, milestoneId: string) =>
+    apiClient.delete(`/goals/${goalId}/milestones/${milestoneId}`),
 };
 
 export const goalPlannerApi = {

@@ -95,10 +95,17 @@ export function StreakBreakModal({ open, brokenStreaks, onClose, onDismiss }: St
                       <span className="text-sm font-semibold text-text-primary">{s.title}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold text-text-muted">
-                          Was on a <span style={{ color: 'var(--color-danger, #EF4444)' }}>{s.previousStreak}</span>-day streak
+                          Was on a <span style={{ color: 'var(--color-danger, #EF4444)' }}>{s.previousStreak}</span>-day
+                          streak
                         </span>
                         {s.xpLost > 0 && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: 'var(--color-warning, #F59E0B)', border: '1px solid color-mix(in srgb, var(--color-warning, #F59E0B) 30%, transparent)' }}>
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{
+                              color: 'var(--color-warning, #F59E0B)',
+                              border: '1px solid color-mix(in srgb, var(--color-warning, #F59E0B) 30%, transparent)',
+                            }}
+                          >
                             -{s.xpLost} XP
                           </span>
                         )}

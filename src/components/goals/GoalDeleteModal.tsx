@@ -26,8 +26,7 @@ export function GoalDeleteModal({ open, goal, onClose, onConfirm, isDeleting }: 
   const [deleteTasks, setDeleteTasks] = useState(false);
   const [deleteProjects, setDeleteProjects] = useState(false);
 
-  const hasLinkedItems =
-    goal.habitCount > 0 || goal.taskCount > 0 || goal.projectCount > 0;
+  const hasLinkedItems = goal.habitCount > 0 || goal.taskCount > 0 || goal.projectCount > 0;
 
   const handleConfirm = () => {
     onConfirm({
@@ -90,9 +89,7 @@ export function GoalDeleteModal({ open, goal, onClose, onConfirm, isDeleting }: 
                     <h2 id="goal-delete-title" className="text-base font-black text-text-primary">
                       Delete goal?
                     </h2>
-                    <p className="text-xs text-text-muted mt-0.5 truncate max-w-[240px]">
-                      {goal.title}
-                    </p>
+                    <p className="text-xs text-text-muted mt-0.5 truncate max-w-[240px]">{goal.title}</p>
                   </div>
                 </div>
                 <button
@@ -107,7 +104,8 @@ export function GoalDeleteModal({ open, goal, onClose, onConfirm, isDeleting }: 
               {/* Body */}
               <div className="px-6 pb-6">
                 <p className="text-sm text-text-secondary mb-5">
-                  The goal will be permanently deleted. Choose what to do with its linked items below — anything you keep will remain as a standalone record.
+                  The goal will be permanently deleted. Choose what to do with its linked items below — anything you
+                  keep will remain as a standalone record.
                 </p>
 
                 {hasLinkedItems ? (

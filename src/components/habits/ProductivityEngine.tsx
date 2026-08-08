@@ -1,6 +1,17 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, TrendingUp, Target, Clock, Plus, Timer, Calendar, ListTodo, FolderKanban, AlertCircle } from 'lucide-react';
+import {
+  Zap,
+  TrendingUp,
+  Target,
+  Clock,
+  Plus,
+  Timer,
+  Calendar,
+  ListTodo,
+  FolderKanban,
+  AlertCircle,
+} from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import type { HabitDTO, TaskDTO, FocusSessionDTO } from '../../types';
@@ -85,7 +96,9 @@ export function ProductivityEngine({
       return gaps; // No point checking further
     }
 
-    const tasksWithoutDuration = tasks.filter((t) => !t.estimatedDuration && t.status !== 'DONE' && t.status !== 'CANCELLED');
+    const tasksWithoutDuration = tasks.filter(
+      (t) => !t.estimatedDuration && t.status !== 'DONE' && t.status !== 'CANCELLED'
+    );
     if (tasksWithoutDuration.length > 0) {
       gaps.push({
         id: 'no-duration',
@@ -129,14 +142,54 @@ export function ProductivityEngine({
 
   // ── Common habit suggestions (title keywords to detect) ─────────────
   const COMMON_HABITS = [
-    { keywords: ['sleep', 'bedtime', 'wake', 'asleep'], title: 'Sleep by 10:00 PM', time: '22:00', desc: 'Consistent sleep improves focus and health.' },
-    { keywords: ['gym', 'workout', 'exercise', 'run', 'running', 'jog', 'walk', 'yoga', 'fitness'], title: 'Morning Gym Session', time: '07:00', desc: 'Morning exercise boosts energy for the day.' },
-    { keywords: ['meditat', 'mindful', 'breathe', 'calm'], title: '10 min Meditation', time: '08:00', desc: 'Start the day with clarity and calm.' },
-    { keywords: ['read', 'book', 'reading', 'study', 'learn', 'course'], title: '30 min Reading', time: '21:00', desc: 'Wind down with a good book before bed.' },
-    { keywords: ['water', 'hydrat', 'drink'], title: 'Drink 8 Glasses of Water', time: '09:00', desc: 'Stay hydrated throughout the day.' },
-    { keywords: ['journal', 'write', 'diary', 'grateful'], title: 'Evening Journaling', time: '21:30', desc: 'Reflect on your day and plan tomorrow.' },
-    { keywords: ['stretch', 'stretching', 'mobility', 'flexib'], title: '10 min Stretching', time: '18:00', desc: 'Loosen up after a long day of sitting.' },
-    { keywords: ['walk', 'nature', 'outdoor', 'fresh'], title: 'Evening Walk', time: '19:00', desc: 'Get fresh air and clear your mind.' },
+    {
+      keywords: ['sleep', 'bedtime', 'wake', 'asleep'],
+      title: 'Sleep by 10:00 PM',
+      time: '22:00',
+      desc: 'Consistent sleep improves focus and health.',
+    },
+    {
+      keywords: ['gym', 'workout', 'exercise', 'run', 'running', 'jog', 'walk', 'yoga', 'fitness'],
+      title: 'Morning Gym Session',
+      time: '07:00',
+      desc: 'Morning exercise boosts energy for the day.',
+    },
+    {
+      keywords: ['meditat', 'mindful', 'breathe', 'calm'],
+      title: '10 min Meditation',
+      time: '08:00',
+      desc: 'Start the day with clarity and calm.',
+    },
+    {
+      keywords: ['read', 'book', 'reading', 'study', 'learn', 'course'],
+      title: '30 min Reading',
+      time: '21:00',
+      desc: 'Wind down with a good book before bed.',
+    },
+    {
+      keywords: ['water', 'hydrat', 'drink'],
+      title: 'Drink 8 Glasses of Water',
+      time: '09:00',
+      desc: 'Stay hydrated throughout the day.',
+    },
+    {
+      keywords: ['journal', 'write', 'diary', 'grateful'],
+      title: 'Evening Journaling',
+      time: '21:30',
+      desc: 'Reflect on your day and plan tomorrow.',
+    },
+    {
+      keywords: ['stretch', 'stretching', 'mobility', 'flexib'],
+      title: '10 min Stretching',
+      time: '18:00',
+      desc: 'Loosen up after a long day of sitting.',
+    },
+    {
+      keywords: ['walk', 'nature', 'outdoor', 'fresh'],
+      title: 'Evening Walk',
+      time: '19:00',
+      desc: 'Get fresh air and clear your mind.',
+    },
   ];
 
   const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -150,7 +203,7 @@ export function ProductivityEngine({
     const hasHabit = (keywords: string[]) =>
       keywords.some((kw) => habitTitlesLower.some((title) => title.includes(kw)));
 
-  // ── 1. No habits at all ───────────────────────────────────────────
+    // ── 1. No habits at all ───────────────────────────────────────────
     if (habits.length === 0) {
       gaps.push({
         id: 'no-habits',
@@ -172,7 +225,10 @@ export function ProductivityEngine({
         id: 'pending-habits',
         icon: <Target size={14} />,
         title: `${pending} habit${pending > 1 ? 's' : ''} remaining today`,
-        description: pending === totalHabits ? 'Start with your easiest habit to build momentum.' : 'Keep going — consistency is what builds streaks.',
+        description:
+          pending === totalHabits
+            ? 'Start with your easiest habit to build momentum.'
+            : 'Keep going — consistency is what builds streaks.',
         actionLabel: 'Complete Now',
         onAction: () => {
           if (firstPending && onFocusHabit) {
@@ -276,9 +332,7 @@ export function ProductivityEngine({
     }
 
     // ── 7. Streak recovery ────────────────────────────────────────────
-    const brokenHabits = habits.filter(
-      (h) => h.currentStreak === 0 && h.completionDates.length > 0 && h.isActive
-    );
+    const brokenHabits = habits.filter((h) => h.currentStreak === 0 && h.completionDates.length > 0 && h.isActive);
     brokenHabits.forEach((h) => {
       const lastDate = new Date(h.completionDates[h.completionDates.length - 1]);
       const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -418,7 +472,10 @@ export function ProductivityEngine({
       const hour12 = h % 12 || 12;
       return `${hour12}:00 ${ampm}`;
     };
-    return { label: `${fmt(peakHour)} – ${fmt(Math.min(peakHour + Math.ceil(maxMinutes / 30), 23))}`, minutes: maxMinutes };
+    return {
+      label: `${fmt(peakHour)} – ${fmt(Math.min(peakHour + Math.ceil(maxMinutes / 30), 23))}`,
+      minutes: maxMinutes,
+    };
   }, [focusSessions]);
 
   // ── Time-based greeting ─────────────────────────────────────────────
@@ -439,9 +496,9 @@ export function ProductivityEngine({
     if (remainingCount === 0) {
       const allHabitsDone = totalHabits > 0 && completedToday === totalHabits;
       if (allHabitsDone) return "All habits done — you're on fire!";
-      return "Everything looks good. Keep it up!";
+      return 'Everything looks good. Keep it up!';
     }
-    return `${remainingCount > 3 ? '3' : remainingCount } improvement opportunit${remainingCount > 1 ? 'ies' : 'y'} detected`;
+    return `${remainingCount > 3 ? '3' : remainingCount} improvement opportunit${remainingCount > 1 ? 'ies' : 'y'} detected`;
   }, [remainingCount, totalHabits, completedToday]);
 
   return (
@@ -463,7 +520,10 @@ export function ProductivityEngine({
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)' }} />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)' }}
+      />
 
       <div className="relative">
         {/* Header */}
@@ -540,17 +600,25 @@ export function ProductivityEngine({
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
                     style={{
                       background:
-                        suggestion.type === 'habit' ? '#22C55E20' :
-                        suggestion.type === 'task' ? '#6C63FF20' :
-                        suggestion.type === 'focus' ? '#FFB80020' :
-                        suggestion.type === 'project' ? '#3B82F620' :
-                        '#6366F120',
+                        suggestion.type === 'habit'
+                          ? '#22C55E20'
+                          : suggestion.type === 'task'
+                            ? '#6C63FF20'
+                            : suggestion.type === 'focus'
+                              ? '#FFB80020'
+                              : suggestion.type === 'project'
+                                ? '#3B82F620'
+                                : '#6366F120',
                       color:
-                        suggestion.type === 'habit' ? '#22C55E' :
-                        suggestion.type === 'task' ? '#6C63FF' :
-                        suggestion.type === 'focus' ? '#FFB800' :
-                        suggestion.type === 'project' ? '#3B82F6' :
-                        '#6366F1',
+                        suggestion.type === 'habit'
+                          ? '#22C55E'
+                          : suggestion.type === 'task'
+                            ? '#6C63FF'
+                            : suggestion.type === 'focus'
+                              ? '#FFB800'
+                              : suggestion.type === 'project'
+                                ? '#3B82F6'
+                                : '#6366F1',
                     }}
                   >
                     {suggestion.icon}
@@ -571,7 +639,15 @@ export function ProductivityEngine({
                     className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-all text-text-muted hover:text-text-primary"
                     title="Dismiss suggestion"
                   >
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <svg
+                      width="8"
+                      height="8"
+                      viewBox="0 0 8 8"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    >
                       <path d="M1 1l6 6M7 1l-6 6" />
                     </svg>
                   </button>
@@ -583,14 +659,22 @@ export function ProductivityEngine({
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
-          <div className="rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}>
+          <div
+            className="rounded-xl px-3 py-2 flex items-center gap-2"
+            style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
+          >
             <Target size={12} className="text-accent shrink-0" />
             <div className="min-w-0">
               <p className="text-[9px] font-bold text-text-muted uppercase">Habits</p>
-              <p className="text-xs font-extrabold text-text-primary">{completedToday}/{totalHabits}</p>
+              <p className="text-xs font-extrabold text-text-primary">
+                {completedToday}/{totalHabits}
+              </p>
             </div>
           </div>
-          <div className="rounded-xl px-3 py-2 flex items-center gap-2" style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}>
+          <div
+            className="rounded-xl px-3 py-2 flex items-center gap-2"
+            style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
+          >
             <ListTodo size={12} className="text-warning shrink-0" />
             <div className="min-w-0">
               <p className="text-[9px] font-bold text-text-muted uppercase">Tasks</p>

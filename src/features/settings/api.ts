@@ -12,8 +12,7 @@ import type {
 } from '../../types';
 
 export const settingsApi = {
-  getSettings: () =>
-    apiClient.get<SettingsDTO>('/settings').then((r) => r.data),
+  getSettings: () => apiClient.get<SettingsDTO>('/settings').then((r) => r.data),
 
   updateAppearance: (data: UpdateAppearanceRequest) =>
     apiClient.patch<AppearanceSettingsDTO>('/settings/appearance', data).then((r) => r.data),

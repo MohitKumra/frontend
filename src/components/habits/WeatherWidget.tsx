@@ -123,9 +123,7 @@ const THEME: Record<Condition, WeatherTheme> = {
 };
 
 function useIsDarkMode() {
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.getAttribute('data-theme') === 'dark'
-  );
+  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
@@ -170,9 +168,17 @@ function Landscape({ theme, isDark }: { theme: WeatherTheme; isDark: boolean }) 
   const skyline = isDark ? theme.skylineDark : theme.skyline;
   return (
     <g>
-      <path d="M0 126 C24 108 43 111 62 95 C79 81 92 90 108 76 C121 65 134 78 149 67 C166 55 180 68 193 58 C205 49 217 55 240 42 L240 150 L0 150 Z" fill={skyline} opacity={isDark ? 0.25 : 0.16} />
-      <path d="M0 138 C34 128 58 132 82 118 C101 106 114 115 133 100 C151 86 166 99 184 86 C204 71 220 83 240 66 L240 150 L0 150 Z" fill={skyline} opacity={isDark ? 0.30 : 0.22} />
-      <g fill={skyline} opacity={isDark ? 0.50 : 0.42} transform="translate(154 76)">
+      <path
+        d="M0 126 C24 108 43 111 62 95 C79 81 92 90 108 76 C121 65 134 78 149 67 C166 55 180 68 193 58 C205 49 217 55 240 42 L240 150 L0 150 Z"
+        fill={skyline}
+        opacity={isDark ? 0.25 : 0.16}
+      />
+      <path
+        d="M0 138 C34 128 58 132 82 118 C101 106 114 115 133 100 C151 86 166 99 184 86 C204 71 220 83 240 66 L240 150 L0 150 Z"
+        fill={skyline}
+        opacity={isDark ? 0.3 : 0.22}
+      />
+      <g fill={skyline} opacity={isDark ? 0.5 : 0.42} transform="translate(154 76)">
         <path d="M0 56 L0 35 L11 28 L22 35 L22 56 Z" />
         <rect x="30" y="27" width="14" height="29" rx="2" />
         <path d="M32 27 L37 18 L42 27 Z" />
@@ -192,7 +198,7 @@ function SunnyScene({ theme, isDark }: { theme: WeatherTheme; isDark: boolean })
       <defs>
         <radialGradient id="weatherSunGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#FFE99C" stopOpacity="0.95" />
-          <stop offset="62%" stopColor={theme.glow} stopOpacity={isDark ? 0.20 : 0.32} />
+          <stop offset="62%" stopColor={theme.glow} stopOpacity={isDark ? 0.2 : 0.32} />
           <stop offset="100%" stopColor={theme.glow} stopOpacity="0" />
         </radialGradient>
         <linearGradient id="weatherSunCore" x1="0" y1="0" x2="0" y2="1">
@@ -344,7 +350,10 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
 
   if (!weather && loading) {
     return (
-      <div className="relative overflow-hidden rounded-[22px] border bg-[var(--color-surface,#fff)]" style={{ borderColor: 'var(--color-border)' }}>
+      <div
+        className="relative overflow-hidden rounded-[22px] border bg-[var(--color-surface,#fff)]"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <div className="flex items-center justify-center py-12">
           <Loader2 size={20} className="text-text-muted animate-spin" />
         </div>
@@ -384,7 +393,7 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
           {/* Decorative glow */}
           <div
             className="absolute -right-8 -top-10 h-28 w-28 rounded-full blur-2xl"
-            style={{ background: theme.glow, opacity: isDark ? 0.10 : 0.2 }}
+            style={{ background: theme.glow, opacity: isDark ? 0.1 : 0.2 }}
           />
 
           {/* Top row: location + live badge */}
@@ -397,12 +406,8 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
                 <MapPin size={13} fill={theme.ink} strokeWidth={2.5} />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-xs font-black leading-tight text-text-primary">
-                  {weather.location}
-                </p>
-                <p className="mt-0.5 truncate text-[10px] font-semibold text-text-muted">
-                  Today - {dateLabel}
-                </p>
+                <p className="truncate text-xs font-black leading-tight text-text-primary">{weather.location}</p>
+                <p className="mt-0.5 truncate text-[10px] font-semibold text-text-muted">Today - {dateLabel}</p>
               </div>
             </div>
 
@@ -418,7 +423,9 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
                 animate={{ opacity: [1, 0.35, 1] }}
                 transition={{ duration: 1.6, repeat: Infinity }}
               />
-              <span className="text-[10px] font-black" style={{ color: isDark ? '#4ADE80' : '#059669' }}>Live</span>
+              <span className="text-[10px] font-black" style={{ color: isDark ? '#4ADE80' : '#059669' }}>
+                Live
+              </span>
             </div>
           </div>
 
@@ -468,11 +475,38 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
         </div>
 
         {/* Bottom stats row - compact */}
-        <div className="grid grid-cols-4 border-t bg-[var(--color-surface)]" style={{ borderColor: 'var(--color-border)' }}>
-          <CompactStat icon={<TrendingUp size={11} />} bg={statBg} color={isDark ? '#FB7171' : '#EF4444'} label="High" value={`${weather.high}°`} />
-          <CompactStat icon={<TrendingDown size={11} />} bg={statBg} color={isDark ? '#60A5FA' : '#2563EB'} label="Low" value={`${weather.low}°`} />
-          <CompactStat icon={<Droplet size={11} />} bg={statBg} color={isDark ? '#A78BFA' : '#7C3AED'} label="Humidity" value={`${weather.humidity}%`} />
-          <CompactStat icon={<Wind size={11} />} bg={statBg} color={isDark ? '#2DD4BF' : '#0D9488'} label="Wind" value={`${weather.windSpeed} km/h`} />
+        <div
+          className="grid grid-cols-4 border-t bg-[var(--color-surface)]"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          <CompactStat
+            icon={<TrendingUp size={11} />}
+            bg={statBg}
+            color={isDark ? '#FB7171' : '#EF4444'}
+            label="High"
+            value={`${weather.high}°`}
+          />
+          <CompactStat
+            icon={<TrendingDown size={11} />}
+            bg={statBg}
+            color={isDark ? '#60A5FA' : '#2563EB'}
+            label="Low"
+            value={`${weather.low}°`}
+          />
+          <CompactStat
+            icon={<Droplet size={11} />}
+            bg={statBg}
+            color={isDark ? '#A78BFA' : '#7C3AED'}
+            label="Humidity"
+            value={`${weather.humidity}%`}
+          />
+          <CompactStat
+            icon={<Wind size={11} />}
+            bg={statBg}
+            color={isDark ? '#2DD4BF' : '#0D9488'}
+            label="Wind"
+            value={`${weather.windSpeed} km/h`}
+          />
         </div>
       </div>
     );
@@ -493,12 +527,9 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
       <div className="relative min-h-[218px] overflow-hidden px-4 pb-4 pt-4" style={{ background: cardBg }}>
         <div
           className="absolute -right-12 -top-14 h-40 w-40 rounded-full blur-3xl"
-          style={{ background: theme.glow, opacity: isDark ? 0.10 : 0.22 }}
+          style={{ background: theme.glow, opacity: isDark ? 0.1 : 0.22 }}
         />
-        <div
-          className="absolute right-0 bottom-0 h-28 w-40 rounded-tl-full"
-          style={{ background: haze }}
-        />
+        <div className="absolute right-0 bottom-0 h-28 w-40 rounded-tl-full" style={{ background: haze }} />
 
         <div className="relative z-10 flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -509,12 +540,8 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
               <MapPin size={18} fill={theme.ink} strokeWidth={2.5} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-base font-black leading-tight text-text-primary">
-                {weather.location}
-              </p>
-              <p className="mt-1 truncate text-xs font-semibold text-text-muted">
-                Today - {dateLabel}
-              </p>
+              <p className="truncate text-base font-black leading-tight text-text-primary">{weather.location}</p>
+              <p className="mt-1 truncate text-xs font-semibold text-text-muted">Today - {dateLabel}</p>
             </div>
           </div>
 
@@ -530,7 +557,9 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
               animate={{ opacity: [1, 0.35, 1] }}
               transition={{ duration: 1.6, repeat: Infinity }}
             />
-            <span className="text-xs font-black" style={{ color: isDark ? '#4ADE80' : '#059669' }}>Live</span>
+            <span className="text-xs font-black" style={{ color: isDark ? '#4ADE80' : '#059669' }}>
+              Live
+            </span>
           </div>
         </div>
 
@@ -577,11 +606,38 @@ export function WeatherWidget({ compact }: WeatherWidgetProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 border-t bg-[var(--color-surface)]" style={{ borderColor: 'var(--color-border)' }}>
-        <Stat icon={<TrendingUp size={14} />} bg={statBg} color={isDark ? '#FB7171' : '#EF4444'} label="High" value={`${weather.high}°`} />
-        <Stat icon={<TrendingDown size={14} />} bg={statBg} color={isDark ? '#60A5FA' : '#2563EB'} label="Low" value={`${weather.low}°`} />
-        <Stat icon={<Droplet size={14} />} bg={statBg} color={isDark ? '#A78BFA' : '#7C3AED'} label="Humidity" value={`${weather.humidity}%`} />
-        <Stat icon={<Wind size={14} />} bg={statBg} color={isDark ? '#2DD4BF' : '#0D9488'} label="Wind" value={`${weather.windSpeed} km/h`} />
+      <div
+        className="grid grid-cols-4 border-t bg-[var(--color-surface)]"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
+        <Stat
+          icon={<TrendingUp size={14} />}
+          bg={statBg}
+          color={isDark ? '#FB7171' : '#EF4444'}
+          label="High"
+          value={`${weather.high}°`}
+        />
+        <Stat
+          icon={<TrendingDown size={14} />}
+          bg={statBg}
+          color={isDark ? '#60A5FA' : '#2563EB'}
+          label="Low"
+          value={`${weather.low}°`}
+        />
+        <Stat
+          icon={<Droplet size={14} />}
+          bg={statBg}
+          color={isDark ? '#A78BFA' : '#7C3AED'}
+          label="Humidity"
+          value={`${weather.humidity}%`}
+        />
+        <Stat
+          icon={<Wind size={14} />}
+          bg={statBg}
+          color={isDark ? '#2DD4BF' : '#0D9488'}
+          label="Wind"
+          value={`${weather.windSpeed} km/h`}
+        />
       </div>
     </div>
   );

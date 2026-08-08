@@ -3,7 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Calendar, CheckCircle2, ChevronDown, FolderKanban, Paperclip, Mic, Square, Trash2, Loader2, Image as ImageIcon, ExternalLink, Plus, Timer } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  FolderKanban,
+  Paperclip,
+  Mic,
+  Square,
+  Trash2,
+  Loader2,
+  Image as ImageIcon,
+  ExternalLink,
+  Plus,
+  Timer,
+} from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -51,13 +66,19 @@ function MediaThumb({ url }: { url: string }) {
   const isImage = isImageUrl(url);
   if (isImage) {
     return (
-      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border" style={{ borderColor: 'var(--color-border)' }}>
+      <div
+        className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
       </div>
     );
   }
   return (
-    <div className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center" style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}>
+    <div
+      className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
+      style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
+    >
       <Paperclip size={16} />
     </div>
   );
@@ -154,7 +175,9 @@ export function ProjectDetailPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const preferredMime =
         ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
-      const recorder = preferredMime ? new MediaRecorder(stream, { mimeType: preferredMime }) : new MediaRecorder(stream);
+      const recorder = preferredMime
+        ? new MediaRecorder(stream, { mimeType: preferredMime })
+        : new MediaRecorder(stream);
       chunksRef.current = [];
       recordingStartRef.current = Date.now();
       recorder.ondataavailable = (e) => {
@@ -225,7 +248,9 @@ export function ProjectDetailPage() {
     return (
       <Card className="p-8 text-center">
         <p className="text-text-muted">Project not found</p>
-        <Button onClick={() => navigate('/projects')} className="mt-4">Back to Projects</Button>
+        <Button onClick={() => navigate('/projects')} className="mt-4">
+          Back to Projects
+        </Button>
       </Card>
     );
   }
@@ -234,13 +259,33 @@ export function ProjectDetailPage() {
   const attachments = [
     ...(project.attachments ?? []),
     ...(project.attachmentUrl && !(project.attachments ?? []).some((m) => m.url === project.attachmentUrl)
-      ? [{ id: 'legacy-attachment', url: project.attachmentUrl, type: 'attachment' as const, fileName: null, mimeType: null, size: null, createdAt: '' }]
+      ? [
+          {
+            id: 'legacy-attachment',
+            url: project.attachmentUrl,
+            type: 'attachment' as const,
+            fileName: null,
+            mimeType: null,
+            size: null,
+            createdAt: '',
+          },
+        ]
       : []),
   ];
   const voiceNotes = [
     ...(project.voiceNotes ?? []),
     ...(project.voiceNoteUrl && !(project.voiceNotes ?? []).some((m) => m.url === project.voiceNoteUrl)
-      ? [{ id: 'legacy-voice', url: project.voiceNoteUrl, type: 'voice_note' as const, fileName: null, mimeType: null, size: null, createdAt: '' }]
+      ? [
+          {
+            id: 'legacy-voice',
+            url: project.voiceNoteUrl,
+            type: 'voice_note' as const,
+            fileName: null,
+            mimeType: null,
+            size: null,
+            createdAt: '',
+          },
+        ]
       : []),
   ];
 
@@ -265,8 +310,12 @@ export function ProjectDetailPage() {
             <Plus size={14} />
             Add Task
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add Note</Button>
-          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add Journal</Button>
+          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>
+            Add Note
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>
+            Add Journal
+          </Button>
         </div>
       </motion.div>
 
@@ -274,7 +323,11 @@ export function ProjectDetailPage() {
         <Card className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="min-w-0 flex-1">
-              <PageHeader icon={<FolderKanban size={24} />} title={project.name} subtitle={project.description ?? 'Project detail'} />
+              <PageHeader
+                icon={<FolderKanban size={24} />}
+                title={project.name}
+                subtitle={project.description ?? 'Project detail'}
+              />
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 <div className="relative">
                   <select
@@ -300,11 +353,23 @@ export function ProjectDetailPage() {
                     style={{ color: 'var(--color-accent)' }}
                   />
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, transparent)', color: 'var(--color-info)' }}>
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
+                    color: 'var(--color-info)',
+                  }}
+                >
                   <Calendar size={12} />
-                  {project.dueDate ? new Date(project.dueDate).toLocaleDateString("eng-gs") : 'No deadline'}
+                  {project.dueDate ? new Date(project.dueDate).toLocaleDateString('eng-gs') : 'No deadline'}
                 </span>
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+                    color: 'var(--color-success)',
+                  }}
+                >
                   <CheckCircle2 size={12} />
                   {project.progress}% complete
                 </span>
@@ -312,7 +377,10 @@ export function ProjectDetailPage() {
             </div>
             <div className="w-full md:w-72">
               <div className="h-2 rounded-full overflow-hidden bg-border">
-                <div className="h-full rounded-full" style={{ width: `${project.progress}%`, background: 'var(--gradient-accent)' }} />
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${project.progress}%`, background: 'var(--gradient-accent)' }}
+                />
               </div>
             </div>
           </div>
@@ -328,7 +396,11 @@ export function ProjectDetailPage() {
               {attachments.length > 0 && (
                 <div className="space-y-2 mb-3">
                   {attachments.map((media: MediaItemDTO) => (
-                    <div key={media.id} className="flex items-center gap-3 rounded-lg border p-2" style={{ borderColor: 'var(--color-border)' }}>
+                    <div
+                      key={media.id}
+                      className="flex items-center gap-3 rounded-lg border p-2"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
                       <MediaThumb url={media.url} />
                       <a
                         href={media.url}
@@ -400,10 +472,25 @@ export function ProjectDetailPage() {
               )}
               <div className="flex items-center gap-2">
                 {isRecording ? (
-                  <div className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold" style={{ color: '#e53935', background: 'rgba(229, 57, 53, 0.08)', border: '1px solid rgba(229, 57, 53, 0.25)' }}>
-                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#e53935', animation: 'recording-pulse 1.2s ease-in-out infinite' }} />
+                  <div
+                    className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-xs font-semibold"
+                    style={{
+                      color: '#e53935',
+                      background: 'rgba(229, 57, 53, 0.08)',
+                      border: '1px solid rgba(229, 57, 53, 0.25)',
+                    }}
+                  >
+                    <span
+                      className="inline-block w-2 h-2 rounded-full"
+                      style={{ backgroundColor: '#e53935', animation: 'recording-pulse 1.2s ease-in-out infinite' }}
+                    />
                     <span>REC {formatDuration(recordingElapsed)}</span>
-                    <button type="button" onClick={stopRecording} className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-red-100 transition-colors" title="Stop recording">
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-red-100 transition-colors"
+                      title="Stop recording"
+                    >
                       <Square size={10} fill="#e53935" />
                     </button>
                   </div>
@@ -457,21 +544,33 @@ export function ProjectDetailPage() {
             </div>
           </div>
           <div className="space-y-2">
-            {tasks.length ? tasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between gap-3 rounded-xl border p-3" style={{ borderColor: 'var(--color-border)' }}>
-                <button type="button" onClick={() => navigate(`/tasks/${task.id}`)} className="text-left min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-text-primary truncate">{task.title}</p>
-                  <p className="text-xs text-text-muted">{task.status}</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeTaskMutation.mutate(task.id)}
-                  className="text-xs font-bold text-danger"
+            {tasks.length ? (
+              tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border p-3"
+                  style={{ borderColor: 'var(--color-border)' }}
                 >
-                  Remove
-                </button>
-              </div>
-            )) : <p className="text-sm text-text-muted">No tasks linked to this project</p>}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/tasks/${task.id}`)}
+                    className="text-left min-w-0 flex-1"
+                  >
+                    <p className="text-sm font-semibold text-text-primary truncate">{task.title}</p>
+                    <p className="text-xs text-text-muted">{task.status}</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeTaskMutation.mutate(task.id)}
+                    className="text-xs font-bold text-danger"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-text-muted">No tasks linked to this project</p>
+            )}
           </div>
         </Card>
 
@@ -491,7 +590,9 @@ export function ProjectDetailPage() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-text-primary truncate">{note.title ?? 'Untitled'}</p>
-                  <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">{note.isJournal ? 'Journal' : 'Note'}</Badge>
+                  <Badge variant={note.isJournal ? 'warning' : 'accent'} size="sm">
+                    {note.isJournal ? 'Journal' : 'Note'}
+                  </Badge>
                 </div>
                 <p className="text-xs text-text-secondary line-clamp-3 mt-2">{note.content}</p>
               </button>
@@ -508,9 +609,15 @@ export function ProjectDetailPage() {
             <p className="text-sm font-bold">Project Focus View</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => navigate(`/focus?projectId=${id}`)}>Open Focus</Button>
-            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>Add project note</Button>
-            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>Add journal entry</Button>
+            <Button size="sm" onClick={() => navigate(`/focus?projectId=${id}`)}>
+              Open Focus
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>
+              Add project note
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>
+              Add journal entry
+            </Button>
           </div>
         </Card>
       </motion.div>
@@ -557,12 +664,7 @@ export function ProjectDetailPage() {
           }}
         />
       )}
-      <CreateTaskModal
-        isOpen={taskOpen}
-        onClose={() => setTaskOpen(false)}
-        initialProjectId={project.id}
-        lockProject
-      />
+      <CreateTaskModal isOpen={taskOpen} onClose={() => setTaskOpen(false)} initialProjectId={project.id} lockProject />
     </motion.div>
   );
 }

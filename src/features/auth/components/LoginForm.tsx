@@ -18,10 +18,16 @@ export function LoginForm() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { url } = await authApi.googleStart('signin', `${import.meta.env.VITE_APP_BASE_URL}/google/callback` || 'http://localhost:5173/google/callback');
+      const { url } = await authApi.googleStart(
+        'signin',
+        `${import.meta.env.VITE_APP_BASE_URL}/google/callback` || 'http://localhost:5173/google/callback'
+      );
       window.location.href = url;
     } catch (err) {
-      toast.error((err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Google sign-in is not available right now.');
+      toast.error(
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
+          'Google sign-in is not available right now.'
+      );
     }
   };
 
@@ -36,7 +42,8 @@ export function LoginForm() {
             color: 'var(--color-danger)',
           }}
         >
-          {(login.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Login failed. Please try again.'}
+          {(login.error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+            ?.message ?? 'Login failed. Please try again.'}
         </div>
       )}
 
@@ -88,7 +95,11 @@ export function LoginForm() {
         </Link>
       </div>
 
-      <button type="submit" className="auth-primary-button flex w-full items-center justify-center" disabled={login.isPending}>
+      <button
+        type="submit"
+        className="auth-primary-button flex w-full items-center justify-center"
+        disabled={login.isPending}
+      >
         {login.isPending ? (
           <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
         ) : (
@@ -106,7 +117,9 @@ export function LoginForm() {
         className="auth-secondary-button flex w-full items-center justify-center gap-3"
         onClick={handleGoogleSignIn}
       >
-        <span className="text-[19px] font-black" style={{ color: '#4285f4' }}>G</span>
+        <span className="text-[19px] font-black" style={{ color: '#4285f4' }}>
+          G
+        </span>
         Continue with Google
       </button>
 

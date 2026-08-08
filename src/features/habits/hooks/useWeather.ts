@@ -70,7 +70,9 @@ function loadCache(): CachedWeather | null {
 function saveCache(data: WeatherData) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // ── Geolocation providers ──────────────────────────────────────────────
@@ -241,7 +243,9 @@ export function useWeather() {
     }
 
     run();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { weather, loading, error };

@@ -3,10 +3,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Bell, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Bell,
+  CheckCircle2,
+  Clock,
   AlertCircle,
   Target,
   TrendingUp,
@@ -26,19 +26,32 @@ import type { BadgeVariant } from '../../../components/ui/Badge';
 
 function getNotificationIcon(type: InAppNotificationType, size = 16) {
   switch (type) {
-    case 'TASK_CREATED':      return <Target size={size} />;
-    case 'TASK_COMPLETED':    return <CheckCircle2 size={size} />;
-    case 'TASK_STATUS_CHANGED': return <TrendingUp size={size} />;
-    case 'HABIT_COMPLETED':   return <Zap size={size} />;
-    case 'HABIT_STREAK':      return <TrendingUp size={size} />;
-    case 'FOCUS_SESSION_COMPLETED': return <Clock size={size} />;
-    case 'PROJECT_CREATED':   return <FolderKanban size={size} />;
-    case 'PROJECT_COMPLETED': return <CheckCircle2 size={size} />;
-    case 'PROJECT_STATUS_CHANGED': return <FolderKanban size={size} />;
-    case 'TASK_OVERDUE':      return <AlertCircle size={size} />;
-    case 'TASK_DUE_SOON':     return <Clock size={size} />;
-    case 'HABIT_PENDING':     return <Zap size={size} />;
-    default:                  return <Bell size={size} />;
+    case 'TASK_CREATED':
+      return <Target size={size} />;
+    case 'TASK_COMPLETED':
+      return <CheckCircle2 size={size} />;
+    case 'TASK_STATUS_CHANGED':
+      return <TrendingUp size={size} />;
+    case 'HABIT_COMPLETED':
+      return <Zap size={size} />;
+    case 'HABIT_STREAK':
+      return <TrendingUp size={size} />;
+    case 'FOCUS_SESSION_COMPLETED':
+      return <Clock size={size} />;
+    case 'PROJECT_CREATED':
+      return <FolderKanban size={size} />;
+    case 'PROJECT_COMPLETED':
+      return <CheckCircle2 size={size} />;
+    case 'PROJECT_STATUS_CHANGED':
+      return <FolderKanban size={size} />;
+    case 'TASK_OVERDUE':
+      return <AlertCircle size={size} />;
+    case 'TASK_DUE_SOON':
+      return <Clock size={size} />;
+    case 'HABIT_PENDING':
+      return <Zap size={size} />;
+    default:
+      return <Bell size={size} />;
   }
 }
 
@@ -52,11 +65,16 @@ function getNotificationColor(type: InAppNotificationType): BadgeVariant {
 
 function getEntityRoute(entityType: string, entityId: string): string {
   switch (entityType) {
-    case 'task':    return `/tasks?taskId=${entityId}`;
-    case 'project': return `/projects?projectId=${entityId}`;
-    case 'habit':   return `/habits`;
-    case 'focus':   return `/focus`;
-    default:        return '/dashboard';
+    case 'task':
+      return `/tasks?taskId=${entityId}`;
+    case 'project':
+      return `/projects?projectId=${entityId}`;
+    case 'habit':
+      return `/habits`;
+    case 'focus':
+      return `/focus`;
+    default:
+      return '/dashboard';
   }
 }
 
@@ -76,9 +94,7 @@ function NotificationItem({ notification, onClick }: NotificationItemProps) {
       className="w-full text-left p-3.5 rounded-xl border transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
       style={{
         borderColor: notification.isActionable ? 'var(--color-border)' : 'transparent',
-        background: notification.isActionable
-          ? 'var(--color-surface-raised)'
-          : 'var(--color-surface)',
+        background: notification.isActionable ? 'var(--color-surface-raised)' : 'var(--color-surface)',
         animation: 'fadeInSlide 0.3s ease-out',
       }}
     >
@@ -94,9 +110,7 @@ function NotificationItem({ notification, onClick }: NotificationItemProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="text-sm font-bold text-text-primary leading-snug">
-              {notification.title}
-            </p>
+            <p className="text-sm font-bold text-text-primary leading-snug">{notification.title}</p>
             {notification.isActionable && (
               <Badge variant={color} size="sm" className="shrink-0 animate-pulse-subtle">
                 Action
@@ -104,13 +118,9 @@ function NotificationItem({ notification, onClick }: NotificationItemProps) {
             )}
           </div>
           {notification.description && (
-            <p className="text-xs text-text-muted leading-relaxed mb-2">
-              {notification.description}
-            </p>
+            <p className="text-xs text-text-muted leading-relaxed mb-2">{notification.description}</p>
           )}
-          <p className="text-[10px] font-bold text-text-muted opacity-75">
-            {timeAgo}
-          </p>
+          <p className="text-[10px] font-bold text-text-muted opacity-75">{timeAgo}</p>
         </div>
       </div>
     </button>
@@ -229,11 +239,10 @@ export function NotificationCenter() {
 
   // Use server-known totals when available (page 1 meta), otherwise fall back to the length of what we've fetched so far.
   // This makes the Badge counts read correctly from the very first render.
-  const displayActionableCount =
-    totalActionable > 0 ? totalActionable : groupedNotifications.actionable.length;
-  const displayActivityCount =
-    totalActivity > 0 ? totalActivity : groupedNotifications.activity.length;
-  const displayTotalCount = totalCount > 0 ? totalCount : groupedNotifications.actionable.length + groupedNotifications.activity.length;
+  const displayActionableCount = totalActionable > 0 ? totalActionable : groupedNotifications.actionable.length;
+  const displayActivityCount = totalActivity > 0 ? totalActivity : groupedNotifications.activity.length;
+  const displayTotalCount =
+    totalCount > 0 ? totalCount : groupedNotifications.actionable.length + groupedNotifications.activity.length;
 
   return (
     <>
@@ -243,9 +252,7 @@ export function NotificationCenter() {
         aria-label="Notification Center"
       >
         <Bell size={18} />
-        {hasUnread && (
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-accent animate-pulse" />
-        )}
+        {hasUnread && <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-accent animate-pulse" />}
       </button>
 
       <Modal open={isOpen} onClose={() => setIsOpen(false)} title="Activity Feed">
@@ -294,9 +301,7 @@ export function NotificationCenter() {
                 <div className="animate-fade-in">
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <AlertCircle size={14} className="text-warning animate-pulse-subtle" />
-                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-                      Action Required
-                    </h3>
+                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">Action Required</h3>
                     <Badge variant="warning" size="sm">
                       {displayActionableCount}
                     </Badge>
@@ -318,9 +323,7 @@ export function NotificationCenter() {
                 <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <TrendingUp size={14} className="text-accent" />
-                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-                      Recent Activity
-                    </h3>
+                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">Recent Activity</h3>
                     <Badge variant="info" size="sm">
                       {displayActivityCount}
                     </Badge>
@@ -363,9 +366,7 @@ export function NotificationCenter() {
 
               {totalCount > 0 && !groupedNotifications.activity.length && !hasNextPage && !isFetchingNextPage && (
                 <div className="text-center pt-2 pb-1">
-                  <p className="text-[10px] font-bold text-text-muted opacity-60">
-                    All caught up! 🎉
-                  </p>
+                  <p className="text-[10px] font-bold text-text-muted opacity-60">All caught up! 🎉</p>
                 </div>
               )}
             </>

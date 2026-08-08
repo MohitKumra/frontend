@@ -109,8 +109,8 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
     consistencyPct >= 70
       ? { title: 'Great job!', body: "You're building a strong habit streak." }
       : consistencyPct >= 40
-      ? { title: 'Keep it going!', body: 'Every completion moves your streak forward.' }
-      : { title: 'Let\u2019s build momentum', body: 'Small, consistent steps add up fast.' };
+        ? { title: 'Keep it going!', body: 'Every completion moves your streak forward.' }
+        : { title: 'Let\u2019s build momentum', body: 'Small, consistent steps add up fast.' };
 
   return (
     <Card
@@ -125,7 +125,8 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
           style={{
             width: compact ? 32 : 40,
             height: compact ? 32 : 40,
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-accent) 8%, transparent))',
+            background:
+              'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-accent) 8%, transparent))',
             color: 'var(--color-accent)',
             boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 18%, transparent)',
           }}
@@ -220,16 +221,14 @@ export function HabitHeatmapCombined({ habits, compact = false }: HabitHeatmapCo
 
       {/* Footer encouragement */}
       {!compact && (
-        <div
-          className="flex items-center gap-3 mt-5 pt-4"
-          style={{ borderTop: '1px solid var(--color-border)' }}
-        >
+        <div className="flex items-center gap-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
           <div
             className="flex items-center justify-center rounded-full shrink-0"
             style={{
               width: 34,
               height: 34,
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-accent) 8%, transparent))',
+              background:
+                'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-accent) 8%, transparent))',
               color: 'var(--color-accent)',
             }}
           >

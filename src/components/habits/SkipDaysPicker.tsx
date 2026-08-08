@@ -23,7 +23,8 @@ export function SkipDaysPicker({ value, onChange }: SkipDaysPickerProps) {
         Skip days (optional)
       </label>
       <p className="text-[11px] text-text-muted mb-3 leading-relaxed">
-        Selected days will be skipped — no reminders, no streak break, and marked as "intentionally skipped" in your heatmap.
+        Selected days will be skipped — no reminders, no streak break, and marked as "intentionally skipped" in your
+        heatmap.
       </p>
       <div className="grid grid-cols-7 gap-2">
         {DAY_LABELS.map((label, idx) => {

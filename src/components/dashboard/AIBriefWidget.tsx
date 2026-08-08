@@ -14,7 +14,9 @@ interface AIBriefWidgetProps {
 
 function scoreTask(task: TaskDTO): number {
   const priorityScore = { CRITICAL: 100, HIGH: 75, MEDIUM: 45, LOW: 20 }[task.priority];
-  const dueScore = task.dueDate ? Math.max(0, 40 - Math.floor((new Date(task.dueDate).getTime() - Date.now()) / 86400000) * 6) : 0;
+  const dueScore = task.dueDate
+    ? Math.max(0, 40 - Math.floor((new Date(task.dueDate).getTime() - Date.now()) / 86400000) * 6)
+    : 0;
   const overdueBoost = isOverdue(task.dueDate, task.status) ? 60 : 0;
   const durationPenalty = task.estimatedDuration ? Math.min(20, Math.floor(task.estimatedDuration / 30)) : 0;
   return priorityScore + dueScore + overdueBoost - durationPenalty;
@@ -55,7 +57,9 @@ export function AIBriefWidget({ tasks, focusMinutes, pendingTasks, habits }: AIB
     // Identify potential blockers
     const blockers: string[] = [];
     if (habits.total > habits.completed) {
-      blockers.push(`${habits.total - habits.completed} habit${habits.total - habits.completed > 1 ? 's' : ''} pending`);
+      blockers.push(
+        `${habits.total - habits.completed} habit${habits.total - habits.completed > 1 ? 's' : ''} pending`
+      );
     }
     if (overdueTasks.length > 0) {
       blockers.push(`${overdueTasks.length} overdue task${overdueTasks.length > 1 ? 's' : ''}`);
@@ -76,18 +80,19 @@ export function AIBriefWidget({ tasks, focusMinutes, pendingTasks, habits }: AIB
   return (
     <Card variant="default" className="overflow-hidden relative">
       {/* Subtle gradient background */}
-      <div 
-        className="absolute inset-0 opacity-30 pointer-events-none" 
-        style={{ 
-          background: 'radial-gradient(circle at top left, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 50%)' 
-        }} 
+      <div
+        className="absolute inset-0 opacity-30 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(circle at top left, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 50%)',
+        }}
       />
-      
+
       <div className="relative p-5 sm:p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" 
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'var(--gradient-accent)' }}
           >
             <Brain size={18} className="text-white" />
@@ -96,7 +101,7 @@ export function AIBriefWidget({ tasks, focusMinutes, pendingTasks, habits }: AIB
             <h3 className="text-sm font-bold text-text-primary">Today's Brief</h3>
             <p className="text-xs text-text-secondary">AI-powered daily assistant</p>
           </div>
-          <div 
+          <div
             className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
             style={{
               background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
@@ -108,30 +113,28 @@ export function AIBriefWidget({ tasks, focusMinutes, pendingTasks, habits }: AIB
         </div>
 
         {/* Summary Statement */}
-        <div 
+        <div
           className="rounded-xl p-4 mb-4"
-          style={{ 
+          style={{
             background: 'color-mix(in srgb, var(--color-surface-raised) 80%, var(--color-accent) 5%)',
-            border: '1px solid var(--color-border)'
+            border: '1px solid var(--color-border)',
           }}
         >
-          <p className="text-sm font-bold text-text-primary leading-relaxed">
-            {briefing.summary}
-          </p>
+          <p className="text-sm font-bold text-text-primary leading-relaxed">{briefing.summary}</p>
         </div>
 
         {/* Recommended Task */}
         {briefing.recommended ? (
-          <div 
+          <div
             className="rounded-xl border p-4 mb-4 group cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
-            style={{ 
-              background: 'var(--color-surface-raised)', 
-              borderColor: 'var(--color-accent-border)' 
+            style={{
+              background: 'var(--color-surface-raised)',
+              borderColor: 'var(--color-accent-border)',
             }}
             onClick={() => navigate('/tasks')}
           >
             <div className="flex items-start gap-3">
-              <div 
+              <div
                 className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' }}
               >
@@ -141,24 +144,23 @@ export function AIBriefWidget({ tasks, focusMinutes, pendingTasks, habits }: AIB
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1">
                   Recommended First Task
                 </p>
-                <p className="text-sm font-bold text-text-primary mb-1 truncate">
-                  {briefing.recommended.title}
-                </p>
+                <p className="text-sm font-bold text-text-primary mb-1 truncate">{briefing.recommended.title}</p>
                 {briefing.recommended.project && (
-                  <p className="text-xs text-text-secondary">
-                    {briefing.recommended.project.name}
-                  </p>
+                  <p className="text-xs text-text-secondary">{briefing.recommended.project.name}</p>
                 )}
               </div>
-              <ArrowRight size={16} className="text-text-muted group-hover:text-accent transition-colors shrink-0 mt-1" />
+              <ArrowRight
+                size={16}
+                className="text-text-muted group-hover:text-accent transition-colors shrink-0 mt-1"
+              />
             </div>
           </div>
         ) : (
-          <div 
+          <div
             className="rounded-xl border p-4 mb-4 text-center"
-            style={{ 
-              background: 'var(--color-surface-raised)', 
-              borderColor: 'var(--color-border)' 
+            style={{
+              background: 'var(--color-surface-raised)',
+              borderColor: 'var(--color-border)',
             }}
           >
             <p className="text-sm text-text-secondary">No open tasks right now. Great job! 🎉</p>
@@ -168,52 +170,44 @@ export function AIBriefWidget({ tasks, focusMinutes, pendingTasks, habits }: AIB
         {/* Insights Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Estimated Focus */}
-          <div 
+          <div
             className="rounded-xl p-3"
             style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <Clock size={14} className="text-text-muted" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                Estimated Focus
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Estimated Focus</span>
             </div>
             <p className="text-lg font-extrabold text-text-primary">{briefing.estimatedFocus}</p>
           </div>
 
           {/* Best Work Window */}
-          <div 
+          <div
             className="rounded-xl p-3"
             style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
           >
             <div className="flex items-center gap-2 mb-2">
               <Calendar size={14} className="text-text-muted" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                Best Window
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Best Window</span>
             </div>
             <p className="text-xs font-bold text-text-primary leading-tight">{briefing.bestWorkWindow}</p>
           </div>
 
           {/* Potential Blockers */}
-          <div 
+          <div
             className="rounded-xl p-3"
-            style={{ 
-              background: briefing.blockers 
-                ? 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface-raised))' 
-                : 'var(--color-surface-raised)', 
-              border: `1px solid ${briefing.blockers ? 'var(--color-warning)' : 'var(--color-border)'}` 
+            style={{
+              background: briefing.blockers
+                ? 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface-raised))'
+                : 'var(--color-surface-raised)',
+              border: `1px solid ${briefing.blockers ? 'var(--color-warning)' : 'var(--color-border)'}`,
             }}
           >
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={14} className={briefing.blockers ? 'text-warning' : 'text-text-muted'} />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                Blockers
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Blockers</span>
             </div>
-            <p className="text-xs font-bold text-text-primary leading-tight">
-              {briefing.blockers ?? 'None detected'}
-            </p>
+            <p className="text-xs font-bold text-text-primary leading-tight">{briefing.blockers ?? 'None detected'}</p>
           </div>
         </div>
       </div>

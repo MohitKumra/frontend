@@ -95,7 +95,9 @@ export function MediaAttachmentsField({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const preferredMime =
         ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((t) => MediaRecorder.isTypeSupported(t)) || '';
-      const recorder = preferredMime ? new MediaRecorder(stream, { mimeType: preferredMime }) : new MediaRecorder(stream);
+      const recorder = preferredMime
+        ? new MediaRecorder(stream, { mimeType: preferredMime })
+        : new MediaRecorder(stream);
       chunksRef.current = [];
       recordingStartRef.current = Date.now();
       recorder.ondataavailable = (e) => {
@@ -226,7 +228,11 @@ export function MediaAttachmentsField({
         >
           {attachIsImage ? <ImageIcon size={12} /> : <Paperclip size={12} />}
           {shortName(attachmentUrl!)}
-          <button type="button" onClick={() => onAttachmentUrlChange('')} className="hover:text-danger transition-colors">
+          <button
+            type="button"
+            onClick={() => onAttachmentUrlChange('')}
+            className="hover:text-danger transition-colors"
+          >
             <Trash2 size={11} />
           </button>
         </span>
@@ -235,11 +241,7 @@ export function MediaAttachmentsField({
       {/* Voice note preview */}
       {hasVoice && (
         <div className="w-full">
-          <VoiceNotePlayer 
-            src={voiceNoteUrl} 
-            onDelete={() => onVoiceNoteUrlChange('')}
-            compact
-          />
+          <VoiceNotePlayer src={voiceNoteUrl} onDelete={() => onVoiceNoteUrlChange('')} compact />
         </div>
       )}
 

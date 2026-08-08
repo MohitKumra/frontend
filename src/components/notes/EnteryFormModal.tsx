@@ -33,7 +33,16 @@ interface EntryFormModalProps {
 // its type is fixed, so editing can never silently convert one into the
 // other. Journal/sticky-note theming is chosen by formData.isJournal and
 // is shared by both modes, so there's no separate create/edit JSX to drift.
-export function EntryFormModal({ isOpen, mode, note, editNote, defaultIsJournal = false, taskId = null, projectId = null, onClose }: EntryFormModalProps) {
+export function EntryFormModal({
+  isOpen,
+  mode,
+  note,
+  editNote,
+  defaultIsJournal = false,
+  taskId = null,
+  projectId = null,
+  onClose,
+}: EntryFormModalProps) {
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
   const activeMode = mode ?? (note || editNote ? 'edit' : 'create');
@@ -77,7 +86,17 @@ export function EntryFormModal({ isOpen, mode, note, editNote, defaultIsJournal 
         await updateNote.mutateAsync({ id: activeNote.id, data: formData });
       } else {
         await createNote.mutateAsync(formData);
-        setFormData({ title: '', content: '', isJournal: defaultIsJournal, taskId, projectId, attachmentUrl: '', voiceNoteUrl: '', mood: null, tags: [] });
+        setFormData({
+          title: '',
+          content: '',
+          isJournal: defaultIsJournal,
+          taskId,
+          projectId,
+          attachmentUrl: '',
+          voiceNoteUrl: '',
+          mood: null,
+          tags: [],
+        });
       }
       onClose();
     } catch (error) {

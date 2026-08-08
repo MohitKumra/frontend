@@ -1,14 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  LayoutDashboard, CheckSquare, Target, ArrowLeft,
-  Sparkles, MapPin,
-} from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Target, ArrowLeft, Sparkles, MapPin } from 'lucide-react';
 
 const quickLinks = [
-  { label: 'Dashboard',  icon: LayoutDashboard, to: '/'        },
-  { label: 'Tasks',      icon: CheckSquare,     to: '/tasks'   },
-  { label: 'Goals',      icon: Target,          to: '/goals'   },
+  { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
+  { label: 'Tasks', icon: CheckSquare, to: '/tasks' },
+  { label: 'Goals', icon: Target, to: '/goals' },
 ];
 
 export function NotFoundPage() {
@@ -46,7 +43,8 @@ export function NotFoundPage() {
           <div
             className="w-28 h-28 rounded-[32px] flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 14%, var(--color-surface)), var(--color-surface))',
+              background:
+                'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 14%, var(--color-surface)), var(--color-surface))',
               border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
               boxShadow: '0 20px 48px color-mix(in srgb, var(--color-accent) 18%, transparent)',
             }}
@@ -59,7 +57,10 @@ export function NotFoundPage() {
             animate={{ y: [-4, 4, -4], rotate: [0, 10, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -top-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: 'var(--gradient-accent)', boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 40%, transparent)' }}
+            style={{
+              background: 'var(--gradient-accent)',
+              boxShadow: '0 4px 12px color-mix(in srgb, var(--color-accent) 40%, transparent)',
+            }}
           >
             <Sparkles size={14} className="text-white" />
           </motion.div>
@@ -101,8 +102,7 @@ export function NotFoundPage() {
           className="text-sm leading-7 max-w-xs"
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          Looks like this milestone doesn't exist in your workspace.
-          Let's get you back to something productive.
+          Looks like this milestone doesn't exist in your workspace. Let's get you back to something productive.
         </motion.p>
 
         {/* ── primary CTA ─────────────────────────────────────── */}

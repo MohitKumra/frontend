@@ -55,7 +55,7 @@ export function PremiumOrb({
       { d: 'M 78 27 L 80 22 L 82 27 L 87 29 L 82 31 L 80 36 L 78 31 L 73 29 Z', delay: 0.35 },
       { d: 'M 19 74 L 21 69 L 23 74 L 28 76 L 23 78 L 21 83 L 19 78 L 14 76 Z', delay: 0.55 },
     ],
-    [],
+    []
   );
 
   return (
@@ -69,15 +69,19 @@ export function PremiumOrb({
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          background:
-            'radial-gradient(circle, rgba(129,140,248,0.34) 0%, rgba(168,85,247,0.17) 42%, transparent 72%)',
+          background: 'radial-gradient(circle, rgba(129,140,248,0.34) 0%, rgba(168,85,247,0.17) 42%, transparent 72%)',
           filter: 'blur(14px)',
           transform: 'scale(1.1)',
           animation: reducedMotion ? 'none' : 'orbGlowPulse 4.8s ease-in-out infinite',
         }}
       />
 
-      <svg viewBox="0 0 100 100" width={size} height={size} className="relative drop-shadow-[0_10px_24px_rgba(79,70,229,0.24)]">
+      <svg
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
+        className="relative drop-shadow-[0_10px_24px_rgba(79,70,229,0.24)]"
+      >
         <defs>
           <radialGradient id={coreId} cx="38%" cy="32%" r="66%">
             <stop offset="0%" stopColor="#eef2ff" />
@@ -212,11 +216,7 @@ export function PremiumOrb({
             strokeLinecap="round"
             filter={`url(#${uid}-filter)`}
             animate={{
-              d: [
-                'M 40 62 Q 50 70 60 62',
-                'M 40 62 Q 50 67.5 60 62',
-                'M 40 62 Q 50 70 60 62',
-              ],
+              d: ['M 40 62 Q 50 70 60 62', 'M 40 62 Q 50 67.5 60 62', 'M 40 62 Q 50 70 60 62'],
             }}
             transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
           />

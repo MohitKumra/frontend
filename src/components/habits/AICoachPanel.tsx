@@ -27,9 +27,12 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
   const getColor = () => {
     if (coachData?.source === 'ai') {
       switch (coachData.mood) {
-        case 'celebratory': return '#22C55E';
-        case 'challenging': return '#FFB800';
-        default: return '#6C63FF';
+        case 'celebratory':
+          return '#22C55E';
+        case 'challenging':
+          return '#FFB800';
+        default:
+          return '#6C63FF';
       }
     }
     if (percentage === 100) return '#22C55E';
@@ -101,7 +104,7 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
           >
             <Sparkles size={14} />
           </motion.div>
-          
+
           <div className="flex-1">
             <p className="text-xs font-bold text-text-primary flex items-center gap-1.5">
               {isRuleBased ? 'Coach' : 'AI Coach'}
@@ -140,9 +143,7 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
                   <p className="text-[13px] sm:text-[15px] font-extrabold text-text-primary mb-1 sm:mb-1.5 flex items-center gap-1.5">
                     {coachData.title}
                   </p>
-                  <p className="text-xs text-text-secondary font-medium leading-relaxed">
-                    {coachData.message}
-                  </p>
+                  <p className="text-xs text-text-secondary font-medium leading-relaxed">{coachData.message}</p>
                 </div>
 
                 {/* Suggestion */}
@@ -201,16 +202,22 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
               <>
                 <div className="mb-3 sm:mb-4">
                   <p className="text-[13px] sm:text-[15px] font-extrabold text-text-primary mb-1 sm:mb-1.5 flex items-center gap-1.5">
-                    {percentage === 100 ? 'Perfect day! 🎉' :
-                     percentage >= 80 ? 'Great consistency! 🎯' :
-                     percentage >= 50 ? 'Keep it up! 💪' :
-                     "Let's get started! 🚀"}
+                    {percentage === 100
+                      ? 'Perfect day! 🎉'
+                      : percentage >= 80
+                        ? 'Great consistency! 🎯'
+                        : percentage >= 50
+                          ? 'Keep it up! 💪'
+                          : "Let's get started! 🚀"}
                   </p>
                   <p className="text-xs text-text-secondary font-medium leading-relaxed">
-                    {percentage === 100 ? "You've completed all your habits. Amazing work!" :
-                     percentage >= 80 ? "You've been 18% more consistent than last week." :
-                     percentage >= 50 ? "You're making progress. Try to complete more habits today." :
-                     'Start with your easiest habit to build momentum.'}
+                    {percentage === 100
+                      ? "You've completed all your habits. Amazing work!"
+                      : percentage >= 80
+                        ? "You've been 18% more consistent than last week."
+                        : percentage >= 50
+                          ? "You're making progress. Try to complete more habits today."
+                          : 'Start with your easiest habit to build momentum.'}
                   </p>
                 </div>
 

@@ -15,15 +15,7 @@ const SUCCESS = '#10B981';
 
 /** Ring with an optional two-tone remainder (used for "today", so the
  *  unfinished portion of the day reads as an active prompt, not a dead track). */
-function DayRing({
-  score,
-  isFuture,
-  isToday,
-}: {
-  score: number;
-  isFuture: boolean;
-  isToday: boolean;
-}) {
+function DayRing({ score, isFuture, isToday }: { score: number; isFuture: boolean; isToday: boolean }) {
   const clamped = Math.min(Math.max(score, 0), 100);
 
   const primaryColor = isToday ? ACCENT : SUCCESS;
@@ -42,10 +34,7 @@ function DayRing({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{ background: gradient, opacity: isFuture ? 0.4 : 1 }}
-      />
+      <div className="absolute inset-0 rounded-full" style={{ background: gradient, opacity: isFuture ? 0.4 : 1 }} />
       <div
         className="absolute rounded-full"
         style={{
@@ -193,12 +182,8 @@ export function WeekOverview({ habits, onViewDetails }: WeekOverviewProps) {
             <CalendarCheck2 size={18} style={{ stroke: ACCENT }} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-tight">
-              Week Overview
-            </h3>
-            <p className="text-[11px] sm:text-xs text-text-muted">
-              Daily consistency without the clutter
-            </p>
+            <h3 className="text-sm sm:text-base font-extrabold text-text-primary leading-tight">Week Overview</h3>
+            <p className="text-[11px] sm:text-xs text-text-muted">Daily consistency without the clutter</p>
           </div>
         </div>
 
@@ -220,24 +205,30 @@ export function WeekOverview({ habits, onViewDetails }: WeekOverviewProps) {
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+        <div
+          className="rounded-xl border px-3 py-2"
+          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+        >
           <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Average</p>
           <p className="mt-1 text-lg font-black text-text-primary">{averageScore}%</p>
         </div>
-        <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+        <div
+          className="rounded-xl border px-3 py-2"
+          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+        >
           <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Done</p>
           <p className="mt-1 text-lg font-black text-text-primary">{completedThisWeek}</p>
         </div>
-        <div className="rounded-xl border px-3 py-2" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+        <div
+          className="rounded-xl border px-3 py-2"
+          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+        >
           <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Total</p>
           <p className="mt-1 text-lg font-black text-text-primary">{totalThisWeek}</p>
         </div>
       </div>
 
-      <div
-        className="mt-4 grid grid-cols-7"
-        style={{ gap: 'clamp(3px, 1.2cqw, 8px)' }}
-      >
+      <div className="mt-4 grid grid-cols-7" style={{ gap: 'clamp(3px, 1.2cqw, 8px)' }}>
         {dayScores.map((d, idx) => {
           const isToday = d.isToday;
           const label = getStatusLabel(d);
@@ -261,8 +252,12 @@ export function WeekOverview({ habits, onViewDetails }: WeekOverviewProps) {
                 style={{
                   minHeight: 'clamp(92px, 30cqw, 128px)',
                   padding: 'clamp(4px, 1.6cqw, 10px) clamp(2px, 1cqw, 8px)',
-                  borderColor: isToday ? 'color-mix(in srgb, var(--color-accent) 34%, var(--color-border))' : 'var(--color-border)',
-                  background: isToday ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))' : 'var(--color-surface)',
+                  borderColor: isToday
+                    ? 'color-mix(in srgb, var(--color-accent) 34%, var(--color-border))'
+                    : 'var(--color-border)',
+                  background: isToday
+                    ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-surface))'
+                    : 'var(--color-surface)',
                 }}
               >
                 <p

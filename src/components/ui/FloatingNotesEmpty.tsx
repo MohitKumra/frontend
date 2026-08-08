@@ -27,13 +27,7 @@ export function FloatingNotesEmpty({
         style={{ width: 200, height: 160 }}
       >
         {/* Dashed Orbit Ring */}
-        <svg
-          className="absolute inset-0"
-          width="200"
-          height="160"
-          viewBox="0 0 200 160"
-          fill="none"
-        >
+        <svg className="absolute inset-0" width="200" height="160" viewBox="0 0 200 160" fill="none">
           <motion.ellipse
             cx="100"
             cy="80"
@@ -60,12 +54,48 @@ export function FloatingNotesEmpty({
           animate={{ y: [0, -6, 0], rotate: [-5, -7, -5] }}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
-          <rect x="2" y="2" width="70" height="58" rx="7" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="2"
+            y="2"
+            width="70"
+            height="58"
+            rx="7"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Folded corner */}
           <path d="M56 2 L72 18 L56 18 Z" fill="var(--color-border)" opacity="0.4" />
-          <line x1="12" y1="16" x2="44" y2="16" stroke="var(--color-border)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-          <line x1="12" y1="28" x2="60" y2="28" stroke="var(--color-border)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          <line x1="12" y1="38" x2="52" y2="38" stroke="var(--color-border)" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+          <line
+            x1="12"
+            y1="16"
+            x2="44"
+            y2="16"
+            stroke="var(--color-border)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="12"
+            y1="28"
+            x2="60"
+            y2="28"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.4"
+          />
+          <line
+            x1="12"
+            y1="38"
+            x2="52"
+            y2="38"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.3"
+          />
         </motion.svg>
 
         {/* Middle journal book */}
@@ -82,14 +112,59 @@ export function FloatingNotesEmpty({
           {/* Book spine */}
           <rect x="2" y="2" width="10" height="70" rx="3" fill="var(--color-accent)" opacity="0.7" />
           {/* Book cover */}
-          <rect x="12" y="2" width="70" height="70" rx="7" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
+          <rect
+            x="12"
+            y="2"
+            width="70"
+            height="70"
+            rx="7"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
           {/* Bookmark ribbon */}
           <path d="M48 2 L48 38 L54 32 L60 38 L60 2 Z" fill="var(--color-accent)" opacity="0.5" />
           {/* Page lines */}
-          <line x1="22" y1="20" x2="40" y2="20" stroke="var(--color-border)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-          <line x1="22" y1="32" x2="62" y2="32" stroke="var(--color-border)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          <line x1="22" y1="42" x2="54" y2="42" stroke="var(--color-border)" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
-          <line x1="22" y1="52" x2="60" y2="52" stroke="var(--color-border)" strokeWidth="1.5" strokeLinecap="round" opacity="0.25" />
+          <line
+            x1="22"
+            y1="20"
+            x2="40"
+            y2="20"
+            stroke="var(--color-border)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="22"
+            y1="32"
+            x2="62"
+            y2="32"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.4"
+          />
+          <line
+            x1="22"
+            y1="42"
+            x2="54"
+            y2="42"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.3"
+          />
+          <line
+            x1="22"
+            y1="52"
+            x2="60"
+            y2="52"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.25"
+          />
         </motion.svg>
 
         {/* Front main open notebook card — glowing accent style */}
@@ -114,7 +189,17 @@ export function FloatingNotesEmpty({
           </defs>
 
           {/* Notebook cover */}
-          <rect x="2" y="2" width="98" height="86" rx="10" fill="url(#noteCardGrad)" stroke="var(--color-accent)" strokeWidth="2" filter="url(#noteCardShadow)" />
+          <rect
+            x="2"
+            y="2"
+            width="98"
+            height="86"
+            rx="10"
+            fill="url(#noteCardGrad)"
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            filter="url(#noteCardShadow)"
+          />
 
           {/* Spiral binding rings at top */}
           {[16, 32, 48, 64, 80].map((cx) => (
@@ -128,14 +213,59 @@ export function FloatingNotesEmpty({
           <rect x="14" y="18" width="42" height="6" rx="3" fill="var(--color-accent)" opacity="0.85" />
 
           {/* Mood / Category Tag */}
-          <rect x="68" y="16" width="20" height="10" rx="5" fill="color-mix(in srgb, var(--color-accent) 22%, transparent)" stroke="var(--color-accent)" strokeWidth="1" />
+          <rect
+            x="68"
+            y="16"
+            width="20"
+            height="10"
+            rx="5"
+            fill="color-mix(in srgb, var(--color-accent) 22%, transparent)"
+            stroke="var(--color-accent)"
+            strokeWidth="1"
+          />
           <circle cx="78" cy="21" r="2" fill="var(--color-accent)" />
 
           {/* Text line skeletons */}
-          <line x1="14" y1="36" x2="86" y2="36" stroke="var(--color-text-primary)" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
-          <line x1="14" y1="46" x2="74" y2="46" stroke="var(--color-text-secondary)" strokeWidth="1.8" strokeLinecap="round" opacity="0.5" />
-          <line x1="14" y1="56" x2="80" y2="56" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
-          <line x1="14" y1="66" x2="60" y2="66" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" opacity="0.3" />
+          <line
+            x1="14"
+            y1="36"
+            x2="86"
+            y2="36"
+            stroke="var(--color-text-primary)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.7"
+          />
+          <line
+            x1="14"
+            y1="46"
+            x2="74"
+            y2="46"
+            stroke="var(--color-text-secondary)"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+          <line
+            x1="14"
+            y1="56"
+            x2="80"
+            y2="56"
+            stroke="var(--color-text-muted)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.4"
+          />
+          <line
+            x1="14"
+            y1="66"
+            x2="60"
+            y2="66"
+            stroke="var(--color-text-muted)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.3"
+          />
 
           {/* Quill / Pen tip decoration */}
           <motion.g
@@ -157,7 +287,15 @@ export function FloatingNotesEmpty({
           viewBox="0 0 140 16"
           fill="none"
         >
-          <ellipse cx="70" cy="8" rx="60" ry="5" fill="currentColor" opacity="0.07" style={{ color: 'var(--color-text-muted)' }} />
+          <ellipse
+            cx="70"
+            cy="8"
+            rx="60"
+            ry="5"
+            fill="currentColor"
+            opacity="0.07"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
         </svg>
 
         {/* Floating sparkle dots */}
@@ -176,11 +314,8 @@ export function FloatingNotesEmpty({
               height: i % 2 === 0 ? 6 : 5,
               left: dot.x,
               top: dot.y,
-              background: i % 3 === 0
-                ? 'var(--color-accent)'
-                : i % 3 === 1
-                ? 'var(--color-info)'
-                : 'var(--color-warning)',
+              background:
+                i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
             animate={{
               scale: [1, 1.6, 1],
@@ -204,12 +339,8 @@ export function FloatingNotesEmpty({
         transition={{ duration: 0.5, delay: 0.35 }}
         className="mt-5 text-center flex flex-col items-center max-w-sm px-4"
       >
-        <p className="text-base sm:text-lg font-bold text-text-primary mb-1">
-          {title}
-        </p>
-        <p className="text-xs sm:text-sm text-text-muted mb-6 leading-relaxed">
-          {description}
-        </p>
+        <p className="text-base sm:text-lg font-bold text-text-primary mb-1">{title}</p>
+        <p className="text-xs sm:text-sm text-text-muted mb-6 leading-relaxed">{description}</p>
 
         {onCreateNote && (
           <motion.button

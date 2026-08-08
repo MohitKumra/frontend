@@ -34,7 +34,9 @@ export function SubtaskBadge({ completed, total, onClick }: SubtaskBadgeProps) {
           style={{ width: `${pct}%`, background: done ? 'var(--color-success)' : 'var(--color-accent)' }}
         />
       </span>
-      <span>{completed}/{total}</span>
+      <span>
+        {completed}/{total}
+      </span>
     </button>
   );
 }

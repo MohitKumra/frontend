@@ -52,12 +52,19 @@ export function TimeOfDayAnalysis({ data }: { data: TimeOfDayData | null }) {
 
       <div className="space-y-2 p-5">
         {data.timeSlots.map((slot) => (
-          <div key={slot.slot} className="rounded-xl border p-3" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}>
+          <div
+            key={slot.slot}
+            className="rounded-xl border p-3"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}
+          >
             <div className="mb-1.5 flex items-center gap-1.5">
               <span style={{ color: SLOT_COLORS[slot.slot] || 'var(--color-accent)' }}>
                 {SLOT_ICONS[slot.slot] || <Sun size={14} strokeWidth={1.75} />}
               </span>
-              <span className="text-[9px] font-bold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>
+              <span
+                className="text-[9px] font-bold uppercase tracking-[0.16em]"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 {slot.slot}
               </span>
               <span className="ml-auto text-[11px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
@@ -73,7 +80,10 @@ export function TimeOfDayAnalysis({ data }: { data: TimeOfDayData | null }) {
                 }}
               />
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[9.5px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+            <div
+              className="mt-1.5 flex items-center justify-between text-[9.5px] font-semibold"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
               <span>{slot.completionRate}% completion</span>
               <span>{slot.averageSessionMinutes}m avg session</span>
             </div>

@@ -15,8 +15,18 @@ const CELL_MAX = 22; // px — cap so cells don't get comically large in wide ca
 const GAP_RATIO = 0.22; // gap scales with cell size so proportions stay consistent
 
 const MONTH_LABELS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -248,7 +258,17 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
                 }}
               >
                 {isRestDay && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#8B5CF6"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.7"
+                  >
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}

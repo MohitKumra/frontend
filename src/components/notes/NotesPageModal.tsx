@@ -68,11 +68,7 @@ export function NotePageModal({ note, onClose, onEdit, onDelete }: NotePageModal
           <p className="note-text">{note.content}</p>
           {(note.attachmentUrl || note.voiceNoteUrl) && (
             <div className="note-media-field-wrap" style={{ marginTop: '20px' }}>
-              <MediaPreview
-                attachmentUrl={note.attachmentUrl}
-                voiceNoteUrl={note.voiceNoteUrl}
-                compact
-              />
+              <MediaPreview attachmentUrl={note.attachmentUrl} voiceNoteUrl={note.voiceNoteUrl} compact />
             </div>
           )}
         </div>

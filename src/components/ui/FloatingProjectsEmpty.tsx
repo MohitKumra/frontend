@@ -26,13 +26,7 @@ export function FloatingProjectsEmpty({
         style={{ width: 200, height: 160 }}
       >
         {/* Dashed orbit ring */}
-        <svg
-          className="absolute inset-0"
-          width="200"
-          height="160"
-          viewBox="0 0 200 160"
-          fill="none"
-        >
+        <svg className="absolute inset-0" width="200" height="160" viewBox="0 0 200 160" fill="none">
           <motion.ellipse
             cx="100"
             cy="80"
@@ -59,8 +53,21 @@ export function FloatingProjectsEmpty({
           animate={{ y: [0, -7, 0], rotate: [-3, -5, -3] }}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
-          <rect x="2" y="14" width="68" height="44" rx="7" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
-          <path d="M2 14 C2 11 4 8 7 8 L28 8 L34 3 L65 3 C68 3 70 5 70 8 L70 14 Z" fill="var(--color-border)" opacity="0.5" />
+          <rect
+            x="2"
+            y="14"
+            width="68"
+            height="44"
+            rx="7"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M2 14 C2 11 4 8 7 8 L28 8 L34 3 L65 3 C68 3 70 5 70 8 L70 14 Z"
+            fill="var(--color-border)"
+            opacity="0.5"
+          />
         </motion.svg>
 
         {/* Middle folder */}
@@ -74,8 +81,18 @@ export function FloatingProjectsEmpty({
           animate={{ y: [0, -9, 0], rotate: [1, 3, 1] }}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
-          <rect x="2" y="16" width="78" height="48" rx="7" fill="var(--color-surface-raised)" stroke="var(--color-border)" strokeWidth="1.5" />
-          <path d="M2 16 C2 13 4 10 7 10 L32 10 L38 4 L74 4 C77 4 80 6 80 9 L80 16 Z"
+          <rect
+            x="2"
+            y="16"
+            width="78"
+            height="48"
+            rx="7"
+            fill="var(--color-surface-raised)"
+            stroke="var(--color-border)"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M2 16 C2 13 4 10 7 10 L32 10 L38 4 L74 4 C77 4 80 6 80 9 L80 16 Z"
             fill="color-mix(in srgb, var(--color-info) 30%, var(--color-border))"
             opacity="0.6"
           />
@@ -105,9 +122,20 @@ export function FloatingProjectsEmpty({
             </filter>
           </defs>
           {/* Folder body */}
-          <rect x="2" y="20" width="96" height="60" rx="9" fill="url(#projFolderGrad)" stroke="var(--color-accent)" strokeWidth="2" filter="url(#projShadow)" />
+          <rect
+            x="2"
+            y="20"
+            width="96"
+            height="60"
+            rx="9"
+            fill="url(#projFolderGrad)"
+            stroke="var(--color-accent)"
+            strokeWidth="2"
+            filter="url(#projShadow)"
+          />
           {/* Folder tab */}
-          <path d="M2 20 C2 17 4 14 7 14 L38 14 L44 7 L90 7 C93 7 96 10 96 13 L96 20 Z"
+          <path
+            d="M2 20 C2 17 4 14 7 14 L38 14 L44 7 L90 7 C93 7 96 10 96 13 L96 20 Z"
             fill="var(--color-accent)"
             opacity="0.45"
           />
@@ -129,7 +157,15 @@ export function FloatingProjectsEmpty({
           viewBox="0 0 140 16"
           fill="none"
         >
-          <ellipse cx="70" cy="8" rx="60" ry="5" fill="currentColor" opacity="0.07" style={{ color: 'var(--color-text-muted)' }} />
+          <ellipse
+            cx="70"
+            cy="8"
+            rx="60"
+            ry="5"
+            fill="currentColor"
+            opacity="0.07"
+            style={{ color: 'var(--color-text-muted)' }}
+          />
         </svg>
 
         {/* Floating sparkle dots */}
@@ -148,11 +184,8 @@ export function FloatingProjectsEmpty({
               height: i % 2 === 0 ? 6 : 5,
               left: dot.x,
               top: dot.y,
-              background: i % 3 === 0
-                ? 'var(--color-accent)'
-                : i % 3 === 1
-                ? 'var(--color-info)'
-                : 'var(--color-warning)',
+              background:
+                i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
             animate={{
               scale: [1, 1.6, 1],
@@ -176,12 +209,8 @@ export function FloatingProjectsEmpty({
         transition={{ duration: 0.5, delay: 0.35 }}
         className="mt-5 text-center flex flex-col items-center"
       >
-        <p className="text-sm sm:text-base font-bold text-text-primary mb-1">
-          {title}
-        </p>
-        <p className="text-xs sm:text-sm text-text-muted mb-4 max-w-xs">
-          {description}
-        </p>
+        <p className="text-sm sm:text-base font-bold text-text-primary mb-1">{title}</p>
+        <p className="text-xs sm:text-sm text-text-muted mb-4 max-w-xs">{description}</p>
 
         {onCreateProject ? (
           <motion.button
@@ -202,7 +231,13 @@ export function FloatingProjectsEmpty({
           >
             <span>{ctaText}</span>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7 H11 M8 4 L11 7 L8 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M3 7 H11 M8 4 L11 7 L8 10"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </motion.div>
         ) : null}

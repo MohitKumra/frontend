@@ -26,17 +26,13 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      setAuth: (token, user) =>
-        set({ accessToken: token, user, isAuthenticated: true }),
+      setAuth: (token, user) => set({ accessToken: token, user, isAuthenticated: true }),
 
-      setUser: (user) =>
-        set({ user }),
+      setUser: (user) => set({ user }),
 
-      setAccessToken: (token) =>
-        set({ accessToken: token }),
+      setAccessToken: (token) => set({ accessToken: token }),
 
-      logout: () =>
-        set({ accessToken: null, user: null, isAuthenticated: false }),
+      logout: () => set({ accessToken: null, user: null, isAuthenticated: false }),
     }),
     {
       name: 'auth-store',
@@ -46,6 +42,6 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-    },
-  ),
+    }
+  )
 );

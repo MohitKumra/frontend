@@ -1,5 +1,19 @@
 import { Link } from 'react-router-dom';
-import { Zap, ArrowLeft, FileCheck, User, Gavel, Ban, AlertTriangle, Briefcase, Heart, RefreshCw, Mail, Scale, ShieldCheck } from 'lucide-react';
+import {
+  Zap,
+  ArrowLeft,
+  FileCheck,
+  User,
+  Gavel,
+  Ban,
+  AlertTriangle,
+  Briefcase,
+  Heart,
+  RefreshCw,
+  Mail,
+  Scale,
+  ShieldCheck,
+} from 'lucide-react';
 import { Card } from '../components/ui/Card';
 
 const sections = [
@@ -11,7 +25,7 @@ const sections = [
 
 By creating an account or using Finamite, you're agreeing to these Terms. If you don't agree with them, please don't use the app.
 
-If you connect a third-party service like Google Calendar, you're also agreeing to that provider's own terms.`
+If you connect a third-party service like Google Calendar, you're also agreeing to that provider's own terms.`,
   },
   {
     id: 'eligibility',
@@ -24,7 +38,7 @@ If you connect a third-party service like Google Calendar, you're also agreeing 
 
 You're responsible for what happens under your account, so please don't share your login with anyone. We may suspend or close accounts that break these Terms or use fake information.
 
-If you sign in with Google, you're confirming you're allowed to grant the permissions Google's sign-in screen asks for.`
+If you sign in with Google, you're confirming you're allowed to grant the permissions Google's sign-in screen asks for.`,
   },
   {
     id: 'user-conduct',
@@ -40,7 +54,7 @@ If you sign in with Google, you're confirming you're allowed to grant the permis
 - Copy, resell, or repackage Finamite for your own commercial product without asking us first.
 - Reverse-engineer the app to figure out how it works internally.
 
-If we find someone doing this, we'll take it seriously and may act on it, including closing the account involved.`
+If we find someone doing this, we'll take it seriously and may act on it, including closing the account involved.`,
   },
   {
     id: 'user-content',
@@ -54,7 +68,7 @@ What we're allowed to do with it: We need permission to store, sync, and display
 - Back it up so you don't lose it
 - Meet any legal obligations we have
 
-What belongs to us: The app itself — its design, code, logo, and features — is ours, and this agreement doesn't give you rights to it beyond using the app as intended.`
+What belongs to us: The app itself — its design, code, logo, and features — is ours, and this agreement doesn't give you rights to it beyond using the app as intended.`,
   },
   {
     id: 'integrations',
@@ -65,13 +79,13 @@ What belongs to us: The app itself — its design, code, logo, and features — 
 When you turn this on:
 - You're allowing us to create, update, and remove calendar events on your behalf, exactly as described in our Privacy Policy and the Google consent screen you approved.
 - You can review or revoke this access any time from Settings → Integrations, or directly at https://myaccount.google.com/permissions.
-- We're not responsible for how Google Calendar itself behaves — if it's down, changes its rules, or anything else outside our control, we'll do our best but can't guarantee the integration keeps working.`
+- We're not responsible for how Google Calendar itself behaves — if it's down, changes its rules, or anything else outside our control, we'll do our best but can't guarantee the integration keeps working.`,
   },
   {
     id: 'subscription',
     title: '6. Pricing',
     icon: Briefcase,
-    content: `Finamite is currently free to use. If we introduce paid plans or premium features down the line, we'll be upfront about pricing before you're charged anything, and we'll let you know about any future price changes in advance.`
+    content: `Finamite is currently free to use. If we introduce paid plans or premium features down the line, we'll be upfront about pricing before you're charged anything, and we'll let you know about any future price changes in advance.`,
   },
   {
     id: 'availability',
@@ -79,7 +93,7 @@ When you turn this on:
     icon: ShieldCheck,
     content: `We aim to keep Finamite available and reliable, but we can't promise it'll never go down — occasionally we'll need to pause the app for maintenance or fixes.
 
-We may also add, change, or remove features over time, including integrations, as we improve the product. We'll try to give you a heads-up for anything major.`
+We may also add, change, or remove features over time, including integrations, as we improve the product. We'll try to give you a heads-up for anything major.`,
   },
   {
     id: 'disclaimers',
@@ -87,7 +101,7 @@ We may also add, change, or remove features over time, including integrations, a
     icon: AlertTriangle,
     content: `Finamite is provided "as is." We work hard to make it reliable and useful, but we can't legally promise it'll be perfect, uninterrupted, or error-free, and we can't guarantee it'll meet every specific need you have.
 
-Finamite is a productivity tool, not professional advice. If you need financial, legal, medical, or psychological guidance, please talk to a qualified professional — don't rely on the app for that.`
+Finamite is a productivity tool, not professional advice. If you need financial, legal, medical, or psychological guidance, please talk to a qualified professional — don't rely on the app for that.`,
   },
   {
     id: 'liability',
@@ -95,13 +109,13 @@ Finamite is a productivity tool, not professional advice. If you need financial,
     icon: Scale,
     content: `To the extent allowed by law, Finamite isn't liable for indirect or unforeseeable damages — like lost profits or lost data — that might result from using the app.
 
-If something does go wrong and we are found liable, our total responsibility is capped at whatever you've paid us in the past 12 months. This limit doesn't apply where local law says it can't.`
+If something does go wrong and we are found liable, our total responsibility is capped at whatever you've paid us in the past 12 months. This limit doesn't apply where local law says it can't.`,
   },
   {
     id: 'indemnification',
     title: '10. If Something Goes Wrong Because of Your Use',
     icon: Heart,
-    content: `If your use of Finamite — or content you post — causes a claim against us (for example, because it infringed someone else's rights or broke these Terms), you agree to cover the reasonable costs that result, including legal fees, and to work with us to resolve it.`
+    content: `If your use of Finamite — or content you post — causes a claim against us (for example, because it infringed someone else's rights or broke these Terms), you agree to cover the reasonable costs that result, including legal fees, and to work with us to resolve it.`,
   },
   {
     id: 'termination',
@@ -112,7 +126,7 @@ If something does go wrong and we are found liable, our total responsibility is 
 When an account closes:
 - Access to Finamite stops right away.
 - Your content is deleted within 30 days, unless we're legally required to keep something longer.
-- If you'd like a copy of your data first, you can export it before closing your account.`
+- If you'd like a copy of your data first, you can export it before closing your account.`,
   },
   {
     id: 'general',
@@ -122,7 +136,7 @@ When an account closes:
 
 Updates: We may update these Terms as Finamite evolves. We'll post the change here with a new "Last updated" date, and let you know in the app or by email for anything significant. Continuing to use Finamite after an update means you accept it.
 
-If one part of these Terms turns out to be unenforceable, the rest still stands. Not enforcing a term once doesn't mean we're waiving it for later. We may transfer our rights under these Terms if Finamite changes ownership; you may not transfer yours without asking us first. Together with our Privacy Policy, these Terms are the whole agreement between you and us about using Finamite.`
+If one part of these Terms turns out to be unenforceable, the rest still stands. Not enforcing a term once doesn't mean we're waiving it for later. We may transfer our rights under these Terms if Finamite changes ownership; you may not transfer yours without asking us first. Together with our Privacy Policy, these Terms are the whole agreement between you and us about using Finamite.`,
   },
   {
     id: 'contact',
@@ -134,7 +148,7 @@ Email: info@finamite.in
 
 We aim to respond within 14 business days.
 
-Last updated: July 25, 2026`
+Last updated: July 25, 2026`,
   },
 ];
 
@@ -173,7 +187,8 @@ export function TermsConditionsPage() {
 
           <Card variant="glass" className="p-5 sm:p-6 border-accent/10">
             <p className="text-sm text-text-secondary leading-relaxed">
-              Effective date: <strong className="text-text-primary">July 25, 2026</strong>. A plain-language guide to using Finamite, alongside our{' '}
+              Effective date: <strong className="text-text-primary">July 25, 2026</strong>. A plain-language guide to
+              using Finamite, alongside our{' '}
               <Link to="/privacy" className="text-accent hover:underline font-semibold">
                 Privacy Policy
               </Link>
@@ -218,9 +233,7 @@ export function TermsConditionsPage() {
                   >
                     <Icon size={18} className="text-accent" />
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight pt-1.5">
-                    {s.title}
-                  </h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight pt-1.5">{s.title}</h2>
                 </div>
                 <div className="pl-0 sm:pl-14">
                   {s.content.split('\n\n').map((para, pIdx) => (
@@ -239,9 +252,7 @@ export function TermsConditionsPage() {
 
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-border text-center">
-          <p className="text-xs text-text-muted">
-            ⓒ {new Date().getFullYear()} Finamite. All rights reserved.
-          </p>
+          <p className="text-xs text-text-muted">ⓒ {new Date().getFullYear()} Finamite. All rights reserved.</p>
           <div className="mt-3 flex items-center justify-center gap-4 text-xs">
             <Link to="/privacy" className="text-text-muted hover:text-accent font-medium">
               Privacy Policy

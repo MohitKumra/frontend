@@ -73,11 +73,7 @@ export function TasksEmptyState({ filter, onCreateTask, onChangeFilter }: TasksE
 
   return (
     <Card variant="default" className="p-6 sm:p-10 text-center">
-      <FloatingTasksEmpty
-        title={cfg.title}
-        description={cfg.subtitle}
-        suggestions={cfg.suggestions}
-      />
+      <FloatingTasksEmpty title={cfg.title} description={cfg.subtitle} suggestions={cfg.suggestions} />
     </Card>
   );
 }

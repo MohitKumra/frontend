@@ -34,12 +34,7 @@ const MOVE_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 /** Estimated height of the mobile top header bar */
 const MOBILE_NAV_HEIGHT = 56;
 
-export function SpotlightOverlay({
-  visible,
-  targetRect,
-  reducedMotion = false,
-  padding = 10,
-}: SpotlightOverlayProps) {
+export function SpotlightOverlay({ visible, targetRect, reducedMotion = false, padding = 10 }: SpotlightOverlayProps) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -67,9 +62,7 @@ export function SpotlightOverlay({
     };
   }, [targetRect, topOffset]);
 
-  const clipPath = adjustedRect
-    ? spotlightClipPath(adjustedRect, effectivePadding, cornerRadius)
-    : 'none';
+  const clipPath = adjustedRect ? spotlightClipPath(adjustedRect, effectivePadding, cornerRadius) : 'none';
 
   const boxW = adjustedRect ? adjustedRect.width + effectivePadding * 2 : 0;
   const boxH = adjustedRect ? adjustedRect.height + effectivePadding * 2 : 0;
@@ -96,9 +89,7 @@ export function SpotlightOverlay({
               bottom: 0,
               background: 'var(--onboarding-scrim, rgba(226,232,240,0.55))',
               clipPath,
-              transition: reducedMotion
-                ? 'none'
-                : `clip-path ${MOVE_DURATION}s cubic-bezier(${MOVE_EASE.join(',')})`,
+              transition: reducedMotion ? 'none' : `clip-path ${MOVE_DURATION}s cubic-bezier(${MOVE_EASE.join(',')})`,
             }}
           />
 

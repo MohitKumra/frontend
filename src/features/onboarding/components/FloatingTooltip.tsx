@@ -237,12 +237,12 @@ export function FloatingTooltip({
     }
 
     const placeRight = targetRect.right + sideGap + tooltipWidth < viewport.width - 16;
-    const placeLeft  = targetRect.left  - sideGap - tooltipWidth > 16;
+    const placeLeft = targetRect.left - sideGap - tooltipWidth > 16;
     const placeBelow = targetRect.bottom + bottomGap + tooltipHeight < viewport.height - 20;
 
     const sideTop = Math.min(
       Math.max(targetRect.top + targetRect.height / 2 - 150, 16),
-      Math.max(viewport.height - 340, 16),
+      Math.max(viewport.height - 340, 16)
     );
 
     if (placeRight) {
@@ -257,23 +257,28 @@ export function FloatingTooltip({
       left = Math.max(16, Math.min(left, viewport.width - tooltipWidth - 16));
       return { left, top: targetRect.bottom + bottomGap, side: 'bottom' as const };
     }
-    return { left: Math.max((viewport.width - tooltipWidth) / 2, 16), top: Math.max((viewport.height - tooltipHeight) / 2, 16), side: 'right' as const };
+    return {
+      left: Math.max((viewport.width - tooltipWidth) / 2, 16),
+      top: Math.max((viewport.height - tooltipHeight) / 2, 16),
+      side: 'right' as const,
+    };
   }, [sideGap, bottomGap, targetRect, tooltipWidth, tooltipHeight, viewport.height, viewport.width]);
 
   const showConnector = !isMobile && !!targetRect;
-  const connectorCardX = desktopPlacement.side === 'right'
-    ? desktopPlacement.left
-    : desktopPlacement.side === 'bottom'
-      ? desktopPlacement.left + tooltipWidth
-      : desktopPlacement.left + tooltipWidth;
+  const connectorCardX =
+    desktopPlacement.side === 'right'
+      ? desktopPlacement.left
+      : desktopPlacement.side === 'bottom'
+        ? desktopPlacement.left + tooltipWidth
+        : desktopPlacement.left + tooltipWidth;
 
   // ─── Animation variants ───────────────────────────────────────────────────
 
   const mobileSheetMaxHeight = Math.min(viewport.height * 0.55, 340);
   const mobileVariants = {
-    hidden:  reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
-    visible: reducedMotion ? { opacity: 1 } : { y: 0,      opacity: 1 },
-    exit:    reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
+    hidden: reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
+    visible: reducedMotion ? { opacity: 1 } : { y: 0, opacity: 1 },
+    exit: reducedMotion ? { opacity: 0 } : { y: '100%', opacity: 0 },
   };
 
   const desktopVariants = {
@@ -366,9 +371,7 @@ export function FloatingTooltip({
               <div
                 style={{
                   padding: isMobile ? '18px 22px' : '26px',
-                  paddingBottom: isMobile
-                    ? 'calc(22px + env(safe-area-inset-bottom))'
-                    : '26px',
+                  paddingBottom: isMobile ? 'calc(22px + env(safe-area-inset-bottom))' : '26px',
                   overflowY: isMobile ? 'auto' : undefined,
                   maxHeight: isMobile ? '100%' : undefined,
                 }}
@@ -459,8 +462,14 @@ export function FloatingTooltip({
                         cursor: 'pointer',
                         transition: 'background 120ms ease',
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--onboarding-prev-hover-bg, #f8fafc)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--onboarding-prev-bg, transparent)'; }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.background =
+                          'var(--onboarding-prev-hover-bg, #f8fafc)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.background =
+                          'var(--onboarding-prev-bg, transparent)';
+                      }}
                     >
                       Back
                     </button>
@@ -489,7 +498,13 @@ export function FloatingTooltip({
                   >
                     {isLast ? 'Finish' : 'Next'}
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M3.5 8h9M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M3.5 8h9M8.5 4l4 4-4 4"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </motion.button>
                 </div>

@@ -32,12 +32,19 @@ function ProductPreview() {
       <div className="auth-preview-main !p-3">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[14px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>Today</p>
-            <p className="mt-0.5 text-[11px] font-medium leading-none" style={{ color: 'var(--color-text-muted)' }}>Mon, Jul 27</p>
+            <p className="text-[14px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
+              Today
+            </p>
+            <p className="mt-0.5 text-[11px] font-medium leading-none" style={{ color: 'var(--color-text-muted)' }}>
+              Mon, Jul 27
+            </p>
           </div>
           <div
             className="flex h-6 min-w-[46px] items-center justify-center gap-1 rounded-lg px-2 text-xs font-black text-white"
-            style={{ background: 'var(--color-accent)', boxShadow: '0 6px 16px color-mix(in srgb, var(--color-accent) 40%, transparent)' }}
+            style={{
+              background: 'var(--color-accent)',
+              boxShadow: '0 6px 16px color-mix(in srgb, var(--color-accent) 40%, transparent)',
+            }}
           >
             <Flame size={11} />
             12
@@ -99,9 +106,7 @@ function MobileBrandHeader() {
 
       {/* Headline */}
       <h1 className="auth-mobile-headline">
-        One system.{' '}
-        <span className="auth-mobile-headline-accent">Everything</span>{' '}
-        you do.
+        One system. <span className="auth-mobile-headline-accent">Everything</span> you do.
       </h1>
 
       {/* Feature pills */}
@@ -133,12 +138,17 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
           <div className="relative z-10 flex items-center gap-2.5">
             <div
               className="flex h-8 w-8 items-center justify-center rounded-[8px]"
-              style={{ background: 'var(--gradient-accent)', boxShadow: '0 8px 20px color-mix(in srgb, var(--color-accent) 38%, transparent)' }}
+              style={{
+                background: 'var(--gradient-accent)',
+                boxShadow: '0 8px 20px color-mix(in srgb, var(--color-accent) 38%, transparent)',
+              }}
             >
               <Zap size={19} className="text-white" fill="none" />
             </div>
             <div>
-              <p className="text-[16px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>Finamite</p>
+              <p className="text-[16px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
+                Finamite
+              </p>
               <p
                 className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: 'color-mix(in srgb, var(--color-text-primary) 50%, transparent)' }}
@@ -160,12 +170,16 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
               <Sparkles size={11} style={{ color: 'var(--color-accent)' }} />
               Built for focus. Designed for life.
             </div>
-            <h1 className="mt-3 text-[clamp(1.7rem,3vw,2.6rem)] font-black leading-[1.05]" style={{ color: 'var(--color-text-primary)' }}>
+            <h1
+              className="mt-3 text-[clamp(1.7rem,3vw,2.6rem)] font-black leading-[1.05]"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
               One system.{' '}
               <span
                 className="bg-clip-text text-transparent"
                 style={{
-                  background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 60%, var(--color-info)))',
+                  background:
+                    'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 60%, var(--color-info)))',
                   WebkitBackgroundClip: 'text',
                 }}
               >
@@ -173,8 +187,12 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
               </span>{' '}
               you do.
             </h1>
-            <p className="mt-2.5 max-w-[550px] text-[13px] font-medium leading-[1.4]" style={{ color: 'color-mix(in srgb, var(--color-text-primary) 85%, transparent)' }}>
-              Tasks, habits, focus sessions, and your calendar - finally wired together so your day actually makes sense.
+            <p
+              className="mt-2.5 max-w-[550px] text-[13px] font-medium leading-[1.4]"
+              style={{ color: 'color-mix(in srgb, var(--color-text-primary) 85%, transparent)' }}
+            >
+              Tasks, habits, focus sessions, and your calendar - finally wired together so your day actually makes
+              sense.
             </p>
           </div>
 
@@ -195,8 +213,18 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
                 >
                   <Icon size={15} />
                 </div>
-                <p className="mt-1.5 text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{featureTitle}</p>
-                <p className="mt-0.5 text-[9px] font-medium leading-[1.3]" style={{ color: 'color-mix(in srgb, var(--color-text-primary) 55%, transparent)' }}>{desc}</p>
+                <p
+                  className="mt-1.5 text-[11px] font-black leading-tight"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  {featureTitle}
+                </p>
+                <p
+                  className="mt-0.5 text-[9px] font-medium leading-[1.3]"
+                  style={{ color: 'color-mix(in srgb, var(--color-text-primary) 55%, transparent)' }}
+                >
+                  {desc}
+                </p>
               </div>
             ))}
           </div>
@@ -225,8 +253,12 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
             </nav>
 
             <div className="mt-6 max-[720px]:mt-3">
-              <h2 className="text-[22px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
-              <p className="mt-1 text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{subtitle}</p>
+              <h2 className="text-[22px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                {title}
+              </h2>
+              <p className="mt-1 text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                {subtitle}
+              </p>
             </div>
 
             <div className="mt-5">

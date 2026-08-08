@@ -71,10 +71,7 @@ export function NotionSettingsPanel() {
   const [importMode, setImportMode] = useState<'tasks' | 'notes'>('tasks');
   const [propertyMapping, setPropertyMapping] = useState<Record<string, string>>({});
 
-  const { data: dbProperties } = useNotionDatabaseProperties(
-    selectedDb?.id ?? null,
-    selectedDb?.object ?? null,
-  );
+  const { data: dbProperties } = useNotionDatabaseProperties(selectedDb?.id ?? null, selectedDb?.object ?? null);
 
   const handleConnect = async () => {
     try {
@@ -91,7 +88,12 @@ export function NotionSettingsPanel() {
     setPropertyMapping({});
   };
 
-  const handleDbSelect = (db: { id: string; object: 'database' | 'data_source'; title: string; icon: string | null }) => {
+  const handleDbSelect = (db: {
+    id: string;
+    object: 'database' | 'data_source';
+    title: string;
+    icon: string | null;
+  }) => {
     setSelectedDb({ id: db.id, object: db.object });
     setPropertyMapping({});
   };
@@ -132,7 +134,10 @@ export function NotionSettingsPanel() {
   const systemFields = importMode === 'tasks' ? SYSTEM_FIELDS_TASKS : SYSTEM_FIELDS_NOTES;
 
   return (
-    <div className="rounded-xl sm:rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}>
+    <div
+      className="rounded-xl sm:rounded-2xl border p-4"
+      style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+    >
       {/* Connection Status */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex-1">
@@ -146,9 +151,7 @@ export function NotionSettingsPanel() {
               : 'Connect your Notion workspace to import tasks and notes.'}
           </p>
           {notionStatus?.workspaceName && (
-            <p className="text-[11px] text-text-muted mt-1">
-              Workspace: {notionStatus.workspaceName}
-            </p>
+            <p className="text-[11px] text-text-muted mt-1">Workspace: {notionStatus.workspaceName}</p>
           )}
         </div>
         <div className="shrink-0">
@@ -160,12 +163,7 @@ export function NotionSettingsPanel() {
       </div>
 
       <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
-        <Button
-          size="sm"
-          leftIcon={<PlugZap size={14} />}
-          loading={notionStart.isPending}
-          onClick={handleConnect}
-        >
+        <Button size="sm" leftIcon={<PlugZap size={14} />} loading={notionStart.isPending} onClick={handleConnect}>
           {notionStatus?.connected ? 'Reconnect' : 'Connect Notion'}
         </Button>
         <Button
@@ -241,7 +239,10 @@ export function NotionSettingsPanel() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setImportMode('tasks'); setPropertyMapping({}); }}
+                  onClick={() => {
+                    setImportMode('tasks');
+                    setPropertyMapping({});
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
                   style={{
                     background: importMode === 'tasks' ? 'var(--icon-bg-accent)' : 'var(--color-surface)',
@@ -253,7 +254,10 @@ export function NotionSettingsPanel() {
                   Tasks
                 </button>
                 <button
-                  onClick={() => { setImportMode('notes'); setPropertyMapping({}); }}
+                  onClick={() => {
+                    setImportMode('notes');
+                    setPropertyMapping({});
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
                   style={{
                     background: importMode === 'notes' ? 'var(--icon-bg-accent)' : 'var(--color-surface)',
@@ -285,12 +289,8 @@ export function NotionSettingsPanel() {
                     className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
                     style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   >
-                    <span className="text-[10px] font-mono uppercase text-text-muted min-w-[60px]">
-                      {prop.type}
-                    </span>
-                    <span className="font-medium text-text-primary min-w-0 flex-1 truncate">
-                      {propName}
-                    </span>
+                    <span className="text-[10px] font-mono uppercase text-text-muted min-w-[60px]">{prop.type}</span>
+                    <span className="font-medium text-text-primary min-w-0 flex-1 truncate">{propName}</span>
                     <select
                       value={propertyMapping[propName] ?? ''}
                       onChange={(e) => handleMappingChange(propName, e.target.value)}
@@ -302,7 +302,9 @@ export function NotionSettingsPanel() {
                         <option
                           key={sf.value}
                           value={sf.value}
-                          disabled={Object.values(propertyMapping).includes(sf.value) && propertyMapping[propName] !== sf.value}
+                          disabled={
+                            Object.values(propertyMapping).includes(sf.value) && propertyMapping[propName] !== sf.value
+                          }
                         >
                           {sf.label}
                         </option>

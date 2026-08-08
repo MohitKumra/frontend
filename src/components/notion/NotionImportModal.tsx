@@ -4,17 +4,16 @@
 // Simplified 2-step flow: Select DB → Preview & select pages (auto-mapped).
 
 import { useState, useCallback } from 'react';
-import {
-  BookOpen,
-  CheckCircle2,
-  CheckSquare,
-  Cloud,
-  Loader2,
-  X,
-} from 'lucide-react';
+import { BookOpen, CheckCircle2, CheckSquare, Cloud, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
-import { useNotionDatabases, useNotionImportTasks, useNotionAutoPreview, useNotionImportNotes, useNotionAutoPreviewNotes } from '../../features/notion/hooks/useNotion';
+import {
+  useNotionDatabases,
+  useNotionImportTasks,
+  useNotionAutoPreview,
+  useNotionImportNotes,
+  useNotionAutoPreviewNotes,
+} from '../../features/notion/hooks/useNotion';
 
 interface NotionImportModalProps {
   isOpen: boolean;
@@ -44,7 +43,11 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
   const autoPreviewNotes = useNotionAutoPreviewNotes();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedDb, setSelectedDb] = useState<{ id: string; object: 'database' | 'data_source'; title: string } | null>(null);
+  const [selectedDb, setSelectedDb] = useState<{
+    id: string;
+    object: 'database' | 'data_source';
+    title: string;
+  } | null>(null);
   const [propertyMapping, setPropertyMapping] = useState<Record<string, string>>({});
   const [pages, setPages] = useState<Array<{ id: string; title: string; alreadyImported: boolean }>>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
@@ -153,20 +156,30 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
         style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+        <div
+          className="flex items-center justify-between px-5 py-4 border-b"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-accent" />
             <h2 className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
               Import from Notion{isTasksMode ? '' : isJournal ? ' (Journal)' : ' (Notes)'}
             </h2>
           </div>
-          <button onClick={handleClose} className="p-1 rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+          <button
+            onClick={handleClose}
+            className="p-1 rounded-lg hover:bg-black/5 transition-colors"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
             <X size={18} />
           </button>
         </div>
 
         {/* Step indicator + Notes journal toggle */}
-        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
+        <div
+          className="flex items-center justify-between px-5 py-3 border-b"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           <div className="flex items-center gap-2">
             {([1, 2] as const).map((s) => (
               <div key={s} className="flex items-center gap-2">
@@ -180,7 +193,10 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
                 >
                   {step > s ? <CheckCircle2 size={12} /> : s}
                 </div>
-                <span className="text-[10px] font-semibold" style={{ color: step >= s ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>
+                <span
+                  className="text-[10px] font-semibold"
+                  style={{ color: step >= s ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}
+                >
                   {s === 1 ? 'Database' : 'Preview'}
                 </span>
                 {s < 2 && <div className="w-6 h-px" style={{ background: 'var(--color-border)' }} />}
@@ -244,7 +260,9 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
                     >
                       <span>{db.icon ?? '📄'}</span>
                       <span className="truncate flex-1">{db.title}</span>
-                      <span className="text-[9px] uppercase opacity-50">{db.object === 'data_source' ? 'DS' : 'DB'}</span>
+                      <span className="text-[9px] uppercase opacity-50">
+                        {db.object === 'data_source' ? 'DS' : 'DB'}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -261,7 +279,10 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
               {mappingSummary && (
                 <div
                   className="text-[10px] px-3 py-2 rounded-lg mb-3"
-                  style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', color: 'var(--color-text-secondary)' }}
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
+                    color: 'var(--color-text-secondary)',
+                  }}
                 >
                   Auto-detected: {mappingSummary}
                 </div>
@@ -279,7 +300,10 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
               </div>
 
               {pagesLoading || autoPreviewMutation.isPending ? (
-                <div className="flex items-center gap-2 text-xs py-8 justify-center" style={{ color: 'var(--color-text-muted)' }}>
+                <div
+                  className="flex items-center gap-2 text-xs py-8 justify-center"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
                   <Loader2 size={14} className="animate-spin" />
                   Loading pages...
                 </div>
@@ -302,13 +326,25 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
                           cursor: isImported ? 'not-allowed' : 'pointer',
                         }}
                       >
-                        <span className="w-4 h-4 rounded flex items-center justify-center border"
-                          style={isSelected ? { background: 'var(--gradient-accent)', borderColor: 'transparent' } : { borderColor: 'var(--color-border)' }}>
+                        <span
+                          className="w-4 h-4 rounded flex items-center justify-center border"
+                          style={
+                            isSelected
+                              ? { background: 'var(--gradient-accent)', borderColor: 'transparent' }
+                              : { borderColor: 'var(--color-border)' }
+                          }
+                        >
                           {isSelected && <CheckSquare size={10} className="text-white" />}
                         </span>
                         <span className="truncate flex-1">{page.title}</span>
                         {isImported && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+                          <span
+                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{
+                              background: 'color-mix(in srgb, var(--color-success) 15%, transparent)',
+                              color: 'var(--color-success)',
+                            }}
+                          >
                             Imported
                           </span>
                         )}
@@ -326,24 +362,42 @@ export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImp
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+        <div
+          className="flex items-center justify-between px-5 py-4 border-t"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           {step > 1 ? (
-            <button onClick={() => { setStep(1); setSelectedDb(null); setPages([]); }}
+            <button
+              onClick={() => {
+                setStep(1);
+                setSelectedDb(null);
+                setPages([]);
+              }}
               className="flex items-center gap-1 text-xs font-bold px-3 py-2 rounded-lg transition-colors"
-              style={{ color: 'var(--color-text-secondary)' }}>
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
               ← Back
             </button>
-          ) : <div />}
+          ) : (
+            <div />
+          )}
 
           {step === 1 && (
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Fields are auto-mapped</p>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+              Fields are auto-mapped
+            </p>
           )}
 
           {step === 2 && (
-            <Button size="sm" leftIcon={<Cloud size={14} />}
-              onClick={handleImport} loading={importMutation.isPending}
-              disabled={selectedPageIds.size === 0}>
-              Import {selectedPageIds.size} {isTasksMode ? 'task' : isJournal ? 'journal' : 'note'}{selectedPageIds.size !== 1 ? 's' : ''}
+            <Button
+              size="sm"
+              leftIcon={<Cloud size={14} />}
+              onClick={handleImport}
+              loading={importMutation.isPending}
+              disabled={selectedPageIds.size === 0}
+            >
+              Import {selectedPageIds.size} {isTasksMode ? 'task' : isJournal ? 'journal' : 'note'}
+              {selectedPageIds.size !== 1 ? 's' : ''}
             </Button>
           )}
         </div>

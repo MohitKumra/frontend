@@ -39,14 +39,10 @@ export async function initTheme(): Promise<Theme> {
 let isTransitioning = false;
 
 function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined'
-    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 }
 
-async function animatedThemeSwitch(
-  newTheme: Theme,
-  onMutate?: () => void,
-): Promise<void> {
+async function animatedThemeSwitch(newTheme: Theme, onMutate?: () => void): Promise<void> {
   if (isTransitioning) {
     applyThemeToDocument(newTheme);
     if (onMutate) {
@@ -112,7 +108,7 @@ async function animatedThemeSwitch(
 
 export async function setTheme(
   theme: ThemePreference,
-  options: { animate?: boolean; onMutate?: () => void } = {},
+  options: { animate?: boolean; onMutate?: () => void } = {}
 ): Promise<Theme> {
   await storageSet(STORAGE_KEY, theme);
   const resolved = theme === 'system' ? resolveSystemTheme() : theme;
@@ -126,9 +122,7 @@ export async function setTheme(
   return resolved;
 }
 
-export async function toggleTheme(
-  options: { animate?: boolean } = {},
-): Promise<Theme> {
+export async function toggleTheme(options: { animate?: boolean } = {}): Promise<Theme> {
   const current = document.documentElement.getAttribute('data-theme') as Theme | null;
   return setTheme(current === 'dark' ? 'light' : 'dark', options);
 }

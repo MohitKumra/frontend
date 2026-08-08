@@ -65,10 +65,16 @@ export function StatTile({ label, value, tone = 'default' }: { label: string; va
       className="rounded-xl border px-3 py-3 text-center transition-colors duration-200"
       style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}
     >
-      <div className="text-[15px] font-bold leading-none tabular-nums" style={{ color: tone === 'default' ? 'var(--color-text-primary)' : t.fg }}>
+      <div
+        className="text-[15px] font-bold leading-none tabular-nums"
+        style={{ color: tone === 'default' ? 'var(--color-text-primary)' : t.fg }}
+      >
         {value}
       </div>
-      <div className="mt-1.5 text-[8.5px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--color-text-muted)' }}>
+      <div
+        className="mt-1.5 text-[8.5px] font-bold uppercase tracking-[0.14em]"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
         {label}
       </div>
     </div>
@@ -78,16 +84,28 @@ export function StatTile({ label, value, tone = 'default' }: { label: string; va
 /** Boxed row of 2-4 evenly-spaced mini metrics, e.g. avg / fastest / longest. */
 export function MiniMetricRow({ items }: { items: { label: string; value: string; tone?: Tone }[] }) {
   return (
-    <div className="rounded-xl border p-3.5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}>
-      <div className="grid gap-2 text-center" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+    <div
+      className="rounded-xl border p-3.5"
+      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-subtle)' }}
+    >
+      <div
+        className="grid gap-2 text-center"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
         {items.map((item) => {
           const t = item.tone ? toneVars[item.tone] : toneVars.default;
           return (
             <div key={item.label}>
-              <div className="text-[8.5px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--color-text-muted)' }}>
+              <div
+                className="text-[8.5px] font-bold uppercase tracking-[0.14em]"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 {item.label}
               </div>
-              <div className="mt-1 text-[12.5px] font-bold" style={{ color: item.tone ? t.fg : 'var(--color-text-primary)' }}>
+              <div
+                className="mt-1 text-[12.5px] font-bold"
+                style={{ color: item.tone ? t.fg : 'var(--color-text-primary)' }}
+              >
                 {item.value}
               </div>
             </div>

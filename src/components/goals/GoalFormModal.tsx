@@ -1,10 +1,29 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { useState } from 'react';
 import {
-  BookOpen, Brain, Briefcase, CheckCircle2, ChevronDown, ChevronUp,
-  Code2, DollarSign, Edit2, Flame, FolderKanban, Globe, GraduationCap,
-  Heart, Lightbulb, Plus, Rocket, Settings, Sparkles, Star,
-  Target, Trophy, type LucideIcon,
+  BookOpen,
+  Brain,
+  Briefcase,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Code2,
+  DollarSign,
+  Edit2,
+  Flame,
+  FolderKanban,
+  Globe,
+  GraduationCap,
+  Heart,
+  Lightbulb,
+  Plus,
+  Rocket,
+  Settings,
+  Sparkles,
+  Star,
+  Target,
+  Trophy,
+  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input, Textarea } from '../ui/Input';
@@ -46,24 +65,24 @@ type GoalFormModalProps = {
 };
 
 const iconChoices: { value: string; label: string; icon: LucideIcon }[] = [
-  { value: 'target',        label: 'Target',    icon: Target       },
-  { value: 'rocket',        label: 'Rocket',    icon: Rocket       },
-  { value: 'brain',         label: 'Brain',     icon: Brain        },
-  { value: 'book-open',     label: 'Book',      icon: BookOpen     },
-  { value: 'flame',         label: 'Focus',     icon: Flame        },
-  { value: 'folder-kanban', label: 'Plan',      icon: FolderKanban },
-  { value: 'check-square',  label: 'Done',      icon: CheckCircle2 },
-  { value: 'trophy',        label: 'Trophy',    icon: Trophy       },
-  { value: 'dollar-sign',   label: 'Finance',   icon: DollarSign   },
-  { value: 'lightbulb',     label: 'Idea',      icon: Lightbulb    },
-  { value: 'graduation',    label: 'Learn',     icon: GraduationCap},
-  { value: 'briefcase',     label: 'Work',      icon: Briefcase    },
-  { value: 'code2',         label: 'Code',      icon: Code2        },
-  { value: 'heart',         label: 'Health',    icon: Heart        },
-  { value: 'globe',         label: 'Global',    icon: Globe        },
-  { value: 'star',          label: 'Star',      icon: Star         },
-  { value: 'settings',      label: 'Systems',   icon: Settings     },
-  { value: 'sparkles',      label: 'AI',        icon: Sparkles     },
+  { value: 'target', label: 'Target', icon: Target },
+  { value: 'rocket', label: 'Rocket', icon: Rocket },
+  { value: 'brain', label: 'Brain', icon: Brain },
+  { value: 'book-open', label: 'Book', icon: BookOpen },
+  { value: 'flame', label: 'Focus', icon: Flame },
+  { value: 'folder-kanban', label: 'Plan', icon: FolderKanban },
+  { value: 'check-square', label: 'Done', icon: CheckCircle2 },
+  { value: 'trophy', label: 'Trophy', icon: Trophy },
+  { value: 'dollar-sign', label: 'Finance', icon: DollarSign },
+  { value: 'lightbulb', label: 'Idea', icon: Lightbulb },
+  { value: 'graduation', label: 'Learn', icon: GraduationCap },
+  { value: 'briefcase', label: 'Work', icon: Briefcase },
+  { value: 'code2', label: 'Code', icon: Code2 },
+  { value: 'heart', label: 'Health', icon: Heart },
+  { value: 'globe', label: 'Global', icon: Globe },
+  { value: 'star', label: 'Star', icon: Star },
+  { value: 'settings', label: 'Systems', icon: Settings },
+  { value: 'sparkles', label: 'AI', icon: Sparkles },
 ];
 
 const ICONS_INITIAL = 6;
@@ -124,20 +143,28 @@ export function GoalFormModal({
         <div
           className="rounded-[28px] border p-5"
           style={{
-            background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)) 0%, var(--color-surface) 100%)',
+            background:
+              'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)) 0%, var(--color-surface) 100%)',
             borderColor: 'var(--color-border)',
           }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-3xl">
-              <p className="text-[11px] font-black uppercase tracking-[0.25em]" style={{ color: 'var(--color-text-muted)' }}>
+              <p
+                className="text-[11px] font-black uppercase tracking-[0.25em]"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 {editingGoal ? 'Refine your existing goal' : 'Create a high-conviction goal'}
               </p>
               <h3 className="mt-2 text-2xl font-black sm:text-3xl" style={{ color: 'var(--color-text-primary)' }}>
                 Build a goal with the right strategy, timing, and linked work
               </h3>
-              <p className="mt-2 max-w-2xl text-sm leading-7 sm:text-base" style={{ color: 'var(--color-text-secondary)' }}>
-                Use the left side to define the goal. Use the right side to confirm how it will look, what it is connected to, and whether the plan feels ready to ship.
+              <p
+                className="mt-2 max-w-2xl text-sm leading-7 sm:text-base"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Use the left side to define the goal. Use the right side to confirm how it will look, what it is
+                connected to, and whether the plan feels ready to ship.
               </p>
             </div>
 
@@ -195,21 +222,32 @@ export function GoalFormModal({
                   label="Status"
                   value={form.status}
                   onChange={(value) => setForm({ ...form, status: value as GoalStatus })}
-                  options={Object.keys(statusMeta).map((status) => ({ value: status, label: statusMeta[status as GoalStatus].label }))}
+                  options={Object.keys(statusMeta).map((status) => ({
+                    value: status,
+                    label: statusMeta[status as GoalStatus].label,
+                  }))}
                 />
                 <SelectField
                   label="Priority"
                   value={form.priority}
                   onChange={(value) => setForm({ ...form, priority: value as GoalPriority })}
-                  options={Object.keys(priorityMeta).map((priority) => ({ value: priority, label: priorityMeta[priority as GoalPriority].label }))}
+                  options={Object.keys(priorityMeta).map((priority) => ({
+                    value: priority,
+                    label: priorityMeta[priority as GoalPriority].label,
+                  }))}
                 />
               </div>
             </FormSection>
 
-            <FormSection title="Visual Identity" description="Pick an icon and accent color that make this goal instantly recognizable.">
+            <FormSection
+              title="Visual Identity"
+              description="Pick an icon and accent color that make this goal instantly recognizable."
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Icon</label>
+                  <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    Icon
+                  </label>
                   <div className="mt-2 grid grid-cols-6 gap-2">
                     {visibleIcons.map((choice) => {
                       const active = form.icon === choice.value;
@@ -221,7 +259,9 @@ export function GoalFormModal({
                           onClick={() => setForm({ ...form, icon: choice.value })}
                           className="flex flex-col items-center gap-1 rounded-2xl border px-2 py-3 text-[11px] font-bold transition-all"
                           style={{
-                            background: active ? 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-raised))' : 'var(--color-surface-raised)',
+                            background: active
+                              ? 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-raised))'
+                              : 'var(--color-surface-raised)',
                             borderColor: active ? 'var(--color-accent)' : 'var(--color-border)',
                             color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
                           }}
@@ -238,12 +278,22 @@ export function GoalFormModal({
                     className="mt-2 flex items-center gap-1 text-xs font-bold transition-opacity hover:opacity-70"
                     style={{ color: 'var(--color-accent)' }}
                   >
-                    {showAllIcons ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> Show {iconChoices.length - ICONS_INITIAL} more</>}
+                    {showAllIcons ? (
+                      <>
+                        <ChevronUp size={13} /> Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={13} /> Show {iconChoices.length - ICONS_INITIAL} more
+                      </>
+                    )}
                   </button>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Accent color</label>
+                  <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    Accent color
+                  </label>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {colorChoices.map((color) => {
                       const active = form.color.toLowerCase() === color.toLowerCase();
@@ -256,7 +306,9 @@ export function GoalFormModal({
                           style={{
                             background: color,
                             borderColor: active ? 'var(--color-text-primary)' : 'transparent',
-                            boxShadow: active ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent)' : undefined,
+                            boxShadow: active
+                              ? '0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent)'
+                              : undefined,
                           }}
                           aria-label={`Use color ${color}`}
                         />
@@ -277,7 +329,10 @@ export function GoalFormModal({
               </div>
             </FormSection>
 
-            <FormSection title="AI Coach Notes" description="Give the planner extra context so future suggestions are better.">
+            <FormSection
+              title="AI Coach Notes"
+              description="Give the planner extra context so future suggestions are better."
+            >
               <Textarea
                 label="AI summary"
                 rows={4}
@@ -294,7 +349,8 @@ export function GoalFormModal({
                 <div
                   className="rounded-xl border p-5"
                   style={{
-                    background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 90%, white) 0%, var(--color-surface-raised) 100%)',
+                    background:
+                      'linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 90%, white) 0%, var(--color-surface-raised) 100%)',
                     borderColor: 'var(--color-border)',
                   }}
                 >
@@ -310,15 +366,35 @@ export function GoalFormModal({
                         {getIconForKey(form.icon)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--color-text-muted)' }}>Goal Preview</p>
-                        <h4 className="mt-1 text-lg font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                        <p
+                          className="text-[11px] font-black uppercase tracking-[0.2em]"
+                          style={{ color: 'var(--color-text-muted)' }}
+                        >
+                          Goal Preview
+                        </p>
+                        <h4
+                          className="mt-1 text-lg font-black leading-tight"
+                          style={{ color: 'var(--color-text-primary)' }}
+                        >
                           {form.title || 'Your goal title appears here'}
                         </h4>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', color: 'var(--color-accent)' }}>
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-bold"
+                            style={{
+                              background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
+                              color: 'var(--color-accent)',
+                            }}
+                          >
                             {statusMeta[form.status].label}
                           </span>
-                          <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>
+                          <span
+                            className="rounded-full px-2.5 py-1 text-[11px] font-bold"
+                            style={{
+                              background: 'color-mix(in srgb, var(--color-info) 12%, transparent)',
+                              color: 'var(--color-info)',
+                            }}
+                          >
                             {priorityMeta[form.priority].label} priority
                           </span>
                         </div>
@@ -326,7 +402,12 @@ export function GoalFormModal({
                     </div>
                     <div className="flex flex-col items-center">
                       <ProgressRing progress={0} color={form.color || 'var(--color-accent)'} size={76} />
-                      <span className="mt-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Auto</span>
+                      <span
+                        className="mt-1 text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--color-text-muted)' }}
+                      >
+                        Auto
+                      </span>
                     </div>
                   </div>
 
@@ -341,8 +422,14 @@ export function GoalFormModal({
                     <PreviewStat label="Progress" value="Auto" />
                   </div>
 
-                  <div className="mt-4 rounded-2xl border p-3" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-                    <div className="flex items-center justify-between text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  <div
+                    className="mt-4 rounded-2xl border p-3"
+                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                  >
+                    <div
+                      className="flex items-center justify-between text-xs font-bold"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
                       <span>Strategy</span>
                       <span>{form.targetDate ? formatDateLong(form.targetDate) : 'No target date'}</span>
                     </div>
@@ -353,11 +440,18 @@ export function GoalFormModal({
                 </div>
               </FormSection>
 
-              <FormSection title="Link Work" description="Connect the goal to the work that will actually move it forward.">
+              <FormSection
+                title="Link Work"
+                description="Connect the goal to the work that will actually move it forward."
+              >
                 <div className="space-y-4">
                   <LinkPicker
                     title="Habits"
-                    items={habits.map((habit) => ({ id: habit.id, label: habit.title, meta: habit.completedToday ? 'completed today' : `${habit.currentStreak} day streak` }))}
+                    items={habits.map((habit) => ({
+                      id: habit.id,
+                      label: habit.title,
+                      meta: habit.completedToday ? 'completed today' : `${habit.currentStreak} day streak`,
+                    }))}
                     selectedIds={form.linkedHabitIds}
                     onToggle={(id) => toggleSelected('habits', id)}
                   />
@@ -369,7 +463,11 @@ export function GoalFormModal({
                   />
                   <LinkPicker
                     title="Projects"
-                    items={projects.map((project) => ({ id: project.id, label: project.name, meta: `${project.progress}%` }))}
+                    items={projects.map((project) => ({
+                      id: project.id,
+                      label: project.name,
+                      meta: `${project.progress}%`,
+                    }))}
                     selectedIds={form.linkedProjectIds}
                     onToggle={(id) => toggleSelected('projects', id)}
                   />
@@ -378,17 +476,30 @@ export function GoalFormModal({
 
               <FormSection title="Ready Check" description="A quick summary before you save.">
                 <div className="grid grid-cols-2 gap-3">
-                  <SummaryStat label="Title" value={form.title ? 'Set' : 'Missing'} tone={form.title ? 'success' : 'danger'} />
+                  <SummaryStat
+                    label="Title"
+                    value={form.title ? 'Set' : 'Missing'}
+                    tone={form.title ? 'success' : 'danger'}
+                  />
                   <SummaryStat label="Category" value={form.category || 'Unset'} />
-                  <SummaryStat label="Target date" value={form.targetDate ? formatDateLong(form.targetDate) : 'Unset'} />
-                  <SummaryStat label="Linked items" value={form.linkedHabitIds.size + form.linkedTaskIds.size + form.linkedProjectIds.size} />
+                  <SummaryStat
+                    label="Target date"
+                    value={form.targetDate ? formatDateLong(form.targetDate) : 'Unset'}
+                  />
+                  <SummaryStat
+                    label="Linked items"
+                    value={form.linkedHabitIds.size + form.linkedTaskIds.size + form.linkedProjectIds.size}
+                  />
                 </div>
               </FormSection>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: 'var(--color-border)' }}>
+        <div
+          className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           <p className="text-xs sm:text-sm" style={{ color: 'var(--color-text-muted)' }}>
             Fields marked with * are required. Use the preview to sanity-check the goal before saving.
           </p>
@@ -396,7 +507,11 @@ export function GoalFormModal({
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={onSubmit} loading={isSubmitting} leftIcon={editingGoal ? <Edit2 size={15} /> : <Plus size={15} />}>
+            <Button
+              onClick={onSubmit}
+              loading={isSubmitting}
+              leftIcon={editingGoal ? <Edit2 size={15} /> : <Plus size={15} />}
+            >
               {isSubmitting ? 'Saving...' : editingGoal ? 'Save Changes' : 'Create Goal'}
             </Button>
           </div>
@@ -419,12 +534,18 @@ function SelectField({
 }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{label}</span>
+      <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+        {label}
+      </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="rounded-2xl border px-3 py-3 text-sm outline-none"
-        style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+        style={{
+          background: 'var(--color-surface-raised)',
+          borderColor: 'var(--color-border)',
+          color: 'var(--color-text-primary)',
+        }}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -436,20 +557,21 @@ function SelectField({
   );
 }
 
-function FormSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
+function FormSection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <section className="rounded-[28px] border p-5" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+    <section
+      className="rounded-[28px] border p-5"
+      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+    >
       <div className="mb-4">
-        <h4 className="text-base font-black" style={{ color: 'var(--color-text-primary)' }}>{title}</h4>
-        {description && <p className="mt-1 text-sm leading-6" style={{ color: 'var(--color-text-muted)' }}>{description}</p>}
+        <h4 className="text-base font-black" style={{ color: 'var(--color-text-primary)' }}>
+          {title}
+        </h4>
+        {description && (
+          <p className="mt-1 text-sm leading-6" style={{ color: 'var(--color-text-muted)' }}>
+            {description}
+          </p>
+        )}
       </div>
       {children}
     </section>
@@ -458,7 +580,14 @@ function FormSection({
 
 function MiniPill({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+    <span
+      className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold"
+      style={{
+        background: 'var(--color-surface)',
+        borderColor: 'var(--color-border)',
+        color: 'var(--color-text-primary)',
+      }}
+    >
       <span style={{ color: 'var(--color-accent)' }}>{icon}</span>
       {label}
     </span>
@@ -467,9 +596,16 @@ function MiniPill({ icon, label }: { icon: ReactNode; label: string }) {
 
 function PreviewStat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border px-3 py-3" style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
-      <p className="mt-1 text-base font-black" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
+    <div
+      className="rounded-2xl border px-3 py-3"
+      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>
+        {label}
+      </p>
+      <p className="mt-1 text-base font-black" style={{ color: 'var(--color-text-primary)' }}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -483,16 +619,24 @@ function SummaryStat({
   value: number | string;
   tone?: 'default' | 'success' | 'danger';
 }) {
-  const toneColor = tone === 'success'
-    ? 'var(--color-success)'
-    : tone === 'danger'
-      ? 'var(--color-danger)'
-      : 'var(--color-text-secondary)';
+  const toneColor =
+    tone === 'success'
+      ? 'var(--color-success)'
+      : tone === 'danger'
+        ? 'var(--color-danger)'
+        : 'var(--color-text-secondary)';
 
   return (
-    <div className="rounded-2xl border px-3 py-3" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
-      <p className="mt-1 text-sm font-bold" style={{ color: toneColor }}>{value}</p>
+    <div
+      className="rounded-2xl border px-3 py-3"
+      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-bold" style={{ color: toneColor }}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -505,13 +649,29 @@ function ProgressRing({ progress, color, size = 72 }: { progress: number; color:
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-border)" strokeWidth="5" />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset="0" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${circ - dash}`}
+        strokeDashoffset="0"
+      />
       <text
         x={size / 2}
         y={size / 2 + 1}
         textAnchor="middle"
         dominantBaseline="middle"
-        style={{ transform: `rotate(90deg) translateY(-${size / 2}px) translateX(${size / 2}px)`, transformOrigin: '50% 50%', fontSize: 13, fontWeight: 900, fill: 'var(--color-text-primary)' }}
+        style={{
+          transform: `rotate(90deg) translateY(-${size / 2}px) translateX(${size / 2}px)`,
+          transformOrigin: '50% 50%',
+          fontSize: 13,
+          fontWeight: 900,
+          fill: 'var(--color-text-primary)',
+        }}
       >
         {clamp(progress, 0, 100)}%
       </text>
@@ -531,14 +691,23 @@ function LinkPicker({
   onToggle: (id: string) => void;
 }) {
   return (
-    <div className="rounded-2xl border p-4" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+    <div
+      className="rounded-2xl border p-4"
+      style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+    >
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>{title}</h3>
-        <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>{selectedIds.size} selected</span>
+        <h3 className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>
+          {title}
+        </h3>
+        <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+          {selectedIds.size} selected
+        </span>
       </div>
       <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
         {items.length === 0 ? (
-          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Nothing to link yet.</p>
+          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Nothing to link yet.
+          </p>
         ) : (
           items.map((item) => {
             const checked = selectedIds.has(item.id);
@@ -548,13 +717,30 @@ function LinkPicker({
                 type="button"
                 onClick={() => onToggle(item.id)}
                 className="flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left"
-                style={{ background: checked ? 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))' : 'var(--color-surface)', borderColor: checked ? 'var(--color-accent)' : 'var(--color-border)' }}
+                style={{
+                  background: checked
+                    ? 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))'
+                    : 'var(--color-surface)',
+                  borderColor: checked ? 'var(--color-accent)' : 'var(--color-border)',
+                }}
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{item.label}</p>
-                  {item.meta && <p className="truncate text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{item.meta}</p>}
+                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    {item.label}
+                  </p>
+                  {item.meta && (
+                    <p className="truncate text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                      {item.meta}
+                    </p>
+                  )}
                 </div>
-                <div className="flex h-4 w-4 items-center justify-center rounded-full border" style={{ borderColor: checked ? 'var(--color-accent)' : 'var(--color-border)', color: checked ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                <div
+                  className="flex h-4 w-4 items-center justify-center rounded-full border"
+                  style={{
+                    borderColor: checked ? 'var(--color-accent)' : 'var(--color-border)',
+                    color: checked ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                  }}
+                >
                   {checked && <CheckCircle2 size={10} />}
                 </div>
               </button>

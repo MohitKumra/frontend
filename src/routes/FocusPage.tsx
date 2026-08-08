@@ -5,9 +5,30 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Timer, Play, Pause, RotateCcw, Maximize2, Minimize2, X, Flame, CheckCircle2, Circle,
-  ChevronDown, ChevronRight, Target, Coffee, Settings, Moon, TrendingUp, SkipBack,
-  SkipForward, MoreHorizontal, Music, CalendarDays, Clock, AudioLines,
+  Timer,
+  Play,
+  Pause,
+  RotateCcw,
+  Maximize2,
+  Minimize2,
+  X,
+  Flame,
+  CheckCircle2,
+  Circle,
+  ChevronDown,
+  ChevronRight,
+  Target,
+  Coffee,
+  Settings,
+  Moon,
+  TrendingUp,
+  SkipBack,
+  SkipForward,
+  MoreHorizontal,
+  Music,
+  CalendarDays,
+  Clock,
+  AudioLines,
   FolderKanban,
   LucideTrendingUp,
   Zap,
@@ -34,7 +55,9 @@ import type { Quote as QuoteType } from '../data/quotes';
 export type TimerMode = 'focus' | 'short_break' | 'long_break';
 const MODE_ORDER: TimerMode[] = ['focus', 'short_break', 'long_break'];
 const DURATIONS: Record<TimerMode, number> = {
-  focus: 25, short_break: 5, long_break: 15,
+  focus: 25,
+  short_break: 5,
+  long_break: 15,
 };
 const QUICK_DURATIONS = [25, 50, 75, 90];
 const DEFAULT_GOAL_MIN = 240;
@@ -45,11 +68,23 @@ const AUTOSAVE_INTERVAL_SEC = 30;
 const getModeColors = (mode: TimerMode) => {
   switch (mode) {
     case 'focus':
-      return { primary: '#6366F1', subtle: 'color-mix(in srgb, #6366F1 15%, transparent)', glow: 'color-mix(in srgb, #6366F1 25%, transparent)' };
+      return {
+        primary: '#6366F1',
+        subtle: 'color-mix(in srgb, #6366F1 15%, transparent)',
+        glow: 'color-mix(in srgb, #6366F1 25%, transparent)',
+      };
     case 'short_break':
-      return { primary: '#38BDF8', subtle: 'color-mix(in srgb, #38BDF8 15%, transparent)', glow: 'color-mix(in srgb, #38BDF8 25%, transparent)' };
+      return {
+        primary: '#38BDF8',
+        subtle: 'color-mix(in srgb, #38BDF8 15%, transparent)',
+        glow: 'color-mix(in srgb, #38BDF8 25%, transparent)',
+      };
     case 'long_break':
-      return { primary: '#A78BFA', subtle: 'color-mix(in srgb, #A78BFA 15%, transparent)', glow: 'color-mix(in srgb, #A78BFA 25%, transparent)' };
+      return {
+        primary: '#A78BFA',
+        subtle: 'color-mix(in srgb, #A78BFA 15%, transparent)',
+        glow: 'color-mix(in srgb, #A78BFA 25%, transparent)',
+      };
   }
 };
 
@@ -103,9 +138,19 @@ function formatDuration(ms: number): string {
 /* ───────────────────────── Progress Ring ───────────────────────── */
 
 function ProgressRing({
-  logicalSize, progress, colors, running, showKnob = true, isNight = false,
+  logicalSize,
+  progress,
+  colors,
+  running,
+  showKnob = true,
+  isNight = false,
 }: {
-  logicalSize: number; progress: number; colors: ReturnType<typeof getModeColors>; running: boolean; showKnob?: boolean; isNight?: boolean;
+  logicalSize: number;
+  progress: number;
+  colors: ReturnType<typeof getModeColors>;
+  running: boolean;
+  showKnob?: boolean;
+  isNight?: boolean;
 }) {
   const stroke = logicalSize > 200 ? 12 : 10;
   const r = logicalSize / 2 - stroke;
@@ -148,7 +193,14 @@ function ProgressRing({
         );
       })}
 
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={isNight ? 'rgba(255,255,255,0.2)' : 'var(--color-border-subtle)'} strokeWidth={stroke} />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill="none"
+        stroke={isNight ? 'rgba(255,255,255,0.2)' : 'var(--color-border-subtle)'}
+        strokeWidth={stroke}
+      />
       <circle
         cx={cx}
         cy={cy}
@@ -162,7 +214,14 @@ function ProgressRing({
         style={{ transition: 'stroke-dashoffset 1s linear' }}
       />
       {showKnob && clamped > 0.01 && (
-        <circle cx={knobX} cy={knobY} r={stroke / 2 + 2} fill={isNight ? 'rgba(255,255,255,0.9)' : 'var(--color-surface)'} stroke={colors.primary} strokeWidth={3} />
+        <circle
+          cx={knobX}
+          cy={knobY}
+          r={stroke / 2 + 2}
+          fill={isNight ? 'rgba(255,255,255,0.9)' : 'var(--color-surface)'}
+          stroke={colors.primary}
+          strokeWidth={3}
+        />
       )}
     </svg>
   );
@@ -178,26 +237,53 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   const points = values.map((v, i) => `${i * step},${h - (v / max) * h}`).join(' ');
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
-      <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 /* ───────────────────────── Fullscreen stat card ───────────────────────── */
 
-function FocusModeStatCard({ icon, label, value, sub, isNight = false, mode }: {
-  icon: React.ReactNode; iconBg?: string; iconColor?: string; label: string; value: React.ReactNode; sub: string; isNight?: boolean; mode: TimerMode;
+function FocusModeStatCard({
+  icon,
+  label,
+  value,
+  sub,
+  isNight = false,
+  mode,
+}: {
+  icon: React.ReactNode;
+  iconBg?: string;
+  iconColor?: string;
+  label: string;
+  value: React.ReactNode;
+  sub: string;
+  isNight?: boolean;
+  mode: TimerMode;
 }) {
   const colors = getModeColors(mode);
   const modeBoost = mode === 'short_break' ? 2.2 : mode === 'long_break' ? 1.8 : 1;
   const modeBorderBoost = mode === 'short_break' ? 1.7 : mode === 'long_break' ? 1.5 : 1;
-  const nightAlpha = 0.40;
+  const nightAlpha = 0.4;
   const mixBg = (pct: number) =>
-    isNight ? `rgba(255,255,255,${nightAlpha})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+    isNight
+      ? `rgba(255,255,255,${nightAlpha})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
   const mixBorder = (pct: number) =>
-    isNight ? `rgba(255,255,255,${nightAlpha + 0.1})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBorderBoost)}%, transparent)`;
+    isNight
+      ? `rgba(255,255,255,${nightAlpha + 0.1})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBorderBoost)}%, transparent)`;
   const mixIconBg = (pct: number) =>
-    isNight ? `rgba(255,255,255,${nightAlpha + 0.05})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+    isNight
+      ? `rgba(255,255,255,${nightAlpha + 0.05})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
   const textCap = 100 - TEXT_DARKEN[mode];
   const subCap = 100 - Math.max(0, TEXT_DARKEN[mode] - 15);
   const mixText = (pct: number) => `color-mix(in srgb, ${colors.primary} ${Math.min(textCap, pct)}%, #000)`;
@@ -212,13 +298,22 @@ function FocusModeStatCard({ icon, label, value, sub, isNight = false, mode }: {
         backdropFilter: 'blur(4px)',
       }}
     >
-      <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: mixIconBg(30), color: strong }}>
+      <span
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: mixIconBg(30), color: strong }}
+      >
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: mixText(85) }}>{label}</p>
-        <p className="text-lg font-black leading-tight" style={{ color: strong }}>{value}</p>
-        <p className="text-[10px] font-semibold" style={{ color: mixSub(70) }}>{sub}</p>
+        <p className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: mixText(85) }}>
+          {label}
+        </p>
+        <p className="text-lg font-black leading-tight" style={{ color: strong }}>
+          {value}
+        </p>
+        <p className="text-[10px] font-semibold" style={{ color: mixSub(70) }}>
+          {sub}
+        </p>
       </div>
     </div>
   );
@@ -227,17 +322,47 @@ function FocusModeStatCard({ icon, label, value, sub, isNight = false, mode }: {
 /* ───────────────────────── Fullscreen Focus Mode ───────────────────────── */
 
 function FocusModeFullScreen({
-  mode, minutes, seconds, progress, running, selectedTaskTitle, selectedProjectTitle, quotes,
-  ambientPlaying, ambientSound, onToggleAmbient,
-  todayFocusCount, todayFocusTimeLabel, todayBreakCount, longestStreakDays,
-  onExit, onReset, onStartPause, onSkipBack, onSkipForward,
+  mode,
+  minutes,
+  seconds,
+  progress,
+  running,
+  selectedTaskTitle,
+  selectedProjectTitle,
+  quotes,
+  ambientPlaying,
+  ambientSound,
+  onToggleAmbient,
+  todayFocusCount,
+  todayFocusTimeLabel,
+  todayBreakCount,
+  longestStreakDays,
+  onExit,
+  onReset,
+  onStartPause,
+  onSkipBack,
+  onSkipForward,
 }: {
-  mode: TimerMode; minutes: string; seconds: string; progress: number; running: boolean;
-  selectedTaskTitle: string | null; selectedProjectTitle: string | null; quotes: QuoteType[];
-  ambientPlaying: boolean; ambientSound: string; onToggleAmbient: () => void;
-  todayFocusCount: number; todayFocusTimeLabel: string; todayBreakCount: number; longestStreakDays: number;
-  onExit: () => void; onReset: () => void; onStartPause: () => void;
-  onSkipBack: () => void; onSkipForward: () => void;
+  mode: TimerMode;
+  minutes: string;
+  seconds: string;
+  progress: number;
+  running: boolean;
+  selectedTaskTitle: string | null;
+  selectedProjectTitle: string | null;
+  quotes: QuoteType[];
+  ambientPlaying: boolean;
+  ambientSound: string;
+  onToggleAmbient: () => void;
+  todayFocusCount: number;
+  todayFocusTimeLabel: string;
+  todayBreakCount: number;
+  longestStreakDays: number;
+  onExit: () => void;
+  onReset: () => void;
+  onStartPause: () => void;
+  onSkipBack: () => void;
+  onSkipForward: () => void;
 }) {
   const colors = getModeColors(mode);
   const [statsVisible, setStatsVisible] = useState(true);
@@ -245,14 +370,20 @@ function FocusModeFullScreen({
 
   const modeBoost = mode === 'short_break' ? 2.2 : mode === 'long_break' ? 1.8 : 1;
   const modeBorderBoost = mode === 'short_break' ? 1.7 : mode === 'long_break' ? 1.5 : 1;
-  const nightAlpha = 0.40;
+  const nightAlpha = 0.4;
 
   const mixBg = (pct: number) =>
-    isNight ? `rgba(255,255,255,${nightAlpha})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+    isNight
+      ? `rgba(255,255,255,${nightAlpha})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
   const mixBorder = (pct: number) =>
-    isNight ? `rgba(255,255,255,${nightAlpha + 0.1})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBorderBoost)}%, transparent)`;
+    isNight
+      ? `rgba(255,255,255,${nightAlpha + 0.1})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBorderBoost)}%, transparent)`;
   const mixIcon = (pct: number) =>
-    isNight ? `rgba(255,255,255,${nightAlpha + 0.05})` : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
+    isNight
+      ? `rgba(255,255,255,${nightAlpha + 0.05})`
+      : `color-mix(in srgb, ${colors.primary} ${Math.round(pct * modeBoost)}%, transparent)`;
   const textCap = 100 - TEXT_DARKEN[mode];
   const subCap = 100 - Math.max(0, TEXT_DARKEN[mode] - 15);
   const mixText = (pct: number) => `color-mix(in srgb, ${colors.primary} ${Math.min(textCap, pct)}%, #000)`;
@@ -264,10 +395,18 @@ function FocusModeFullScreen({
   const onResetRef = useRef(onReset);
   const onSkipBackRef = useRef(onSkipBack);
   const onSkipForwardRef = useRef(onSkipForward);
-  useEffect(() => { onStartPauseRef.current = onStartPause; }, [onStartPause]);
-  useEffect(() => { onResetRef.current = onReset; }, [onReset]);
-  useEffect(() => { onSkipBackRef.current = onSkipBack; }, [onSkipBack]);
-  useEffect(() => { onSkipForwardRef.current = onSkipForward; }, [onSkipForward]);
+  useEffect(() => {
+    onStartPauseRef.current = onStartPause;
+  }, [onStartPause]);
+  useEffect(() => {
+    onResetRef.current = onReset;
+  }, [onReset]);
+  useEffect(() => {
+    onSkipBackRef.current = onSkipBack;
+  }, [onSkipBack]);
+  useEffect(() => {
+    onSkipForwardRef.current = onSkipForward;
+  }, [onSkipForward]);
 
   useEffect(() => {
     if (quotes.length <= 1) return;
@@ -280,7 +419,10 @@ function FocusModeFullScreen({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space') { e.preventDefault(); onStartPauseRef.current(); }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        onStartPauseRef.current();
+      }
       if (e.key === 'r' || e.key === 'R') onResetRef.current();
       if (e.key === 'ArrowLeft') onSkipBackRef.current();
       if (e.key === 'ArrowRight') onSkipForwardRef.current();
@@ -291,19 +433,19 @@ function FocusModeFullScreen({
 
   return createPortal(
     <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--color-bg)', zIndex: 9999 }}>
-     <div
-  className="absolute inset-0 transition-all duration-700 pointer-events-none"
-  style={{
-    background: `linear-gradient(180deg, ${MODE_SKY[mode][0]} 0%, ${MODE_SKY[mode][1]} 38%, ${MODE_SKY[mode][2]} 72%, ${MODE_SKY[mode][3]} 100%)`,
-  }}
-/>
-<div
-  className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
-  style={{
-    background: `radial-gradient(circle at 50% 30%, color-mix(in srgb, ${colors.primary} 12%, transparent) 0%, transparent 70%)`,
-    opacity: running ? 1 : 0.7,
-  }}
-/>
+      <div
+        className="absolute inset-0 transition-all duration-700 pointer-events-none"
+        style={{
+          background: `linear-gradient(180deg, ${MODE_SKY[mode][0]} 0%, ${MODE_SKY[mode][1]} 38%, ${MODE_SKY[mode][2]} 72%, ${MODE_SKY[mode][3]} 100%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 50% 30%, color-mix(in srgb, ${colors.primary} 12%, transparent) 0%, transparent 70%)`,
+          opacity: running ? 1 : 0.7,
+        }}
+      />
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-6 z-10">
@@ -402,10 +544,18 @@ function FocusModeFullScreen({
       <div className="relative h-full flex items-center justify-center px-3 sm:px-4 pointer-events-none z-10">
         <div className="flex flex-col items-center gap-4 sm:gap-8 w-full max-w-[94vw] sm:max-w-lg p-4 sm:p-8 pointer-events-auto">
           <div className="flex flex-col items-center gap-2 sm:gap-3 w-full px-2">
-            <p className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.25em] sm:tracking-[0.35em]" style={{ color: strong }}>
+            <p
+              className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.25em] sm:tracking-[0.35em]"
+              style={{ color: strong }}
+            >
               {mode === 'focus' ? 'FOCUS' : mode === 'short_break' ? 'SHORT BREAK' : 'LONG BREAK'}
             </p>
-            <p className="text-xs sm:text-sm font-semibold text-center max-w-full break-words" style={{ color: 'var(--color-text-secondary)' }}>{MODE_COPY[mode]}</p>
+            <p
+              className="text-xs sm:text-sm font-semibold text-center max-w-full break-words"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              {MODE_COPY[mode]}
+            </p>
             {selectedTaskTitle && mode === 'focus' && (
               <div className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
                 🎯 {selectedTaskTitle}
@@ -418,24 +568,27 @@ function FocusModeFullScreen({
             )}
           </div>
 
-          <div className="relative flex items-center justify-center" style={{ animation: running ? 'focus-breathe 4s ease-in-out infinite' : 'none' }}>
+          <div
+            className="relative flex items-center justify-center"
+            style={{ animation: running ? 'focus-breathe 4s ease-in-out infinite' : 'none' }}
+          >
             <div className="w-[clamp(200px,58vw,380px)] h-[clamp(200px,58vw,380px)]">
-              <ProgressRing
-                logicalSize={380}
-                progress={progress}
-                colors={colors}
-                running={running}
-                isNight={false}
-              />
+              <ProgressRing logicalSize={380} progress={progress} colors={colors} running={running} isNight={false} />
             </div>
             <div className="absolute flex flex-col items-center gap-2 sm:gap-3 select-none px-2">
-              <span className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tabular-nums tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+              <span
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tabular-nums tracking-tight"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
                 {minutes}:{seconds}
               </span>
-              <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap" style={{
-                background: colors.subtle,
-                color: strong
-              }}>
+              <span
+                className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap"
+                style={{
+                  background: colors.subtle,
+                  color: strong,
+                }}
+              >
                 <Target size={11} className="sm:hidden" />
                 <Target size={12} className="hidden sm:block" />
                 {mode === 'focus' ? 'Focus Session' : mode === 'short_break' ? 'Short Break' : 'Long Break'}
@@ -521,7 +674,10 @@ function FocusModeFullScreen({
             </button>
           </div>
 
-          <p className="text-[11px] sm:text-xs font-semibold text-center max-w-full break-words px-2" style={{ color: 'var(--color-text-muted)' }}>
+          <p
+            className="text-[11px] sm:text-xs font-semibold text-center max-w-full break-words px-2"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
             💡 Tip: Take short breaks to recharge. You'll come back stronger!
           </p>
         </div>
@@ -544,9 +700,15 @@ function FocusModeFullScreen({
                   exit={{ y: -40, opacity: 0 }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
                 >
-                  <p className="text-3xl leading-none mb-2" style={{ color: 'var(--color-accent)' }}>“</p>
-                  <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--color-text-primary)' }}>{quotes[quoteIndex].quote}</p>
-                  <p className="text-xs font-bold mt-3" style={{ color: 'var(--color-text-secondary)' }}>— {quotes[quoteIndex].author}</p>
+                  <p className="text-3xl leading-none mb-2" style={{ color: 'var(--color-accent)' }}>
+                    “
+                  </p>
+                  <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--color-text-primary)' }}>
+                    {quotes[quoteIndex].quote}
+                  </p>
+                  <p className="text-xs font-bold mt-3" style={{ color: 'var(--color-text-secondary)' }}>
+                    — {quotes[quoteIndex].author}
+                  </p>
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -555,20 +717,30 @@ function FocusModeFullScreen({
       </div>
 
       <div className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 z-10">
-        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl border shadow-sm" style={{
-          background: mixBg(20),
-          borderColor: mixBorder(30),
-          backdropFilter: 'blur(4px)',
-        }}>
-          <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0" style={{
-            background: mixIcon(30),
-            color: strong
-          }}>
+        <div
+          className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl border shadow-sm"
+          style={{
+            background: mixBg(20),
+            borderColor: mixBorder(30),
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <span
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: mixIcon(30),
+              color: strong,
+            }}
+          >
             <Music size={14} />
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] sm:text-xs font-bold truncate" style={{ color: mixText(90) }}>{ambientSound}</p>
-            <p className="text-[9px] sm:text-[10px] font-semibold truncate" style={{ color: mixSub(70) }}>Concentration</p>
+            <p className="text-[11px] sm:text-xs font-bold truncate" style={{ color: mixText(90) }}>
+              {ambientSound}
+            </p>
+            <p className="text-[9px] sm:text-[10px] font-semibold truncate" style={{ color: mixSub(70) }}>
+              Concentration
+            </p>
           </div>
           <button
             onClick={onToggleAmbient}
@@ -582,33 +754,59 @@ function FocusModeFullScreen({
       </div>
 
       <div className="hidden sm:block absolute bottom-6 right-6 z-10">
-        <div className="px-5 py-3.5 rounded-2xl border shadow-sm" style={{
-          background: mixBg(18),
-          borderColor: mixBorder(30),
-          backdropFilter: 'blur(4px)',
-        }}>
-          <p className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: mixText(85) }}>Shortcuts</p>
+        <div
+          className="px-5 py-3.5 rounded-2xl border shadow-sm"
+          style={{
+            background: mixBg(18),
+            borderColor: mixBorder(30),
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: mixText(85) }}>
+            Shortcuts
+          </p>
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-2">
-              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{
-                background: mixIcon(30),
-                color: strong
-              }}>Space</kbd>
-              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>Start / Pause</span>
+              <kbd
+                className="px-2.5 py-1.5 rounded-md text-[10px] font-black"
+                style={{
+                  background: mixIcon(30),
+                  color: strong,
+                }}
+              >
+                Space
+              </kbd>
+              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>
+                Start / Pause
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{
-                background: mixIcon(30),
-                color: strong
-              }}>R</kbd>
-              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>Reset</span>
+              <kbd
+                className="px-2.5 py-1.5 rounded-md text-[10px] font-black"
+                style={{
+                  background: mixIcon(30),
+                  color: strong,
+                }}
+              >
+                R
+              </kbd>
+              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>
+                Reset
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-2.5 py-1.5 rounded-md text-[10px] font-black" style={{
-                background: mixIcon(30),
-                color: strong
-              }}>←→</kbd>
-              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>Switch Mode</span>
+              <kbd
+                className="px-2.5 py-1.5 rounded-md text-[10px] font-black"
+                style={{
+                  background: mixIcon(30),
+                  color: strong,
+                }}
+              >
+                ←→
+              </kbd>
+              <span className="text-[11px] font-semibold" style={{ color: mixText(85) }}>
+                Switch Mode
+              </span>
             </div>
           </div>
         </div>
@@ -633,9 +831,13 @@ function FocusModeFullScreen({
 /* ───────────────────────── Task Selector ───────────────────────── */
 
 function TaskSelector({
-  tasks, selectedTaskId, onSelect,
+  tasks,
+  selectedTaskId,
+  onSelect,
 }: {
-  tasks: TaskDTO[]; selectedTaskId: string | null; onSelect: (taskId: string | null) => void;
+  tasks: TaskDTO[];
+  selectedTaskId: string | null;
+  onSelect: (taskId: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -661,18 +863,39 @@ function TaskSelector({
         }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Target size={14} className="shrink-0" style={{ color: selectedTaskId ? 'var(--color-accent)' : undefined }} />
+          <Target
+            size={14}
+            className="shrink-0"
+            style={{ color: selectedTaskId ? 'var(--color-accent)' : undefined }}
+          />
           <span className="truncate">{selectedTask ? selectedTask.title : 'Link a task (optional)'}</span>
         </div>
-        <ChevronDown size={14} className="shrink-0" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+        <ChevronDown
+          size={14}
+          className="shrink-0"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}
+        />
       </button>
 
       {open && (
         <div
           className="absolute top-full left-0 right-0 mt-2 rounded-xl border shadow-xl overflow-hidden"
-          style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', zIndex: 50, maxHeight: 260, overflowY: 'auto' }}
+          style={{
+            background: 'var(--color-surface-raised)',
+            borderColor: 'var(--color-border)',
+            zIndex: 50,
+            maxHeight: 260,
+            overflowY: 'auto',
+          }}
         >
-          <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800" style={{ color: 'var(--color-text-secondary)' }}>
+          <button
+            onClick={() => {
+              onSelect(null);
+              setOpen(false);
+            }}
+            className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
             No task (general focus)
           </button>
           {tasks.length === 0 && <div className="px-3.5 py-2.5 text-[11px] text-text-muted">No active tasks found</div>}
@@ -681,15 +904,26 @@ function TaskSelector({
             return (
               <button
                 key={task.id}
-                onClick={() => { onSelect(task.id); setOpen(false); }}
+                onClick={() => {
+                  onSelect(task.id);
+                  setOpen(false);
+                }}
                 className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-3"
                 style={{ background: isActive ? 'var(--color-accent-subtle)' : undefined }}
               >
-                <span className="truncate" style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-primary)' }}>{task.title}</span>
+                <span
+                  className="truncate"
+                  style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-primary)' }}
+                >
+                  {task.title}
+                </span>
                 <span
                   className="shrink-0 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full"
                   style={{
-                    background: task.status === 'IN_PROGRESS' ? 'color-mix(in srgb, var(--color-info) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 15%, transparent)',
+                    background:
+                      task.status === 'IN_PROGRESS'
+                        ? 'color-mix(in srgb, var(--color-info) 15%, transparent)'
+                        : 'color-mix(in srgb, var(--color-text-muted) 15%, transparent)',
                     color: task.status === 'IN_PROGRESS' ? 'var(--color-info)' : 'var(--color-text-muted)',
                   }}
                 >
@@ -705,9 +939,13 @@ function TaskSelector({
 }
 
 function ProjectSelector({
-  projects, selectedProjectId, onSelect,
+  projects,
+  selectedProjectId,
+  onSelect,
 }: {
-  projects: ProjectDTO[]; selectedProjectId: string | null; onSelect: (projectId: string | null) => void;
+  projects: ProjectDTO[];
+  selectedProjectId: string | null;
+  onSelect: (projectId: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -733,18 +971,39 @@ function ProjectSelector({
         }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <FolderKanban size={14} className="shrink-0" style={{ color: selectedProjectId ? 'var(--color-accent)' : undefined }} />
+          <FolderKanban
+            size={14}
+            className="shrink-0"
+            style={{ color: selectedProjectId ? 'var(--color-accent)' : undefined }}
+          />
           <span className="truncate">{selectedProject ? selectedProject.name : 'Link a project (optional)'}</span>
         </div>
-        <ChevronDown size={14} className="shrink-0" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+        <ChevronDown
+          size={14}
+          className="shrink-0"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}
+        />
       </button>
 
       {open && (
         <div
           className="absolute top-full left-0 right-0 mt-2 rounded-xl border shadow-xl overflow-hidden"
-          style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)', zIndex: 50, maxHeight: 260, overflowY: 'auto' }}
+          style={{
+            background: 'var(--color-surface-raised)',
+            borderColor: 'var(--color-border)',
+            zIndex: 50,
+            maxHeight: 260,
+            overflowY: 'auto',
+          }}
         >
-          <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800" style={{ color: 'var(--color-text-secondary)' }}>
+          <button
+            onClick={() => {
+              onSelect(null);
+              setOpen(false);
+            }}
+            className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
             No project
           </button>
           {projects.length === 0 && <div className="px-3.5 py-2.5 text-[11px] text-text-muted">No projects found</div>}
@@ -753,11 +1012,19 @@ function ProjectSelector({
             return (
               <button
                 key={project.id}
-                onClick={() => { onSelect(project.id); setOpen(false); }}
+                onClick={() => {
+                  onSelect(project.id);
+                  setOpen(false);
+                }}
                 className="w-full text-left px-3.5 py-2.5 text-xs font-medium transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-3"
                 style={{ background: isActive ? 'var(--color-accent-subtle)' : undefined }}
               >
-                <span className="truncate" style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-primary)' }}>{project.name}</span>
+                <span
+                  className="truncate"
+                  style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-primary)' }}
+                >
+                  {project.name}
+                </span>
                 <span
                   className="shrink-0 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full"
                   style={{
@@ -816,7 +1083,10 @@ function FocusHero({
     mouseX.set((e.clientX - r.left) / r.width);
     mouseY.set((e.clientY - r.top) / r.height);
   };
-  const onLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+  const onLeave = () => {
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
 
   const modeColors = getModeColors(mode);
   const goalDone = goalPct >= 100;
@@ -843,24 +1113,48 @@ function FocusHero({
       }}
     >
       {/* Ambient blobs */}
-      <motion.div style={{ x: blob1X, y: blob1Y }}
-        className="pointer-events-none absolute z-0 -top-20 -left-20 h-72 w-72 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
-        <div className="h-full w-full rounded-full" style={{
-          background: `radial-gradient(circle, color-mix(in srgb, ${modeColors.primary} 14%, transparent), transparent 70%)`,
-          filter: 'blur(36px)',
-          transition: 'background 0.6s ease',
-        }} />
+      <motion.div
+        style={{ x: blob1X, y: blob1Y }}
+        className="pointer-events-none absolute z-0 -top-20 -left-20 h-72 w-72 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.08, 1] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background: `radial-gradient(circle, color-mix(in srgb, ${modeColors.primary} 14%, transparent), transparent 70%)`,
+            filter: 'blur(36px)',
+            transition: 'background 0.6s ease',
+          }}
+        />
       </motion.div>
-      <motion.div style={{ x: blob2X }}
-        className="pointer-events-none absolute z-0 -bottom-12 -right-12 h-56 w-56 rounded-full" aria-hidden="true"
-        animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}>
-        <div className="h-full w-full rounded-full" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-success) 9%, transparent), transparent 70%)', filter: 'blur(40px)' }} />
+      <motion.div
+        style={{ x: blob2X }}
+        className="pointer-events-none absolute z-0 -bottom-12 -right-12 h-56 w-56 rounded-full"
+        aria-hidden="true"
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      >
+        <div
+          className="h-full w-full rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, color-mix(in srgb, var(--color-success) 9%, transparent), transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
       </motion.div>
 
       {/* Dot grid */}
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.022]" aria-hidden="true"
-        style={{ backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.022]"
+        aria-hidden="true"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--color-text-primary) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
 
       {/* Running pulse bar */}
       <AnimatePresence>
@@ -883,10 +1177,10 @@ function FocusHero({
       </AnimatePresence>
 
       <div className="relative z-10 flex flex-col gap-5 p-5 sm:p-7 lg:p-5">
-
         {/* Row 1: Eyebrow + Focus Mode CTA */}
         <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
+          <div
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.22em]"
             style={{
               background: running
                 ? `color-mix(in srgb, ${modeColors.primary} 10%, var(--color-surface))`
@@ -896,10 +1190,12 @@ function FocusHero({
                 : 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
               color: running ? modeColors.primary : 'var(--color-accent)',
               transition: 'all 0.4s ease',
-            }}>
+            }}
+          >
             <motion.span
               animate={running ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-              transition={{ duration: 1.5, repeat: running ? Infinity : 0 }}>
+              transition={{ duration: 1.5, repeat: running ? Infinity : 0 }}
+            >
               <Timer size={11} />
             </motion.span>
             {running ? (mode === 'focus' ? 'In session' : 'On break') : 'Pomodoro Timer'}
@@ -923,8 +1219,10 @@ function FocusHero({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           {/* Left: title + sub + progress */}
           <div className="min-w-0">
-            <h1 className="font-black tracking-tight"
-              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}>
+            <h1
+              className="font-black tracking-tight"
+              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.6rem)', lineHeight: 1.08, color: 'var(--color-text-primary)' }}
+            >
               Focus{' '}
               <span
                 className="focus-headline-gradient"
@@ -945,7 +1243,10 @@ function FocusHero({
                 <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                   Daily goal
                 </span>
-                <span className="text-[11px] font-black" style={{ color: goalDone ? 'var(--color-success)' : 'var(--color-text-primary)' }}>
+                <span
+                  className="text-[11px] font-black"
+                  style={{ color: goalDone ? 'var(--color-success)' : 'var(--color-text-primary)' }}
+                >
                   {formatDuration(todayFocusMin * 60000)} / {formatDuration(DEFAULT_GOAL_MIN * 60000)}
                 </span>
               </div>
@@ -960,7 +1261,9 @@ function FocusHero({
                       ? 'linear-gradient(90deg, var(--color-success), #16A34A)'
                       : `linear-gradient(90deg, ${modeColors.primary}, #818CF8)`,
                     transition: 'background 0.4s ease',
-                    boxShadow: goalDone ? '0 0 8px color-mix(in srgb, var(--color-success) 50%, transparent)' : `0 0 8px ${modeColors.primary}44`,
+                    boxShadow: goalDone
+                      ? '0 0 8px color-mix(in srgb, var(--color-success) 50%, transparent)'
+                      : `0 0 8px ${modeColors.primary}44`,
                   }}
                 />
               </div>
@@ -974,20 +1277,42 @@ function FocusHero({
 
 /* ───────────────────────── Small presentational cards ───────────────────────── */
 
-function StatCard({ icon, iconBg, iconColor, label, value, sub, subColor, sparkline }: {
-  icon: React.ReactNode; iconBg: string; iconColor: string; label: string; value: React.ReactNode;
-  sub?: string; subColor?: string; sparkline?: number[];
+function StatCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  value,
+  sub,
+  subColor,
+  sparkline,
+}: {
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+  subColor?: string;
+  sparkline?: number[];
 }) {
   return (
     <Card variant="default" className="p-3.5 sm:p-4">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg, color: iconColor }}>
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: iconBg, color: iconColor }}
+        >
           {icon}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted truncate">{label}</p>
           <p className="text-lg font-black text-text-primary leading-tight">{value}</p>
-          {sub && <p className="text-[10px] font-semibold mt-0.5" style={{ color: subColor }}>{sub}</p>}
+          {sub && (
+            <p className="text-[10px] font-semibold mt-0.5" style={{ color: subColor }}>
+              {sub}
+            </p>
+          )}
         </div>
         {sparkline && <Sparkline values={sparkline} color={iconColor} />}
       </div>
@@ -995,7 +1320,13 @@ function StatCard({ icon, iconBg, iconColor, label, value, sub, subColor, sparkl
   );
 }
 
-function TodaysPlanCard({ items, onPick }: { items: { id: string; title: string; time: string; color: string }[]; onPick: (id: string) => void }) {
+function TodaysPlanCard({
+  items,
+  onPick,
+}: {
+  items: { id: string; title: string; time: string; color: string }[];
+  onPick: (id: string) => void;
+}) {
   return (
     <Card variant="default" className="p-4">
       <div className="flex items-center gap-2 mb-3">
@@ -1007,11 +1338,18 @@ function TodaysPlanCard({ items, onPick }: { items: { id: string; title: string;
       ) : (
         <div className="flex flex-col gap-1">
           {items.map((item) => (
-            <button key={item.id} onClick={() => onPick(item.id)} className="flex items-center gap-2.5 py-1.5 px-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group">
+            <button
+              key={item.id}
+              onClick={() => onPick(item.id)}
+              className="flex items-center gap-2.5 py-1.5 px-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+            >
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: item.color }} />
               <span className="text-xs font-semibold text-text-primary flex-1 text-left truncate">{item.title}</span>
               <span className="text-[10px] font-bold text-text-muted whitespace-nowrap">{item.time}</span>
-              <ChevronRight size={13} className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              <ChevronRight
+                size={13}
+                className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              />
             </button>
           ))}
         </div>
@@ -1020,9 +1358,20 @@ function TodaysPlanCard({ items, onPick }: { items: { id: string; title: string;
   );
 }
 
-function AmbientSoundCard({ sound, setSound, playing, onToggle, loading, error: hasError }: {
-  sound: string; setSound: (s: string) => void; playing: boolean; onToggle: () => void;
-  loading?: boolean; error?: boolean;
+function AmbientSoundCard({
+  sound,
+  setSound,
+  playing,
+  onToggle,
+  loading,
+  error: hasError,
+}: {
+  sound: string;
+  setSound: (s: string) => void;
+  playing: boolean;
+  onToggle: () => void;
+  loading?: boolean;
+  error?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -1054,13 +1403,19 @@ function AmbientSoundCard({ sound, setSound, playing, onToggle, loading, error: 
             {getSoundLabel()} <ChevronDown size={12} />
           </button>
           {open && (
-            <div className="absolute top-full left-0 mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden" style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}>
+            <div
+              className="absolute top-full left-0 mt-1.5 w-36 rounded-xl border shadow-lg z-20 overflow-hidden"
+              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+            >
               {AMBIENT_SOUNDS.map((s) => {
                 const isSelected = s === sound;
                 return (
                   <button
                     key={s}
-                    onClick={() => { setSound(s); setOpen(false); }}
+                    onClick={() => {
+                      setSound(s);
+                      setOpen(false);
+                    }}
                     className="w-full text-left px-3 py-2.5 text-[11px] font-semibold flex items-center justify-between gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                     style={{ color: isSelected ? 'var(--color-accent)' : 'var(--color-text-primary)' }}
                   >
@@ -1087,9 +1442,7 @@ function AmbientSoundCard({ sound, setSound, playing, onToggle, loading, error: 
             <Play size={14} />
           )}
           {/* Pulse ring when loading */}
-          {loading && playing && (
-            <span className="absolute inset-0 rounded-full animate-ping bg-white/20" />
-          )}
+          {loading && playing && <span className="absolute inset-0 rounded-full animate-ping bg-white/20" />}
         </button>
       </div>
       {/* Waveform bars — show shimmer when loading, animate when playing, static when off */}
@@ -1109,17 +1462,13 @@ function AmbientSoundCard({ sound, setSound, playing, onToggle, loading, error: 
                     ? 'var(--color-accent-muted)'
                     : 'var(--color-border-subtle)',
                 opacity: showPlayWave ? 0.5 + (i % 3) * 0.15 : showLoadingWave ? 0.3 + (i % 3) * 0.1 : 1,
-                animation: showLoadingWave
-                  ? `waveform-loading 1.2s ease-in-out ${i * 0.08}s infinite`
-                  : 'none',
+                animation: showLoadingWave ? `waveform-loading 1.2s ease-in-out ${i * 0.08}s infinite` : 'none',
               }}
             />
           );
         })}
       </div>
-      {hasError && (
-        <p className="text-[10px] font-semibold text-danger mt-1.5">Failed to load sound. Tap to retry.</p>
-      )}
+      {hasError && <p className="text-[10px] font-semibold text-danger mt-1.5">Failed to load sound. Tap to retry.</p>}
       <style>{`
         @keyframes waveform-loading {
           0%, 100% { transform: scaleY(0.6); }
@@ -1130,7 +1479,6 @@ function AmbientSoundCard({ sound, setSound, playing, onToggle, loading, error: 
   );
 }
 
-
 /** Format a timestamp for the recent sessions list.
  *  Uses completedAt when available (for completed/cancelled sessions),
  *  falls back to startedAt otherwise.
@@ -1139,12 +1487,12 @@ function formatSessionTimestamp(s: FocusSessionDTO): string {
   const ts = s.completedAt ?? s.startedAt;
   const date = new Date(ts);
   const now = new Date();
-  const isToday = date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
+  const isToday =
+    date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  const isYesterday = date.getDate() === yesterday.getDate() &&
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
     date.getMonth() === yesterday.getMonth() &&
     date.getFullYear() === yesterday.getFullYear();
 
@@ -1156,9 +1504,13 @@ function formatSessionTimestamp(s: FocusSessionDTO): string {
 }
 
 function RecentSessionsCard({
-  sessions, tasksById, projectsById,
+  sessions,
+  tasksById,
+  projectsById,
 }: {
-  sessions: FocusSessionDTO[]; tasksById: Map<string, string>; projectsById: Map<string, string>;
+  sessions: FocusSessionDTO[];
+  tasksById: Map<string, string>;
+  projectsById: Map<string, string>;
 }) {
   const recent = sessions.slice(0, 5);
   return (
@@ -1173,9 +1525,9 @@ function RecentSessionsCard({
         <div className="flex flex-col gap-2.5">
           {recent.map((s) => {
             const label = s.taskId
-              ? tasksById.get(s.taskId) ?? 'Task'
+              ? (tasksById.get(s.taskId) ?? 'Task')
               : s.projectId
-                ? projectsById.get(s.projectId) ?? 'Project'
+                ? (projectsById.get(s.projectId) ?? 'Project')
                 : s.isBreak
                   ? 'Break'
                   : 'Focus Session';
@@ -1192,7 +1544,9 @@ function RecentSessionsCard({
                 <span className="text-[10px] font-bold text-text-muted whitespace-nowrap">
                   {formatSessionTimestamp(s)}
                 </span>
-                <span className="text-[10px] font-bold text-text-muted whitespace-nowrap w-9 text-right">{s.durationMin}m</span>
+                <span className="text-[10px] font-bold text-text-muted whitespace-nowrap w-9 text-right">
+                  {s.durationMin}m
+                </span>
               </div>
             );
           })}
@@ -1219,7 +1573,10 @@ export function FocusPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [ambientSound, setAmbientSound] = useState(AMBIENT_SOUNDS[0]);
   const [ambientPlaying, setAmbientPlaying] = useState(false);
-  const { loading: ambientLoading, error: ambientError } = useAmbientSound(ambientSound as 'Forest' | 'Rain' | 'Ocean' | 'Silence', ambientPlaying);
+  const { loading: ambientLoading, error: ambientError } = useAmbientSound(
+    ambientSound as 'Forest' | 'Rain' | 'Ocean' | 'Silence',
+    ambientPlaying
+  );
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
@@ -1231,7 +1588,9 @@ export function FocusPage() {
   const lastLoggedElapsedRef = useRef(0);
   const autosaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => { elapsedRef.current = elapsedSeconds; }, [elapsedSeconds]);
+  useEffect(() => {
+    elapsedRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
 
   // ─── Recovery on mount: try server-side active session first, then localStorage ───
   useEffect(() => {
@@ -1249,7 +1608,9 @@ export function FocusPage() {
           }
           localStorage.removeItem('focus-timer-state');
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
       // Try server-side recovery first
       try {
@@ -1277,7 +1638,11 @@ export function FocusPage() {
 
           // If somehow the timer should have expired, mark it completed
           if (remaining <= 0) {
-            try { await focusApi.complete(active.id); } catch { /* ignore */ }
+            try {
+              await focusApi.complete(active.id);
+            } catch {
+              /* ignore */
+            }
             setSessionId(null);
             setSecondsLeft(DURATIONS.focus * 60);
             setStartedAt(null);
@@ -1291,7 +1656,9 @@ export function FocusPage() {
           restoredRef.current = true;
           return;
         }
-      } catch { /* server recovery failed — fall through to localStorage */ }
+      } catch {
+        /* server recovery failed — fall through to localStorage */
+      }
 
       // Fallback: localStorage recovery
       const restored = restoreTimerState(mode);
@@ -1313,9 +1680,9 @@ export function FocusPage() {
             setSelectedTaskId(null);
             setSelectedProjectId(null);
             clearTimerState(mode);
-          setIsRestored(true);
-          restoredRef.current = true;
-          return;
+            setIsRestored(true);
+            restoredRef.current = true;
+            return;
           }
         }
         setSecondsLeft(newSecondsLeft);
@@ -1356,7 +1723,16 @@ export function FocusPage() {
   useEffect(() => {
     if (!isRestored) return;
     if (startedAt) {
-      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId });
+      saveTimerState({
+        mode,
+        secondsLeft,
+        running,
+        startedAt,
+        elapsedSeconds,
+        selectedTaskId,
+        selectedProjectId,
+        sessionId,
+      });
     }
   }, [mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId]);
 
@@ -1380,14 +1756,23 @@ export function FocusPage() {
     queryFn: () => apiClient.get<ListResponse<ProjectDTO>>('/projects').then((r) => r.data),
   });
 
-  const activeTasks = useMemo(() => (tasksData?.data ?? []).filter((t) => t.status === 'TODO' || t.status === 'IN_PROGRESS'), [tasksData]);
+  const activeTasks = useMemo(
+    () => (tasksData?.data ?? []).filter((t) => t.status === 'TODO' || t.status === 'IN_PROGRESS'),
+    [tasksData]
+  );
   const allTasks = tasksData?.data ?? [];
   const selectedTask = allTasks.find((t) => t.id === selectedTaskId) ?? null;
-  const tasksById:Map<string , string> = useMemo(() => new Map(allTasks.map((t) => [t.id, t.title])), [allTasks]);
-  const activeProjects = useMemo(() => (projectsData?.data ?? []).filter((p) => p.status !== 'COMPLETED' && p.status !== 'CANCELLED'), [projectsData]);
+  const tasksById: Map<string, string> = useMemo(() => new Map(allTasks.map((t) => [t.id, t.title])), [allTasks]);
+  const activeProjects = useMemo(
+    () => (projectsData?.data ?? []).filter((p) => p.status !== 'COMPLETED' && p.status !== 'CANCELLED'),
+    [projectsData]
+  );
   const allProjects = projectsData?.data ?? [];
   const selectedProject = allProjects.find((p) => p.id === selectedProjectId) ?? null;
-  const projectsById:Map<string , string> = useMemo(() => new Map(allProjects.map((p) => [p.id, p.name])), [allProjects]);
+  const projectsById: Map<string, string> = useMemo(
+    () => new Map(allProjects.map((p) => [p.id, p.name])),
+    [allProjects]
+  );
 
   useEffect(() => {
     const projectIdParam = searchParams.get('projectId');
@@ -1482,7 +1867,9 @@ export function FocusPage() {
 
   const isBreakMode = mode === 'short_break' || mode === 'long_break';
   const isBreakModeRef = useRef(isBreakMode);
-  useEffect(() => { isBreakModeRef.current = isBreakMode; }, [isBreakMode]);
+  useEffect(() => {
+    isBreakModeRef.current = isBreakMode;
+  }, [isBreakMode]);
 
   // ─── Autosave: flush elapsed to server every 30 seconds ────────────────
   useEffect(() => {
@@ -1496,7 +1883,7 @@ export function FocusPage() {
 
     autosaveTimerRef.current = setInterval(() => {
       const elapsedMin = Math.round(elapsedRef.current / 60);
-      if (elapsedMin > (lastLoggedElapsedRef.current / 60)) {
+      if (elapsedMin > lastLoggedElapsedRef.current / 60) {
         updateSession.mutate({ id: sessionId, elapsedMin });
         lastLoggedElapsedRef.current = elapsedRef.current;
       }
@@ -1513,14 +1900,22 @@ export function FocusPage() {
   // ─── Timer tick ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!running) {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       return;
     }
     intervalRef.current = setInterval(() => {
       setSecondsLeft((prev) => Math.max(0, prev - 1));
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
-    return () => { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; } };
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [running]);
 
   // ─── Completion detection ──────────────────────────────────────────────
@@ -1565,7 +1960,16 @@ export function FocusPage() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (running) {
-        saveTimerState({ mode, secondsLeft, running: false, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId });
+        saveTimerState({
+          mode,
+          secondsLeft,
+          running: false,
+          startedAt,
+          elapsedSeconds,
+          selectedTaskId,
+          selectedProjectId,
+          sessionId,
+        });
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -1573,13 +1977,23 @@ export function FocusPage() {
   }, [running, mode, secondsLeft, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId]);
 
   const enterFocusMode = async () => {
-    try { await requestFullscreen(document.documentElement); } catch { /* denied */ }
+    try {
+      await requestFullscreen(document.documentElement);
+    } catch {
+      /* denied */
+    }
     setFocusMode(true);
   };
   const exitFocusMode = async () => {
     flushAndPause();
     setRunning(false);
-    if (isFullscreenActive()) { try { await exitFullscreen(); } catch { /* no-op */ } }
+    if (isFullscreenActive()) {
+      try {
+        await exitFullscreen();
+      } catch {
+        /* no-op */
+      }
+    }
     setFocusMode(false);
   };
 
@@ -1588,7 +2002,16 @@ export function FocusPage() {
   const changeMode = (m: TimerMode) => {
     // Flush current session's elapsed on mode switch
     if (startedAt) {
-      saveTimerState({ mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId });
+      saveTimerState({
+        mode,
+        secondsLeft,
+        running,
+        startedAt,
+        elapsedSeconds,
+        selectedTaskId,
+        selectedProjectId,
+        sessionId,
+      });
     }
 
     const targetState = restoreTimerState(m);
@@ -1677,7 +2100,9 @@ export function FocusPage() {
     changeMode(prev);
   };
 
-  const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+  const minutes = Math.floor(secondsLeft / 60)
+    .toString()
+    .padStart(2, '0');
   const seconds = (secondsLeft % 60).toString().padStart(2, '0');
   const progress = 1 - secondsLeft / (durationForMode(mode) * 60);
   const colors = getModeColors(mode);
@@ -1691,23 +2116,30 @@ export function FocusPage() {
   const totalBreakCount = breakOnlySessions.length;
 
   const todaySessions = allSessions.filter((s) => isSameDay(new Date(s.startedAt), new Date()));
-  const todayFocusMin = todaySessions.filter((s) => !s.isBreak && s.status === 'COMPLETED').reduce((acc, s) => acc + s.durationMin, 0)
-    + (timeLogsData ?? []).filter((l) => isSameDay(new Date(l.date), new Date())).reduce((acc, l) => acc + l.durationMin, 0);
+  const todayFocusMin =
+    todaySessions.filter((s) => !s.isBreak && s.status === 'COMPLETED').reduce((acc, s) => acc + s.durationMin, 0) +
+    (timeLogsData ?? [])
+      .filter((l) => isSameDay(new Date(l.date), new Date()))
+      .reduce((acc, l) => acc + l.durationMin, 0);
   const todayFocusCount = todaySessions.filter((s) => !s.isBreak && s.status === 'COMPLETED').length;
   const todayBreakCount = todaySessions.filter((s) => s.isBreak).length;
   const goalPct = Math.min(100, Math.round((todayFocusMin / DEFAULT_GOAL_MIN) * 100));
 
   const weekBars = useMemo(() => {
     const dateKeys = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0);
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
       return d.toISOString().split('T')[0];
     });
     const days = dateKeys.map((key, i) => {
-      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
       return { date: d, label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), minutes: 0, key };
     });
     allSessions.forEach((s) => {
-      const sd = new Date(s.startedAt); sd.setHours(0, 0, 0, 0);
+      const sd = new Date(s.startedAt);
+      sd.setHours(0, 0, 0, 0);
       const sessionKey = sd.toISOString().split('T')[0];
       const match = days.find((d) => d.key === sessionKey);
       if (match) match.minutes += s.durationMin;
@@ -1718,21 +2150,31 @@ export function FocusPage() {
 
   const thisWeekTotal = weekBars.reduce((acc, d) => acc + d.minutes, 0);
   const lastWeekTotal = useMemo(() => {
-    const start = new Date(); start.setDate(start.getDate() - 13); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setDate(end.getDate() - 7); end.setHours(23, 59, 59, 999);
-    return allSessions.filter((s) => { const d = new Date(s.startedAt); return d >= start && d <= end; }).reduce((acc, s) => acc + s.durationMin, 0);
+    const start = new Date();
+    start.setDate(start.getDate() - 13);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setDate(end.getDate() - 7);
+    end.setHours(23, 59, 59, 999);
+    return allSessions
+      .filter((s) => {
+        const d = new Date(s.startedAt);
+        return d >= start && d <= end;
+      })
+      .reduce((acc, s) => acc + s.durationMin, 0);
   }, [allSessions]);
   const weekDeltaMin = thisWeekTotal - lastWeekTotal;
 
   const longestStreakDays = useMemo(() => {
     const dayKeys = new Set(
       focusOnlySessions.map((s) => {
-        const d = new Date(s.startedAt); d.setHours(0, 0, 0, 0);
+        const d = new Date(s.startedAt);
+        d.setHours(0, 0, 0, 0);
         return d.getTime();
       })
     );
     if (dayKeys.size === 0) return 0;
-    const sortedDays:any = Array.from(dayKeys).sort((a:any, b:any) => a - b);
+    const sortedDays: any = Array.from(dayKeys).sort((a: any, b: any) => a - b);
     let longest = 1;
     let current = 1;
     const oneDayMs = 86400000;
@@ -1748,7 +2190,8 @@ export function FocusPage() {
   }, [focusOnlySessions]);
 
   const focusScore = Math.max(0, Math.min(100, Math.round(goalPct * 0.8 + Math.min(todayFocusCount, 10) * 2)));
-  const focusScoreLabel = focusScore >= 85 ? 'Excellent' : focusScore >= 65 ? 'Good' : focusScore >= 35 ? 'Fair' : 'Building';
+  const focusScoreLabel =
+    focusScore >= 85 ? 'Excellent' : focusScore >= 65 ? 'Good' : focusScore >= 35 ? 'Fair' : 'Building';
 
   const modeTabs = [
     { id: 'focus', label: 'Focus' },
@@ -1784,7 +2227,12 @@ export function FocusPage() {
       )}
 
       <div className="w-full flex flex-col gap-4 sm:gap-5">
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4 sm:gap-5">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col gap-4 sm:gap-5"
+        >
           {/* ── Premium Hero Header ──────────────────────────────── */}
           <motion.div variants={itemVariants}>
             <FocusHero
@@ -1845,7 +2293,10 @@ export function FocusPage() {
           {/* Progress bar */}
           <motion.div variants={itemVariants} className="-mt-2 px-1">
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
-              <div className="h-full rounded-full transition-all" style={{ width: `${goalPct}%`, background: 'var(--gradient-accent)' }} />
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${goalPct}%`, background: 'var(--gradient-accent)' }}
+              />
             </div>
           </motion.div>
 
@@ -1854,18 +2305,33 @@ export function FocusPage() {
             {/* Left column */}
             <motion.div variants={itemVariants} className="order-2 lg:order-1 flex flex-col gap-4">
               <TodaysPlanCard items={todaysPlanItems} onPick={setSelectedTaskId} />
-              <AmbientSoundCard sound={ambientSound} setSound={setAmbientSound} playing={ambientPlaying} onToggle={() => setAmbientPlaying((p) => !p)} loading={ambientLoading} error={ambientError} />
+              <AmbientSoundCard
+                sound={ambientSound}
+                setSound={setAmbientSound}
+                playing={ambientPlaying}
+                onToggle={() => setAmbientPlaying((p) => !p)}
+                loading={ambientLoading}
+                error={ambientError}
+              />
               <QuoteCard quotes={getDailyQuotes()} />
             </motion.div>
 
             {/* Center column — timer */}
             <motion.div variants={itemVariants} className="order-1 lg:order-2 flex flex-col items-center gap-5">
-              <TabBar tabs={modeTabs} activeTab={mode} onTabChange={(m) => changeMode(m as TimerMode)} variant="pill" className="w-full justify-center" />
+              <TabBar
+                tabs={modeTabs}
+                activeTab={mode}
+                onTabChange={(m) => changeMode(m as TimerMode)}
+                variant="pill"
+                className="w-full justify-center"
+              />
 
               <div
                 className="relative flex items-center justify-center my-1 p-6 sm:p-8 rounded-full transition-all duration-500"
                 style={{
-                  boxShadow: running ? `0 0 40px ${colors.glow}, inset 0 0 24px ${colors.glow}` : '0 10px 30px -10px rgba(0,0,0,0.08), inset 0 0 10px rgba(0,0,0,0.02)',
+                  boxShadow: running
+                    ? `0 0 40px ${colors.glow}, inset 0 0 24px ${colors.glow}`
+                    : '0 10px 30px -10px rgba(0,0,0,0.08), inset 0 0 10px rgba(0,0,0,0.02)',
                   background: 'var(--color-surface-raised)',
                   border: '1px solid var(--color-border)',
                 }}
@@ -1873,7 +2339,11 @@ export function FocusPage() {
                 <button
                   onClick={handleSkipBack}
                   className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center border shadow-sm z-10"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-secondary)',
+                  }}
                   aria-label="Previous mode"
                 >
                   <SkipBack size={15} />
@@ -1882,15 +2352,24 @@ export function FocusPage() {
                   <ProgressRing logicalSize={260} progress={progress} colors={colors} running={running} />
                 </div>
                 <div className="absolute flex flex-col items-center select-none">
-                  <span className="text-4xl sm:text-5xl font-black tabular-nums text-text-primary tracking-tight">{minutes}:{seconds}</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest mt-2 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1" style={{ background: colors.subtle, color: colors.primary }}>
+                  <span className="text-4xl sm:text-5xl font-black tabular-nums text-text-primary tracking-tight">
+                    {minutes}:{seconds}
+                  </span>
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest mt-2 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1"
+                    style={{ background: colors.subtle, color: colors.primary }}
+                  >
                     <Target size={10} /> {mode === 'focus' ? 'Focus Session' : mode.replace('_', ' ')}
                   </span>
                 </div>
                 <button
                   onClick={handleSkipForward}
                   className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center border shadow-sm z-10"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-secondary)',
+                  }}
                   aria-label="Next mode"
                 >
                   <SkipForward size={15} />
@@ -1903,12 +2382,21 @@ export function FocusPage() {
                 <button
                   onClick={handleReset}
                   className="w-11 h-11 flex items-center justify-center rounded-full border shadow-sm"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  style={{
+                    background: 'var(--color-surface)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-secondary)',
+                  }}
                   aria-label="Reset timer"
                 >
                   <RotateCcw size={16} />
                 </button>
-                <Button onClick={handleStartPause} size="lg" className="w-48 shadow-lg font-bold" leftIcon={running ? <Pause size={18} /> : <Play size={18} />}>
+                <Button
+                  onClick={handleStartPause}
+                  size="lg"
+                  className="w-48 shadow-lg font-bold"
+                  leftIcon={running ? <Pause size={18} /> : <Play size={18} />}
+                >
                   {running ? 'Pause' : mode === 'focus' ? 'Start Focus' : 'Start Break'}
                 </Button>
               </div>
@@ -1918,7 +2406,12 @@ export function FocusPage() {
                 <Card variant="default" className="p-4 w-full">
                   <div className="flex items-center justify-between mb-2.5">
                     <p className="text-xs font-bold text-text-primary">Quick Start</p>
-                    <button onClick={() => setCustomOpen((o) => !o)} className="text-[11px] font-bold text-accent hover:text-accent-hover">Custom ✎</button>
+                    <button
+                      onClick={() => setCustomOpen((o) => !o)}
+                      className="text-[11px] font-bold text-accent hover:text-accent-hover"
+                    >
+                      Custom ✎
+                    </button>
                   </div>
                   <p className="text-[11px] text-text-muted font-semibold mb-3">Choose a duration and get started</p>
                   {customOpen && (
@@ -1931,9 +2424,19 @@ export function FocusPage() {
                         onChange={(e) => setCustomInput(e.target.value)}
                         placeholder="Minutes"
                         className="flex-1 px-3 py-2 rounded-lg border text-xs font-semibold"
-                        style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text-primary)' }}
+                        style={{
+                          borderColor: 'var(--color-border)',
+                          background: 'var(--color-surface)',
+                          color: 'var(--color-text-primary)',
+                        }}
                       />
-                      <button onClick={applyCustomDuration} className="px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: 'var(--gradient-accent)' }}>Set</button>
+                      <button
+                        onClick={applyCustomDuration}
+                        className="px-3 py-2 rounded-lg text-xs font-bold text-white"
+                        style={{ background: 'var(--gradient-accent)' }}
+                      >
+                        Set
+                      </button>
                     </div>
                   )}
                   <div className="grid grid-cols-4 gap-2">
@@ -1948,7 +2451,8 @@ export function FocusPage() {
                           borderColor: focusDurationMin === d ? 'transparent' : 'var(--color-border)',
                         }}
                       >
-                        {d}<span className="block text-[9px] font-semibold opacity-80">min</span>
+                        {d}
+                        <span className="block text-[9px] font-semibold opacity-80">min</span>
                       </button>
                     ))}
                   </div>
@@ -1956,15 +2460,29 @@ export function FocusPage() {
               )}
 
               {!bannerDismissed && totalFocusCount > 0 && (
-                <Card variant="default" className="p-3.5 w-full flex items-center justify-between gap-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))', borderColor: 'var(--color-accent-border)' }}>
+                <Card
+                  variant="default"
+                  className="p-3.5 w-full flex items-center justify-between gap-3"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))',
+                    borderColor: 'var(--color-accent-border)',
+                  }}
+                >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-lg shrink-0">🔥</span>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-text-primary">You're on a roll!</p>
-                      <p className="text-[11px] text-text-muted font-semibold truncate">You've completed {todayFocusCount} sessions today. Keep going!</p>
+                      <p className="text-[11px] text-text-muted font-semibold truncate">
+                        You've completed {todayFocusCount} sessions today. Keep going!
+                      </p>
                     </div>
                   </div>
-                  <button onClick={() => setBannerDismissed(true)} className="text-text-muted hover:text-text-primary shrink-0"><X size={14} /></button>
+                  <button
+                    onClick={() => setBannerDismissed(true)}
+                    className="text-text-muted hover:text-text-primary shrink-0"
+                  >
+                    <X size={14} />
+                  </button>
                 </Card>
               )}
             </motion.div>
@@ -1973,9 +2491,16 @@ export function FocusPage() {
             <motion.div variants={itemVariants} className="order-3 flex flex-col gap-4">
               <Card variant="default" className="p-4 flex flex-col gap-3">
                 <TaskSelector tasks={activeTasks} selectedTaskId={selectedTaskId} onSelect={setSelectedTaskId} />
-                <ProjectSelector projects={activeProjects} selectedProjectId={selectedProjectId} onSelect={setSelectedProjectId} />
+                <ProjectSelector
+                  projects={activeProjects}
+                  selectedProjectId={selectedProjectId}
+                  onSelect={setSelectedProjectId}
+                />
                 {selectedTask && (
-                  <div className="mt-3 flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--gradient-accent)' }}>
+                  <div
+                    className="mt-3 flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: 'var(--gradient-accent)' }}
+                  >
                     <span className="w-9 h-9 rounded-lg flex items-center justify-center bg-white/20 shrink-0">
                       <Target size={16} className="text-white" />
                     </span>
@@ -1983,13 +2508,20 @@ export function FocusPage() {
                       <p className="text-xs font-bold text-white truncate">{selectedTask.title}</p>
                       <p className="text-[10px] text-white/80 font-semibold">Linked task</p>
                     </div>
-                    <button onClick={() => setSelectedTaskId(null)} className="text-[10px] font-bold text-white px-2.5 py-1 rounded-lg bg-white/20 shrink-0">Change</button>
+                    <button
+                      onClick={() => setSelectedTaskId(null)}
+                      className="text-[10px] font-bold text-white px-2.5 py-1 rounded-lg bg-white/20 shrink-0"
+                    >
+                      Change
+                    </button>
                   </div>
                 )}
               </Card>
 
               <RecentSessionsCard
-                sessions={[...allSessions].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())}
+                sessions={[...allSessions].sort(
+                  (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+                )}
                 tasksById={tasksById}
                 projectsById={projectsById}
               />
@@ -1997,29 +2529,50 @@ export function FocusPage() {
               <Card variant="default" className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-xs font-bold text-text-primary">Focus Statistics</h4>
-                  <span className="text-[11px] font-bold text-text-muted flex items-center gap-1">This Week <ChevronDown size={11} /></span>
+                  <span className="text-[11px] font-bold text-text-muted flex items-center gap-1">
+                    This Week <ChevronDown size={11} />
+                  </span>
                 </div>
                 {allSessions.length > 0 ? (
                   <div className="flex items-stretch justify-between gap-1 h-16 mb-3">
                     {weekBars.map((d, i) => (
                       <div key={i} className="flex-1 h-full flex flex-col items-center gap-1.5 min-w-0">
-                        <div className="w-full flex-1 flex items-end rounded-md overflow-hidden" style={{ background: 'var(--color-border-subtle)' }}>
-                          <div className="w-full rounded-md transition-all duration-500" style={{ height: `${Math.max(d.pct, d.minutes > 0 ? 8 : 0)}%`, background: 'var(--gradient-accent)' }} title={`${d.minutes} min`} />
+                        <div
+                          className="w-full flex-1 flex items-end rounded-md overflow-hidden"
+                          style={{ background: 'var(--color-border-subtle)' }}
+                        >
+                          <div
+                            className="w-full rounded-md transition-all duration-500"
+                            style={{
+                              height: `${Math.max(d.pct, d.minutes > 0 ? 8 : 0)}%`,
+                              background: 'var(--gradient-accent)',
+                            }}
+                            title={`${d.minutes} min`}
+                          />
                         </div>
                         <span className="text-[9px] font-bold text-text-muted uppercase shrink-0">{d.label}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="h-16 flex items-center justify-center mb-3"><p className="text-[11px] text-text-muted">No sessions yet</p></div>
+                  <div className="h-16 flex items-center justify-center mb-3">
+                    <p className="text-[11px] text-text-muted">No sessions yet</p>
+                  </div>
                 )}
-                <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                <div
+                  className="flex items-center justify-between pt-3 border-t"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
                   <div>
                     <p className="text-base font-black text-text-primary">{formatDuration(thisWeekTotal * 60000)}</p>
                     <p className="text-[10px] text-text-muted font-semibold">Total Focus</p>
                   </div>
-                  <p className="text-[11px] font-bold" style={{ color: weekDeltaMin >= 0 ? 'var(--color-success)' : 'var(--color-danger, #ef4444)' }}>
-                    {weekDeltaMin >= 0 ? '+' : ''}{formatDuration(Math.abs(weekDeltaMin) * 60000)} vs last week
+                  <p
+                    className="text-[11px] font-bold"
+                    style={{ color: weekDeltaMin >= 0 ? 'var(--color-success)' : 'var(--color-danger, #ef4444)' }}
+                  >
+                    {weekDeltaMin >= 0 ? '+' : ''}
+                    {formatDuration(Math.abs(weekDeltaMin) * 60000)} vs last week
                   </p>
                 </div>
               </Card>
