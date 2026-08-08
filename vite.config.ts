@@ -12,6 +12,6 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-    allowedHosts: ['localhost', '127.0.0.1'],
+    allowedHosts: ['localhost', '127.0.0.1' , 'frontend-production-f612.up.railway.app'],
   },
 });
