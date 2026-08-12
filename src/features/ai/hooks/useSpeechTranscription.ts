@@ -37,6 +37,7 @@ export function appendTranscriptText(current: string, transcript: string): strin
 export function useSpeechTranscription({ onTranscript, language }: UseSpeechTranscriptionOptions) {
   const onTranscriptRef = useRef(onTranscript);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const finalTranscriptPartsRef = useRef<string[]>([]);
   const draftTranscriptRef = useRef('');
   const shouldCommitRef = useRef(false);
   const [isListening, setIsListening] = useState(false);
@@ -75,6 +76,7 @@ export function useSpeechTranscription({ onTranscript, language }: UseSpeechTran
     try {
       const recognition = new Recognition();
       recognitionRef.current = recognition;
+      finalTranscriptPartsRef.current = [];
       draftTranscriptRef.current = '';
       shouldCommitRef.current = true;
       setError(null);
@@ -86,19 +88,29 @@ export function useSpeechTranscription({ onTranscript, language }: UseSpeechTran
       recognition.maxAlternatives = 1;
 
       recognition.onresult = (event) => {
-        let transcript = '';
-        for (let index = 0; index < event.results.length; index += 1) {
+        const finalParts = finalTranscriptPartsRef.current;
+        let interimTranscript = '';
+
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index];
           const primaryAlternative = result[0];
-          if (primaryAlternative?.transcript) {
-            transcript += `${primaryAlternative.transcript} `;
+          const transcript = primaryAlternative?.transcript?.trim();
+          if (!transcript) continue;
+
+          if (result.isFinal) {
+            finalParts[index] = transcript;
+          } else {
+            interimTranscript = transcript;
           }
         }
-        draftTranscriptRef.current = transcript.trim();
+
+        const finalTranscript = finalParts.filter(Boolean).join(' ').trim();
+        draftTranscriptRef.current = [finalTranscript, interimTranscript].filter(Boolean).join(' ').trim();
       };
 
       recognition.onerror = (event) => {
         shouldCommitRef.current = false;
+        finalTranscriptPartsRef.current = [];
         draftTranscriptRef.current = '';
         recognitionRef.current = null;
         setIsListening(false);
@@ -108,6 +120,7 @@ export function useSpeechTranscription({ onTranscript, language }: UseSpeechTran
       recognition.onend = () => {
         const transcript = shouldCommitRef.current ? draftTranscriptRef.current.trim() : '';
         shouldCommitRef.current = false;
+        finalTranscriptPartsRef.current = [];
         draftTranscriptRef.current = '';
         recognitionRef.current = null;
         setIsListening(false);
@@ -120,6 +133,7 @@ export function useSpeechTranscription({ onTranscript, language }: UseSpeechTran
       recognition.start();
     } catch {
       shouldCommitRef.current = false;
+      finalTranscriptPartsRef.current = [];
       draftTranscriptRef.current = '';
       recognitionRef.current = null;
       setIsListening(false);
