@@ -14,8 +14,13 @@ import {
   ChevronRight,
   Wand2,
   ListChecks,
+  Mic,
+  Square,
 } from 'lucide-react';
 import { useTaskParser, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
+import { appendTranscriptText, useSpeechTranscription } from '../../features/ai/hooks/useSpeechTranscription';
+import { Button } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
 
 interface ParsedTask {
   title: string;
@@ -82,6 +87,12 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const taskParser = useTaskParser();
   const taskBuilderEnabled = useAIFeatureEnabled('taskParserEnabled');
+  const transcription = useSpeechTranscription({
+    onTranscript: (text) => {
+      setInput((current) => appendTranscriptText(current, text));
+      inputRef.current?.focus();
+    },
+  });
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || taskParser.isPending) return;
@@ -282,6 +293,31 @@ export function NaturalTaskInput({ onTaskParsed, onClose }: NaturalTaskInputProp
               <X size={13} />
             </button>
           )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-4 pb-3">
+          <div
+            className="min-h-4 text-[10px] font-semibold"
+            style={{
+              color: transcription.error ? 'var(--color-danger)' : 'var(--color-text-muted)',
+            }}
+          >
+            {transcription.error ?? (transcription.isListening ? 'Listening' : '')}
+          </div>
+          <Tooltip content={transcription.isListening ? 'Stop transcription' : 'Transcribe speech'} side="top">
+            <Button
+              type="button"
+              size="icon"
+              variant={transcription.isListening ? 'danger' : 'secondary'}
+              onClick={transcription.isListening ? transcription.stop : transcription.start}
+              disabled={!transcription.isSupported || taskParser.isPending}
+              aria-label={transcription.isListening ? 'Stop transcription' : 'Start transcription'}
+              title={
+                transcription.isSupported ? undefined : 'Speech transcription is not supported in this browser'
+              }
+              leftIcon={transcription.isListening ? <Square size={14} /> : <Mic size={14} />}
+            />
+          </Tooltip>
         </div>
 
         {/* Example prompts */}

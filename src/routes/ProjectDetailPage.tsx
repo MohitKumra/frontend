@@ -207,7 +207,7 @@ export function ProjectDetailPage() {
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
         setVoiceError('Microphone is being used by another app.');
       } else {
-        setVoiceError('Could not access microphone. Please try again.');
+        setVoiceError(err?.message || 'Could not access microphone. Please try again.');
       }
     }
   };

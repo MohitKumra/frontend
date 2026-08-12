@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
@@ -31,7 +31,7 @@ import {
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
-import { useProjects, useDeleteProject } from '../features/projects/hooks/useProjects';
+import { useProjects, useDeleteProject, useFilteredProjects } from '../features/projects/hooks/useProjects';
 import { CreateProjectModal } from '../components/projects/CreateProjectModal';
 import { EditProjectModal } from '../components/projects/EditProjectModal';
 import type { ProjectDTO } from '../types';
@@ -157,8 +157,28 @@ export function ProjectsPage() {
     danger: { bg: 'var(--icon-bg-danger, rgba(239,68,68,0.12))', color: 'var(--color-danger, #dc2626)' },
   };
 
-  // ---- Filter + search + sort ----
-  const filteredProjects = useMemo(() => {
+  // Debounce search so the backend is only called after the user pauses typing.
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    return () => window.clearTimeout(id);
+  }, [searchQuery]);
+
+  // The status / search / sort filters are applied on the backend. The full
+  // project set is still fetched for the stats / widgets above. For the default
+  // view we fall back to the already-fetched full list so the page paints
+  // instantly; other filter combinations are loaded from the backend.
+  const listFilters = useMemo(
+    () => ({ status: filterStatus, search: debouncedSearchQuery.trim(), sort: sortBy }),
+    [filterStatus, debouncedSearchQuery, sortBy]
+  );
+  const { data: filteredProjectsData } = useFilteredProjects(listFilters);
+
+  // Instant local placeholder computed from the already-fetched full project
+  // set. It renders on every filter/sort/search change with zero lag; the
+  // backend response replaces it as soon as it arrives, so the backend stays
+  // the source of truth. This is what keeps the UI feeling immediate.
+  const localFilteredProjects = useMemo(() => {
     let list = projects.filter((p) => (filterStatus === 'ALL' ? true : p.status === filterStatus));
 
     if (searchQuery.trim()) {
@@ -181,11 +201,34 @@ export function ProjectsPage() {
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         });
         break;
-      default:
-        break;
     }
     return sorted;
   }, [projects, filterStatus, searchQuery, sortBy]);
+
+  const filteredProjects = filteredProjectsData?.data ?? localFilteredProjects;
+
+  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
+  // fire a request storm (these tabs now query the backend). The tab still
+  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
+  const [tabsDisabled, setTabsDisabled] = useState(false);
+  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFilterChange = useCallback(
+    (nextStatus: FilterStatus) => {
+      if (tabsDisabled) return;
+      setFilterStatus(nextStatus);
+      setTabsDisabled(true);
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
+    },
+    [tabsDisabled, setFilterStatus]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+    };
+  }, []);
 
   // Handle projectId from URL query parameter (for notification clicks).
   // AUTO-SELECT a filter that will show the project, HIGHLIGHT the card, SCROLL to it.
@@ -269,7 +312,9 @@ export function ProjectsPage() {
                 return (
                   <button
                     key={status}
-                    onClick={() => setFilterStatus(status)}
+                    onClick={() => handleFilterChange(status)}
+                    disabled={tabsDisabled}
+                    style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
                     className={`np-pill ${isActive ? 'is-active' : ''}`}
                   >
                     {isActive && (

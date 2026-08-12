@@ -133,7 +133,7 @@ export function MediaAttachmentsField({
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
         setError('Microphone is being used by another app.');
       } else {
-        setError('Could not access microphone. Please try again.');
+        setError(err?.message || 'Could not access microphone. Please try again.');
       }
     }
   };

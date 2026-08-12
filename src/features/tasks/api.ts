@@ -11,11 +11,14 @@ import type {
   UpdateSubTaskRequest,
   TaskTimeEntryDTO,
   CreateTaskTimeEntryRequest,
+  TaskCountsDTO,
 } from '../../types';
 
 export const tasksApi = {
-  list: (params?: Record<string, string>) =>
-    apiClient.get<ListResponse<TaskDTO>>('/tasks', { params }).then((r) => r.data),
+  list: (params?: Record<string, string>, signal?: AbortSignal) =>
+    apiClient.get<ListResponse<TaskDTO>>('/tasks', { params, signal }).then((r) => r.data),
+
+  getCounts: () => apiClient.get<TaskCountsDTO>('/tasks/counts').then((r) => r.data),
 
   getOne: (id: string) => apiClient.get<TaskDetailDTO>(`/tasks/${id}`).then((r) => r.data),
 

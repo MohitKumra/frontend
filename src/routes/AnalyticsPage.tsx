@@ -987,12 +987,12 @@ export function AnalyticsPage({ embedded = false }: AnalyticsPageProps) {
 
   const RootWrapper: any = embedded ? 'div' : motion.div;
   const rootProps = embedded
-    ? { className: 'relative mx-auto flex w-full flex-col gap-5 overflow-hidden px-3 py-4 sm:px-4 lg:px-5 lg:py-5' }
+    ? { className: 'relative flex w-full flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6 lg:py-5 2xl:px-8' }
     : {
         variants: containerVariants,
         initial: 'hidden',
         animate: 'visible',
-        className: 'relative mx-auto flex w-full flex-col gap-5 overflow-hidden px-3 py-4 sm:px-4 lg:px-5 lg:py-5',
+        className: 'relative flex w-full flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6 lg:py-5 2xl:px-8',
       };
 
   return (

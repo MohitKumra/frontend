@@ -106,7 +106,7 @@ function warmRouteData(route: string): void {
       break;
     }
     case '/habits':
-      void queryClient.prefetchQuery({ queryKey: ['habits'], queryFn: habitsApi.list });
+      void queryClient.prefetchQuery({ queryKey: ['habits'], queryFn: () => habitsApi.list() });
       break;
     case '/notes':
       void queryClient.prefetchQuery({ queryKey: ['notes', undefined], queryFn: () => notesApi.list() });

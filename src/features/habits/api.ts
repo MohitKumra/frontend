@@ -11,7 +11,8 @@ import type {
 } from '../../types';
 
 export const habitsApi = {
-  list: () => apiClient.get<HabitsListResponse>('/habits').then((r) => r.data),
+  list: (params?: Record<string, string>) =>
+    apiClient.get<HabitsListResponse>('/habits', { params }).then((r) => r.data),
   create: (data: CreateHabitRequest) => apiClient.post<HabitDTO>('/habits', data).then((r) => r.data),
   update: (id: string, data: UpdateHabitRequest) =>
     apiClient.patch<HabitDTO>(`/habits/${id}`, data).then((r) => r.data),

@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { GoalDTO } from '../../types';
+import { GOAL_ICONS } from './goalIcons';
 
 type ViewMode = 'grid' | 'list';
 
@@ -51,6 +52,14 @@ function formatRelativeTime(value: string | null | undefined): string {
 }
 
 function getGoalMeta(goal: GoalDTO): { label: string; Icon: LucideIcon; color: string } {
+  // 1) Explicit user-picked icon wins. GOAL_ICONS has no "None" key, so an
+  //    empty / null / "none" icon falls through to the category heuristic below.
+  const explicitIcon = goal.icon ? GOAL_ICONS[goal.icon] : undefined;
+  if (explicitIcon) {
+    return { label: goal.category || 'Goal', Icon: explicitIcon, color: goal.color || '#4F46E5' };
+  }
+
+  // 2) Fallback: derive icon from the goal's category/title keywords.
   const src = `${goal.category ?? ''} ${goal.icon ?? ''} ${goal.title}`.toLowerCase();
   const table = [
     { match: ['revenue', 'finance', 'money', 'sales'], label: 'Finance', Icon: TrendingUp, color: '#10B981' },

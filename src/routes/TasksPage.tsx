@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, useTransition, useDeferredValue } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
@@ -11,7 +11,6 @@ import {
   CheckSquare,
   Plus,
   Search,
-  Keyboard,
   ChevronDown,
   Zap,
   Calendar,
@@ -21,16 +20,14 @@ import {
   RotateCcw,
   ArrowRight,
   BookOpen,
-  Settings2,
   ListChecks,
   Columns3,
   X,
-  Clock,
   Flame,
-  ArrowUpRight,
+  CalendarDays,
   BarChart3,
 } from 'lucide-react';
-import { useTasks, useUpdateTask, useDeleteTask } from '../features/tasks/hooks/useTasks';
+import { useTasks, useTasksOffset, useUpdateTask, useDeleteTask } from '../features/tasks/hooks/useTasks';
 import { useTaskKeyboardShortcuts } from '../hooks/useTaskKeyboardShortcuts';
 import { useDashboardSummary } from '../features/dashboard/hooks/useDashboard';
 import { tasksApi } from '../features/tasks/api';
@@ -44,38 +41,74 @@ import { NotionImportModal } from '../components/notion/NotionImportModal';
 import { useNotionStatus } from '../features/notion/hooks/useNotion';
 import { EditTaskModal } from '../components/tasks/EditTaskModal';
 import { TaskBoardView } from '../components/tasks/TaskBoardView';
-import { TaskCard, isOverdue, isToday } from '../components/tasks/TaskCard';
+import { TaskCard } from '../components/tasks/TaskCard';
+import { PageControls } from '../components/tasks/PageControls';
 import { TasksEmptyState } from '../components/tasks/TasksEmptyState';
 import { ProductivityEngine } from '../components/habits/ProductivityEngine';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
-import type { DailyAnalyticsDTO, TaskDTO, TaskStatus } from '../types';
+import type { DailyAnalyticsDTO, TaskCountsDTO, TaskDTO, TaskStatus } from '../types';
+import {
+  dateKeyInTimeZone,
+  formatDueDateInTimeZone,
+  isFutureTaskInTimeZone,
+  isOverdueInTimeZone,
+  isTodayInTimeZone,
+  isUpcomingInTimeZone,
+} from '../lib/taskDateUtils';
 
 type TaskFilter = 'pending' | 'today' | 'upcoming' | 'completed' | 'overdue' | 'all';
 type ViewMode = 'list' | 'board';
 type SortKey = 'priority' | 'dueDate' | 'created';
 
+// Date filter preset — drives the from/to params independently of the status filter tab
+type DatePreset = 'any' | 'today' | 'tomorrow' | 'this_week' | 'next_week' | 'this_month' | 'no_date' | 'custom';
+
 const PRIORITY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
-function isFutureTask(dateStr: string | null): boolean {
-  if (!dateStr) return false;
-  if (isToday(dateStr)) return false;
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  const d = new Date(dateStr);
-  return d > today;
+/** Returns today's date string in YYYY-MM-DD (local time). */
+function localDateStr(offset = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().split('T')[0];
 }
 
-function isUpcoming(dateStr: string | null): boolean {
-  if (!dateStr) return false;
-  if (isToday(dateStr)) return false;
-  const d = new Date(dateStr);
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  const weekFromNow = new Date();
-  weekFromNow.setDate(today.getDate() + 7);
-  weekFromNow.setHours(23, 59, 59, 999);
-  return d > today && d <= weekFromNow;
+/** Compute from/to for a given date preset. Returns undefined for 'any'/'no_date'/'custom'. */
+function datePresetToRange(preset: DatePreset): { from?: string; to?: string; noDate?: boolean } {
+  switch (preset) {
+    case 'today':
+      return { from: localDateStr(0), to: localDateStr(0) };
+    case 'tomorrow':
+      return { from: localDateStr(1), to: localDateStr(1) };
+    case 'this_week': {
+      const now = new Date();
+      const day = now.getDay(); // 0=Sun
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - day);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      return { from: startOfWeek.toISOString().split('T')[0], to: endOfWeek.toISOString().split('T')[0] };
+    }
+    case 'next_week': {
+      const now = new Date();
+      const day = now.getDay();
+      const startOfNext = new Date(now);
+      startOfNext.setDate(now.getDate() - day + 7);
+      const endOfNext = new Date(startOfNext);
+      endOfNext.setDate(startOfNext.getDate() + 6);
+      return { from: startOfNext.toISOString().split('T')[0], to: endOfNext.toISOString().split('T')[0] };
+    }
+    case 'this_month': {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { from: firstDay.toISOString().split('T')[0], to: lastDay.toISOString().split('T')[0] };
+    }
+    case 'no_date':
+      return { noDate: true };
+    default:
+      return {};
+  }
 }
 
 // ─── TasksHero ────────────────────────────────────────────────────────────────
@@ -96,6 +129,183 @@ type AnalyticsWindow = {
   scoreTrend: string;
   scoreSignal: number;
 };
+
+// ─── DateFilterBar ────────────────────────────────────────────────────────────
+
+const DATE_PRESETS: { value: DatePreset; label: string }[] = [
+  { value: 'any', label: 'Any date' },
+  { value: 'today', label: 'Today' },
+  { value: 'tomorrow', label: 'Tomorrow' },
+  { value: 'this_week', label: 'This week' },
+  { value: 'next_week', label: 'Next week' },
+  { value: 'this_month', label: 'This month' },
+  { value: 'no_date', label: 'No date' },
+  { value: 'custom', label: 'Custom…' },
+];
+
+function DateFilterBar({
+  datePreset,
+  setDatePreset,
+  customFrom,
+  setCustomFrom,
+  customTo,
+  setCustomTo,
+}: {
+  datePreset: DatePreset;
+  setDatePreset: (v: DatePreset) => void;
+  customFrom: string;
+  setCustomFrom: (v: string) => void;
+  customTo: string;
+  setCustomTo: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draftFrom, setDraftFrom] = useState(customFrom);
+  const [draftTo, setDraftTo] = useState(customTo);
+  const hasActive = datePreset !== 'any' && !(datePreset === 'custom' && !customFrom && !customTo);
+  const activeLabel = DATE_PRESETS.find((p) => p.value === datePreset)?.label ?? 'Date';
+
+  const handleToggleOpen = () => {
+    if (!open && datePreset === 'custom') {
+      setDraftFrom(customFrom);
+      setDraftTo(customTo);
+    }
+    setOpen((v) => !v);
+  };
+
+  const handleApply = () => {
+    setCustomFrom(draftFrom);
+    setCustomTo(draftTo);
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setDatePreset('any');
+    setCustomFrom('');
+    setCustomTo('');
+    setDraftFrom('');
+    setDraftTo('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={handleToggleOpen}
+        className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-black whitespace-nowrap transition-colors"
+        style={{
+          background: hasActive
+            ? 'color-mix(in srgb, var(--color-info) 10%, var(--color-surface-raised))'
+            : 'var(--color-surface-raised)',
+          borderColor: hasActive ? 'color-mix(in srgb, var(--color-info) 40%, transparent)' : 'var(--color-border)',
+          color: hasActive ? 'var(--color-info)' : 'var(--color-text-primary)',
+        }}
+      >
+        <CalendarDays size={12} />
+        {hasActive ? activeLabel : 'Date'}
+        {hasActive ? (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
+            className="ml-0.5 flex items-center rounded-full p-0.5 hover:bg-black/10"
+            role="button"
+            aria-label="Clear date filter"
+          >
+            <X size={10} />
+          </span>
+        ) : (
+          <ChevronDown size={12} />
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 top-full mt-2 w-56 overflow-hidden rounded-xl border shadow-lg z-20"
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          >
+            {DATE_PRESETS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => {
+                  setDatePreset(p.value);
+                  if (p.value === 'custom') {
+                    setDraftFrom(customFrom);
+                    setDraftTo(customTo);
+                  } else {
+                    setOpen(false);
+                  }
+                }}
+                className="w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors"
+                style={{
+                  color: datePreset === p.value ? 'var(--color-info)' : 'var(--color-text-secondary)',
+                  background:
+                    datePreset === p.value
+                      ? 'color-mix(in srgb, var(--color-info) 8%, transparent)'
+                      : 'transparent',
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+
+            {datePreset === 'custom' && (
+              <div
+                className="border-t px-3.5 py-3 flex flex-col gap-2"
+                style={{ borderColor: 'var(--color-border-subtle)' }}
+              >
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                    From
+                  </label>
+                  <input
+                    type="date"
+                    value={draftFrom}
+                    onChange={(e) => setDraftFrom(e.target.value)}
+                    className="rounded-lg border px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1"
+                    style={{
+                      background: 'var(--color-surface-raised)',
+                      borderColor: 'var(--color-border)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                    To
+                  </label>
+                  <input
+                    type="date"
+                    value={draftTo}
+                    onChange={(e) => setDraftTo(e.target.value)}
+                    className="rounded-lg border px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1"
+                    style={{
+                      background: 'var(--color-surface-raised)',
+                      borderColor: 'var(--color-border)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  className="mt-1 w-full rounded-lg py-1.5 text-xs font-bold text-white"
+                  style={{ background: 'var(--color-info)' }}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function TasksHero({
   user,
@@ -125,6 +335,14 @@ function TasksHero({
   overdueCount,
   analyticsWindow,
   dashboardSummary,
+  datePreset,
+  setDatePreset,
+  customFrom,
+  setCustomFrom,
+  customTo,
+  setCustomTo,
+  isFetching,
+  tabsDisabled,
 }: {
   user: { name?: string | null; email?: string } | null;
   greeting: string;
@@ -153,6 +371,14 @@ function TasksHero({
   overdueCount: number;
   analyticsWindow: AnalyticsWindow;
   dashboardSummary: { productivityScore: number; focusMinutesTotal: number } | null | undefined;
+  datePreset: DatePreset;
+  setDatePreset: (v: DatePreset) => void;
+  customFrom: string;
+  setCustomFrom: (v: string) => void;
+  customTo: string;
+  setCustomTo: (v: string) => void;
+  isFetching: boolean;
+  tabsDisabled: boolean;
 }) {
   const heroRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0.5);
@@ -472,15 +698,20 @@ function TasksHero({
           </button>
         </div>
 
-        {/* ── Row 3: Filter tabs + sort ── */}
+        {/* ── Row 3: Filter tabs + date filter + sort ── */}
         <div className="flex items-center justify-between gap-3 pb-5">
           <div className="flex flex-wrap items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             <div className="np-pill-segmented shadow-sm">
               {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
                 const isActive = filter === f;
                 return (
-                  <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
-                    {isActive && (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    disabled={tabsDisabled}
+                    style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
+                    className={`np-pill ${isActive ? 'is-active' : ''}`}
+                  >                    {isActive && (
                       <motion.div
                         layoutId="task-pill-indicator"
                         className="np-pill-indicator"
@@ -498,50 +729,75 @@ function TasksHero({
             </div>
           </div>
 
-          {/* Sort */}
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setSortMenuOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-black whitespace-nowrap"
-              style={{
-                background: 'var(--color-surface-raised)',
-                borderColor: 'var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              Sort: {sortLabel[sortBy]}
-              <ChevronDown size={12} />
-            </button>
-            {sortMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(() => false)} />
-                <div
-                  className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
-                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-                >
-                  {(Object.keys(sortLabel) as SortKey[]).map((key) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setSortBy(key);
-                        setSortMenuOpen(() => false);
-                      }}
-                      className="w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors"
-                      style={{
-                        color: sortBy === key ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-                        background:
-                          sortBy === key ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
-                      }}
-                    >
-                      {sortLabel[key]}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+          {/* Date filter + Sort */}
+          <div className="flex items-center gap-2 shrink-0">
+            <DateFilterBar
+              datePreset={datePreset}
+              setDatePreset={setDatePreset}
+              customFrom={customFrom}
+              setCustomFrom={setCustomFrom}
+              customTo={customTo}
+              setCustomTo={setCustomTo}
+            />
+
+            {/* Sort */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSortMenuOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-black whitespace-nowrap"
+                style={{
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Sort: {sortLabel[sortBy]}
+                <ChevronDown size={12} />
+              </button>
+              {sortMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setSortMenuOpen(() => false)} />
+                  <div
+                    className="absolute right-0 mt-2 w-40 overflow-hidden rounded-xl border shadow-lg z-20"
+                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                  >
+                    {(Object.keys(sortLabel) as SortKey[]).map((key) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setSortBy(key);
+                          setSortMenuOpen(() => false);
+                        }}
+                        className="w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors"
+                        style={{
+                          color: sortBy === key ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                          background:
+                            sortBy === key ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                        }}
+                      >
+                        {sortLabel[key]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
+      </div>
+      {/* Thin fetch-progress bar along the very bottom of the hero — visible only
+          while a background refetch is in-flight. Never blocks the UI. */}
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
+        {isFetching && (
+          <motion.div
+            className="h-full"
+            style={{ background: 'linear-gradient(90deg, var(--color-accent), #818CF8, var(--color-accent))' }}
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ duration: 1.2, ease: 'easeInOut', repeat: Infinity }}
+          />
+        )}
       </div>
     </motion.div>
   );
@@ -601,12 +857,51 @@ export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore((s) => s.user);
+  const [isFilterPending, startFilterTransition] = useTransition();
+  const accountTimeZone = user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
 
   const [filter, setFilter] = useState<TaskFilter>('pending');
   const [sortBy, setSortBy] = useState<SortKey>('priority');
   const savedTaskView = useUIStore((s) => s.taskViewPreference);
   const setTaskViewPreference = useUIStore((s) => s.setTaskViewPreference);
   const [view, setView] = useState<ViewMode>(savedTaskView);
+
+  // ── Date filter state ─────────────────────────────────────────────────────
+  const [datePreset, setDatePreset] = useState<DatePreset>('any');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const changeFilter = useCallback(
+    (nextFilter: TaskFilter) => {
+      startFilterTransition(() => {
+        setFilter(nextFilter);
+      });
+    },
+    [startFilterTransition]
+  );
+
+  // ── Tab cooldown — prevent spam-clicking tabs from firing a request storm.
+  // The tab switches instantly for visual feedback but further clicks are
+  // ignored for 500ms while the previous request is still being debounced/in-flight.
+  const [tabsDisabled, setTabsDisabled] = useState(false);
+  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFilterChange = useCallback(
+    (nextFilter: TaskFilter) => {
+      if (tabsDisabled) return;
+      changeFilter(nextFilter);
+      setTabsDisabled(true);
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
+    },
+    [tabsDisabled, changeFilter]
+  );
+
+  // Clean up the cooldown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     setView(savedTaskView);
@@ -615,9 +910,19 @@ export function TasksPage() {
   const [editingTask, setEditingTask] = useState<TaskDTO | null>(null);
   const [taskMenuOpen, setTaskMenuOpen] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  // Debounce the search so the backend is only called after 300 ms of inactivity.
+  // The raw searchQuery still drives the input value (instant feedback),
+  // while debouncedSearch drives backendFilters (and therefore the API call).
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => window.clearTimeout(id);
+  }, [searchQuery]);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set<string>());
   const [bulkAction, setBulkAction] = useState<'done' | 'todo' | 'delete' | null>(null);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [cardPage, setCardPage] = useState(1);
+  const CARD_PAGE_SIZE = 10;
 
   const [expandedSubtasks, setExpandedSubtasks] = useState<Record<string, boolean>>({});
   const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
@@ -629,17 +934,101 @@ export function TasksPage() {
 
   const queryClient = useQueryClient();
 
-  const { data: tasksData, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useTasks();
+  // ── Build backend filter params ───────────────────────────────────────────
+  // The status-tab filter maps to the ?filter= preset on the backend.
+  // The date filter adds from/to params on top (except when the tab is a
+  // date-specific preset like 'today'/'upcoming'/'overdue' — those control
+  // their own date range server-side, so the date picker is additive but the
+  // tab preset wins for the status/date combo).
+  const backendFilters = useMemo<Record<string, string>>(() => {
+    const params: Record<string, string> = {};
+
+    // Status-tab preset — always applied
+    if (filter !== 'all') params.filter = filter;
+
+    // Date range — applied on top of the tab preset when 'all' or 'pending'
+    // (for 'today'/'upcoming'/'overdue' the backend preset already scopes dates)
+    const canApplyDateFilter = filter === 'all' || filter === 'pending' || filter === 'completed';
+    if (canApplyDateFilter && datePreset !== 'any') {
+      if (datePreset === 'custom') {
+        if (customFrom) params.from = customFrom;
+        if (customTo) params.to = customTo;
+      } else if (datePreset === 'no_date') {
+        params.noDate = 'true';
+      } else {
+        const range = datePresetToRange(datePreset);
+        if (range.from) params.from = range.from;
+        if (range.to) params.to = range.to;
+      }
+    }
+
+    // Search — passed to backend for title/description filtering
+    if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+
+    // Sort
+    if (sortBy === 'created') params.sortBy = 'created';
+    else if (sortBy === 'dueDate') params.sortBy = 'dueDate';
+    // priority sort is done client-side after fetch (Prisma can't order by enum priority)
+
+    return params;
+  }, [filter, datePreset, customFrom, customTo, debouncedSearch, sortBy]);
+
+  // ── Debounce the backend request to prevent a waterfall of requests when
+  // the user rapid-clicks through tabs. The UI (client-side filter from cache)
+  // updates instantly on every click. Only the network call is held back 150ms.
+  // This is the same pattern used by Linear, GitHub, and Vercel dashboards.
+  const [committedFilters, setCommittedFilters] = useState(backendFilters);
+  useEffect(() => {
+    const id = window.setTimeout(() => setCommittedFilters(backendFilters), 150);
+    return () => window.clearTimeout(id);
+  }, [backendFilters]);
+
+  const { data: tasksData, isLoading, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useTasks(committedFilters);
+  // isFetching is intentionally not used for blocking UI — placeholderData keeps
+  // the previous tab's data visible while the new request is in-flight.
+
+  // ── Card-view offset pagination ──────────────────────────────────────────
+  const { data: cardTasksData, isFetching: cardIsFetching } = useTasksOffset(committedFilters, cardPage);
+
+  // Reset card page to 1 whenever filters change
+  useEffect(() => {
+    setCardPage(1);
+  }, [committedFilters]);
+
+  // ── Tab counts — fetched via dedicated endpoint so badges stay accurate ──
+  const { data: countSummary } = useQuery<TaskCountsDTO>({
+    queryKey: ['tasks', 'counts', accountTimeZone],
+    queryFn: () => tasksApi.getCounts(),
+    staleTime: 30_000,
+  });
+
   const { data: dashboardSummary } = useDashboardSummary();
   const { data: notionStatus } = useNotionStatus();
   const { data: dailyAnalytics } = useQuery({
     queryKey: ['analytics', 'daily', 14],
     queryFn: () => apiClient.get<DailyAnalyticsDTO[]>('/analytics/daily', { params: { days: 14 } }).then((r) => r.data),
+    staleTime: 5 * 60_000, // analytics data is fine to cache for 5 minutes
   });
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
   const tasks = useMemo(() => tasksData?.pages.flatMap((p) => p.data) ?? [], [tasksData]);
+  // The API already applies the active tab/date/search filters server-side,
+  // so the rendered list is exactly what the backend returned (no client-side re-filter).
+  const filteredTasks = tasks;
+
+  // Card-view tasks come from offset pagination, board-view tasks use cursor pagination
+  const cardTasks = useMemo(() => cardTasksData?.data ?? [], [cardTasksData]);
+  const cardTotal = cardTasksData?.meta?.total ?? 0;
+  const cardTotalPages = cardTasksData?.meta?.totalPages ?? Math.max(1, Math.ceil(cardTotal / CARD_PAGE_SIZE));
+  const cardDisplayTasks = view === 'board' ? filteredTasks : cardTasks;
+  const cardDisplayTotal = view === 'board' ? filteredTasks.length : cardTotal;
+  const cardDisplayTotalPages = view === 'board' ? Math.max(1, Math.ceil(cardDisplayTotal / CARD_PAGE_SIZE)) : cardTotalPages;
+  const cardDisplayPage = view === 'board' ? 1 : cardPage;
+  const cardDisplaySetPage = (p: number) => {
+    if (view === 'board') return;
+    setCardPage(p);
+  };
   const { ref: sentinelRef, inView: sentinelInView } = useInView({
     threshold: 0,
     rootMargin: '150px',
@@ -650,55 +1039,136 @@ export function TasksPage() {
   const fetchingRef = useRef(false);
 
   useEffect(() => {
-    const shouldFetch = sentinelInView && hasNextPage && !isFetchingNextPage && !fetchingRef.current;
+    const shouldFetch = sentinelInView && hasNextPage && !isFetching && !isFetchingNextPage && !fetchingRef.current;
 
     if (shouldFetch) {
       fetchingRef.current = true;
       fetchNextPage().finally(() => {
-        // Small delay to prevent immediate re-trigger
         setTimeout(() => {
           fetchingRef.current = false;
         }, 500);
       });
     }
-  }, [sentinelInView, hasNextPage, isFetchingNextPage, fetchNextPage]);
-  const invalidateTasks = useCallback(() => queryClient.invalidateQueries({ queryKey: ['tasks'] }), [queryClient]);
+  }, [sentinelInView, hasNextPage, isFetching, isFetchingNextPage, fetchNextPage]);
+  const invalidateTasks = useCallback(
+    () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+      ]),
+    [queryClient]
+  );
 
   // ── subtask mutations ────────────────────────────────────────────────────
+  // Use optimistic cache updates instead of full invalidation so toggling/adding
+  // a subtask doesn't trigger a full tasks list refetch.
 
   const updateSubTaskMutation = useMutation({
     mutationFn: ({ taskId, subTaskId, data }: { taskId: string; subTaskId: string; data: { completed?: boolean } }) =>
       tasksApi.updateSubTask(taskId, subTaskId, data),
-    onSuccess: invalidateTasks,
-    onError: (err: any) => toast.error(err?.response?.data?.error?.message ?? 'Failed to update subtask'),
+    onMutate: async ({ taskId, subTaskId, data }) => {
+      // Optimistically update the subtask in all task list cache entries
+      queryClient.setQueriesData<{ pages: { data: typeof tasks }[] }>(
+        { queryKey: ['tasks'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((task: (typeof tasks)[number]) =>
+                task.id !== taskId
+                  ? task
+                  : {
+                      ...task,
+                      subTasks: task.subTasks?.map((s) => (s.id === subTaskId ? { ...s, ...data } : s)),
+                    }
+              ),
+            })),
+          };
+        }
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error?.message ?? 'Failed to update subtask');
+      // Refetch to restore correct state after optimistic update failure
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 
   const createSubTaskMutation = useMutation({
     mutationFn: ({ taskId, title, order }: { taskId: string; title: string; order: number }) =>
       tasksApi.createSubTask(taskId, { title, order }),
-    onSuccess: invalidateTasks,
-    onError: (err: any) => toast.error(err?.response?.data?.error?.message ?? 'Failed to create subtask'),
+    onSuccess: (newSubTask, { taskId }) => {
+      // Append the new subtask returned by the server into the cache
+      queryClient.setQueriesData<{ pages: { data: typeof tasks }[] }>(
+        { queryKey: ['tasks'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((task: (typeof tasks)[number]) =>
+                task.id !== taskId
+                  ? task
+                  : { ...task, subTasks: [...(task.subTasks ?? []), newSubTask] }
+              ),
+            })),
+          };
+        }
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error?.message ?? 'Failed to create subtask');
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 
   const deleteSubTaskMutation = useMutation({
     mutationFn: ({ taskId, subTaskId }: { taskId: string; subTaskId: string }) =>
       tasksApi.deleteSubTask(taskId, subTaskId),
-    onSuccess: invalidateTasks,
-    onError: (err: any) => toast.error(err?.response?.data?.error?.message ?? 'Failed to delete subtask'),
+    onMutate: async ({ taskId, subTaskId }) => {
+      queryClient.setQueriesData<{ pages: { data: typeof tasks }[] }>(
+        { queryKey: ['tasks'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((task: (typeof tasks)[number]) =>
+                task.id !== taskId
+                  ? task
+                  : { ...task, subTasks: task.subTasks?.filter((s) => s.id !== subTaskId) }
+              ),
+            })),
+          };
+        }
+      );
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.error?.message ?? 'Failed to delete subtask');
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 
-  // ── filter + sort helpers ────────────────────────────────────────────────
-
-  const counts = useMemo(
+  // ── counts (use server counts for badges, fall back to loaded data) ────────
+  const counts = useMemo<TasksCounts>(
     () => ({
-      pending: tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED' && !isFutureTask(t.dueDate)).length,
-      today: tasks.filter((t) => isToday(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
-      upcoming: tasks.filter((t) => isUpcoming(t.dueDate) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
-      completed: tasks.filter((t) => t.status === 'DONE').length,
-      overdue: tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
-      all: tasks.length,
+      pending:
+        countSummary?.pending ??
+        tasks.filter((t) => t.status !== 'DONE' && t.status !== 'CANCELLED' && !isFutureTaskInTimeZone(t.dueDate, accountTimeZone)).length,
+      today:
+        countSummary?.today ??
+        tasks.filter((t) => isTodayInTimeZone(t.dueDate, accountTimeZone) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
+      upcoming:
+        countSummary?.upcoming ??
+        tasks.filter((t) => isUpcomingInTimeZone(t.dueDate, accountTimeZone) && t.status !== 'DONE' && t.status !== 'CANCELLED').length,
+      completed: countSummary?.completed ?? tasks.filter((t) => t.status === 'DONE').length,
+      overdue: countSummary?.overdue ?? tasks.filter((t) => isOverdueInTimeZone(t.dueDate, t.status, accountTimeZone)).length,
+      all: countSummary?.all ?? tasks.length,
     }),
-    [tasks]
+    [countSummary, tasks, accountTimeZone]
   );
 
   const analyticsWindow = useMemo(() => {
@@ -726,60 +1196,10 @@ export function TasksPage() {
     };
   }, [dailyAnalytics]);
 
-  const filteredTasks = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    const base = tasks.filter((task) => {
-      switch (filter) {
-        case 'pending':
-          if (task.status === 'DONE' || task.status === 'CANCELLED' || isFutureTask(task.dueDate)) return false;
-          break;
-        case 'today':
-          if (!(isToday(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false;
-          break;
-        case 'upcoming':
-          if (!(isUpcoming(task.dueDate) && task.status !== 'DONE' && task.status !== 'CANCELLED')) return false;
-          break;
-        case 'completed':
-          if (task.status !== 'DONE') return false;
-          break;
-        case 'overdue':
-          if (!isOverdue(task.dueDate, task.status)) return false;
-          break;
-        case 'all':
-          break;
-        default:
-          break;
-      }
-      if (!query) return true;
-      const haystack = [
-        task.title,
-        task.description ?? '',
-        task.priority,
-        task.status,
-        ...(task.subTasks?.map((s) => s.title) ?? []),
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-
-    const sorted = [...base].sort((a, b) => {
-      if (sortBy === 'priority') {
-        return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3);
-      }
-      if (sortBy === 'dueDate') {
-        if (!a.dueDate && !b.dueDate) return 0;
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-      return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
-    });
-
-    return sorted;
-  }, [tasks, filter, searchQuery, sortBy]);
-
-  const overdueTasks = useMemo(() => tasks.filter((t) => isOverdue(t.dueDate, t.status)), [tasks]);
+  const overdueTasks = useMemo(
+    () => tasks.filter((t) => isOverdueInTimeZone(t.dueDate, t.status, accountTimeZone)),
+    [tasks, accountTimeZone]
+  );
   const overdueMinutes = useMemo(
     () => overdueTasks.reduce((sum, t) => sum + (t.estimatedDuration ?? 0), 0),
     [overdueTasks]
@@ -807,7 +1227,7 @@ export function TasksPage() {
   // This must NOT open the edit modal — users want to locate and view the task.
   useEffect(() => {
     const taskId = searchParams.get('taskId');
-    if (!taskId || !tasks) return;
+    if (!taskId || !tasks.length) return;
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
@@ -849,7 +1269,7 @@ export function TasksPage() {
 
   useEffect(() => {
     clearSelection();
-  }, [filter, view, searchQuery, clearSelection]);
+  }, [filter, view, searchQuery, datePreset, customFrom, customTo, clearSelection]);
 
   const toggleTaskSelection = (taskId: string) => {
     setSelectedTaskIds((prev) => {
@@ -912,12 +1332,21 @@ export function TasksPage() {
     [subtaskDraft, tasks, createSubTaskMutation]
   );
 
-  const handleRescheduleAll = useCallback(async () => {
-    const today = new Date().toISOString().split('T')[0];
+  const handleToggleSubtasks = useCallback(
+    (id: string) => setExpandedSubtasks((prev) => ({ ...prev, [id]: !prev[id] })),
+    []
+  );
+
+  const handleSubtaskDraftChange = useCallback(
+    (id: string, val: string) => setSubtaskDraft((prev) => ({ ...prev, [id]: val })),
+    []
+  );
+
+  const handleRescheduleAll = useCallback(async () => {    const today = dateKeyInTimeZone(new Date(), accountTimeZone);
     await Promise.all(overdueTasks.map((t) => tasksApi.update(t.id, { dueDate: today })));
     await invalidateTasks();
     toast.success(`Rescheduled ${overdueTasks.length} tasks to today`);
-  }, [overdueTasks, invalidateTasks]);
+  }, [overdueTasks, invalidateTasks, accountTimeZone]);
 
   const handleStartHighestPriority = useCallback(() => {
     if (topOverdueTask) setEditingTask(topOverdueTask);
@@ -994,15 +1423,18 @@ export function TasksPage() {
   const plannedMinutesToday = useMemo(
     () =>
       tasks
-        .filter((t) => isToday(t.dueDate) && t.status !== 'CANCELLED')
+        .filter((t) => isTodayInTimeZone(t.dueDate, accountTimeZone) && t.status !== 'CANCELLED')
         .reduce((sum, t) => sum + (t.estimatedDuration ?? 0), 0),
-    [tasks]
+    [tasks, accountTimeZone]
   );
   const capacityMinutes = 8 * 60;
   const capacityUsedPct = Math.min(100, Math.round((plannedMinutesToday / capacityMinutes) * 100));
   const capacityFreePct = 100 - capacityUsedPct;
   const capacityLabel = capacityUsedPct <= 40 ? 'Light Day' : capacityUsedPct <= 75 ? 'Balanced Day' : 'Heavy Day';
-  const tasksScheduledToday = tasks.filter((t) => isToday(t.dueDate) && t.status !== 'CANCELLED').length;
+  const tasksScheduledToday = useMemo(
+    () => tasks.filter((t) => isTodayInTimeZone(t.dueDate, accountTimeZone) && t.status !== 'CANCELLED').length,
+    [tasks, accountTimeZone]
+  );
 
   const sortLabel: Record<SortKey, string> = { priority: 'Priority', dueDate: 'Due date', created: 'Newest' };
 
@@ -1010,7 +1442,9 @@ export function TasksPage() {
 
   // ── render ───────────────────────────────────────────────────────────────
 
-  if (isLoading) return <LoadingScreen />;
+  // Only show the full-page spinner on the very first load (no data yet).
+  // Filter changes use isFetching so the hero/sidebar stay mounted.
+  if (isLoading && !tasksData) return <LoadingScreen />;
 
   return (
     <motion.div
@@ -1030,7 +1464,7 @@ export function TasksPage() {
             greeting={greeting}
             counts={counts}
             filter={filter}
-            setFilter={setFilter}
+            setFilter={handleFilterChange}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             searchRef={searchRef}
@@ -1053,6 +1487,14 @@ export function TasksPage() {
             overdueCount={counts.overdue}
             analyticsWindow={analyticsWindow}
             dashboardSummary={dashboardSummary}
+            datePreset={datePreset}
+            setDatePreset={setDatePreset}
+            customFrom={customFrom}
+            setCustomFrom={setCustomFrom}
+            customTo={customTo}
+            setCustomTo={setCustomTo}
+            isFetching={isFetching && !isFetchingNextPage}
+            tabsDisabled={tabsDisabled}
           />
 
           {/* Overdue banner — right after filters */}
@@ -1120,7 +1562,7 @@ export function TasksPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFilter('overdue')}
+                  onClick={() => changeFilter('overdue')}
                   className="px-3 py-2 text-xs font-bold underline"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
@@ -1131,8 +1573,10 @@ export function TasksPage() {
           )}
 
           {/* Main content area (tasks) */}
-          <motion.div variants={itemVariants} className="flex-1 overflow-y-auto">
-            <div className="flex w-full flex-col gap-5 p-5 sm:p-7 xl:p-9">
+          <motion.div variants={itemVariants} className="relative flex-1 overflow-y-auto">
+            <div
+              className="flex w-full flex-col gap-5 p-5 sm:p-7 xl:p-9"
+            >
               {/* Select all */}
               {view === 'list' && filteredTasks.length > 0 && (
                 <motion.div variants={itemVariants} className="flex items-center justify-end">
@@ -1235,13 +1679,8 @@ export function TasksPage() {
                     onViewDetails={(task) => navigate(`/tasks/${task.id}`)}
                     onAddTask={() => setCreateModalOpen(true)}
                     highlightedTaskId={highlightedTaskId}
-                    formatDueDate={(d) => {
-                      if (!d) return null;
-                      const date = new Date(d);
-                      if (isToday(d)) return 'Today';
-                      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    }}
-                    isOverdue={isOverdue}
+                    formatDueDate={(d) => formatDueDateInTimeZone(d, accountTimeZone)}
+                    isOverdue={(d, status) => isOverdueInTimeZone(d, status, accountTimeZone)}
                     getRecurrenceLabel={(rule) => {
                       if (!rule) return null;
                       if (rule.includes('INTERVAL=2') && rule.includes('WEEKLY')) return 'Fortnightly';
@@ -1252,71 +1691,54 @@ export function TasksPage() {
                       return 'Recurring';
                     }}
                   />
-                ) : filteredTasks.length === 0 ? (
+                ) : cardDisplayTasks.length === 0 ? (
                   <TasksEmptyState
                     filter={filter}
                     onCreateTask={() => setCreateModalOpen(true)}
-                    onChangeFilter={setFilter}
+                    onChangeFilter={changeFilter}
                   />
                 ) : (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                      {filteredTasks.map((task, index) => (
-                        <motion.div key={task.id} variants={itemVariants}>
-                          <TaskCard
-                            task={task}
-                            index={index}
-                            isSelected={selectedTaskIds.has(task.id)}
-                            isMenuOpen={taskMenuOpen === task.id}
-                            isHighlighted={highlightedTaskId === task.id}
-                            subExpanded={!!expandedSubtasks[task.id]}
-                            subtaskDraft={subtaskDraft[task.id] ?? ''}
-                            onToggleStatus={toggleTaskStatus}
-                            onToggleSelect={toggleTaskSelection}
-                            onToggleMenu={setTaskMenuOpen}
-                            onToggleSubtasks={(id) => setExpandedSubtasks((prev) => ({ ...prev, [id]: !prev[id] }))}
-                            onEdit={setEditingTask}
-                            onDelete={handleDeleteTask}
-                            onChangeStatus={changeTaskStatus}
-                            onSubtaskDraftChange={(id, val) => setSubtaskDraft((prev) => ({ ...prev, [id]: val }))}
-                            onAddSubtask={handleAddSubtask}
-                            onToggleSubtask={(taskId, subTaskId, completed) =>
-                              updateSubTaskMutation.mutate({ taskId, subTaskId, data: { completed } })
-                            }
-                            onDeleteSubtask={(taskId, subTaskId) => deleteSubTaskMutation.mutate({ taskId, subTaskId })}
-                            onFocus={(taskId) => navigate(`/focus?taskId=${taskId}`)}
-                            onOpen={(taskId) => navigate(`/tasks/${taskId}`)}
-                          />
-                        </motion.div>
+                      {cardDisplayTasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          timeZone={accountTimeZone}
+                          index={0}
+                          isSelected={selectedTaskIds.has(task.id)}
+                          isMenuOpen={taskMenuOpen === task.id}
+                          isHighlighted={highlightedTaskId === task.id}
+                          subExpanded={!!expandedSubtasks[task.id]}
+                          subtaskDraft={subtaskDraft[task.id] ?? ''}
+                          onToggleStatus={toggleTaskStatus}
+                          onToggleSelect={toggleTaskSelection}
+                          onToggleMenu={setTaskMenuOpen}
+                          onToggleSubtasks={handleToggleSubtasks}
+                          onEdit={setEditingTask}
+                          onDelete={handleDeleteTask}
+                          onChangeStatus={changeTaskStatus}
+                          onSubtaskDraftChange={handleSubtaskDraftChange}
+                          onAddSubtask={handleAddSubtask}
+                          onToggleSubtask={(taskId, subTaskId, completed) =>
+                            updateSubTaskMutation.mutate({ taskId, subTaskId, data: { completed } })
+                          }
+                          onDeleteSubtask={(taskId, subTaskId) => deleteSubTaskMutation.mutate({ taskId, subTaskId })}
+                          onFocus={(taskId) => navigate(`/focus?taskId=${taskId}`)}
+                          onOpen={(taskId) => navigate(`/tasks/${taskId}`)}
+                        />
                       ))}
                     </div>
 
-                    {/* Cursor pagination sentinel + loading indicator */}
-                    <div
-                      ref={sentinelRef}
-                      className="w-full flex items-center justify-center py-8 min-h-[100px]"
-                      style={{
-                        visibility: hasNextPage || isFetchingNextPage ? 'visible' : 'visible',
-                        opacity: hasNextPage || isFetchingNextPage ? 1 : 0.6,
-                      }}
-                    >
-                      {isFetchingNextPage ? (
-                        <div
-                          className="flex items-center gap-2 text-xs font-semibold"
-                          style={{ color: 'var(--color-text-muted)' }}
-                        >
-                          <Loader2 size={16} className="animate-spin" />
-                          Loading more tasks…
-                        </div>
-                      ) : hasNextPage ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <Loader2 size={12} className="opacity-30" style={{ color: 'var(--color-text-muted)' }} />
-                          <span className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
-                            Scroll to load more
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
+                    {/* Page-based pagination controls */}
+                    <PageControls
+                      page={cardDisplayPage}
+                      totalPages={cardDisplayTotalPages}
+                      total={cardDisplayTotal}
+                      accent="var(--color-accent)"
+                      pageSize={CARD_PAGE_SIZE}
+                      onChange={cardDisplaySetPage}
+                    />
                   </>
                 )}
               </motion.div>

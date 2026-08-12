@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, Settings2 } from 'lucide-react';
+import { BrainCircuit, Mic, Settings2, Square } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Input';
@@ -8,6 +8,8 @@ import { Badge } from '../ui/Badge';
 import { Card } from '../ui/Card';
 import { goalPlannerApi } from '../../features/goals/api';
 import { useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
+import { appendTranscriptText, useSpeechTranscription } from '../../features/ai/hooks/useSpeechTranscription';
+import { Tooltip } from '../ui/Tooltip';
 import type {
   GoalPlannerPlanDTO,
   GoalPlannerMilestoneItem,
@@ -30,6 +32,11 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
   const [isCreating, setIsCreating] = useState(false);
   const plannerEnabled = useAIFeatureEnabled('goalPlannerEnabled');
   const navigate = useNavigate();
+  const transcription = useSpeechTranscription({
+    onTranscript: (text) => {
+      setPrompt((current) => appendTranscriptText(current, text));
+    },
+  });
 
   useEffect(() => {
     if (!open) {
@@ -237,6 +244,31 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Example: Launch my freelance design studio by the end of September. I need a plan with client outreach, portfolio refresh, a weekly habit for outreach, and a project structure."
             />
+
+            <div className="flex items-center justify-between gap-3">
+              <div
+                className="min-h-4 text-[10px] font-semibold"
+                style={{
+                  color: transcription.error ? 'var(--color-danger)' : 'var(--color-text-muted)',
+                }}
+              >
+                {transcription.error ?? (transcription.isListening ? 'Listening' : '')}
+              </div>
+              <Tooltip content={transcription.isListening ? 'Stop transcription' : 'Transcribe speech'} side="top">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={transcription.isListening ? 'danger' : 'secondary'}
+                  onClick={transcription.isListening ? transcription.stop : transcription.start}
+                  disabled={!transcription.isSupported}
+                  aria-label={transcription.isListening ? 'Stop transcription' : 'Start transcription'}
+                  title={
+                    transcription.isSupported ? undefined : 'Speech transcription is not supported in this browser'
+                  }
+                  leftIcon={transcription.isListening ? <Square size={14} /> : <Mic size={14} />}
+                />
+              </Tooltip>
+            </div>
 
             <div className="flex flex-wrap gap-2">
               {['Launch a product', 'Get fit for summer', 'Study for certification', 'Build a client pipeline'].map(

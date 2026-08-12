@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Grid3x3, List, LayoutList, Zap, Clock, CheckCircle2 } from 'lucide-react';
-import { useHabits, useCreateHabit, useStreakStatus } from '../features/habits/hooks/useHabits';
+import { useHabits, useCreateHabit, useStreakStatus, useFilteredHabits } from '../features/habits/hooks/useHabits';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useFocusSessions } from '../features/habits/hooks/useFocusSessions';
 import { useAuthStore } from '../store/authStore';
@@ -89,7 +89,29 @@ export function HabitsPage() {
     }, null);
   }, [habits]);
 
-  const filteredHabits = useMemo(() => {
+  // Debounce search so the backend is only called after the user pauses typing.
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => window.clearTimeout(id);
+  }, [searchQuery]);
+
+  // The status / search / sort filters are applied on the backend. The full
+  // habit set is still fetched separately for the analytical widgets above.
+  // For the default view we fall back to the already-fetched full list so the
+  // page paints instantly; every other filter combination is loaded from the
+  // backend (placeholderData keeps the previous result visible while loading).
+  const listFilters = useMemo(
+    () => ({ status: filter, search: debouncedSearch.trim(), sort }),
+    [filter, debouncedSearch, sort]
+  );
+  const { data: filteredListData } = useFilteredHabits(listFilters);
+
+  // Instant local placeholder computed from the already-fetched full habit set.
+  // It renders on every filter/sort/search change with zero lag; the backend
+  // response replaces it as soon as it arrives, so the backend stays the
+  // source of truth. This is what keeps the UI feeling immediate.
+  const localFilteredHabits = useMemo(() => {
     let list = habits.filter((h) => h.title.toLowerCase().includes(searchQuery.toLowerCase()));
     switch (filter) {
       case 'active':
@@ -119,6 +141,31 @@ export function HabitsPage() {
     }
     return sorted;
   }, [habits, searchQuery, filter, sort]);
+
+  const filteredHabits = filteredListData?.data ?? localFilteredHabits;
+
+  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
+  // fire a request storm (these tabs now query the backend). The tab still
+  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
+  const [tabsDisabled, setTabsDisabled] = useState(false);
+  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFilterChange = useCallback(
+    (nextFilter: HabitFilter) => {
+      if (tabsDisabled) return;
+      setFilter(nextFilter);
+      setTabsDisabled(true);
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
+    },
+    [tabsDisabled, setFilter]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+    };
+  }, []);
 
   const filterCounts = {
     all: habits.length,
@@ -284,7 +331,13 @@ export function HabitsPage() {
                 completed: <CheckCircle2 size={12} />,
               };
               return (
-                <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
+                <button
+                  key={f}
+                  onClick={() => handleFilterChange(f)}
+                  disabled={tabsDisabled}
+                  style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
+                  className={`np-pill ${isActive ? 'is-active' : ''}`}
+                >
                   {isActive && (
                     <motion.div
                       layoutId="habit-pill-indicator"

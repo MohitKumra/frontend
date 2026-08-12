@@ -10,9 +10,21 @@ import type {
 const GOALS_KEY = ['goals'] as const;
 
 export function useGoals() {
+  return useQuery({ queryKey: GOALS_KEY, queryFn: () => goalsApi.list() });
+}
+
+/**
+ * Filtered goals list (status / search / sort) — filtering happens on the
+ * backend. `placeholderData` keeps the previous result on screen while a new
+ * filter combination loads, so switching tabs / sorting feels instant.
+ */
+export function useFilteredGoals(filters: Record<string, string>) {
+  const stableFilters = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined));
   return useQuery({
-    queryKey: GOALS_KEY,
-    queryFn: goalsApi.list,
+    queryKey: [...GOALS_KEY, 'list', stableFilters],
+    queryFn: () => goalsApi.list(stableFilters),
+    placeholderData: (prev) => prev,
+    staleTime: 30_000,
   });
 }
 

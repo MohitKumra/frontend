@@ -6,7 +6,22 @@ import type { CreateHabitRequest, UpdateHabitRequest } from '../../../types';
 const HABITS_KEY = ['habits'] as const;
 
 export function useHabits() {
-  return useQuery({ queryKey: HABITS_KEY, queryFn: habitsApi.list });
+  return useQuery({ queryKey: HABITS_KEY, queryFn: () => habitsApi.list() });
+}
+
+/**
+ * Filtered habits list (status / search / sort) — filtering happens on the
+ * backend. `placeholderData` keeps the previous result on screen while a new
+ * filter combination loads, so switching tabs / sorting feels instant.
+ */
+export function useFilteredHabits(filters: Record<string, string>) {
+  const stableFilters = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined));
+  return useQuery({
+    queryKey: [...HABITS_KEY, 'list', stableFilters],
+    queryFn: () => habitsApi.list(stableFilters),
+    placeholderData: (prev) => prev,
+    staleTime: 30_000,
+  });
 }
 
 export function useCreateHabit() {

@@ -295,6 +295,16 @@ export interface TaskDTO {
   updatedAt: string;
 }
 
+/** Per-tab task counts returned by GET /tasks/counts. */
+export interface TaskCountsDTO {
+  pending: number;
+  today: number;
+  upcoming: number;
+  completed: number;
+  overdue: number;
+  all: number;
+}
+
 export interface CreateTaskRequest {
   title: string;
   description?: string;
@@ -678,10 +688,18 @@ export interface EnhancedDashboardDTO extends AnalyticsSummaryDTO {
 
 // ─── Misc ────────────────────────────────────────────────────────────────────
 
-/** Standard list response envelope. */
+/** Standard list response envelope — supports both cursor and offset pagination. */
 export interface ListResponse<T> {
   data: T[];
-  meta: { total: number; nextCursor?: string | null };
+  meta: {
+    total: number;
+    // Cursor pagination
+    nextCursor?: string | null;
+    // Offset pagination (present when ?page= was used)
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+  };
 }
 
 export interface GoogleCalendarSyncResponse {
@@ -800,6 +818,7 @@ export interface NoteListParams {
   projectId?: string;
   isPinned?: boolean;
   archived?: boolean;
+  hasAttachment?: boolean;
   mood?: NoteMood;
   tags?: string[];
   sortBy?: NoteSortField;

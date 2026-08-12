@@ -312,7 +312,11 @@ export function DashboardPage() {
           initial={reducedMotion ? undefined : 'hidden'}
           animate={reducedMotion ? undefined : 'visible'}
           exit={reducedMotion ? undefined : 'hidden'}
-          className="grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start"
+          className={
+            view === 'analytics'
+              ? 'w-full'
+              : 'grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start'
+          }
         >
           {view === 'dashboard' ? (
             <>

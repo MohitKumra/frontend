@@ -14,8 +14,6 @@ import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import {
   Calendar,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Circle,
   Clock3,
   Edit3,
@@ -28,6 +26,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { TaskDTO, TaskStatus } from '../../types';
+import { PageControls } from './PageControls';
 
 const PAGE_SIZE = 6;
 
@@ -95,52 +94,6 @@ function formatDuration(minutes: number | null) {
   return mins ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
-// ── Pagination footer ───────────────────────────────────────────────────────
-function PageControls({
-  page,
-  totalPages,
-  total,
-  accent,
-  onChange,
-}: {
-  page: number;
-  totalPages: number;
-  total: number;
-  accent: string;
-  onChange: (page: number) => void;
-}) {
-  if (total <= PAGE_SIZE) return null;
-  return (
-    <div
-      className="mt-2 flex items-center justify-between border-t px-1 pt-2.5"
-      style={{ borderColor: 'var(--color-border)' }}
-    >
-      <button
-        type="button"
-        disabled={page <= 1}
-        onClick={() => onChange(page - 1)}
-        className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:opacity-30"
-        style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
-        aria-label="Previous page"
-      >
-        <ChevronLeft size={14} />
-      </button>
-      <span className="text-[10.5px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-        Page {page} of {totalPages} · {total} tasks
-      </span>
-      <button
-        type="button"
-        disabled={page >= totalPages}
-        onClick={() => onChange(page + 1)}
-        className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors disabled:opacity-30"
-        style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
-        aria-label="Next page"
-      >
-        <ChevronRight size={14} />
-      </button>
-    </div>
-  );
-}
 
 // ── Draggable wrapper for a task card (desktop board only) ─────────────────
 function DraggableTaskCard({
@@ -1059,6 +1012,7 @@ export function TaskBoardView({
                   totalPages={totalPages}
                   total={col.tasks.length}
                   accent={col.accent}
+                  pageSize={PAGE_SIZE}
                   onChange={(p) => setPage(col.status, p)}
                 />
 
@@ -1074,6 +1028,22 @@ export function TaskBoardView({
       </div>
 
       {/* ── Desktop: 3-column drag & drop board, each column capped in height with its own pagination ── */}
+      <style>{`
+        .board-scroll-todo::-webkit-scrollbar { width: 5px; }
+        .board-scroll-todo::-webkit-scrollbar-track { background: color-mix(in srgb, var(--color-info) 10%, transparent); border-radius: 9999px; }
+        .board-scroll-todo::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color-info) 50%, transparent); border-radius: 9999px; }
+        .board-scroll-todo::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--color-info) 75%, transparent); }
+
+        .board-scroll-inprogress::-webkit-scrollbar { width: 5px; }
+        .board-scroll-inprogress::-webkit-scrollbar-track { background: color-mix(in srgb, var(--color-warning) 10%, transparent); border-radius: 9999px; }
+        .board-scroll-inprogress::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color-warning) 50%, transparent); border-radius: 9999px; }
+        .board-scroll-inprogress::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--color-warning) 75%, transparent); }
+
+        .board-scroll-done::-webkit-scrollbar { width: 5px; }
+        .board-scroll-done::-webkit-scrollbar-track { background: color-mix(in srgb, var(--color-success) 10%, transparent); border-radius: 9999px; }
+        .board-scroll-done::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color-success) 50%, transparent); border-radius: 9999px; }
+        .board-scroll-done::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--color-success) 75%, transparent); }
+      `}</style>
       <div className="hidden lg:block">
         <DndContext
           sensors={sensors}
@@ -1124,8 +1094,17 @@ export function TaskBoardView({
 
                   {/* scrollable card area — fixed column height instead of growing forever */}
                   <div
-                    className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5"
-                    style={{ scrollbarWidth: 'thin' }}
+                    className={`flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5 ${
+                      col.status === 'TODO'
+                        ? 'board-scroll-todo'
+                        : col.status === 'IN_PROGRESS'
+                          ? 'board-scroll-inprogress'
+                          : 'board-scroll-done'
+                    }`}
+                    style={{
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: `color-mix(in srgb, ${col.accent} 50%, transparent) color-mix(in srgb, ${col.accent} 10%, transparent)`,
+                    }}
                   >
                     {pageTasks.length === 0 && !draggingId && (
                       <BoardColumnEmpty
@@ -1171,6 +1150,7 @@ export function TaskBoardView({
                       totalPages={totalPages}
                       total={col.tasks.length}
                       accent={col.accent}
+                      pageSize={PAGE_SIZE}
                       onChange={(p) => setPage(col.status, p)}
                     />
 

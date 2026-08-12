@@ -9,6 +9,21 @@ export function useProjects() {
   });
 }
 
+/**
+ * Filtered projects list (status / search / sort) — filtering happens on the
+ * backend. `placeholderData` keeps the previous result on screen while a new
+ * filter combination loads, so switching tabs / sorting feels instant.
+ */
+export function useFilteredProjects(filters: Record<string, string>) {
+  const stableFilters = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined));
+  return useQuery({
+    queryKey: ['projects', 'list', stableFilters],
+    queryFn: () => apiClient.get<ListResponse<ProjectDTO>>('/projects', { params: stableFilters }).then((r) => r.data),
+    placeholderData: (prev) => prev,
+    staleTime: 30_000,
+  });
+}
+
 export function useProject(id: string) {
   return useQuery({
     queryKey: ['projects', id],

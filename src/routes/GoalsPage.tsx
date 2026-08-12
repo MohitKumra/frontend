@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { containerVariants, itemVariants } from '../lib/motionVariants';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,24 +11,17 @@ import {
   Brain,
   BriefcaseBusiness,
   Calendar,
-  ChevronDown,
-  Edit2,
-  Filter,
   Flame,
-  FolderKanban,
   Grid2x2,
   HeartPulse,
   Layers,
   List,
-  ListChecks,
-  MoreHorizontal,
   Palette,
   Plus,
   Rocket,
   Search,
   Sparkles,
   Target,
-  Trash2,
   TrendingUp,
   Zap,
   CheckCircle2,
@@ -38,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useEnhancedDashboard } from '../features/dashboard/hooks/useDashboard';
-import { useGoals, useCreateGoal, useDeleteGoal, useUpdateGoal } from '../features/goals/hooks/useGoals';
+import { useGoals, useCreateGoal, useDeleteGoal, useUpdateGoal, useFilteredGoals } from '../features/goals/hooks/useGoals';
 import { useHabits } from '../features/habits/hooks/useHabits';
 import { useProjects } from '../features/projects/hooks/useProjects';
 import { useTasks } from '../features/tasks/hooks/useTasks';
@@ -48,16 +41,11 @@ import { GoalCardView } from '../components/goals/GoalCardView';
 import { GoalDeleteModal } from '../components/goals/GoalDeleteModal';
 import { GoalFormModal } from '../components/goals/GoalFormModal';
 import { GoalPlannerModal } from '../components/goals/GoalPlannerModal';
-import { Button } from '../components/ui/Button';
 import type {
   EnhancedDashboardDTO,
   GoalDTO,
-  GoalMilestoneDTO,
   GoalPriority,
   GoalStatus,
-  HabitDTO,
-  ProjectDTO,
-  TaskDTO,
 } from '../types';
 import type { DeleteGoalOptions } from '../features/goals/api';
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
@@ -125,7 +113,7 @@ function emptyForm(): GoalFormState {
     title: '',
     description: '',
     category: '',
-    icon: 'target',
+    icon: 'none',
     color: '#4F46E5',
     targetDate: '',
     status: 'ACTIVE',
@@ -142,7 +130,7 @@ function goalToForm(goal: GoalDTO): GoalFormState {
     title: goal.title,
     description: goal.description ?? '',
     category: goal.category ?? '',
-    icon: goal.icon ?? 'target',
+    icon: goal.icon ?? 'none',
     color: goal.color || '#4F46E5',
     targetDate: goal.targetDate ? goal.targetDate.slice(0, 10) : '',
     status: goal.status,
@@ -323,7 +311,28 @@ export function GoalsPage() {
   const errors = useMemo(() => validateForm(form), [form]);
   const fieldError = (key: keyof GoalFormState) => (touched[key] || submitAttempted ? errors[key] : undefined);
 
-  const filteredGoals = useMemo(() => {
+  // Debounce search so the backend is only called after the user pauses typing.
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search), 300);
+    return () => window.clearTimeout(id);
+  }, [search]);
+
+  // The status / search / sort filters are applied on the backend. The full
+  // goal set is still fetched for the stats / widgets above. For the default
+  // view we fall back to the already-fetched full list so the page paints
+  // instantly; other filter combinations are loaded from the backend.
+  const listFilters = useMemo(
+    () => ({ status: filter, search: debouncedSearch.trim(), sort: sortKey }),
+    [filter, debouncedSearch, sortKey]
+  );
+  const { data: filteredGoalsData } = useFilteredGoals(listFilters);
+
+  // Instant local placeholder computed from the already-fetched full goal set.
+  // It renders on every filter/sort/search change with zero lag; the backend
+  // response replaces it as soon as it arrives, so the backend stays the
+  // source of truth. This is what keeps the UI feeling immediate.
+  const localFilteredGoals = useMemo(() => {
     const term = search.trim().toLowerCase();
     const list = goals.filter((goal) => {
       const matchesFilter = filter === 'ALL' || goal.status === filter;
@@ -342,6 +351,31 @@ export function GoalsPage() {
       return a.title.localeCompare(b.title);
     });
   }, [goals, filter, search, sortKey]);
+
+  const filteredGoals = filteredGoalsData?.data ?? localFilteredGoals;
+
+  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
+  // fire a request storm (these tabs now query the backend). The tab still
+  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
+  const [tabsDisabled, setTabsDisabled] = useState(false);
+  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFilterChange = useCallback(
+    (nextFilter: GoalFilter) => {
+      if (tabsDisabled) return;
+      setFilter(nextFilter);
+      setTabsDisabled(true);
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
+    },
+    [tabsDisabled, setFilter]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+    };
+  }, []);
 
   const stats = useMemo(() => {
     const total = goals.length;
@@ -574,23 +608,77 @@ export function GoalsPage() {
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <ChipSelect
-                label="Status"
-                value={filter}
-                options={goalStatuses.map((status) => ({ value: status, label: filterLabel(status) }))}
-                onChange={(value) => setFilter(value as GoalFilter)}
-              />
-              <ChipSelect
-                label="Sort"
-                value={sortKey}
-                options={[
-                  { value: 'latest', label: 'Latest' },
-                  { value: 'progress', label: 'Progress' },
-                  { value: 'name', label: 'Name' },
-                  { value: 'oldest', label: 'Oldest' },
-                ]}
-                onChange={(value) => setSortKey(value as SortKey)}
-              />
+              <div
+                className="inline-flex flex-wrap items-center gap-1 rounded-2xl border p-1"
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+              >
+                {goalStatuses.map((status) => {
+                  const isActive = filter === status;
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => handleFilterChange(status)}
+                      disabled={tabsDisabled}
+                      className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all"
+                      style={
+                        isActive
+                          ? {
+                              background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
+                              color: '#fff',
+                              cursor: tabsDisabled ? 'not-allowed' : 'pointer',
+                              opacity: tabsDisabled ? 0.6 : 1,
+                            }
+                          : {
+                              color: 'var(--color-text-secondary)',
+                              cursor: tabsDisabled ? 'not-allowed' : 'pointer',
+                              opacity: tabsDisabled ? 0.6 : 1,
+                            }
+                      }
+                    >
+                      {filterLabel(status)}
+                      <span
+                        className="rounded-full px-1.5 py-0.5 text-[10px]"
+                        style={{
+                          background: isActive ? 'rgba(255,255,255,0.22)' : 'color-mix(in srgb, currentColor 12%, transparent)',
+                        }}
+                      >
+                        {statusCount(goals, status)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div
+                className="inline-flex flex-wrap items-center gap-1 rounded-2xl border p-1"
+                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
+              >
+                {(
+                  [
+                    { value: 'latest', label: 'Latest' },
+                    { value: 'progress', label: 'Progress' },
+                    { value: 'name', label: 'Name' },
+                    { value: 'oldest', label: 'Oldest' },
+                  ] as Array<{ value: SortKey; label: string }>
+                ).map((opt) => {
+                  const isActive = sortKey === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setSortKey(opt.value)}
+                      className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all"
+                      style={
+                        isActive
+                          ? { background: 'linear-gradient(135deg, var(--color-accent), #818CF8)', color: '#fff', cursor: 'pointer' }
+                          : { color: 'var(--color-text-secondary)', cursor: 'pointer' }
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
               <button
                 type="button"
                 onClick={() => setViewMode((current) => (current === 'grid' ? 'list' : 'grid'))}
@@ -615,7 +703,7 @@ export function GoalsPage() {
                 }}
               >
                 <Sparkles size={15} />
-                AI Coach
+                AI Planner
               </button>
             </div>
           </div>
@@ -657,7 +745,7 @@ export function GoalsPage() {
               title="Active Goals"
               count={filteredGoals.length}
               actionLabel="View all"
-              onAction={() => setFilter('ALL')}
+              onAction={() => handleFilterChange('ALL')}
             />
 
             <div className="mt-4 flex flex-col gap-4">
@@ -1389,41 +1477,6 @@ function KpiCard({
         </svg>
       </div>
     </div>
-  );
-}
-
-function ChipSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  const active = options.find((option) => option.value === value);
-  return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold"
-      style={{
-        background: 'var(--color-surface-raised)',
-        borderColor: 'var(--color-border)',
-        color: 'var(--color-text-secondary)',
-      }}
-      onClick={() => {
-        const currentIndex = options.findIndex((option) => option.value === value);
-        const next = options[(currentIndex + 1) % options.length];
-        onChange(next?.value ?? value);
-      }}
-    >
-      <Filter size={14} />
-      <span>{label}</span>
-      <span className="text-text-primary">{active?.label ?? 'Any'}</span>
-      <ChevronDown size={14} />
-    </button>
   );
 }
 

@@ -18,7 +18,8 @@ export interface DeleteGoalOptions {
 }
 
 export const goalsApi = {
-  list: () => apiClient.get<ListResponse<GoalDTO>>('/goals').then((r) => r.data),
+  list: (params?: Record<string, string>) =>
+    apiClient.get<ListResponse<GoalDTO>>('/goals', { params }).then((r) => r.data),
   getOne: (id: string) => apiClient.get<GoalDTO>(`/goals/${id}`).then((r) => r.data),
   create: (data: CreateGoalRequest) => apiClient.post<GoalDTO>('/goals', data).then((r) => r.data),
   update: (id: string, data: UpdateGoalRequest) => apiClient.patch<GoalDTO>(`/goals/${id}`, data).then((r) => r.data),

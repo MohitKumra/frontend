@@ -1,33 +1,10 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { useState } from 'react';
-import {
-  BookOpen,
-  Brain,
-  Briefcase,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Code2,
-  DollarSign,
-  Edit2,
-  Flame,
-  FolderKanban,
-  Globe,
-  GraduationCap,
-  Heart,
-  Lightbulb,
-  Plus,
-  Rocket,
-  Settings,
-  Sparkles,
-  Star,
-  Target,
-  Trophy,
-  type LucideIcon,
-} from 'lucide-react';
+import { Ban, CheckCircle2, ChevronDown, ChevronUp, Edit2, FolderKanban, Plus, Sparkles, Target, type LucideIcon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input, Textarea } from '../ui/Input';
 import { Modal } from '../ui/Modal';
+import { GOAL_ICON_CHOICES, NO_ICON } from './goalIcons';
 import type { GoalPriority, GoalStatus, HabitDTO, ProjectDTO, TaskDTO } from '../../types';
 
 export type GoalFormState = {
@@ -65,24 +42,8 @@ type GoalFormModalProps = {
 };
 
 const iconChoices: { value: string; label: string; icon: LucideIcon }[] = [
-  { value: 'target', label: 'Target', icon: Target },
-  { value: 'rocket', label: 'Rocket', icon: Rocket },
-  { value: 'brain', label: 'Brain', icon: Brain },
-  { value: 'book-open', label: 'Book', icon: BookOpen },
-  { value: 'flame', label: 'Focus', icon: Flame },
-  { value: 'folder-kanban', label: 'Plan', icon: FolderKanban },
-  { value: 'check-square', label: 'Done', icon: CheckCircle2 },
-  { value: 'trophy', label: 'Trophy', icon: Trophy },
-  { value: 'dollar-sign', label: 'Finance', icon: DollarSign },
-  { value: 'lightbulb', label: 'Idea', icon: Lightbulb },
-  { value: 'graduation', label: 'Learn', icon: GraduationCap },
-  { value: 'briefcase', label: 'Work', icon: Briefcase },
-  { value: 'code2', label: 'Code', icon: Code2 },
-  { value: 'heart', label: 'Health', icon: Heart },
-  { value: 'globe', label: 'Global', icon: Globe },
-  { value: 'star', label: 'Star', icon: Star },
-  { value: 'settings', label: 'Systems', icon: Settings },
-  { value: 'sparkles', label: 'AI', icon: Sparkles },
+  { value: NO_ICON, label: 'None', icon: Ban },
+  ...GOAL_ICON_CHOICES,
 ];
 
 const ICONS_INITIAL = 6;
@@ -125,7 +86,6 @@ export function GoalFormModal({
   editingGoal,
   form,
   setForm,
-  touched,
   setTouched,
   fieldError,
   isSubmitting,
@@ -136,7 +96,7 @@ export function GoalFormModal({
 }: GoalFormModalProps) {
   const [showAllIcons, setShowAllIcons] = useState(false);
   const visibleIcons = showAllIcons ? iconChoices : iconChoices.slice(0, ICONS_INITIAL);
-
+  
   return (
     <Modal open={open} onClose={onClose} title={editingGoal ? 'Edit Goal' : 'Create Goal'} maxWidth="max-w-6xl">
       <div className="space-y-6">
@@ -340,6 +300,7 @@ export function GoalFormModal({
                 onChange={(event) => setForm({ ...form, aiSummary: event.target.value })}
                 placeholder="Optional coaching summary for this goal"
               />
+              
             </FormSection>
           </div>
 
@@ -645,32 +606,36 @@ function ProgressRing({ progress, color, size = 72 }: { progress: number; color:
   const r = (size - 10) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (clamp(progress, 0, 100) / 100) * circ;
+  const cx = size / 2;
+  const cy = size / 2;
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-border)" strokeWidth="5" />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {/* track */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--color-border)" strokeWidth="5" />
+      {/* progress arc — starts from top via rotate(-90) */}
       <circle
-        cx={size / 2}
-        cy={size / 2}
+        cx={cx}
+        cy={cy}
         r={r}
         fill="none"
         stroke={color}
         strokeWidth="5"
         strokeLinecap="round"
         strokeDasharray={`${dash} ${circ - dash}`}
-        strokeDashoffset="0"
+        transform={`rotate(-90 ${cx} ${cy})`}
       />
+      {/* label — plain SVG text, no CSS transform needed */}
       <text
-        x={size / 2}
-        y={size / 2 + 1}
+        x={cx}
+        y={cy}
         textAnchor="middle"
-        dominantBaseline="middle"
+        dominantBaseline="central"
         style={{
-          transform: `rotate(90deg) translateY(-${size / 2}px) translateX(${size / 2}px)`,
-          transformOrigin: '50% 50%',
           fontSize: 13,
           fontWeight: 900,
           fill: 'var(--color-text-primary)',
+          fontFamily: 'inherit',
         }}
       >
         {clamp(progress, 0, 100)}%

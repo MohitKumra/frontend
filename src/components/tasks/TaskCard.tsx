@@ -2,6 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import {
+  formatDueDateInTimeZone,
+  isOverdueInTimeZone,
+  isTodayInTimeZone,
+} from '../../lib/taskDateUtils';
+import {
   Calendar,
   CheckCircle2,
   Circle,
@@ -128,6 +133,7 @@ function Chip({ children, color, icon }: { children: React.ReactNode; color: str
 
 export interface TaskCardProps {
   task: TaskDTO;
+  timeZone?: string;
   isSelected: boolean;
   isMenuOpen: boolean;
   subExpanded: boolean;
@@ -151,9 +157,10 @@ export interface TaskCardProps {
 
 // ── component ──────────────────────────────────────────────────────────────
 
-export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
+const TaskCardInner = React.forwardRef<HTMLDivElement, TaskCardProps>(function TaskCard(
   {
     task,
+    timeZone,
     isSelected,
     isMenuOpen,
     subExpanded,
@@ -175,11 +182,12 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
   },
   forwardedRef
 ) {
+  const effectiveTimeZone = timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
   const done = task.status === 'DONE';
   const cancelled = task.status === 'CANCELLED';
-  const overdue = isOverdue(task.dueDate, task.status);
-  const today = isToday(task.dueDate);
-  const dueDateLabel = formatDueDate(task.dueDate);
+  const overdue = isOverdueInTimeZone(task.dueDate, task.status, effectiveTimeZone);
+  const today = isTodayInTimeZone(task.dueDate, effectiveTimeZone);
+  const dueDateLabel = formatDueDateInTimeZone(task.dueDate, effectiveTimeZone);
   const recurrenceLabel = getRecurrenceLabel(task.recurrenceRule);
   const duration = formatDuration(task.estimatedDuration);
 
@@ -585,3 +593,8 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(function
     </motion.div>
   );
 });
+
+// Wrap in React.memo so re-renders only happen when this card's own props change.
+// This prevents the entire grid from re-rendering when unrelated parent state
+// changes (e.g. another card's menu opens, subtask draft in a different card, etc.).
+export const TaskCard = React.memo(TaskCardInner) as typeof TaskCardInner;

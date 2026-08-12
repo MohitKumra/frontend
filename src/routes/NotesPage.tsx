@@ -125,8 +125,9 @@ export function NotesPage() {
       dateTo: dateTo || undefined,
       mood: filterMood || undefined,
       tags: filterTags.length > 0 ? filterTags : undefined,
+      hasAttachment: attachmentsOnly || undefined,
     }),
-    [filter, debouncedSearchQuery, sortField, sortOrder, dateFrom, dateTo, filterMood, filterTags, showArchived]
+    [filter, debouncedSearchQuery, sortField, sortOrder, dateFrom, dateTo, filterMood, filterTags, showArchived, attachmentsOnly]
   );
 
   const {
@@ -161,11 +162,32 @@ export function NotesPage() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Apply client-side attachment filter
-  const filteredNotes = useMemo(() => {
-    if (!attachmentsOnly) return allNotes;
-    return allNotes.filter((n) => Boolean(n.attachmentUrl || n.voiceNoteUrl));
-  }, [allNotes, attachmentsOnly]);
+  // Attachment / voice-note filtering is handled on the backend via the
+  // `hasAttachment` param, so no client-side re-filter is needed here.
+  const filteredNotes = allNotes;
+
+  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
+  // fire a request storm (these tabs now query the backend). The tab still
+  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
+  const [tabsDisabled, setTabsDisabled] = useState(false);
+  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFilterChange = useCallback(
+    (nextFilter: NoteFilter) => {
+      if (tabsDisabled) return;
+      setFilter(nextFilter);
+      setTabsDisabled(true);
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
+    },
+    [tabsDisabled, setFilter]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
+    };
+  }, []);
 
   // Separate pinned and unpinned for grid view
   const starredNotes = useMemo(() => filteredNotes.filter((n) => n.isPinned), [filteredNotes]);
@@ -531,7 +553,13 @@ export function NotesPage() {
                     archived: <Archive size={12} />,
                   };
                   return (
-                    <button key={f} onClick={() => setFilter(f)} className={`np-pill ${isActive ? 'is-active' : ''}`}>
+                    <button
+                      key={f}
+                      onClick={() => handleFilterChange(f)}
+                      disabled={tabsDisabled}
+                      style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
+                      className={`np-pill ${isActive ? 'is-active' : ''}`}
+                    >
                       {isActive && (
                         <motion.div
                           layoutId="pill-indicator"
