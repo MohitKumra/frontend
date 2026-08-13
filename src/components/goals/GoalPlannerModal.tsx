@@ -210,7 +210,12 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
                 type="button"
                 onClick={() => {
                   onClose();
-                  navigate('/settings?tab=ai');
+                  navigate('/coach', {
+                    state: {
+                      coachPrompt: prompt.trim() || 'Help me build a practical goal plan.',
+                      autoSend: false,
+                    },
+                  });
                 }}
                 className="inline-flex items-center gap-2 rounded-2xl px-6 py-2.5 text-sm font-black text-white transition-all hover:opacity-90 active:scale-95"
                 style={{
@@ -218,8 +223,8 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
                   boxShadow: '0 8px 24px color-mix(in srgb, var(--color-accent) 35%, transparent)',
                 }}
               >
-                <Settings2 size={15} />
-                Enable in Settings
+                <BrainCircuit size={15} />
+                Open Coach
               </button>
             </div>
           </div>

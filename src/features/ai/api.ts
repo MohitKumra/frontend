@@ -2,6 +2,7 @@
 // API client for AI-powered features.
 
 import apiClient from '../../lib/apiClient';
+import type { CoachChatDTO, CoachChatListDTO, ListResponse } from '../../types';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -27,9 +28,29 @@ export interface AIInsightResult {
 export interface AICoachResult {
   title: string;
   message: string;
-  suggestion: { text: string; actionLabel: string };
+  suggestion: { text: string; actionLabel: string; actionType: AICoachActionType };
   mood: 'encouraging' | 'challenging' | 'celebratory';
+  planPrompt?: string;
   source: 'ai' | 'fallback';
+}
+
+export type AICoachActionType =
+  | 'open_habits'
+  | 'open_tasks'
+  | 'open_goals'
+  | 'open_focus'
+  | 'open_dashboard'
+  | 'open_coach'
+  | 'create_plan';
+
+export interface AICoachMessageDTO {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface CoachChatSendResponse {
+  chat: CoachChatDTO;
+  result: AICoachResult;
 }
 
 export interface AIDailyBriefResult {
@@ -91,6 +112,45 @@ export async function getAIInsights(): Promise<AIInsightResult> {
 
 export async function getAICoach(): Promise<AICoachResult> {
   const { data } = await apiClient.get('/ai/coach');
+  return data;
+}
+
+export async function getAICoachChats(): Promise<ListResponse<CoachChatListDTO>> {
+  const { data } = await apiClient.get('/ai/coach/chats');
+  return data;
+}
+
+export async function createAICoachChat(title?: string): Promise<CoachChatDTO> {
+  const normalizedTitle = typeof title === 'string' ? title.trim() : '';
+  const payload = normalizedTitle ? { title: normalizedTitle } : {};
+  const { data } = await apiClient.post('/ai/coach/chats', payload);
+  return data;
+}
+
+export async function getAICoachChat(chatId: string): Promise<CoachChatDTO> {
+  const { data } = await apiClient.get(`/ai/coach/chats/${chatId}`);
+  return data;
+}
+
+export async function deleteAICoachChat(chatId: string): Promise<void> {
+  await apiClient.delete(`/ai/coach/chats/${chatId}`);
+}
+
+export async function sendAICoachMessage(
+  chatId: string,
+  message: string,
+  imageUrls?: string[],
+): Promise<CoachChatSendResponse> {
+  const payload: { message: string; imageUrls?: string[] } = { message };
+  if (imageUrls && imageUrls.length > 0) {
+    payload.imageUrls = imageUrls;
+  }
+  const { data } = await apiClient.post(`/ai/coach/chats/${chatId}/messages`, payload);
+  return data;
+}
+
+export async function chatWithAICoach(messages: AICoachMessageDTO[]): Promise<AICoachResult> {
+  const { data } = await apiClient.post('/ai/coach/chat', { messages });
   return data;
 }
 

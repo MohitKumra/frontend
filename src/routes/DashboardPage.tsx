@@ -24,10 +24,7 @@ import apiClient from '../lib/apiClient';
 import { useEnhancedDashboard, useActivityFeed } from '../features/dashboard/hooks/useDashboard';
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { useHabits } from '../features/habits/hooks/useHabits';
-import { useStreakStatus } from '../features/habits/hooks/useHabits';
 import { useAuthStore } from '../store/authStore';
-import { useUIStore } from '../store/uiStore';
-import { StreakBreakModal } from '../components/habits/StreakBreakModal';
 import { DashboardScore } from '../components/dashboard/DashboardScore';
 import { WeeklyProgressChart } from '../components/dashboard/WeeklyProgressChart';
 import { WeatherWidget } from '../components/habits/WeatherWidget';
@@ -44,8 +41,6 @@ import type { FocusSessionDTO, ListResponse, TaskStatus } from '../types';
 function toUtcDateKey(value: string | Date): string {
   return new Date(value).toISOString().split('T')[0];
 }
-
-const XP_PER_LEVEL_BAR = 500;
 
 const DASHBOARD_RESPONSIVE_CSS = `
   .dash-cq { container-type: inline-size; container-name: dash; }
@@ -99,14 +94,14 @@ const DASHBOARD_RESPONSIVE_CSS = `
 
   /* Sidebar: full-width 2-up grid when it's rendered below the main
      content (below 2xl); collapses to a single stacked column once it
-     becomes the actual ~320px sidebar at 2xl+. */
+     becomes the actual ~360px sidebar at 2xl+. */
   .cq-aside { container-type: inline-size; container-name: aside; }
   .cq-aside-grid {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
   }
-  @container aside (min-width: 560px) {
+  @container aside (min-width: 700px) {
     .cq-aside-grid { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; }
   }
 
@@ -130,18 +125,6 @@ export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const updateTask = useUpdateTask();
   const { data: aiInsightsData } = useAIInsights();
-
-  // Streak break popup — MUST be before early returns (hooks rules)
-  const { data: brokenStreaks } = useStreakStatus();
-  const streakPopupDismissedAt = useUIStore((s) => s.streakPopupDismissedAt);
-  const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
-  const [streakModalOpen, setStreakModalOpen] = useState(true);
-  const latestBrokenAt = brokenStreaks?.[0]?.brokenAt ?? null;
-  const showStreakPopup = !!(
-    latestBrokenAt &&
-    streakModalOpen &&
-    (!streakPopupDismissedAt || latestBrokenAt > streakPopupDismissedAt)
-  );
 
   // View toggle: dashboard widgets vs analytics
   const [view, setView] = useState<'dashboard' | 'analytics'>('dashboard');
@@ -260,8 +243,6 @@ export function DashboardPage() {
 
   const displayName = user.name ?? user.email.split('@')[0];
   const avatarInitial = (user.name ?? user.email)[0]?.toUpperCase() ?? '?';
-  const xpInCurrentBar = dashboard.gamification.totalPoints % XP_PER_LEVEL_BAR;
-  const xpBarPct = Math.round((xpInCurrentBar / XP_PER_LEVEL_BAR) * 100);
 
   // Decorative weekly consistency dots for the Habit Streak card — filled
   // for each day of the current streak (capped at 5 slots), matching the
@@ -315,7 +296,7 @@ export function DashboardPage() {
           className={
             view === 'analytics'
               ? 'w-full'
-              : 'grid grid-cols-1 2xl:grid-cols-[1fr_320px] gap-6 lg:gap-8 items-start'
+              : 'grid grid-cols-1 2xl:grid-cols-[67fr_33fr] gap-6 lg:gap-8 items-start'
           }
         >
           {view === 'dashboard' ? (
@@ -579,7 +560,7 @@ export function DashboardPage() {
                         </div>
                         {currentHabitStreak > 0 && (
                           <span
-                            className="text-[10px] font-black px-2 py-0.5 rounded-full"
+                            className="text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap"
                             style={{
                               background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
                               color: 'var(--color-warning)',
@@ -895,62 +876,109 @@ export function DashboardPage() {
             2xl+. */}
               <aside className="cq-aside min-w-0 h-full">
                 <div className="cq-aside-grid h-full">
-                  {/* Profile card */}
+                  {/* Profile card — redesigned */}
                   <div
-                    className="rounded-2xl border p-5 flex flex-col gap-4"
+                    className="rounded-2xl border overflow-hidden flex flex-col"
                     style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
                   >
-                    <div className="flex items-start gap-3">
-                      <Avatar
-                        src={user.avatarUrl}
-                        name={user.name}
-                        email={user.email}
-                        size="lg"
-                        showBorder
-                        onClick={() => navigate('/profile')}
-                        className="cursor-pointer"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Profile</p>
-                        <h4 className="text-sm font-black text-text-primary truncate">{displayName}</h4>
-                        <p className="text-[11px] text-text-muted truncate">{user.email}</p>
-                      </div>
-                    </div>
+                    {/* Thin accent bar at top */}
+                    <div
+                      className="h-[3px] w-full shrink-0"
+                      style={{ background: 'var(--gradient-accent)' }}
+                    />
 
-                    <div className="flex items-center justify-between">
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full"
+                    <div className="p-5 flex flex-col gap-4">
+                      {/* Top row — avatar + name + live badge */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          <Avatar
+                            src={user.avatarUrl}
+                            name={user.name}
+                            email={user.email}
+                            size="lg"
+                            showBorder
+                            onClick={() => navigate('/profile')}
+                            className="cursor-pointer"
+                          />
+                          {/* Live dot on avatar */}
+                          <span
+                            className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2"
+                            style={{
+                              background: 'var(--color-success)',
+                              borderColor: 'var(--color-surface-raised)',
+                            }}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-black text-text-primary truncate leading-snug">
+                            {displayName}
+                          </h4>
+                          <p className="text-[10px] text-text-muted truncate">{user.email}</p>
+                        </div>
+                        {/* Score badge */}
+                        <div
+                          className="shrink-0 flex flex-col items-center px-3 py-2 rounded-xl"
+                          style={{
+                            background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
+                            border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)',
+                          }}
+                        >
+                          <span
+                            className="text-lg font-black leading-none"
+                            style={{ color: 'var(--color-accent)' }}
+                          >
+                            {dashboard.productivityScore ?? 0}
+                          </span>
+                          <span className="text-[8px] font-bold uppercase tracking-wider text-text-muted mt-0.5">
+                            Score
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Stats row */}
+                      <div
+                        className="grid grid-cols-3 rounded-xl overflow-hidden border"
+                        style={{ borderColor: 'var(--color-border)' }}
+                      >
+                        {[
+                          { label: 'Tasks', value: `${taskCompletedTotal}/${taskTotals}`, color: 'var(--color-accent)' },
+                          {
+                            label: 'Focus',
+                            value: `${Math.floor(todayFocusMinutes / 60)}h ${todayFocusMinutes % 60}m`,
+                            color: 'var(--color-info)',
+                          },
+                          { label: 'Streak', value: `${currentHabitStreak}d`, color: 'var(--color-warning)' },
+                        ].map((stat, i) => (
+                          <div
+                            key={stat.label}
+                            className="flex flex-col items-center gap-0.5 py-3"
+                            style={{
+                              background: 'var(--color-surface)',
+                              borderRight: i < 2 ? '1px solid var(--color-border)' : undefined,
+                            }}
+                          >
+                            <span className="text-sm font-black" style={{ color: stat.color }}>
+                              {stat.value}
+                            </span>
+                            <span className="text-[8px] font-bold uppercase tracking-wider text-text-muted">
+                              {stat.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* View Profile button */}
+                      <button
+                        onClick={() => navigate('/profile')}
+                        className="w-full py-2 rounded-xl text-xs font-bold transition-all hover:opacity-90 active:scale-[0.98]"
                         style={{
-                          background: 'color-mix(in srgb, var(--color-success) 15%, transparent)',
-                          color: 'var(--color-success)',
+                          background: 'var(--gradient-accent)',
+                          color: 'white',
+                          boxShadow: '0 2px 12px color-mix(in srgb, var(--color-accent) 30%, transparent)',
                         }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-success" /> Live
-                      </span>
-                      <div className="text-right">
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Score</p>
-                        <p className="text-sm font-black text-text-primary leading-tight">
-                          {dashboard.productivityScore ?? 0}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div
-                      className="grid grid-cols-2 gap-3 pt-3 border-t"
-                      style={{ borderColor: 'var(--color-border)' }}
-                    >
-                      <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Tasks</p>
-                        <p className="text-sm font-black text-text-primary mt-0.5">
-                          {taskCompletedTotal}/{taskTotals}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">Focus</p>
-                        <p className="text-sm font-black text-text-primary mt-0.5">
-                          {Math.floor(todayFocusMinutes / 60)}h {todayFocusMinutes % 60}m
-                        </p>
-                      </div>
+                        View Profile
+                      </button>
                     </div>
                   </div>
 
@@ -963,6 +991,20 @@ export function DashboardPage() {
                       activities={activityFeed?.data ?? []}
                       isLoading={isActivityFeedLoading}
                       maxItems={5}
+                    />
+                  </div>
+
+                  {/* Productivity Score breakdown — full width in the sidebar */}
+                  <div className="col-span-2">
+                    <DashboardScore
+                      overallScore={dashboard.productivityScore ?? 72}
+                      breakdown={{
+                        taskCompletion,
+                        focus: Math.min(100, Math.floor((focusMinutesTotal / 120) * 100)),
+                        habits: habitCompletion,
+                        planner: plannerScore,
+                        consistency: currentHabitStreak > 0 ? Math.min(100, currentHabitStreak * 10) : 0,
+                      }}
                     />
                   </div>
                 </div>
@@ -1027,43 +1069,11 @@ export function DashboardPage() {
         </button>
       </motion.div>
 
-      {/* Weekly Progress / Productivity Breakdown — 70/30 split,
-          both cards stretch to match heights. */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-5 items-stretch">
-        <div className="min-w-0">
-          <WeeklyProgressChart data={weeklyProgress} />
-        </div>
-        <div className="min-w-0">
-          <DashboardScore
-            overallScore={dashboard.productivityScore ?? 72}
-            breakdown={{
-              taskCompletion,
-              focus: Math.min(100, Math.floor((focusMinutesTotal / 120) * 100)),
-              habits: habitCompletion,
-              planner: plannerScore,
-              consistency: currentHabitStreak > 0 ? Math.min(100, currentHabitStreak * 10) : 0,
-            }}
-          />
-        </div>
+      {/* Weekly Progress — full width */}
+      <motion.div variants={itemVariants} className="w-full min-w-0">
+        <WeeklyProgressChart data={weeklyProgress} />
       </motion.div>
 
-      {/* Streak Break Popup — shows on first screen load */}
-      <StreakBreakModal
-        open={showStreakPopup}
-        brokenStreaks={brokenStreaks || []}
-        onClose={() => {
-          setStreakModalOpen(false);
-          if (latestBrokenAt) {
-            dismissStreakPopup(latestBrokenAt);
-          }
-        }}
-        onDismiss={() => {
-          setStreakModalOpen(false);
-          if (latestBrokenAt) {
-            dismissStreakPopup(latestBrokenAt);
-          }
-        }}
-      />
     </motion.div>
   );
 }

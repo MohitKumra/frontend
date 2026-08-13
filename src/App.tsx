@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { AppErrorBoundary } from './components/layout/AppErrorBoundary';
 import { PageTransition } from './components/layout/PageTransition';
@@ -27,6 +27,7 @@ import { FocusPage } from './routes/FocusPage';
 import { ProjectsPage } from './routes/ProjectsPage';
 import { GoalsPage } from './routes/GoalsPage';
 import { GoalDetailPage } from './routes/GoalDetailPage';
+import { AIControlsPage } from './routes/AIControlsPage';
 import { SettingsPage } from './routes/SettingsPage';
 import { ProfilePage } from './routes/ProfilePage';
 import { TaskDetailPage } from './routes/TaskDetailPage';
@@ -62,6 +63,11 @@ function OnboardingTrigger() {
   }, [isAuthenticated, isActive, actions]);
 
   return null;
+}
+
+function CoachRedirectPage() {
+  const location = useLocation();
+  return <Navigate to="/coach" replace state={location.state} />;
 }
 
 export default function App() {
@@ -152,6 +158,8 @@ export default function App() {
           <Route path="goals" element={<GoalsPage />} />
           <Route path="goals/:id" element={<GoalDetailPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="coach" element={<AIControlsPage />} />
+          <Route path="ai" element={<CoachRedirectPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

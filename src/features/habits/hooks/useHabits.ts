@@ -80,6 +80,8 @@ export function useStreakStatus() {
     queryKey: [...HABITS_KEY, 'streak-status'],
     queryFn: habitsApi.streakStatus,
     staleTime: 60_000, // 1 minute
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     retry: false,
   });
 }

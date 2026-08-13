@@ -385,7 +385,7 @@ export function AISettingsPanel({
             </div>
             <p className="text-sm font-extrabold text-text-primary">AI Summary Refresh</p>
             <p className="text-xs text-text-muted mt-0.5 leading-snug">
-              How often AI summaries re-run automatically. Longer intervals save tokens.
+              How often AI summaries and coach refreshes run automatically. Longer intervals save tokens.
             </p>
           </div>
         </div>

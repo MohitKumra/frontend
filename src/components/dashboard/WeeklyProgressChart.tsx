@@ -60,11 +60,11 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
       </div>
 
       {/* Content */}
-      <div className="p-5 flex-1 flex flex-col min-h-0">
+      <div className="p-5 flex-1 flex flex-col min-h-0" style={{ minHeight: 280 }}>
         {!hasData ? (
           <WeeklyProgressEmpty />
         ) : (
-          <div className="h-full w-full flex-1">
+          <div style={{ height: 260, width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>

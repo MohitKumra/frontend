@@ -18,6 +18,7 @@ import {
   FolderKanban,
   Keyboard,
   Flag,
+  BrainCircuit,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -31,6 +32,7 @@ import { DraggableModal } from '../ui/DraggableModal';
 import { Badge } from '../ui/Badge';
 import { PageTransition } from './PageTransition';
 import { useDashboardToday, useAchievements } from '../../features/dashboard/hooks/useDashboard';
+import { useStreakStatus } from '../../features/habits/hooks/useHabits';
 import { applyLayoutPreference } from '../../platform/layout';
 import { queryClient } from '../../lib/queryClient';
 import { dashboardApi } from '../../features/dashboard/api';
@@ -41,6 +43,7 @@ import { calendarApi } from '../../features/calendar/api';
 import { settingsApi } from '../../features/settings/api';
 import apiClient from '../../lib/apiClient';
 import { AchievementCelebrationModal } from '../achievements/AchievementCelebrationModal';
+import { StreakBreakModal } from '../habits/StreakBreakModal';
 import type { AchievementWithStatusDTO } from '../../types';
 import { createPortal } from 'react-dom';
 type TaskListPage = Awaited<ReturnType<typeof tasksApi.list>>;
@@ -60,6 +63,7 @@ const navItems = [
   { to: '/focus', icon: Timer, label: 'Focus', onboarding: 'focus' },
   { to: '/projects', icon: FolderKanban, label: 'Projects', onboarding: 'projects' },
   { to: '/goals', icon: Flag, label: 'Goals', onboarding: 'goals' },
+  { to: '/coach', icon: BrainCircuit, label: 'AI Coach', onboarding: 'coach' },
   { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings' },
 ];
 
@@ -142,6 +146,10 @@ function warmRouteData(route: string): void {
     case '/settings':
       void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
       break;
+    case '/coach':
+    case '/ai':
+      void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
+      break;
     case '/profile':
       void queryClient.prefetchQuery({
         queryKey: ['auth', 'me'],
@@ -186,9 +194,19 @@ export function AppLayout() {
   const [achievementQueue, setAchievementQueue] = useState<AchievementWithStatusDTO[]>([]);
   const { data: todayData } = useDashboardToday();
   const { data: achievements } = useAchievements();
+  const { data: brokenStreaks } = useStreakStatus();
   const { data: settings } = useSettings();
   const seenAchievementKeysRef = useRef<Set<string> | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [streakModalOpen, setStreakModalOpen] = useState(true);
+  const streakPopupDismissedAt = useUIStore((s) => s.streakPopupDismissedAt);
+  const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
+  const latestBrokenAt = brokenStreaks?.[0]?.brokenAt ?? null;
+  const showStreakPopup = !!(
+    latestBrokenAt &&
+    streakModalOpen &&
+    (!streakPopupDismissedAt || latestBrokenAt > streakPopupDismissedAt)
+  );
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -218,6 +236,8 @@ export function AppLayout() {
       '/notes',
       '/focus',
       '/analytics',
+      '/coach',
+      '/ai',
       '/profile',
       '/settings',
     ];
@@ -280,6 +300,13 @@ export function AppLayout() {
       setUser({ ...user, recoveryEmail: settings.security.recoveryEmail });
     }
   }, [settings, setCalendarViewPreference, setLayoutPreference, setTaskViewPreference, setTheme, setUser, user]);
+
+  useEffect(() => {
+    if (!latestBrokenAt) return;
+    if (!streakPopupDismissedAt || latestBrokenAt > streakPopupDismissedAt) {
+      setStreakModalOpen(true);
+    }
+  }, [latestBrokenAt, streakPopupDismissedAt]);
 
   // ── Global keyboard shortcuts ──────────────────────────────────────────────
   //
@@ -843,6 +870,7 @@ export function AppLayout() {
                 '/analytics': 'var(--gradient-danger)',
                 '/goals': 'var(--gradient-accent)',
                 '/projects': 'var(--gradient-accent)',
+                '/coach': 'linear-gradient(135deg, #7c3aed, #6d28d9)',
                 '/settings': 'linear-gradient(135deg, #6b7280, #4b5563)',
               };
               const gradient = gradientMap[to] ?? 'var(--gradient-accent)';
@@ -961,6 +989,23 @@ export function AppLayout() {
         open={!!activeAchievement}
         achievement={activeAchievement}
         onClose={closeAchievementCelebration}
+      />
+
+      <StreakBreakModal
+        open={showStreakPopup}
+        brokenStreaks={brokenStreaks ?? []}
+        onClose={() => {
+          setStreakModalOpen(false);
+          if (latestBrokenAt) {
+            dismissStreakPopup(latestBrokenAt);
+          }
+        }}
+        onDismiss={() => {
+          setStreakModalOpen(false);
+          if (latestBrokenAt) {
+            dismissStreakPopup(latestBrokenAt);
+          }
+        }}
       />
 
       {showShortcuts &&

@@ -1,29 +1,8 @@
-// frontend/src/features/ai/hooks/useAI.ts
-// React hooks for AI-powered features. Settings-aware to control token usage.
-//
-// Refresh strategy — all periodic AI queries share the same timer derived
-// from the user's `summaryRefreshMinutes` setting:
-//
-//   staleTime   = refreshMs  — cached data stays fresh for the full interval;
-//                              no refetch will fire while the data is fresh.
-//   gcTime      = refreshMs  — keep the cached entry in memory for the same
-//                              window so navigating away and back doesn't GC
-//                              it and trigger an immediate re-fetch.
-//   refetchInterval = refreshMs (when enabled) — background timer that fires
-//                              exactly once per interval.
-//   refetchOnWindowFocus = false — switching back to the tab never bypasses
-//                              the interval.
-//   refetchOnMount      = false — remounting a component (e.g. navigating
-//                              back to a page) uses the cached value until
-//                              staleTime expires; it does NOT fire a new call.
-//
-// The refresh interval is included in the queryKey so that when the user
-// changes their cadence setting, React Query treats it as a brand-new query
-// and starts a fresh timer at the new cadence immediately.
-
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import * as aiApi from '../api';
 import { useSettings } from '../../settings';
+import { useAuthStore } from '../../../store/authStore';
 
 export type AIFeatureKey =
   | 'dailyBriefEnabled'
@@ -34,6 +13,50 @@ export type AIFeatureKey =
   | 'goalSummaryEnabled'
   | 'taskParserEnabled'
   | 'goalPlannerEnabled';
+
+type CoachCacheRecord = {
+  fetchedAt: number;
+  data: aiApi.AICoachResult;
+};
+
+const COACH_CACHE_PREFIX = 'ai-coach-cache';
+
+function getCoachCacheKey(userId: string, refreshMinutes: number): string {
+  return `${COACH_CACHE_PREFIX}:${userId}:${refreshMinutes}`;
+}
+
+function readCoachCache(userId: string, refreshMinutes: number): CoachCacheRecord | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(getCoachCacheKey(userId, refreshMinutes));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<CoachCacheRecord>;
+    if (typeof parsed.fetchedAt !== 'number' || !parsed.data) return null;
+
+    return {
+      fetchedAt: parsed.fetchedAt,
+      data: parsed.data as aiApi.AICoachResult,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCoachCache(userId: string, refreshMinutes: number, data: aiApi.AICoachResult): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const payload: CoachCacheRecord = {
+      fetchedAt: Date.now(),
+      data,
+    };
+    window.localStorage.setItem(getCoachCacheKey(userId, refreshMinutes), JSON.stringify(payload));
+  } catch {
+    // Ignore storage failures. The network result is still usable.
+  }
+}
 
 /** Returns whether a specific AI feature is enabled for the current user. */
 export function useAIFeatureEnabled(featureKey: AIFeatureKey): boolean {
@@ -74,21 +97,37 @@ export function useAIInsights() {
 
 export function useAICoach() {
   const { data: settings } = useSettings();
+  const userId = useAuthStore((s) => s.user?.id ?? '');
   const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
   const refreshMs = refreshMinutes * 60 * 1000;
   const enabled = settings?.ai?.coachEnabled !== false;
-  return useQuery({
-    queryKey: ['ai-coach', refreshMinutes],
+  const canQuery = Boolean(settings) && Boolean(userId) && enabled;
+  const cached = canQuery ? readCoachCache(userId, refreshMinutes) : null;
+  const isFreshCache = cached ? Date.now() - cached.fetchedAt < refreshMs : false;
+
+  const query = useQuery({
+    queryKey: ['ai-coach', userId, refreshMinutes],
     queryFn: aiApi.getAICoach,
     staleTime: refreshMs,
     gcTime: refreshMs,
-    refetchInterval: enabled ? refreshMs : false,
+    refetchInterval: canQuery ? refreshMs : false,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    enabled,
+    refetchOnMount: isFreshCache ? false : 'always',
+    enabled: canQuery,
+    initialData: cached?.data,
+    initialDataUpdatedAt: cached?.fetchedAt,
     retry: 1,
   });
+
+  useEffect(() => {
+    if (!canQuery || !query.data) return;
+    const cachedAt = cached?.fetchedAt ?? 0;
+    if (query.dataUpdatedAt <= cachedAt) return;
+    writeCoachCache(userId, refreshMinutes, query.data);
+  }, [cached?.fetchedAt, canQuery, query.data, query.dataUpdatedAt, refreshMinutes, userId]);
+
+  return query;
 }
 
 export function useDailyBrief() {

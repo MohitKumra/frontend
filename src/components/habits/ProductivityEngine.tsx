@@ -539,14 +539,6 @@ export function ProductivityEngine({
           <div className="flex-1">
             <p className="text-xs font-bold text-text-primary flex items-center gap-1.5">
               Productivity Engine
-              <motion.span
-                className="px-2 py-0.5 rounded-full text-[9px] font-extrabold"
-                style={{ background: `${primaryColor}20`, color: primaryColor }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Live
-              </motion.span>
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Lightbulb, ArrowRight, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 
 interface AIInsightStripProps {
@@ -9,6 +10,8 @@ interface AIInsightStripProps {
 }
 
 export function AIInsightStrip({ completedToday, totalHabits }: AIInsightStripProps) {
+  const navigate = useNavigate();
+
   // Generate dynamic insight based on time and performance
   const getInsight = () => {
     const hour = new Date().getHours();
@@ -171,6 +174,7 @@ export function AIInsightStrip({ completedToday, totalHabits }: AIInsightStripPr
               size="sm"
               rightIcon={<ArrowRight size={14} />}
               className="font-bold whitespace-nowrap"
+              onClick={() => navigate('/coach', { state: { coachPrompt: insight.suggestion, autoSend: false } })}
               style={{
                 background: insight.color,
                 borderColor: insight.color,

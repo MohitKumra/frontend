@@ -1,3 +1,5 @@
+import React from 'react'
+
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
@@ -6,7 +8,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 /** Premium enterprise input component with label, error & icons */
-export function Input({ label, error, leftIcon, rightIcon, id, className = '', ...props }: InputProps) {
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
+  { label, error, leftIcon, rightIcon, id, className = '', ...props },
+  ref
+) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   return (
     <div className="flex flex-col gap-2">
@@ -18,6 +23,7 @@ export function Input({ label, error, leftIcon, rightIcon, id, className = '', .
       <div className="relative flex items-center">
         {leftIcon && <span className="absolute left-4 text-text-muted pointer-events-none">{leftIcon}</span>}
         <input
+          ref={ref}
           id={inputId}
           {...props}
           className={[
@@ -37,14 +43,17 @@ export function Input({ label, error, leftIcon, rightIcon, id, className = '', .
       {error && <p className="text-xs text-danger flex items-center gap-1">{error}</p>}
     </div>
   );
-}
+});
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
 }
 
-export function Textarea({ label, error, id, className = '', ...props }: TextareaProps) {
+export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { label, error, id, className = '', ...props },
+  ref
+) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   return (
     <div className="flex flex-col gap-2">
@@ -54,6 +63,7 @@ export function Textarea({ label, error, id, className = '', ...props }: Textare
         </label>
       )}
       <textarea
+        ref={ref}
         id={inputId}
         {...props}
         className={[
@@ -69,4 +79,4 @@ export function Textarea({ label, error, id, className = '', ...props }: Textare
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
-}
+});

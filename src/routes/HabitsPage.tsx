@@ -2,11 +2,10 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Grid3x3, List, LayoutList, Zap, Clock, CheckCircle2 } from 'lucide-react';
-import { useHabits, useCreateHabit, useStreakStatus, useFilteredHabits } from '../features/habits/hooks/useHabits';
+import { useHabits, useCreateHabit, useFilteredHabits } from '../features/habits/hooks/useHabits';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { useFocusSessions } from '../features/habits/hooks/useFocusSessions';
 import { useAuthStore } from '../store/authStore';
-import { useUIStore } from '../store/uiStore';
 import { Modal } from '../components/ui/Modal';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { Card } from '../components/ui/Card';
@@ -24,7 +23,6 @@ import { HabitHeatmapCombined } from '../components/habits/HabitHeatmapCombined'
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
 import { AICoachPanel } from '../components/habits/AICoachPanel';
 import { CreateHabitWizard } from '../components/habits/CreateHabitWizard';
-import { StreakBreakModal } from '../components/habits/StreakBreakModal';
 import { useGamificationProfile } from '../features/dashboard/hooks/useDashboard';
 import type { HabitDTO } from '../types';
 
@@ -50,18 +48,6 @@ export function HabitsPage() {
   const [filter, setFilter] = useState<HabitFilter>('all');
   const [sort, setSort] = useState<HabitSort>('custom');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-
-  // Streak break popup
-  const { data: brokenStreaks } = useStreakStatus();
-  const streakPopupDismissedAt = useUIStore((s) => s.streakPopupDismissedAt);
-  const dismissStreakPopup = useUIStore((s) => s.dismissStreakPopup);
-  const [streakModalOpen, setStreakModalOpen] = useState(true);
-  const latestBrokenAt = brokenStreaks?.[0]?.brokenAt ?? null;
-  const showStreakPopup = !!(
-    latestBrokenAt &&
-    streakModalOpen &&
-    (!streakPopupDismissedAt || latestBrokenAt > streakPopupDismissedAt)
-  );
 
   const habits = data?.data ?? [];
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
@@ -536,23 +522,6 @@ export function HabitsPage() {
         initialDuration={taskPrefill.duration}
       />
 
-      {/* Streak Break Popup */}
-      <StreakBreakModal
-        open={showStreakPopup}
-        brokenStreaks={brokenStreaks || []}
-        onClose={() => {
-          setStreakModalOpen(false);
-          if (latestBrokenAt) {
-            dismissStreakPopup(latestBrokenAt);
-          }
-        }}
-        onDismiss={() => {
-          setStreakModalOpen(false);
-          if (latestBrokenAt) {
-            dismissStreakPopup(latestBrokenAt);
-          }
-        }}
-      />
     </motion.div>
   );
 }

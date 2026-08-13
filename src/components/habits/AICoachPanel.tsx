@@ -2,11 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Lightbulb, TrendingUp, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { useAICoach, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
-import { useSettings } from '../../features/settings';
 
 interface AICoachPanelProps {
   completedToday: number;
@@ -17,8 +15,6 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
   const { data: coachData, isLoading } = useAICoach();
   const coachEnabled = useAIFeatureEnabled('coachEnabled');
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { data: settings } = useSettings();
 
   const percentage = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
   const isRuleBased = !coachEnabled || coachData?.source !== 'ai';
@@ -43,14 +39,39 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
 
   const color = getColor();
 
-  // The action label is a short generic CTA from the AI (e.g. "Start Now",
-  // "Take a Break", "Do It Now"). We navigate to /habits as the primary
-  // destination since this coach lives in the habits context, and also
-  // invalidate the coach cache so the next fetch gets fresh advice.
+  const openCoachStudio = (autoSend = false) => {
+    const coachPrompt = coachData?.planPrompt || coachData?.suggestion?.text || coachData?.message || '';
+    navigate('/coach', { state: { coachPrompt, autoSend } });
+  };
+
   const handleActionClick = () => {
-    const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
-    queryClient.invalidateQueries({ queryKey: ['ai-coach', refreshMinutes] });
-    navigate('/habits');
+    const actionType = coachData?.suggestion?.actionType ?? 'open_coach';
+    const coachPrompt = coachData?.planPrompt || coachData?.suggestion?.text || coachData?.message || '';
+
+    switch (actionType) {
+      case 'open_habits':
+        navigate('/habits');
+        return;
+      case 'open_tasks':
+        navigate('/tasks');
+        return;
+      case 'open_goals':
+        navigate('/goals');
+        return;
+      case 'open_focus':
+        navigate('/focus');
+        return;
+      case 'open_dashboard':
+        navigate('/');
+        return;
+      case 'create_plan':
+        navigate('/coach', { state: { coachPrompt, autoSend: true } });
+        return;
+      case 'open_coach':
+      default:
+        navigate('/coach', { state: { coachPrompt, autoSend: false } });
+        return;
+    }
   };
 
   return (
@@ -178,8 +199,8 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
                 )}
 
                 {/* Apply button */}
-                {coachData.suggestion?.actionLabel && (
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                {coachData?.suggestion?.actionLabel && (
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="mb-2">
                     <Button
                       variant="secondary"
                       size="sm"
@@ -196,6 +217,14 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
                     </Button>
                   </motion.div>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => openCoachStudio(coachData?.suggestion?.actionType === 'create_plan')}
+                  className="w-full text-center text-[11px] font-bold text-accent hover:opacity-80 transition-opacity"
+                >
+                  Chat & plan
+                </button>
               </>
             ) : (
               /* Fallback: Rule-based messages when AI is unavailable */
@@ -215,11 +244,19 @@ export function AICoachPanel({ completedToday, totalHabits }: AICoachPanelProps)
                       ? "You've completed all your habits. Amazing work!"
                       : percentage >= 80
                         ? "You've been 18% more consistent than last week."
-                        : percentage >= 50
-                          ? "You're making progress. Try to complete more habits today."
-                          : 'Start with your easiest habit to build momentum.'}
+                    : percentage >= 50
+                        ? "You're making progress. Try to complete more habits today."
+                        : 'Start with your easiest habit to build momentum.'}
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => openCoachStudio(false)}
+                  className="w-full text-center text-[11px] font-bold text-accent hover:opacity-80 transition-opacity"
+                >
+                  Chat & plan
+                </button>
 
                 {/* Trend indicator */}
                 {percentage >= 80 && (

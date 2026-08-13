@@ -1341,6 +1341,25 @@ export function SettingsPage() {
 
             {activeTab === 'ai' && (
               <TabPanel key="ai" panelKey="ai" className="w-full">
+                <div className="mb-4 rounded-2xl border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-text-primary">Need a live coach conversation?</p>
+                    <p className="text-xs text-text-muted mt-1 leading-snug">
+                      Open the dedicated coach studio to chat and turn the conversation into a practical plan.
+                    </p>
+                  </div>
+                  <Link
+                    to="/coach"
+                    className="inline-flex items-center justify-center rounded-xl font-bold transition-all duration-200 ease-out active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg px-5 py-2.5 text-sm min-h-[44px] gap-2 shrink-0"
+                    style={{
+                      background: 'var(--gradient-accent)',
+                      color: 'var(--color-text-onaccent)',
+                      boxShadow: '0 8px 18px color-mix(in srgb, var(--color-accent) 18%, transparent)',
+                    }}
+                  >
+                    Open Coach Page
+                  </Link>
+                </div>
                 <AISettingsPanel preferences={data?.ai} onChange={(next) => aiMutation.mutate(next)} />
               </TabPanel>
             )}

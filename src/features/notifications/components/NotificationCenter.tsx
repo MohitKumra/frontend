@@ -36,6 +36,8 @@ function getNotificationIcon(type: InAppNotificationType, size = 16) {
       return <Zap size={size} />;
     case 'HABIT_STREAK':
       return <TrendingUp size={size} />;
+    case 'HABIT_STREAK_BROKEN':
+      return <AlertTriangle size={size} />;
     case 'FOCUS_SESSION_COMPLETED':
       return <Clock size={size} />;
     case 'PROJECT_CREATED':
@@ -59,6 +61,7 @@ function getNotificationColor(type: InAppNotificationType): BadgeVariant {
   if (type === 'TASK_OVERDUE') return 'danger';
   if (type === 'TASK_DUE_SOON') return 'warning';
   if (type === 'HABIT_PENDING') return 'info';
+  if (type === 'HABIT_STREAK_BROKEN') return 'danger';
   if (type === 'TASK_COMPLETED' || type === 'PROJECT_COMPLETED' || type === 'HABIT_COMPLETED') return 'success';
   return 'accent';
 }

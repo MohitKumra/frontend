@@ -1,6 +1,6 @@
 /**
  * frontend/src/routes/AchievementsTestPage.tsx
- * Test page to preview all 17 achievements with their SVG icons.
+ * Test page to preview all achievements with their SVG icons.
  * Visit /achievements-test to see them.
  */
 
@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Trophy, Lock, Sparkles, ArrowLeft } from 'lucide-react';
 import { useAchievements } from '../features/dashboard/hooks/useDashboard';
 import { getAchievementIcon, tierColors, tierGradients } from '../components/achievements/SVGTrophies';
+import { LevelBadge } from '../components/achievements/LevelBadge';
 import { Card } from '../components/ui/Card';
 import { LoadingScreen } from '../components/ui/Spinner';
 
@@ -147,6 +148,26 @@ export function AchievementsTestPage() {
           </div>
         ))}
       </div>
+
+      {/* Level badge showcase */}
+      <Card variant="default" className="p-6 mt-8">
+        <h3 className="text-base font-bold text-text-primary mb-3">Level Badges</h3>
+        <p className="text-xs text-text-muted mb-4">
+          Each level maps to a tiered trophy badge — higher levels look more prestigious.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          {[1, 5, 10, 25, 50].map((level) => (
+            <div
+              key={level}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl"
+              style={{ background: 'var(--color-surface)' }}
+            >
+              <LevelBadge level={level} size={64} />
+              <p className="text-xs font-bold text-text-primary">Level {level}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {/* Summary card */}
       <Card variant="default" className="p-6 mt-8">

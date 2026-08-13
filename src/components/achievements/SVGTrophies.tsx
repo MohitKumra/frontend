@@ -1015,7 +1015,24 @@ export function getAchievementIcon(key: string, tier: string): React.ReactNode {
       return <RocketIcon size={48} color={color} />;
     case 'project_legend_10':
       return <TargetIcon size={48} color={color} />;
+    case 'first_goal_completed':
+      return <TargetIcon size={48} color={tier === 'bronze' ? '#EF4444' : color} />;
+    case 'goal_achiever_5':
+      return <AwardIcon size={48} color={color} />;
+    case 'goal_master_25':
+      return <CrownIcon size={48} color={color} />;
+    case 'milestone_builder_10':
+      return <MedalIcon size={48} color={color} />;
     case 'level_five': {
+      if (tier === 'bronze') return <BronzeTrophy size={48} color={color} />;
+      if (tier === 'silver') return <SilverTrophy size={48} color={color} />;
+      if (tier === 'gold') return <GoldTrophy size={48} color={color} />;
+      return <PlatinumTrophy size={48} color={color} />;
+    }
+    case 'level_two':
+    case 'level_ten':
+    case 'level_25':
+    case 'level_50': {
       if (tier === 'bronze') return <BronzeTrophy size={48} color={color} />;
       if (tier === 'silver') return <SilverTrophy size={48} color={color} />;
       if (tier === 'gold') return <GoldTrophy size={48} color={color} />;
@@ -1044,3 +1061,24 @@ export const tierGradients: Record<string, string> = {
   gold: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
   platinum: 'linear-gradient(135deg, #E5E4E2 0%, #B0C4DE 50%, #FFFFFF 100%)',
 };
+
+/**
+ * Maps a numeric level to a trophy tier (and thus a color / SVG) so a level
+ * reads as a badge with escalating prestige as you climb.
+ */
+export function getLevelTier(level: number): string {
+  if (level >= 25) return 'platinum';
+  if (level >= 10) return 'gold';
+  if (level >= 5) return 'silver';
+  return 'bronze';
+}
+
+/**
+ * Renders the badge icon for a given level (a tiered trophy). Reusable by any
+ * level badge / card component.
+ */
+export function getLevelBadge(level: number, size = 48): React.ReactNode {
+  const tier = getLevelTier(level);
+  const color = tierColors[tier] ?? '#FFD700';
+  return getAchievementIcon('level_five', tier);
+}
