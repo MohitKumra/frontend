@@ -2,7 +2,15 @@
 // API client for AI-powered features.
 
 import apiClient from '../../lib/apiClient';
-import type { CoachChatDTO, CoachChatListDTO, ListResponse } from '../../types';
+import type {
+  CoachChatDTO,
+  CoachChatListDTO,
+  GoalDTO,
+  HabitDTO,
+  ProjectDTO,
+  TaskDTO,
+  ListResponse,
+} from '../../types';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,12 +33,46 @@ export interface AIInsightResult {
   usage?: { promptTokens: number; completionTokens: number; totalTokens: number };
 }
 
+// ─── Coach entity creation ────────────────────────────────────────────────────
+
+/** A field the coach needs the user to confirm before creating an entity */
+export interface CoachMissingField {
+  field: string;
+  label: string;
+  options: string[];
+  required: boolean;
+}
+
+/**
+ * Returned by the coach when it detected a CRUD intent but needs the user to
+ * confirm field values. The frontend renders these as selectable chips.
+ */
+export interface CoachOptionGroup {
+  entity: 'task' | 'habit' | 'goal' | 'project';
+  entityTitle: string;
+  missingFields: CoachMissingField[];
+}
+
+/**
+ * The draft the LLM embeds in its JSON response once it has enough info to
+ * create an entity. Sent back verbatim to POST /ai/coach/actions/confirm.
+ */
+export interface CoachEntityDraft {
+  entity: 'task' | 'habit' | 'goal' | 'project';
+  title: string;
+  fields: Record<string, string | null>;
+}
+
+// ─── Coach result (extended) ──────────────────────────────────────────────────
+
 export interface AICoachResult {
   title: string;
   message: string;
   suggestion: { text: string; actionLabel: string; actionType: AICoachActionType };
   mood: 'encouraging' | 'challenging' | 'celebratory';
   planPrompt?: string;
+  /** Present when the coach has gathered enough info to create an entity */
+  entityDraft?: CoachEntityDraft | null;
   source: 'ai' | 'fallback';
 }
 
@@ -171,5 +213,27 @@ export async function getJournalWeeklyAnalysis(): Promise<AIJournalWeeklyResult>
 
 export async function parseTaskText(text: string): Promise<AITaskParseResult> {
   const { data } = await apiClient.post('/ai/parse-task', { text });
+  return data;
+}
+
+// ─── Coach entity confirm ─────────────────────────────────────────────────────
+
+export interface CoachConfirmEntityResponse {
+  entity: 'task' | 'habit' | 'goal' | 'project';
+  result: TaskDTO | HabitDTO | GoalDTO | ProjectDTO;
+}
+
+/**
+ * Send the LLM-gathered entity draft to the backend for validation + creation.
+ * The backend Zod-validates every field before writing to the DB.
+ */
+export async function confirmCoachEntity(
+  entity: CoachEntityDraft['entity'],
+  draft: CoachEntityDraft['fields'] & { title: string },
+): Promise<CoachConfirmEntityResponse> {
+  const { data } = await apiClient.post('/ai/coach/actions/confirm', {
+    entity,
+    draft,
+  });
   return data;
 }

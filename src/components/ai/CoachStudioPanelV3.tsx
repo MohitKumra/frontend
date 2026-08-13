@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
   BrainCircuit,
+  CheckCircle2,
   ChevronRight,
   Copy,
   FileText,
@@ -30,12 +31,14 @@ import { Modal } from '../ui/Modal';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { appendTranscriptText, useSpeechTranscription } from '../../features/ai/hooks/useSpeechTranscription';
 import {
+  confirmCoachEntity,
   createAICoachChat,
   deleteAICoachChat,
   getAICoachChat,
   getAICoachChats,
   sendAICoachMessage,
   type CoachChatSendResponse,
+  type CoachEntityDraft,
 } from '../../features/ai/api';
 import { goalPlannerApi } from '../../features/goals/api';
 import { useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
@@ -236,7 +239,7 @@ function MessageBubble({
       </div>
 
       {/* Bubble content */}
-      <div className={`flex flex-col gap-1.5 max-w-[72%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col gap-1.5 max-w-[85%] sm:max-w-[72%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
         <span
           className="text-[10px] font-bold uppercase tracking-widest px-1"
           style={{ color: isUser ? 'var(--color-accent)' : 'var(--color-info)' }}
@@ -345,6 +348,7 @@ function ChatHistorySidebar({
   onDelete,
   collapsed,
   onToggle,
+  isMobile,
 }: {
   chats: CoachChatListDTO[];
   isLoading: boolean;
@@ -357,14 +361,18 @@ function ChatHistorySidebar({
   onDelete: (chat: CoachChatListDTO) => void;
   collapsed: boolean;
   onToggle: () => void;
+  isMobile: boolean;
 }) {
   return (
     <aside
-      className="flex flex-col border-r shrink-0 transition-all duration-200"
+      className={`flex flex-col border-r shrink-0 transition-all duration-200 ${
+        isMobile ? 'absolute inset-y-0 left-0 z-20 bg-[var(--sidebar-bg)]' : ''
+      }`}
       style={{
-        width: collapsed ? '56px' : '260px',
+        width: collapsed ? (isMobile ? '0' : '56px') : isMobile ? '280px' : '260px',
         background: 'var(--sidebar-bg)',
         borderColor: 'var(--sidebar-border)',
+        display: isMobile && collapsed ? 'none' : 'flex',
       }}
     >
       {/* Header */}
@@ -485,6 +493,7 @@ function ContextPanel({
   onCreateWorkspace,
   collapsed,
   onToggle,
+  onPromptSelect,
 }: {
   goals: GoalDTO[];
   habits: HabitDTO[];
@@ -500,6 +509,7 @@ function ContextPanel({
   onCreateWorkspace: () => void;
   collapsed: boolean;
   onToggle: () => void;
+  onPromptSelect?: (prompt: string) => void;
 }) {
   const activeGoals = getActiveGoals(goals);
   const topHabits = getTopHabits(habits);
@@ -562,6 +572,76 @@ function ContextPanel({
             <div className="flex items-center gap-1.5 text-[10px] text-text-muted">
               <Clock size={10} />
               <span>Auto-refresh every {refreshLabel}</span>
+            </div>
+          </div>
+
+          {/* Quick prompts for entity creation */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Quick Prompts</p>
+            <div className="space-y-1.5">
+              {[
+                { 
+                  icon: '📝', 
+                  label: 'Task #1', 
+                  prompt: 'Create a critical task: prepare Q4 board presentation by next Friday at 2pm, remind me 1 hour before with message "final review time", recurring quarterly, with subtasks: gather financial data, create slide deck, get CEO approval' 
+                },
+                { 
+                  icon: '📝', 
+                  label: 'Task #2', 
+                  prompt: 'Create daily task: gym workout at 5am, remind me at 4:30am with message "rise and grind", skip Sundays, estimated 1.5 hours, link to my fitness project, high priority' 
+                },
+                { 
+                  icon: '✅', 
+                  label: 'Habit #1', 
+                  prompt: 'Create habit: morning workout for 30 minutes every day at 6am, remind me at 5:45am with message "time to move", skip Saturdays and Sundays, commit for 90 days, link to my fitness goal' 
+                },
+                { 
+                  icon: '✅', 
+                  label: 'Habit #2', 
+                  prompt: 'Create weekly habit: team standup meeting every Monday and Thursday at 10am, remind me 15 minutes before, duration 30 minutes, link to management project, track consistency for performance review' 
+                },
+                { 
+                  icon: '🎯', 
+                  label: 'Goal #1', 
+                  prompt: 'Create high priority career goal: launch freelance consulting business with 3 paying clients by March 31st 2027, focus on building sustainable side income, track with blue rocket icon' 
+                },
+                { 
+                  icon: '🎯', 
+                  label: 'Goal #2', 
+                  prompt: 'Create fitness goal: lose 15 pounds by summer 2027, medium priority, health category, description: combine strength training 3x week with calorie tracking, green dumbbell icon' 
+                },
+                { 
+                  icon: '📦', 
+                  label: 'Project #1', 
+                  prompt: 'Create active project: home office renovation starting today until December 15th, includes designing layout, purchasing furniture, hiring contractors, setting up tech equipment, purple color scheme, link to productivity goal' 
+                },
+                { 
+                  icon: '📦', 
+                  label: 'Project #2', 
+                  prompt: 'Create project: marketing campaign for product launch, active status, start March 1st 2027 end May 31st 2027, description: social media, email sequences, influencer outreach, paid ads, orange theme' 
+                },
+              ].map(({ icon, label, prompt }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onPromptSelect?.(prompt)}
+                  className="w-full text-left rounded-lg border px-2.5 py-2 hover:border-accent transition-colors group"
+                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+                  title={prompt}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-base shrink-0 mt-0.5">{icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-text-secondary group-hover:text-accent transition-colors block">
+                        {label}
+                      </span>
+                      <p className="text-[10px] text-text-muted leading-relaxed mt-0.5 line-clamp-2">
+                        {prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -651,6 +731,124 @@ function ContextPanel({
   );
 }
 
+// ─── Entity draft banner ──────────────────────────────────────────────────────
+// Shown inline in the chat area when the coach returns an entityDraft.
+// The user can confirm (create) or dismiss it.
+
+const ENTITY_LABELS: Record<CoachEntityDraft['entity'], string> = {
+  task: 'Task',
+  habit: 'Habit',
+  goal: 'Goal',
+  project: 'Project',
+};
+
+function EntityDraftBanner({
+  draft,
+  isConfirming,
+  onConfirm,
+  onDismiss,
+}: {
+  draft: CoachEntityDraft;
+  isConfirming: boolean;
+  onConfirm: () => void;
+  onDismiss: () => void;
+}) {
+  const entityLabel = ENTITY_LABELS[draft.entity] ?? draft.entity;
+  const filledFields = Object.entries(draft.fields).filter(([, v]) => v !== null && v !== '');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.18 }}
+      className="mx-3 sm:mx-4 mb-3 rounded-2xl border p-3 sm:p-4"
+      style={{
+        background: 'color-mix(in srgb, var(--color-success) 6%, var(--color-surface))',
+        borderColor: 'color-mix(in srgb, var(--color-success) 28%, var(--color-border))',
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+            style={{
+              background: 'color-mix(in srgb, var(--color-success) 14%, var(--color-surface))',
+              color: 'var(--color-success)',
+            }}
+          >
+            <CheckCircle2 size={14} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-black text-text-primary">
+              Create {entityLabel}: <span className="text-accent break-words">{draft.title}</span>
+            </p>
+            <p className="text-[10px] text-text-muted mt-0.5">
+              Coach is ready to create this {entityLabel.toLowerCase()} for you
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 p-1 rounded text-text-muted hover:text-text-primary transition-colors"
+          aria-label="Dismiss"
+        >
+          <X size={13} />
+        </button>
+      </div>
+
+      {/* Field summary chips */}
+      {filledFields.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {filledFields.slice(0, 5).map(([field, value]) => (
+            <span
+              key={field}
+              className="rounded-full border px-2.5 py-0.5 text-[10px] font-semibold truncate max-w-[200px]"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+              title={`${field}: ${value}`}
+            >
+              {field}: {value}
+            </span>
+          ))}
+          {filledFields.length > 5 && (
+            <span
+              className="rounded-full border px-2.5 py-0.5 text-[10px] font-semibold"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              +{filledFields.length - 5} more
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          size="sm"
+          onClick={onConfirm}
+          loading={isConfirming}
+          leftIcon={<CheckCircle2 size={12} />}
+        >
+          Create {entityLabel}
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onDismiss} disabled={isConfirming}>
+          Cancel
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Quick prompts ─────────────────────────────────────────────────────────────
 
 const QUICK_PROMPTS = [
@@ -693,6 +891,9 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   const [historySidebarCollapsed, setHistorySidebarCollapsed] = useState(false);
   const [contextPanelCollapsed, setContextPanelCollapsed] = useState(false);
   const [showQuickPrompts, setShowQuickPrompts] = useState(false);
+  // Entity draft — set when the coach returns an entityDraft in its response
+  const [pendingEntityDraft, setPendingEntityDraft] = useState<CoachEntityDraft | null>(null);
+  const [isConfirmingEntity, setIsConfirmingEntity] = useState(false);
 
   const hasAutoSentRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -783,6 +984,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   };
 
   const focusComposer = () => {
+    // Only auto-focus on desktop to avoid keyboard popping up on mobile
     if (!isDesktop) return;
     window.requestAnimationFrame(() => textareaRef.current?.focus());
   };
@@ -832,6 +1034,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     setAssistantPlanPrompt('');
     setLastCoachResult(null);
     setPendingExchange(null);
+    setPendingEntityDraft(null);
     setStatus(null);
     focusComposer();
   }
@@ -845,7 +1048,12 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     setAssistantPlanPrompt('');
     setLastCoachResult(null);
     setPendingExchange(null);
+    setPendingEntityDraft(null);
     setStatus(null);
+    // Close sidebar on mobile after selecting a chat
+    if (!isDesktop) {
+      setHistorySidebarCollapsed(true);
+    }
     focusComposer();
   }
 
@@ -898,6 +1106,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     setPlan(null);
     setAssistantPlanPrompt('');
     setLastCoachResult(null);
+    setPendingEntityDraft(null);
     setInput('');
     setComposerAttachments([]);
     setIsSending(true);
@@ -923,7 +1132,11 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
       setIsDraftMode(false);
       setLastCoachResult(response.result);
       setAssistantPlanPrompt(response.result.planPrompt?.trim() || '');
-      if (response.result.suggestion?.actionType === 'create_plan') {
+      // Surface entity draft if the coach gathered enough info to create an entity
+      if (response.result.entityDraft) {
+        setPendingEntityDraft(response.result.entityDraft);
+        setStatus(null);
+      } else if (response.result.suggestion?.actionType === 'create_plan') {
         setStatus('Plan ready — hit Build plan when you\'re ready.');
       } else if (response.result.suggestion?.text) {
         setStatus(`Next step: ${response.result.suggestion.text}`);
@@ -966,6 +1179,31 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     finally { setIsGeneratingPlan(false); focusComposer(); }
   }
 
+  async function handleConfirmEntity() {
+    if (!pendingEntityDraft || isConfirmingEntity) return;
+    setIsConfirmingEntity(true);
+    const draft = pendingEntityDraft;
+    try {
+      await confirmCoachEntity(draft.entity, { title: draft.title, ...draft.fields });
+      setPendingEntityDraft(null);
+      const entityLabel = ENTITY_LABELS[draft.entity] ?? draft.entity;
+      setStatus(`${entityLabel} "${draft.title}" created.`);
+      // Invalidate the relevant list so the sidebar / page refreshes
+      const queryKeyMap: Record<CoachEntityDraft['entity'], string> = {
+        task: 'tasks',
+        habit: 'habits',
+        goal: 'goals',
+        project: 'projects',
+      };
+      void queryClient.invalidateQueries({ queryKey: [queryKeyMap[draft.entity]] });
+    } catch {
+      setStatus(`Could not create the ${draft.entity}. Please try again.`);
+    } finally {
+      setIsConfirmingEntity(false);
+      focusComposer();
+    }
+  }
+
   async function handleCreateWorkspace() {
     if (!plan || isCreatingWorkspace) return;
     setIsCreatingWorkspace(true);
@@ -995,6 +1233,14 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+      {/* Mobile sidebar backdrop */}
+      {!isDesktop && !historySidebarCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-10"
+          onClick={() => setHistorySidebarCollapsed(true)}
+          style={{ backdropFilter: 'blur(2px)' }}
+        />
+      )}
 
       {/* ── History sidebar ─────────────────────────────────────────────── */}
       <ChatHistorySidebar
@@ -1009,6 +1255,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         onDelete={(chat) => setDeleteTarget(chat)}
         collapsed={historySidebarCollapsed}
         onToggle={() => setHistorySidebarCollapsed((v) => !v)}
+        isMobile={!isDesktop}
       />
 
       {/* ── Chat area ────────────────────────────────────────────────────── */}
@@ -1020,6 +1267,17 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           style={{ height: '56px', borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
         >
           <div className="flex items-center gap-2.5 min-w-0">
+            {/* Mobile menu toggle */}
+            {!isDesktop && (
+              <button
+                type="button"
+                onClick={() => setHistorySidebarCollapsed((v) => !v)}
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors shrink-0"
+                aria-label="Toggle menu"
+              >
+                <BrainCircuit size={18} />
+              </button>
+            )}
             <div
               className="flex h-8 w-8 items-center justify-center rounded-xl shrink-0"
               style={{
@@ -1042,7 +1300,8 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           <div className="flex items-center gap-2 shrink-0">
             {isSending && (
               <Badge variant="warning" size="sm" dot>
-                Thinking…
+                <span className="hidden sm:inline">Thinking…</span>
+                <span className="sm:hidden">...</span>
               </Badge>
             )}
             {isDraftMode && !isSending && (
@@ -1050,7 +1309,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 Draft
               </Badge>
             )}
-            <Badge variant={coachEnabled ? 'accent' : 'warning'} size="sm" dot>
+            <Badge variant={coachEnabled ? 'accent' : 'warning'} size="sm" dot className="hidden sm:flex">
               {coachEnabled ? 'AI ready' : 'Coach off'}
             </Badge>
           </div>
@@ -1059,7 +1318,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         {/* Coach-off warning */}
         {!coachEnabled && (
           <div
-            className="mx-4 mt-3 rounded-xl border px-4 py-3 text-xs leading-relaxed"
+            className="mx-3 sm:mx-4 mt-3 rounded-xl border px-3 sm:px-4 py-3 text-xs leading-relaxed"
             style={{
               background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
               borderColor: 'color-mix(in srgb, var(--color-warning) 22%, var(--color-border))',
@@ -1071,18 +1330,18 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         )}
 
         {/* Messages scroll area */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-5">
           {displayMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-5 pb-20 text-center">
+            <div className="flex flex-col items-center justify-center h-full gap-4 sm:gap-5 pb-20 text-center px-4">
               <div
-                className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl"
                 style={{
                   background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
                   color: 'var(--color-accent)',
                   border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
                 }}
               >
-                <Sparkles size={24} />
+                <Sparkles size={isDesktop ? 24 : 20} />
               </div>
               <div className="space-y-2 max-w-sm">
                 <p className="text-base font-black text-text-primary">How can I help you today?</p>
@@ -1091,12 +1350,12 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-                {QUICK_PROMPTS.slice(0, 4).map((prompt) => (
+                {QUICK_PROMPTS.slice(0, isDesktop ? 4 : 3).map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => handlePromptClick(prompt)}
-                    className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors hover:border-accent hover:text-accent"
+                    className="rounded-full border px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-colors hover:border-accent hover:text-accent"
                     style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
                   >
                     {prompt}
@@ -1134,16 +1393,28 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           )}
         </div>
 
+        {/* Entity draft banner — shown when coach gathers enough info to create an entity */}
+        <AnimatePresence>
+          {pendingEntityDraft && !isSending && (
+            <EntityDraftBanner
+              draft={pendingEntityDraft}
+              isConfirming={isConfirmingEntity}
+              onConfirm={() => void handleConfirmEntity()}
+              onDismiss={() => { setPendingEntityDraft(null); setStatus(null); }}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Status bar */}
         {status && (
-          <div className="px-4 pb-1">
+          <div className="px-3 sm:px-4 pb-1">
             <p className="text-[11px] text-text-muted">{status}</p>
           </div>
         )}
 
         {/* Composer */}
         <div
-          className="border-t p-3 shrink-0"
+          className="border-t p-2 sm:p-3 shrink-0"
           style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
         >
           {/* Attachments strip */}
@@ -1166,7 +1437,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
-                className="mb-2 rounded-xl border p-2 space-y-1"
+                className="mb-2 rounded-xl border p-2 space-y-1 max-h-[50vh] overflow-y-auto"
                 style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
               >
                 {QUICK_PROMPTS.map((p) => (
@@ -1184,13 +1455,13 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           </AnimatePresence>
 
           {/* Input row */}
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-1.5 sm:gap-2">
             {/* Left actions */}
-            <div className="flex items-center gap-1 pb-1">
+            <div className="flex items-center gap-0.5 sm:gap-1 pb-1">
               <button
                 type="button"
                 onClick={() => setShowQuickPrompts((v) => !v)}
-                className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors"
                 aria-label="Quick prompts"
                 title="Quick prompts"
               >
@@ -1200,24 +1471,26 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!canChat || isBusy}
-                className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors disabled:opacity-40"
+                className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors disabled:opacity-40"
                 aria-label="Attach file"
               >
                 <Paperclip size={16} />
               </button>
-              <button
-                type="button"
-                onClick={transcription.isListening ? transcription.stop : transcription.start}
-                disabled={!transcription.isSupported || !canChat || isBusy}
-                className={`p-2 rounded-lg transition-colors disabled:opacity-40 ${
-                  transcription.isListening
-                    ? 'text-danger bg-danger/10'
-                    : 'text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)]'
-                }`}
-                aria-label={transcription.isListening ? 'Stop recording' : 'Voice input'}
-              >
-                {transcription.isListening ? <Square size={16} /> : <Mic size={16} />}
-              </button>
+              {transcription.isSupported && (
+                <button
+                  type="button"
+                  onClick={transcription.isListening ? transcription.stop : transcription.start}
+                  disabled={!transcription.isSupported || !canChat || isBusy}
+                  className={`p-1.5 sm:p-2 rounded-lg transition-colors disabled:opacity-40 ${
+                    transcription.isListening
+                      ? 'text-danger bg-danger/10'
+                      : 'text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)]'
+                  }`}
+                  aria-label={transcription.isListening ? 'Stop recording' : 'Voice input'}
+                >
+                  {transcription.isListening ? <Square size={16} /> : <Mic size={16} />}
+                </button>
+              )}
             </div>
 
             {/* Textarea */}
@@ -1229,14 +1502,16 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 onKeyDown={handleComposerKeyDown}
                 placeholder={
                   !canChat
-                    ? 'AI Coach is disabled in Settings'
+                    ? 'AI Coach is disabled'
                     : transcription.isListening
                     ? 'Listening…'
-                    : 'Message the coach… (Enter to send, Shift+Enter for new line)'
+                    : isDesktop
+                    ? 'Message the coach… (Enter to send, Shift+Enter for new line)'
+                    : 'Message the coach…'
                 }
                 disabled={!canChat || isBusy}
                 rows={1}
-                className="w-full resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-colors disabled:opacity-50"
+                className="w-full resize-none rounded-xl border px-3 sm:px-4 py-2.5 sm:py-3 text-sm outline-none transition-colors disabled:opacity-50"
                 style={{
                   background: 'var(--color-surface-raised)',
                   borderColor: 'var(--color-border)',
@@ -1299,6 +1574,10 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         onCreateWorkspace={() => void handleCreateWorkspace()}
         collapsed={contextPanelCollapsed}
         onToggle={() => setContextPanelCollapsed((v) => !v)}
+        onPromptSelect={(prompt) => {
+          setInput(prompt);
+          focusComposer();
+        }}
       />
 
       {/* ── Delete confirmation modal ────────────────────────────────────── */}

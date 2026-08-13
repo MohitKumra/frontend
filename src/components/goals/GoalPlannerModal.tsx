@@ -30,6 +30,13 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Track which items are selected (default all selected)
+  const [selectedMilestones, setSelectedMilestones] = useState<Set<number>>(new Set());
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [selectedHabits, setSelectedHabits] = useState<Set<number>>(new Set());
+  const [selectedProjects, setSelectedProjects] = useState<Set<number>>(new Set());
+  
   const plannerEnabled = useAIFeatureEnabled('goalPlannerEnabled');
   const navigate = useNavigate();
   const transcription = useSpeechTranscription({
@@ -45,17 +52,31 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
       setError(null);
       setIsGenerating(false);
       setIsCreating(false);
+      setSelectedMilestones(new Set());
+      setSelectedTasks(new Set());
+      setSelectedHabits(new Set());
+      setSelectedProjects(new Set());
     }
   }, [open]);
+  
+  // When plan changes, select all items by default
+  useEffect(() => {
+    if (plan) {
+      setSelectedMilestones(new Set(plan.milestones.map((_, i) => i)));
+      setSelectedTasks(new Set(plan.tasks.map((_, i) => i)));
+      setSelectedHabits(new Set(plan.habits.map((_, i) => i)));
+      setSelectedProjects(new Set(plan.projects.map((_, i) => i)));
+    }
+  }, [plan]);
 
   const summaryCounts = useMemo(
     () => ({
-      milestones: plan?.milestones.length ?? 0,
-      tasks: plan?.tasks.length ?? 0,
-      habits: plan?.habits.length ?? 0,
-      projects: plan?.projects.length ?? 0,
+      milestones: selectedMilestones.size,
+      tasks: selectedTasks.size,
+      habits: selectedHabits.size,
+      projects: selectedProjects.size,
     }),
-    [plan]
+    [selectedMilestones, selectedTasks, selectedHabits, selectedProjects]
   );
 
   const handleGenerate = async () => {
@@ -80,7 +101,15 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
     setIsCreating(true);
     setError(null);
     try {
-      const created = await goalPlannerApi.createWorkspace(plan);
+      // Filter plan to only include selected items
+      const filteredPlan: GoalPlannerPlanDTO = {
+        ...plan,
+        milestones: plan.milestones.filter((_, i) => selectedMilestones.has(i)),
+        tasks: plan.tasks.filter((_, i) => selectedTasks.has(i)),
+        habits: plan.habits.filter((_, i) => selectedHabits.has(i)),
+        projects: plan.projects.filter((_, i) => selectedProjects.has(i)),
+      };
+      const created = await goalPlannerApi.createWorkspace(filteredPlan);
       onCreated(created.goal.id);
       onClose();
     } catch {
@@ -338,10 +367,55 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
                 <PlanSection
                   title="Milestones"
                   items={plan.milestones.map((item: GoalPlannerMilestoneItem) => item.title)}
+                  selectedIndexes={selectedMilestones}
+                  onToggle={(index) => {
+                    setSelectedMilestones(prev => {
+                      const next = new Set(prev);
+                      if (next.has(index)) next.delete(index);
+                      else next.add(index);
+                      return next;
+                    });
+                  }}
                 />
-                <PlanSection title="Tasks" items={plan.tasks.map((item: GoalPlannerTaskItem) => item.title)} />
-                <PlanSection title="Habits" items={plan.habits.map((item: GoalPlannerHabitItem) => item.title)} />
-                <PlanSection title="Projects" items={plan.projects.map((item: GoalPlannerProjectItem) => item.name)} />
+                <PlanSection
+                  title="Tasks"
+                  items={plan.tasks.map((item: GoalPlannerTaskItem) => item.title)}
+                  selectedIndexes={selectedTasks}
+                  onToggle={(index) => {
+                    setSelectedTasks(prev => {
+                      const next = new Set(prev);
+                      if (next.has(index)) next.delete(index);
+                      else next.add(index);
+                      return next;
+                    });
+                  }}
+                />
+                <PlanSection
+                  title="Habits"
+                  items={plan.habits.map((item: GoalPlannerHabitItem) => item.title)}
+                  selectedIndexes={selectedHabits}
+                  onToggle={(index) => {
+                    setSelectedHabits(prev => {
+                      const next = new Set(prev);
+                      if (next.has(index)) next.delete(index);
+                      else next.add(index);
+                      return next;
+                    });
+                  }}
+                />
+                <PlanSection
+                  title="Projects"
+                  items={plan.projects.map((item: GoalPlannerProjectItem) => item.name)}
+                  selectedIndexes={selectedProjects}
+                  onToggle={(index) => {
+                    setSelectedProjects(prev => {
+                      const next = new Set(prev);
+                      if (next.has(index)) next.delete(index);
+                      else next.add(index);
+                      return next;
+                    });
+                  }}
+                />
               </>
             ) : (
               <Card className="p-5 border text-sm text-text-muted" style={{ borderColor: 'var(--color-border)' }}>
@@ -367,21 +441,52 @@ function MiniStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function PlanSection({ title, items }: { title: string; items: string[] }) {
+function PlanSection({ title, items, selectedIndexes, onToggle }: { 
+  title: string; 
+  items: string[];
+  selectedIndexes?: Set<number>;
+  onToggle?: (index: number) => void;
+}) {
   return (
     <Card className="p-4 border" style={{ borderColor: 'var(--color-border)' }}>
-      <p className="text-sm font-bold text-text-primary">{title}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-text-primary">{title}</p>
+        {selectedIndexes && onToggle && items.length > 0 && (
+          <p className="text-xs text-text-muted">
+            {selectedIndexes.size} of {items.length} selected
+          </p>
+        )}
+      </div>
       <div className="mt-3 space-y-2">
         {items.length > 0 ? (
-          items.map((item) => (
-            <div
-              key={item}
-              className="rounded-xl border px-3 py-2 text-sm text-text-primary"
-              style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-            >
-              {item}
-            </div>
-          ))
+          items.map((item, index) => {
+            const isSelected = selectedIndexes ? selectedIndexes.has(index) : true;
+            return (
+              <div
+                key={`${item}-${index}`}
+                className={`rounded-xl border px-3 py-2 text-sm flex items-center gap-2 transition-opacity ${
+                  onToggle ? 'cursor-pointer hover:bg-[var(--sidebar-item-hover)]' : ''
+                }`}
+                style={{ 
+                  borderColor: 'var(--color-border)', 
+                  background: 'var(--color-surface)',
+                  opacity: isSelected ? 1 : 0.5
+                }}
+                onClick={() => onToggle?.(index)}
+              >
+                {onToggle && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggle(index)}
+                    className="w-4 h-4 rounded accent-accent shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
+                <span className="text-text-primary">{item}</span>
+              </div>
+            );
+          })
         ) : (
           <p className="text-sm text-text-muted">No items generated.</p>
         )}
