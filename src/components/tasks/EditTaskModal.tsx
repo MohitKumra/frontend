@@ -70,7 +70,7 @@ function parseConfigFromTask(task: TaskDTO): TaskRecurrenceConfig | null {
     generateNext: 'onCompletion',
   };
 
-  if (freq === 'WEEKLY' && parts['BYDAY']) {
+  if ((freq === 'WEEKLY' || freq === 'DAILY') && parts['BYDAY']) {
     const dayMap: Record<string, string> = {
       MO: 'monday',
       TU: 'tuesday',

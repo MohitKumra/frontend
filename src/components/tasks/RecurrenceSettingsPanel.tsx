@@ -204,6 +204,59 @@ function WeekdayToggle({ days, onChange }: { days: string[]; onChange: (days: st
   );
 }
 
+const ALL_WEEKDAY_KEYS = WEEKDAYS.map((w) => w.key);
+
+/**
+ * Exclusion-style day picker for the *daily* frequency, mirroring the habit
+ * SkipDaysPicker. `weekdays` stores the days that ARE included; the complement
+ * is rendered as "skipped". Toggling a day updates the included set.
+ */
+function DailySkipToggle({
+  weekdays,
+  onChange,
+}: {
+  weekdays: string[] | undefined;
+  onChange: (days: string[]) => void;
+}) {
+  // undefined (never touched) -> every day is included (no skips).
+  const effective = weekdays ?? ALL_WEEKDAY_KEYS;
+  const toggle = (key: string) => {
+    const isIncluded = effective.includes(key);
+    onChange(isIncluded ? effective.filter((d) => d !== key) : [...effective, key]);
+  };
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {WEEKDAYS.map(({ key, label }) => {
+        const skipped = !effective.includes(key);
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => toggle(key)}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all"
+            style={
+              skipped
+                ? {
+                    background: 'color-mix(in srgb, var(--color-danger) 14%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                    color: 'var(--color-danger)',
+                  }
+                : {
+                    background: 'var(--color-surface-raised)',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-text-muted)',
+                  }
+            }
+          >
+            {label}
+            {skipped && <span className="ml-1 text-[9px] uppercase tracking-wide opacity-80">skip</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── validation helper ───────────────────────────────────────────────────────
 
 export function validateRecurrenceConfig(cfg: TaskRecurrenceConfig | null): string | null {
@@ -211,6 +264,8 @@ export function validateRecurrenceConfig(cfg: TaskRecurrenceConfig | null): stri
   if (!cfg.startsAt) return 'Start date is required for recurring tasks.';
   if (cfg.interval < 1 || !Number.isInteger(cfg.interval)) return 'Interval must be a whole number of 1 or more.';
   if (cfg.frequency === 'week' && (!cfg.weekdays || cfg.weekdays.length === 0))
+    return 'Select at least one day of the week.';
+  if (cfg.frequency === 'day' && cfg.weekdays && cfg.weekdays.length === 0)
     return 'Select at least one day of the week.';
   if (cfg.frequency === 'month' && cfg.monthlyMode === 'dayOfMonth') {
     const d = cfg.dayOfMonth;
@@ -311,6 +366,21 @@ export function RecurrenceSettingsPanel({ value, onChange, startsAtHint }: Recur
             <FieldGroup label="Days of week">
               <WeekdayToggle days={value.weekdays ?? []} onChange={(days) => patch({ weekdays: days })} />
               {(!value.weekdays || value.weekdays.length === 0) && (
+                <p className="mt-1.5 text-xs font-medium" style={{ color: 'var(--color-danger)' }}>
+                  Select at least one day.
+                </p>
+              )}
+            </FieldGroup>
+          )}
+
+          {/* ── Daily: skip-days picker ─────────────────────────── */}
+          {value.frequency === 'day' && (
+            <FieldGroup label="Skip days (optional)">
+              <DailySkipToggle weekdays={value.weekdays} onChange={(days) => patch({ weekdays: days })} />
+              <p className="mt-1.5 text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                Tasks won&apos;t recur — and reminders won&apos;t fire — on the days marked skipped.
+              </p>
+              {value.weekdays && value.weekdays.length === 0 && (
                 <p className="mt-1.5 text-xs font-medium" style={{ color: 'var(--color-danger)' }}>
                   Select at least one day.
                 </p>

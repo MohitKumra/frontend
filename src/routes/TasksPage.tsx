@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback, useEffect, useTransition, useDeferredValue } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { Loader2 } from 'lucide-react';
+import { CreditCard, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -652,7 +652,7 @@ function TasksHero({
                   : { color: 'var(--color-text-muted)' }
               }
             >
-              <ListChecks size={13} /> List
+              <CreditCard size={13} /> Card
             </button>
             <button
               onClick={() => {
@@ -1685,7 +1685,21 @@ export function TasksPage() {
                       if (!rule) return null;
                       if (rule.includes('INTERVAL=2') && rule.includes('WEEKLY')) return 'Fortnightly';
                       if (rule.includes('INTERVAL=3') && rule.includes('MONTHLY')) return 'Quarterly';
-                      if (rule.includes('FREQ=DAILY')) return 'Daily';
+                      if (rule.includes('FREQ=DAILY')) {
+                        const bydayMatch = rule.match(/BYDAY=([A-Z,]+)/);
+                        if (bydayMatch) {
+                          const included = bydayMatch[1].split(',').map((d) => d.trim());
+                          if (included.length > 0 && included.length < 7) {
+                            const ALL = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+                            const SHORT: Record<string, string> = {
+                              MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun',
+                            };
+                            const skipped = ALL.filter((d) => !included.includes(d)).map((d) => SHORT[d]);
+                            if (skipped.length > 0) return `Daily (skip ${skipped.join(', ')})`;
+                          }
+                        }
+                        return 'Daily';
+                      }
                       if (rule.includes('FREQ=WEEKLY')) return 'Weekly';
                       if (rule.includes('FREQ=MONTHLY')) return 'Monthly';
                       return 'Recurring';

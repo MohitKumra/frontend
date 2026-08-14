@@ -110,28 +110,61 @@ export function NoteEntryShell({
             className="note-edit-textarea"
             style={{ minHeight: '120px' }}
           />
-
-          {/* Mood & Tags */}
-          <div className="note-edit-extras">
-            <div className="note-extra-row">
-              <span className="note-extra-label">Mood</span>
-              <MoodPicker value={formData.mood} onChange={(mood) => setFormData((f) => ({ ...f, mood }))} />
-            </div>
-            <div className="note-extra-row">
-              <span className="note-extra-label">Tags</span>
-              <TagInput tags={formData.tags} onChange={(tags) => setFormData((f) => ({ ...f, tags }))} />
-            </div>
-          </div>
         </div>
 
-        {/* Media attachment icons — always visible at bottom of sheet */}
-        <div className="note-media-field-wrap" style={{ flexShrink: 0, marginTop: 0, paddingTop: '10px' }}>
+        {/* Combined Media, Mood & Tags row */}
+        <div 
+          className="note-media-field-wrap" 
+          style={{ 
+            flexShrink: 0, 
+            marginTop: 0, 
+            paddingTop: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}
+        >
+          {/* Left: Media attachments */}
           <MediaAttachmentsField
             attachmentUrl={formData.attachmentUrl}
             onAttachmentUrlChange={(value) => setFormData((f) => ({ ...f, attachmentUrl: value }))}
             voiceNoteUrl={formData.voiceNoteUrl}
             onVoiceNoteUrlChange={(value) => setFormData((f) => ({ ...f, voiceNoteUrl: value }))}
           />
+
+          {/* Right: Mood & Tags */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span 
+                style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 600, 
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                Mood
+              </span>
+              <MoodPicker value={formData.mood} onChange={(mood) => setFormData((f) => ({ ...f, mood }))} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '200px' }}>
+              <span 
+                style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 600, 
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                Tags
+              </span>
+              <TagInput tags={formData.tags} onChange={(tags) => setFormData((f) => ({ ...f, tags }))} />
+            </div>
+          </div>
         </div>
       </div>
 

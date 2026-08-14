@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, Mic, Settings2, Square } from 'lucide-react';
+import { Sparkles, Mic, Settings2, Square } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Input';
@@ -152,7 +152,7 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
                   boxShadow: '0 16px 40px color-mix(in srgb, var(--color-accent) 20%, transparent)',
                 }}
               >
-                <BrainCircuit size={34} style={{ color: 'var(--color-accent)' }} strokeWidth={1.5} />
+                <Sparkles size={34} style={{ color: 'var(--color-accent)' }} strokeWidth={1.5} />
               </div>
               {/* lock pip */}
               <div
@@ -252,7 +252,7 @@ export function GoalPlannerModal({ open, onClose, onCreated }: GoalPlannerModalP
                   boxShadow: '0 8px 24px color-mix(in srgb, var(--color-accent) 35%, transparent)',
                 }}
               >
-                <BrainCircuit size={15} />
+                <Sparkles size={15} />
                 Open Coach
               </button>
             </div>

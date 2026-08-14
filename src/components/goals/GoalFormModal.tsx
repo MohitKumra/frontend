@@ -208,7 +208,7 @@ export function GoalFormModal({
                   <label className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                     Icon
                   </label>
-                  <div className="mt-2 grid grid-cols-6 gap-2">
+                  <div className="mt-2 grid grid-cols-5 gap-2">
                     {visibleIcons.map((choice) => {
                       const active = form.icon === choice.value;
                       const Icon = choice.icon;

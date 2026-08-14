@@ -13,7 +13,6 @@ import {
   Columns3,
   KeyRound,
   LayoutGrid,
-  ListChecks,
   Lock,
   Mail,
   Monitor,
@@ -27,7 +26,8 @@ import {
   SlidersHorizontal,
   SunMedium,
   Unplug,
-  BrainCircuit,
+  Sparkles,
+  CreditCard,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -73,7 +73,7 @@ const SETTINGS_TABS: Array<{
   { id: 'notifications', label: 'Notifications', icon: <BellRing size={14} /> },
   { id: 'integrations', label: 'Integrations', icon: <Cloud size={14} /> },
   { id: 'security', label: 'Security', icon: <ShieldCheck size={14} /> },
-  { id: 'ai', label: 'AI & Tokens', icon: <BrainCircuit size={14} /> },
+  { id: 'ai', label: 'AI & Tokens', icon: <Sparkles size={14} /> },
 ];
 
 const APPEARANCE_OPTIONS: Array<{
@@ -258,7 +258,7 @@ function SettingsHero({
     {
       id: 'ai',
       label: 'AI & Tokens',
-      icon: <BrainCircuit size={16} />,
+      icon: <Sparkles size={16} />,
       colorVar: TAB_COLOR.ai,
       desc: 'Features · Budget',
     },
@@ -922,9 +922,9 @@ export function SettingsPage() {
                               <ChoiceChip
                                 key={id}
                                 active={active}
-                                title={id === 'board' ? 'Board' : 'List'}
-                                description={id === 'board' ? 'Kanban-style columns' : 'Vertical task list'}
-                                icon={id === 'board' ? <Columns3 size={16} /> : <ListChecks size={16} />}
+                                title={id === 'board' ? 'Board' : 'Card'}
+                                description={id === 'board' ? 'Kanban-style columns' : 'Vertical task cards'}
+                                icon={id === 'board' ? <Columns3 size={16} /> : <CreditCard size={16} />}
                                 onClick={() => applyAppearance({ taskView: id })}
                               />
                             );

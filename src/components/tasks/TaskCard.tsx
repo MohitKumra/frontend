@@ -44,7 +44,21 @@ export function getRecurrenceLabel(rule: string | null): string | null {
   if (!rule) return null;
   if (rule.includes('INTERVAL=2') && rule.includes('WEEKLY')) return 'Fortnightly';
   if (rule.includes('INTERVAL=3') && rule.includes('MONTHLY')) return 'Quarterly';
-  if (rule.includes('FREQ=DAILY')) return 'Daily';
+  if (rule.includes('FREQ=DAILY')) {
+    // A daily rule narrowed with BYDAY means some weekdays are skipped.
+    const bydayMatch = rule.match(/BYDAY=([A-Z,]+)/);
+    if (bydayMatch) {
+      const included = bydayMatch[1].split(',').map((d) => d.trim());
+      if (included.length > 0 && included.length < 7) {
+        const ALL = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+        const SHORT: Record<string, string> = {
+          MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun',
+        };
+        const skipped = ALL.filter((d) => !included.includes(d)).map((d) => SHORT[d]);
+      }
+    }
+    return 'Daily';
+  }
   if (rule.includes('FREQ=WEEKLY')) return 'Weekly';
   if (rule.includes('FREQ=MONTHLY')) return 'Monthly';
   if (rule.includes('FREQ=YEARLY')) return 'Yearly';

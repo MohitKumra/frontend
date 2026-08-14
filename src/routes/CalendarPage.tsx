@@ -1293,10 +1293,12 @@ function DayDetailModal({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-bold text-text-primary truncate">{event.title}</p>
-                  <p className="text-[9px] text-text-muted font-semibold">
-                    {event.allDay ? 'All day' : formatTime(new Date(event.startAt))}
-                    {event.metadata?.durationMin ? ` · ${event.metadata.durationMin} min` : ''}
-                  </p>
+                  {(event.allDay || event.metadata?.durationMin) && (
+                    <p className="text-[9px] text-text-muted font-semibold">
+                      {event.allDay && 'All day'}
+                      {event.metadata?.durationMin && ` · ${event.metadata.durationMin} min`}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -1623,9 +1625,9 @@ function CalendarDayAgenda({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold text-text-primary truncate">{event.title}</p>
-                <p className="text-[8px] text-text-muted font-semibold">
-                  {event.allDay ? 'All day' : formatTime(new Date(event.startAt))}
-                </p>
+                {event.allDay && (
+                  <p className="text-[8px] text-text-muted font-semibold">All day</p>
+                )}
               </div>
             </div>
           ))}

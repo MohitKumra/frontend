@@ -18,7 +18,6 @@ import {
   FolderKanban,
   Keyboard,
   Flag,
-  BrainCircuit,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -63,7 +62,7 @@ const navItems = [
   { to: '/focus', icon: Timer, label: 'Focus', onboarding: 'focus' },
   { to: '/projects', icon: FolderKanban, label: 'Projects', onboarding: 'projects' },
   { to: '/goals', icon: Flag, label: 'Goals', onboarding: 'goals' },
-  { to: '/coach', icon: BrainCircuit, label: 'AI Coach', onboarding: 'coach' },
+  { to: '/coach', icon: Sparkles, label: 'AI Coach', onboarding: 'coach' },
   { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings' },
 ];
 

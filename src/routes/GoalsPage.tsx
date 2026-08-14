@@ -744,22 +744,22 @@ export function GoalsPage() {
             <SectionHeader
               title="Active Goals"
               count={filteredGoals.length}
-              actionLabel="View all"
-              onAction={() => handleFilterChange('ALL')}
             />
 
-            <div className="mt-4 flex flex-col gap-4">
+            <div className={viewMode === 'grid' ? 'mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2' : 'mt-4 flex flex-col gap-3'}>
               {filteredGoals.length === 0 ? (
-                <FloatingGoalsEmpty
-                  title={search || filter !== 'ALL' ? 'No matching goals' : 'No goals yet'}
-                  description={
-                    search || filter !== 'ALL'
-                      ? 'Try adjusting your search or filter.'
-                      : 'Create a goal and start linking habits, tasks, and projects.'
-                  }
-                  ctaText="Create goal"
-                  onCreateGoal={openCreate}
-                />
+                <div className={viewMode === 'grid' ? 'col-span-full' : ''}>
+                  <FloatingGoalsEmpty
+                    title={search || filter !== 'ALL' ? 'No matching goals' : 'No goals yet'}
+                    description={
+                      search || filter !== 'ALL'
+                        ? 'Try adjusting your search or filter.'
+                        : 'Create a goal and start linking habits, tasks, and projects.'
+                    }
+                    ctaText="Create goal"
+                    onCreateGoal={openCreate}
+                  />
+                </div>
               ) : (
                 filteredGoals.map((goal) => (
                   <GoalCardView
@@ -1488,8 +1488,8 @@ function SectionHeader({
 }: {
   title: string;
   count: number;
-  actionLabel: string;
-  onAction: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
@@ -1504,7 +1504,9 @@ function SectionHeader({
         className="inline-flex items-center gap-2 text-sm font-semibold"
         style={{ color: 'var(--color-accent)' }}
       >
-        {actionLabel} <ArrowRight size={14} />
+        {
+          actionLabel && <ArrowRight size={14} />
+        } 
       </button>
     </div>
   );

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
-  BrainCircuit,
   CheckCircle2,
   ChevronRight,
   Copy,
@@ -382,7 +381,7 @@ function ChatHistorySidebar({
       >
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
-            <BrainCircuit size={16} className="text-accent shrink-0" />
+            <Sparkles size={16} className="text-accent shrink-0" />
             <span className="text-sm font-black text-text-primary truncate">Chats</span>
           </div>
         )}
@@ -441,7 +440,7 @@ function ChatHistorySidebar({
                   title={collapsed ? chat.title : undefined}
                 >
                   {collapsed ? (
-                    <BrainCircuit
+                    <Sparkles
                       size={16}
                       className="mx-auto"
                       style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
@@ -1275,7 +1274,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors shrink-0"
                 aria-label="Toggle menu"
               >
-                <BrainCircuit size={18} />
+                <Sparkles size={18} />
               </button>
             )}
             <div
@@ -1285,7 +1284,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 color: 'var(--color-accent)',
               }}
             >
-              <BrainCircuit size={15} />
+              <Sparkles size={15} />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-black text-text-primary truncate">{selectedChatTitle}</p>

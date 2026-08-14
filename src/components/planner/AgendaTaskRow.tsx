@@ -76,11 +76,6 @@ export function AgendaTaskRow({ task, onToggle, isLast = false }: AgendaTaskRowP
             <div className="flex items-center flex-wrap gap-2 mt-2.5">
               <PriorityBadge priority={task.priority} />
               <StatusBadge status={task.status} />
-              {task.dueDate && (
-                <span className="flex items-center gap-1.5 text-[11px] text-text-muted font-bold">
-                  <Clock size={11} /> {task.dueDate ? formatTime(task.dueDate) : formatTime(task.createdAt)}
-                </span>
-              )}
             </div>
           </div>
         </div>

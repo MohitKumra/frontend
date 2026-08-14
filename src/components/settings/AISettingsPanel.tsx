@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { BrainCircuit, CheckCircle2, Gauge, Sparkles, Zap } from 'lucide-react';
+import { CheckCircle2, Gauge, Sparkles, Zap } from 'lucide-react';
 import { Card } from '../ui/Card';
 import type { AIPreferenceDTO } from '../../types';
 
@@ -238,7 +238,7 @@ export function AISettingsPanel({
       {/* ── Section header — same pattern as MOD.01 / MOD.02 / MOD.03 / MOD.04 ── */}
       <Card className="p-4 sm:p-5 lg:p-6" variant="default">
         <SectionHeader
-          icon={<BrainCircuit size={20} />}
+          icon={<Sparkles size={20} />}
           title="AI &amp; Tokens"
           subtitle="Choose which AI features are active. Each toggle saves immediately and stops token use the moment it's off."
           code="MOD.05 — AI &amp; TOKENS"

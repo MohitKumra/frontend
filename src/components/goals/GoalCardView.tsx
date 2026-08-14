@@ -9,6 +9,7 @@ import {
   FolderKanban,
   ListChecks,
   MoreHorizontal,
+  MoveRight,
   Rocket,
   Target,
   Timer,
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 import type { GoalDTO } from '../../types';
 import { GOAL_ICONS } from './goalIcons';
-
+import { useNavigate } from 'react-router-dom';
 type ViewMode = 'grid' | 'list';
 
 /* ─── helpers ─────────────────────────────────────────────── */
@@ -139,7 +140,7 @@ interface GoalCardViewProps {
   onDelete: () => void;
 }
 
-export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelete }: GoalCardViewProps) {
+export function GoalCardView({ goal, selected, viewMode, onSelect, onOpen, onEdit, onDelete }: GoalCardViewProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const meta = getGoalMeta(goal);
@@ -147,6 +148,8 @@ export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelet
   const accent = goal.color || meta.color;
 
   const daysLeft = goal.targetDate ? daysBetween(new Date(), goal.targetDate) : null;
+
+  const navigate = useNavigate()
 
   /* status */
   const statusMap: Record<string, { label: string; color: string }> = {
@@ -178,6 +181,225 @@ export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelet
   /* avatar stack */
   const linkedCount = goal.taskCount + goal.habitCount + goal.projectCount;
   const extraCount = Math.max(0, linkedCount - 3);
+
+  // LIST VIEW: Compact horizontal layout
+  if (viewMode === 'list') {
+    return (
+      <motion.div
+        layout
+        onClick={onOpen}
+        whileHover={{ x: 2 }}
+        transition={{ duration: 0.15, ease: 'easeOut' }}
+        className="group relative w-full cursor-pointer rounded-2xl border px-4 py-3"
+        style={{
+          background: selected
+            ? `linear-gradient(90deg, color-mix(in srgb, ${accent} 5%, var(--color-surface)) 0%, var(--color-surface) 100%)`
+            : 'var(--color-surface)',
+          borderColor: selected
+            ? `color-mix(in srgb, ${accent} 22%, var(--color-border))`
+            : 'var(--color-border)',
+          boxShadow: selected
+            ? `0 4px 12px color-mix(in srgb, ${accent} 8%, transparent)`
+            : '0 2px 8px rgba(15, 23, 42, 0.02)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Icon */}
+          <div
+            style={{
+              flexShrink: 0,
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: `linear-gradient(135deg, color-mix(in srgb, ${accent} 88%, #fff), color-mix(in srgb, ${accent} 55%, #fff))`,
+              color: '#fff',
+            }}
+          >
+            <Icon size={20} />
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: 'var(--color-text-primary)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '300px',
+                }}
+              >
+                {goal.title}
+              </h3>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  borderRadius: 999,
+                  padding: '2px 7px',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  background: `color-mix(in srgb, ${status.color} 12%, transparent)`,
+                  color: status.color,
+                }}
+              >
+                {status.label}
+              </span>
+            </div>
+            {goal.description && (
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontSize: 12,
+                  lineHeight: 1.4,
+                  color: 'var(--color-text-secondary)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {goal.description}
+              </p>
+            )}
+          </div>
+
+          {/* Stats mini */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  {goal.taskCount}
+                </div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
+                  Tasks
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 800,
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  {completedMs}/{totalMs}
+                </div>
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
+                  Milestones
+                </div>
+              </div>
+            </div>
+
+            {/* Progress ring */}
+            <ProgressRing progress={goal.progress} color={accent} size={52} />
+
+            {/* Menu */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen((v) => !v);
+                }}
+                className="flex items-center justify-center rounded-lg border transition-all hover:opacity-80"
+                style={{
+                  width: 28,
+                  height: 28,
+                  background: 'var(--color-surface-raised)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                }}
+              >
+                <MoreHorizontal size={14} />
+              </button>
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.1 }}
+                    style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: '100%',
+                      zIndex: 9999,
+                      marginTop: 6,
+                      width: 128,
+                      borderRadius: 12,
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-surface)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                     <button
+                      onClick={() => {
+                        navigate(`/goals/${goal.id}`)
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-raised)]"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      <MoveRight size={12} /> More Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onEdit();
+                        setMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-raised)]"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      <Edit2 size={12} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onDelete();
+                        setMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-raised)]"
+                      style={{ color: 'var(--color-danger)' }}
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -284,6 +506,15 @@ export function GoalCardView({ goal, selected, onSelect, onOpen, onEdit, onDelet
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
+                     <button
+                      onClick={() => {
+                        navigate(`/goals/${goal.id}`)
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-[var(--color-surface-raised)]"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      <MoveRight size={12} /> More Details
+                    </button>
                     <button
                       type="button"
                       onClick={() => {

@@ -5,18 +5,24 @@ import {
   CheckCircle2,
   Code2,
   DollarSign,
+  Dumbbell,
   Flame,
   FolderKanban,
   Globe,
   GraduationCap,
   Heart,
+  Home,
   Lightbulb,
+  Music,
+  Palette,
+  Plane,
   Rocket,
   Settings,
   Sparkles,
   Star,
   Target,
   Trophy,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +54,12 @@ export const GOAL_ICONS: Record<string, LucideIcon> = {
   star: Star,
   settings: Settings,
   sparkles: Sparkles,
+  dumbbell: Dumbbell,
+  plane: Plane,
+  users: Users,
+  palette: Palette,
+  home: Home,
+  music: Music,
 };
 
 export type GoalIconChoice = { value: string; label: string; icon: LucideIcon };
@@ -71,6 +83,12 @@ export const GOAL_ICON_CHOICES: GoalIconChoice[] = [
   { value: 'star', label: 'Star', icon: Star },
   { value: 'settings', label: 'Systems', icon: Settings },
   { value: 'sparkles', label: 'AI', icon: Sparkles },
+  { value: 'dumbbell', label: 'Fitness', icon: Dumbbell },
+  { value: 'plane', label: 'Travel', icon: Plane },
+  { value: 'users', label: 'Team', icon: Users },
+  { value: 'palette', label: 'Creative', icon: Palette },
+  { value: 'home', label: 'Home', icon: Home },
+  { value: 'music', label: 'Music', icon: Music },
 ];
 
 /** Sentinel value meaning "no explicit icon — derive from category/title". */
