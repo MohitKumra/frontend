@@ -22,6 +22,8 @@ interface UIState {
   layoutPreference: ShellLayoutPreference;
   calendarViewPreference: 'day' | 'week' | 'month' | 'agenda';
   taskViewPreference: TaskViewPreference;
+  pageTransitionsEnabled: boolean;
+  floatingAnimationsEnabled: boolean;
   sidebarOpen: boolean;
   focusMode: boolean;
   streakPopupDismissed: boolean;
@@ -30,6 +32,8 @@ interface UIState {
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
   setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
   setTaskViewPreference: (view: TaskViewPreference) => void;
+  setPageTransitionsEnabled: (enabled: boolean) => void;
+  setFloatingAnimationsEnabled: (enabled: boolean) => void;
   toggleTheme: (options?: { animate?: boolean; onMutate?: () => void }) => Promise<Theme>;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -47,6 +51,8 @@ export const useUIStore = create<UIState>()(
       layoutPreference: 'COMFORTABLE',
       calendarViewPreference: 'month',
       taskViewPreference: 'board',
+      pageTransitionsEnabled: true,
+      floatingAnimationsEnabled: true,
       sidebarOpen: true,
       focusMode: false,
       streakPopupDismissed: false,
@@ -66,6 +72,8 @@ export const useUIStore = create<UIState>()(
       },
       setCalendarViewPreference: (view) => set({ calendarViewPreference: view }),
       setTaskViewPreference: (view) => set({ taskViewPreference: view }),
+      setPageTransitionsEnabled: (enabled) => set({ pageTransitionsEnabled: enabled }),
+      setFloatingAnimationsEnabled: (enabled) => set({ floatingAnimationsEnabled: enabled }),
       toggleTheme: async (options) => {
         const current = document.documentElement.getAttribute('data-theme') as Theme | null;
         const next = current === 'dark' ? 'light' : 'dark';

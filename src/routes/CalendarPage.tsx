@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import {
   CalendarDays,
   ChevronLeft,
@@ -127,6 +127,7 @@ function getEventSummary(events: CalendarEventDTO[]) {
 const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export function CalendarPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const calendarViewPreference = useUIStore((s) => s.calendarViewPreference);
   const [view, setView] = useState<CalendarView>(calendarViewPreference);
   const [reference, setReference] = useState(new Date());
@@ -787,6 +788,7 @@ const LeftRail = memo(function LeftRail({
   isSyncing,
   onSync,
 }: LeftRailProps) {
+  const { itemVariants } = usePageVariants();
   const syncLabel = lastSyncedAt ? `Last sync ${format(new Date(lastSyncedAt), 'h:mm a')}` : 'Not synced yet';
 
   return (
@@ -876,6 +878,7 @@ const RightRail = memo(function RightRail({
   weekRate,
   navigate,
 }: RightRailProps) {
+  const { itemVariants } = usePageVariants();
   return (
     <motion.div variants={itemVariants} className="order-3 flex flex-col gap-4">
       <Card variant="default" className="p-3.5">

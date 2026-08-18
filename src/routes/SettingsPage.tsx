@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import toast from 'react-hot-toast';
 import {
   Bell,
@@ -51,6 +51,7 @@ import { usePushNotifications } from '../features/notifications';
 import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
 import { AISettingsPanel } from '../components/settings/AISettingsPanel';
 import type { AIPreferenceDTO, LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
+import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security' | 'ai';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
@@ -575,10 +576,12 @@ function TabPanel({
 }
 
 export function SettingsPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const user = useAuthStore((s) => s.user);
   const uiTheme = useUIStore((s) => s.themePreference);
   const uiLayout = useUIStore((s) => s.layoutPreference);
   const setTheme = useUIStore((s) => s.setTheme);
+  const floating = useFloatingEnabled();
   const [searchParams] = useSearchParams();
   const searchParamsString = searchParams.toString();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => getInitialTab(searchParams));
@@ -622,6 +625,8 @@ export function SettingsPage() {
     layoutPreference: uiLayout as LayoutPreference,
     calendarView: 'month' as CalendarView,
     taskView: 'board' as TaskView,
+    pageTransitionsEnabled: true,
+    floatingAnimationsEnabled: true,
   });
   const [notifications, setNotifications] = useState({
     taskDue: true,
@@ -674,6 +679,15 @@ export function SettingsPage() {
     // Update local previews immediately so the selected card and preview
     // match the sweep as it starts rather than after the network request.
     setAppearance(merged);
+
+    // Animation preferences update the local cache instantly (fast feedback)
+    // and the backend mutation below persists them across devices.
+    if (typeof next.pageTransitionsEnabled === 'boolean') {
+      useUIStore.getState().setPageTransitionsEnabled(next.pageTransitionsEnabled);
+    }
+    if (typeof next.floatingAnimationsEnabled === 'boolean') {
+      useUIStore.getState().setFloatingAnimationsEnabled(next.floatingAnimationsEnabled);
+    }
 
     if (isThemeChanging) {
       void setTheme(next.themePreference === 'SYSTEM' ? 'system' : next.themePreference === 'DARK' ? 'dark' : 'light', {
@@ -762,7 +776,7 @@ export function SettingsPage() {
   const isSaving = appearanceMutation.isPending || notificationsMutation.isPending;
 
   return (
-    <div className="w-full max-w-8xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0">
+    <div className="w-full max-w-8xl mx-auto flex flex-col gap-4 sm:gap-5 lg:gap-6 px-4 sm:px-0 pb-16 sm:pb-20 lg:pb-24">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -939,6 +953,62 @@ export function SettingsPage() {
                       </div>
                     </div>
                   </Card>
+
+                  <Card className="mt-4 sm:mt-5 p-4 sm:p-5 lg:p-6" variant="default" style={{ overflow: 'visible' }}>
+                    <SectionHeader
+                      icon={<Sparkles size={20} />}
+                      title="Motion & animations"
+                      subtitle="Reduce on-screen movement to make the app feel calmer or snappier. Changes save instantly."
+                      code="MOD.01b — MOTION"
+                      colorVar={TAB_COLOR.appearance}
+                    />
+
+                    <div className="mt-4 sm:mt-5 space-y-2.5 sm:space-y-3">
+                      <div
+                        className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4"
+                        style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-text-primary">Page transitions</div>
+                          <div className="text-xs text-text-muted mt-1 leading-snug">
+                            Animated fade between pages when you navigate.
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <Toggle
+                            checked={appearance.pageTransitionsEnabled}
+                            onToggle={() =>
+                              applyAppearance({ pageTransitionsEnabled: !appearance.pageTransitionsEnabled })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4"
+                        style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold text-text-primary">Floating &amp; ambient animations</div>
+                          <div className="text-xs text-text-muted mt-1 leading-snug">
+                            Bobbing, glowing, and decorative effects across empty states and backgrounds.
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          <Toggle
+                            checked={appearance.floatingAnimationsEnabled}
+                            onToggle={() =>
+                              applyAppearance({ floatingAnimationsEnabled: !appearance.floatingAnimationsEnabled })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <p className="px-1 text-[11px] text-text-muted">
+                        Hover and tap effects stay on so controls always feel responsive.
+                      </p>
+                    </div>
+                  </Card>
                 </div>
 
                 <Card className="p-4 sm:p-5 lg:p-6" variant="default" style={{ overflow: 'visible' }}>
@@ -966,7 +1036,7 @@ export function SettingsPage() {
                   >
                     {/* Animated gradient orbs */}
                     <motion.div
-                      animate={{ x: [0, 15, 0], y: [0, -10, 0], scale: [1, 1.1, 1] }}
+                      animate={floating ? { x: [0, 15, 0], y: [0, -10, 0], scale: [1, 1.1, 1] } : undefined}
                       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                       style={{
                         position: 'absolute',
@@ -982,7 +1052,7 @@ export function SettingsPage() {
                       }}
                     />
                     <motion.div
-                      animate={{ x: [0, -12, 0], y: [0, 15, 0], scale: [1, 1.15, 1] }}
+                      animate={floating ? { x: [0, -12, 0], y: [0, 15, 0], scale: [1, 1.15, 1] } : undefined}
                       transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
                       style={{
                         position: 'absolute',
@@ -999,7 +1069,7 @@ export function SettingsPage() {
                       }}
                     />
                     <motion.div
-                      animate={{ x: [0, 8, 0], y: [0, -8, 0] }}
+                      animate={floating ? { x: [0, 8, 0], y: [0, -8, 0] } : undefined}
                       transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
                       style={{
                         position: 'absolute',
@@ -1030,7 +1100,7 @@ export function SettingsPage() {
                       >
                         {/* Main floating window */}
                         <motion.div
-                          animate={{ y: [0, -4, 0] }}
+                          animate={floating ? { y: [0, -4, 0] } : undefined}
                           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
                           style={{
                             width:
@@ -1154,7 +1224,7 @@ export function SettingsPage() {
 
                         {/* Floating accent card - top right */}
                         <motion.div
-                          animate={{ y: [0, -6, 0], x: [0, 3, 0] }}
+                          animate={floating ? { y: [0, -6, 0], x: [0, 3, 0] } : undefined}
                           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                           style={{
                             position: 'absolute',
@@ -1185,7 +1255,7 @@ export function SettingsPage() {
 
                         {/* Floating status pill - bottom left */}
                         <motion.div
-                          animate={{ y: [0, 5, 0], x: [0, -4, 0] }}
+                          animate={floating ? { y: [0, 5, 0], x: [0, -4, 0] } : undefined}
                           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
                           style={{
                             position: 'absolute',
@@ -1216,7 +1286,7 @@ export function SettingsPage() {
 
                         {/* Floating chart card - bottom right */}
                         <motion.div
-                          animate={{ y: [0, 4, 0], x: [0, -2, 0] }}
+                          animate={floating ? { y: [0, 4, 0], x: [0, -2, 0] } : undefined}
                           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
                           style={{
                             position: 'absolute',

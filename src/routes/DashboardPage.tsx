@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import { AnalyticsPage } from './AnalyticsPage';
 import {
   CheckSquare,
@@ -113,6 +113,7 @@ const DASHBOARD_RESPONSIVE_CSS = `
 `;
 
 export function DashboardPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const navigate = useNavigate();
   const { data: dashboard, isLoading } = useEnhancedDashboard();
   const { data: activityFeed, isLoading: isActivityFeedLoading } = useActivityFeed(1, 10);

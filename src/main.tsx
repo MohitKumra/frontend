@@ -27,6 +27,7 @@ initTheme().then(() => {
           </OnboardingRoot>
           <Toaster
             position="top-right"
+            containerStyle={{ zIndex: 110 }}
             toastOptions={{
               duration: 3200,
               className: 'toast-enter',

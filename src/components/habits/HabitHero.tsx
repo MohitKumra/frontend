@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Zap, Trophy, TrendingUp, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { containerVariants, itemVariants } from '../../lib/motionVariants';
+import { usePageVariants } from '../../lib/motionVariants';
 
 interface HabitHeroProps {
   userName: string;
@@ -28,6 +28,7 @@ interface StatCardProps {
 }
 
 function FloatingStatCard({ icon, iconColor, label, value, suffix, trend, delay = 0 }: StatCardProps) {
+  const { itemVariants } = usePageVariants();
   return (
     <motion.div
       variants={itemVariants}
@@ -93,6 +94,7 @@ export function HabitHero({
   successRate,
   onCreateHabit,
 }: HabitHeroProps) {
+  const { containerVariants, itemVariants } = usePageVariants();
   const gradientId = React.useId();
 
   // Circular progress ring math

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import { useSearchParams } from 'react-router-dom';
 import {
   Timer,
@@ -1557,6 +1557,7 @@ function RecentSessionsCard({
 /* ───────────────────────── Main Focus Page ───────────────────────── */
 
 export function FocusPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<TimerMode>('focus');
   const [focusDurationMin, setFocusDurationMin] = useState(DURATIONS.focus);

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Plus, Sparkles, Flame, Target, Trophy } from 'lucide-react';
 import { Button } from './Button';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingHabitsEmptyProps {
   title?: string;
@@ -13,6 +14,7 @@ export function FloatingHabitsEmpty({
   description = 'Track daily progress, build unbreakable streaks, and transform your routines step by step.',
   onCreateHabit,
 }: FloatingHabitsEmptyProps) {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-10 text-center">
       {/* ── Floating SVG Illustration Stack ────────────────────────────── */}
@@ -34,7 +36,7 @@ export function FloatingHabitsEmpty({
             strokeWidth="1"
             strokeDasharray="5 8"
             opacity="0.35"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '110px 85px' }}
           />
@@ -48,7 +50,7 @@ export function FloatingHabitsEmpty({
           height="68"
           viewBox="0 0 80 68"
           fill="none"
-          animate={{ y: [0, -7, 0], rotate: [-5, -7, -5] }}
+          animate={floating ? { y: [0, -7, 0], rotate: [-5, -7, -5] } : undefined}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
           <rect
@@ -81,7 +83,7 @@ export function FloatingHabitsEmpty({
           height="76"
           viewBox="0 0 90 76"
           fill="none"
-          animate={{ y: [0, -9, 0], rotate: [2, 4, 2] }}
+          animate={floating ? { y: [0, -9, 0], rotate: [2, 4, 2] } : undefined}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
           <rect
@@ -119,7 +121,7 @@ export function FloatingHabitsEmpty({
           height="94"
           viewBox="0 0 106 94"
           fill="none"
-          animate={{ y: [0, -12, 0] }}
+          animate={floating ? { y: [0, -12, 0] } : undefined}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         >
           <defs>
@@ -162,7 +164,7 @@ export function FloatingHabitsEmpty({
             cy="38"
             r="8"
             fill="var(--color-accent)"
-            animate={{ scale: [0.9, 1.15, 0.9] }}
+            animate={floating ? { scale: [0.9, 1.15, 0.9] } : undefined}
             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           />
 
@@ -196,7 +198,7 @@ export function FloatingHabitsEmpty({
             height="5"
             rx="2.5"
             fill="var(--color-accent)"
-            animate={{ width: [30, 60, 30] }}
+            animate={floating ? { width: [30, 60, 30] } : undefined}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           />
         </motion.svg>
@@ -240,11 +242,7 @@ export function FloatingHabitsEmpty({
               background:
                 i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
-            animate={{
-              scale: [1, 1.6, 1],
-              opacity: [0.25, 0.7, 0.25],
-              y: [0, -6, 0],
-            }}
+            animate={floating ? { scale: [1, 1.6, 1], opacity: [0.25, 0.7, 0.25], y: [0, -6, 0] } : undefined}
             transition={{
               duration: 2.2 + i * 0.3,
               repeat: Infinity,

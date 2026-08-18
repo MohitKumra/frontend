@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import {
   FileText,
   Plus,
@@ -78,6 +78,7 @@ const MOOD_EMOJI: Record<string, string> = {
 };
 
 export function NotesPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const [filter, setFilter] = useState<NoteFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -369,7 +370,19 @@ export function NotesPage() {
     const starred = note.isPinned;
     const theme = themeForNote(note, starred);
     const Icon = iconForNote(note);
-    const plainContent = note.content ? note.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+    const plainContent = note.content
+      ? note.content
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/&nbsp;/gi, ' ')
+          .replace(/&amp;/gi, '&')
+          .replace(/&lt;/gi, '<')
+          .replace(/&gt;/gi, '>')
+          .replace(/&quot;/gi, '"')
+          .replace(/&#39;/gi, "'")
+          .replace(/&[a-z]+;/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      : '';
     const preview = plainContent.length > 140 ? plainContent.slice(0, 140) + '…' : plainContent;
     const moodEmoji = note.mood ? MOOD_EMOJI[note.mood] : null;
 
@@ -799,7 +812,12 @@ export function NotesPage() {
 
                       {/* Preview */}
                       <p className="np-list-preview">
-                        {note.content?.length > 180 ? note.content.slice(0, 180) + '…' : note.content}
+                        {(() => {
+                          const plain = note.content
+                            ? note.content.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim()
+                            : '';
+                          return plain.length > 180 ? plain.slice(0, 180) + '…' : plain;
+                        })()}
                       </p>
 
                       {/* Tags */}
@@ -911,7 +929,15 @@ export function NotesPage() {
             viewMode === 'grid' &&
             (() => {
               const entry = journalNotes[featuredIndex % journalNotes.length];
-              const words = entry.content ? entry.content.trim().split(/\s+/).filter(Boolean).length : 0;
+              const words = entry.content
+                ? entry.content
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/&[a-z]+;/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean).length
+                : 0;
               const hasMedia = Boolean(entry.attachmentUrl || entry.voiceNoteUrl);
               const moodEmoji = entry.mood ? MOOD_EMOJI[entry.mood] : null;
               const menuKey = `featured-${entry.id}`;
@@ -978,7 +1004,12 @@ export function NotesPage() {
                         className="relative z-10 text-sm leading-relaxed max-w-xl"
                         style={{ color: 'var(--color-text-secondary)' }}
                       >
-                        {entry.content.length > 200 ? entry.content.slice(0, 200) + '…' : entry.content}
+                        {(() => {
+                          const plain = entry.content
+                            ? entry.content.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim()
+                            : '';
+                          return plain.length > 200 ? plain.slice(0, 200) + '…' : plain;
+                        })()}
                       </p>
 
                       {/* Tags */}

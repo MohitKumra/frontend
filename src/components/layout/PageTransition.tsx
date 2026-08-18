@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { usePageTransitionsEnabled } from '../../hooks/useAnimationPrefs';
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -19,8 +20,11 @@ interface PageTransitionProps {
  */
 export function PageTransition({ children, className }: PageTransitionProps) {
   const reducedMotion = useReducedMotion();
+  const pageTransitionsEnabled = usePageTransitionsEnabled();
 
-  if (reducedMotion) {
+  // Skip the fade when the user prefers reduced motion OR has disabled
+  // page transitions in Settings → Appearance.
+  if (reducedMotion || !pageTransitionsEnabled) {
     return <div className={className}>{children}</div>;
   }
 

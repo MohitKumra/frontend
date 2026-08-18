@@ -309,6 +309,18 @@ select:focus {
   }
 }
 
+/* ====== User "floating & ambient animations" disabled ======
+   Set on <html> by AppLayout when the user turns off floating/ambient
+   motion in Settings → Appearance. Only kills CSS *animation* (bobbing,
+   glowing, pulsing, shimmering) — transition-duration is left intact so
+   hover/tap feedback still animates. */
+html[data-disable-floating='true'] *,
+html[data-disable-floating='true'] *::before,
+html[data-disable-floating='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+}
+
 /* ====== Performance: Remove will-change after animation ====== */
 @supports (animation-timeline: scroll()) {
   * {

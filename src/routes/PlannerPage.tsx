@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { LoadingScreen } from '../components/ui/Spinner';
 import { getWeekDays, getMonthDays, addDays, subDays, isSameDay, isToday, format, isSameMonth } from '../lib/dateUtils';
@@ -21,6 +21,7 @@ const STATUS_META = {
 } as const;
 
 export function PlannerPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const [view, setView] = useState<PlannerView>('week');
   const [reference, setReference] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

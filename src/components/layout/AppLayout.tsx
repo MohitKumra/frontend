@@ -185,6 +185,10 @@ export function AppLayout() {
     setLayoutPreference,
     setCalendarViewPreference,
     setTaskViewPreference,
+    pageTransitionsEnabled,
+    floatingAnimationsEnabled,
+    setPageTransitionsEnabled,
+    setFloatingAnimationsEnabled,
   } = useUIStore();
   const logout = useLogout();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
@@ -294,11 +298,39 @@ export function AppLayout() {
     if (settings.appearance.taskView) {
       setTaskViewPreference(settings.appearance.taskView);
     }
+    if (typeof settings.appearance.pageTransitionsEnabled === 'boolean') {
+      setPageTransitionsEnabled(settings.appearance.pageTransitionsEnabled);
+    }
+    if (typeof settings.appearance.floatingAnimationsEnabled === 'boolean') {
+      setFloatingAnimationsEnabled(settings.appearance.floatingAnimationsEnabled);
+    }
 
     if (user && user.recoveryEmail !== settings.security.recoveryEmail) {
       setUser({ ...user, recoveryEmail: settings.security.recoveryEmail });
     }
-  }, [settings, setCalendarViewPreference, setLayoutPreference, setTaskViewPreference, setTheme, setUser, user]);
+  }, [
+    settings,
+    setCalendarViewPreference,
+    setLayoutPreference,
+    setTaskViewPreference,
+    setPageTransitionsEnabled,
+    setFloatingAnimationsEnabled,
+    setTheme,
+    setUser,
+    user,
+  ]);
+
+  // When the user disables floating/ambient animations, flag it on <html>
+  // so the global CSS rule can kill decorative animations app-wide (leaving
+  // hover/tap transitions intact).
+  useEffect(() => {
+    const root = document.documentElement;
+    if (floatingAnimationsEnabled === false) {
+      root.setAttribute('data-disable-floating', 'true');
+    } else {
+      root.removeAttribute('data-disable-floating');
+    }
+  }, [floatingAnimationsEnabled]);
 
   useEffect(() => {
     if (!latestBrokenAt) return;

@@ -37,7 +37,7 @@ import {
   YAxis,
 } from 'recharts';
 import apiClient from '../lib/apiClient';
-import { containerVariants, itemVariants, filterContainerVariants } from '../lib/motionVariants';
+import { filterContainerVariants, usePageVariants } from '../lib/motionVariants';
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { FloatingAnalyticsEmpty } from '../components/ui/FloatingAnalyticsEmpty';
@@ -802,6 +802,7 @@ interface AnalyticsPageProps {
 }
 
 export function AnalyticsPage({ embedded = false }: AnalyticsPageProps) {
+  const { containerVariants, itemVariants } = usePageVariants();
   const initialDates = computePresetDates('this_week');
   const [dateRange, setDateRange] = useState<DateRange>({
     preset: 'this_week',

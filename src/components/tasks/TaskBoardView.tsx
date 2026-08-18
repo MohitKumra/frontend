@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 import {
   DndContext,
   PointerSensor,
@@ -558,6 +559,7 @@ function BoardColumnEmpty({
   isDragTarget: boolean;
   onAddTask?: () => void;
 }) {
+  const floating = useFloatingEnabled();
   if (isDragTarget) {
     return (
       <div
@@ -565,7 +567,7 @@ function BoardColumnEmpty({
         style={{ borderColor: accent, color: accent, background: `color-mix(in srgb, ${accent} 6%, transparent)` }}
       >
         <motion.div
-          animate={{ scale: [1, 1.12, 1] }}
+          animate={floating ? { scale: [1, 1.12, 1] } : undefined}
           transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
         >
           <Plus size={22} />
@@ -596,7 +598,7 @@ function BoardColumnEmpty({
             strokeWidth="1"
             strokeDasharray="4 6"
             opacity="0.25"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '50px 40px' }}
           />
@@ -606,7 +608,7 @@ function BoardColumnEmpty({
           <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
             {/* Back card */}
             <motion.g
-              animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }}
+              animate={floating ? { y: [0, -3, 0], rotate: [-3, -4, -3] } : undefined}
               transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
               style={{ transformOrigin: '20px 30px' }}
             >
@@ -627,7 +629,7 @@ function BoardColumnEmpty({
             </motion.g>
             {/* Front card */}
             <motion.g
-              animate={{ y: [0, -5, 0] }}
+              animate={floating ? { y: [0, -5, 0] } : undefined}
               transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
               style={{ transformOrigin: '46px 28px' }}
             >
@@ -659,7 +661,7 @@ function BoardColumnEmpty({
           <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
             {/* Back card */}
             <motion.g
-              animate={{ y: [0, -3, 0], rotate: [3, 4, 3] }}
+              animate={floating ? { y: [0, -3, 0], rotate: [3, 4, 3] } : undefined}
               transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
               style={{ transformOrigin: '50px 30px' }}
             >
@@ -681,7 +683,7 @@ function BoardColumnEmpty({
             </motion.g>
             {/* Front card */}
             <motion.g
-              animate={{ y: [0, -5, 0] }}
+              animate={floating ? { y: [0, -5, 0] } : undefined}
               transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
               style={{ transformOrigin: '28px 28px' }}
             >
@@ -708,7 +710,7 @@ function BoardColumnEmpty({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeDasharray="62.8"
-                animate={{ strokeDashoffset: [47, 25, 47] }}
+                animate={floating ? { strokeDashoffset: [47, 25, 47] } : undefined}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 style={{ transform: 'rotate(-90deg)', transformOrigin: '27px 26px' }}
               />
@@ -744,7 +746,7 @@ function BoardColumnEmpty({
           <svg width="70" height="62" viewBox="0 0 70 62" fill="none">
             {/* Back card */}
             <motion.g
-              animate={{ y: [0, -3, 0], rotate: [-3, -4, -3] }}
+              animate={floating ? { y: [0, -3, 0], rotate: [-3, -4, -3] } : undefined}
               transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
               style={{ transformOrigin: '20px 30px' }}
             >
@@ -781,7 +783,7 @@ function BoardColumnEmpty({
             </motion.g>
             {/* Front card — with animated check */}
             <motion.g
-              animate={{ y: [0, -5, 0] }}
+              animate={floating ? { y: [0, -5, 0] } : undefined}
               transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
               style={{ transformOrigin: '44px 28px' }}
             >
@@ -805,7 +807,7 @@ function BoardColumnEmpty({
                 fill={`color-mix(in srgb, ${accent} 18%, transparent)`}
                 stroke={accent}
                 strokeWidth="1.5"
-                animate={{ scale: [1, 1.06, 1] }}
+                animate={floating ? { scale: [1, 1.06, 1] } : undefined}
                 transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
               />
               <motion.path
@@ -815,7 +817,7 @@ function BoardColumnEmpty({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                animate={{ opacity: [0.6, 1, 0.6] }}
+                animate={floating ? { opacity: [0.6, 1, 0.6] } : undefined}
                 transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
               />
               <rect x="30" y="48" width="28" height="3" rx="1.5" fill={accent} opacity="0.2" />
@@ -834,7 +836,7 @@ function BoardColumnEmpty({
             key={i}
             className="absolute rounded-full"
             style={{ width: 4, height: 4, left: dot.x, top: dot.y, background: accent, opacity: 0 }}
-            animate={{ scale: [1, 1.8, 1], opacity: [0, 0.5, 0], y: [0, -4, 0] }}
+            animate={floating ? { scale: [1, 1.8, 1], opacity: [0, 0.5, 0], y: [0, -4, 0] } : undefined}
             transition={{ duration: 2 + i * 0.3, repeat: Infinity, delay: dot.delay, ease: 'easeInOut' }}
           />
         ))}

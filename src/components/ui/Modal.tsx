@@ -125,7 +125,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-50"
+            className="fixed inset-0 z-[110]"
             style={{ background: 'var(--overlay-bg, rgba(0,0,0,0.5))' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -143,7 +143,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
               aria-modal="true"
               aria-labelledby={title ? 'modal-title' : undefined}
               tabIndex={-1}
-              className="fixed bottom-0 left-0 right-0 z-[51] rounded-t-3xl overflow-hidden shadow-2xl flex flex-col"
+              className="fixed bottom-0 left-0 right-0 z-[111] rounded-t-3xl overflow-hidden shadow-2xl flex flex-col"
               style={{
                 background: 'var(--modal-bg)',
                 borderTop: '1px solid var(--modal-border)',
@@ -207,7 +207,7 @@ export function Modal({ open, onClose, title, children, maxWidth = 'max-w-lg' }:
           ) : (
             /* ── Desktop: centered dialog ── */
             <motion.div
-              className="fixed inset-0 z-[51] flex items-center justify-center p-4"
+              className="fixed inset-0 z-[111] flex items-center justify-center p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

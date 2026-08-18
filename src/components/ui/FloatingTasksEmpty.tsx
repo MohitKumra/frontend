@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingTasksEmptyProps {
   title?: string;
@@ -15,6 +16,7 @@ export function FloatingTasksEmpty({
   onCreateTask,
   suggestions,
 }: FloatingTasksEmptyProps = {}) {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-10">
       <motion.div
@@ -35,7 +37,7 @@ export function FloatingTasksEmpty({
             strokeWidth="1"
             strokeDasharray="5 8"
             opacity="0.35"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '100px 80px' }}
           />
@@ -49,7 +51,7 @@ export function FloatingTasksEmpty({
           height="66"
           viewBox="0 0 76 66"
           fill="none"
-          animate={{ y: [0, -6, 0], rotate: [-4, -6, -4] }}
+          animate={floating ? { y: [0, -6, 0], rotate: [-4, -6, -4] } : undefined}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
           <rect
@@ -78,7 +80,7 @@ export function FloatingTasksEmpty({
           height="72"
           viewBox="0 0 86 72"
           fill="none"
-          animate={{ y: [0, -9, 0], rotate: [2, 4, 2] }}
+          animate={floating ? { y: [0, -9, 0], rotate: [2, 4, 2] } : undefined}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
           <rect
@@ -124,7 +126,7 @@ export function FloatingTasksEmpty({
           height="88"
           viewBox="0 0 100 88"
           fill="none"
-          animate={{ y: [0, -12, 0] }}
+          animate={floating ? { y: [0, -12, 0] } : undefined}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         >
           <defs>
@@ -172,7 +174,7 @@ export function FloatingTasksEmpty({
 
           {/* Task item 1 with animated check */}
           <motion.g
-            animate={{ opacity: [0.7, 1, 0.7] }}
+            animate={floating ? { opacity: [0.7, 1, 0.7] } : undefined}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           >
             <circle cx="20" cy="34" r="7" fill="var(--color-accent)" />
@@ -234,11 +236,7 @@ export function FloatingTasksEmpty({
               background:
                 i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
-            animate={{
-              scale: [1, 1.6, 1],
-              opacity: [0.25, 0.7, 0.25],
-              y: [0, -6, 0],
-            }}
+            animate={floating ? { scale: [1, 1.6, 1], opacity: [0.25, 0.7, 0.25], y: [0, -6, 0] } : undefined}
             transition={{
               duration: 2.2 + i * 0.3,
               repeat: Infinity,

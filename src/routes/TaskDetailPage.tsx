@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import {
   ArrowLeft,
   Calendar,
@@ -84,6 +84,7 @@ function statusLabel(status: string) {
 }
 
 export function TaskDetailPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

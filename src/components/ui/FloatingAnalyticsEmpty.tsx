@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, PieChart, Activity } from 'lucide-react';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingAnalyticsEmptyProps {
   compact?: boolean;
@@ -12,6 +13,7 @@ export function FloatingAnalyticsEmpty({
   message = 'No data to display yet',
   subMessage = 'Complete tasks and habits to see your analytics',
 }: FloatingAnalyticsEmptyProps = {}) {
+  const floating = useFloatingEnabled();
   if (compact) {
     return (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
@@ -19,13 +21,13 @@ export function FloatingAnalyticsEmpty({
         <motion.div
           className="absolute w-24 h-24 rounded-full blur-2xl opacity-15"
           style={{ background: 'var(--color-accent)', left: '15%', top: '20%' }}
-          animate={{ x: [0, 20, 0], y: [0, -12, 0], scale: [1, 1.1, 1] }}
+          animate={floating ? { x: [0, 20, 0], y: [0, -12, 0], scale: [1, 1.1, 1] } : undefined}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className="absolute w-20 h-20 rounded-full blur-2xl opacity-15"
           style={{ background: 'var(--color-success)', right: '15%', bottom: '20%' }}
-          animate={{ x: [0, -15, 0], y: [0, 10, 0], scale: [1, 1.15, 1] }}
+          animate={floating ? { x: [0, -15, 0], y: [0, 10, 0], scale: [1, 1.15, 1] } : undefined}
           transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
         />
 
@@ -46,7 +48,11 @@ export function FloatingAnalyticsEmpty({
               height={h}
               fill="currentColor"
               rx="3"
-              animate={{ height: [h * 0.5, h, h * 0.85, h], y: [80 - h * 0.5, 80 - h, 80 - h * 0.85, 80 - h] }}
+              animate={
+                floating
+                  ? { height: [h * 0.5, h, h * 0.85, h], y: [80 - h * 0.5, 80 - h, 80 - h * 0.85, 80 - h] }
+                  : undefined
+              }
               transition={{ duration: 3, delay: i * 0.15, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
             />
           ))}
@@ -55,21 +61,21 @@ export function FloatingAnalyticsEmpty({
         {/* Floating icons at corners */}
         <motion.div
           className="absolute top-3 left-6"
-          animate={{ y: [0, -8, 0], rotate: [0, 4, 0] }}
+          animate={floating ? { y: [0, -8, 0], rotate: [0, 4, 0] } : undefined}
           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         >
           <BarChart3 size={28} className="opacity-10" style={{ color: 'var(--color-accent)' }} />
         </motion.div>
         <motion.div
           className="absolute bottom-4 right-8"
-          animate={{ y: [0, 7, 0], rotate: [0, -4, 0] }}
+          animate={floating ? { y: [0, 7, 0], rotate: [0, -4, 0] } : undefined}
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
         >
           <TrendingUp size={24} className="opacity-10" style={{ color: 'var(--color-info)' }} />
         </motion.div>
         <motion.div
           className="absolute top-4 right-10"
-          animate={{ y: [0, -6, 0], x: [0, 4, 0] }}
+          animate={floating ? { y: [0, -6, 0], x: [0, 4, 0] } : undefined}
           transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
           <Activity size={22} className="opacity-10" style={{ color: 'var(--color-warning)' }} />
@@ -86,7 +92,7 @@ export function FloatingAnalyticsEmpty({
             key={i}
             className="absolute w-1.5 h-1.5 rounded-full"
             style={{ left: dot.x, top: dot.y, background: dot.color }}
-            animate={{ scale: [1, 1.8, 1], opacity: [0.2, 0.6, 0.2] }}
+            animate={floating ? { scale: [1, 1.8, 1], opacity: [0.2, 0.6, 0.2] } : undefined}
             transition={{ duration: 2 + i * 0.4, repeat: Infinity, delay: dot.delay, ease: 'easeInOut' }}
           />
         ))}
@@ -122,31 +128,36 @@ export function FloatingAnalyticsEmpty({
       <motion.div
         className="absolute w-32 h-32 rounded-full blur-3xl opacity-20"
         style={{ background: 'var(--color-accent)' }}
-        animate={{
-          x: [0, 30, 0],
-          y: [0, -20, 0],
-          scale: [1, 1.1, 1],
-        }}
+        animate={
+          floating
+            ? {
+                x: [0, 30, 0],
+                y: [0, -20, 0],
+                scale: [1, 1.1, 1],
+              }
+            : undefined
+        }
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
         className="absolute w-40 h-40 rounded-full blur-3xl opacity-20"
         style={{ background: 'var(--color-success)', right: 40 }}
-        animate={{
-          x: [0, -20, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.2, 1],
-        }}
+        animate={
+          floating
+            ? {
+                x: [0, -20, 0],
+                y: [0, 30, 0],
+                scale: [1, 1.2, 1],
+              }
+            : undefined
+        }
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       {/* Floating chart elements */}
       <motion.div
         className="absolute top-8 left-12"
-        animate={{
-          y: [0, -15, 0],
-          rotate: [0, 5, 0],
-        }}
+        animate={floating ? { y: [0, -15, 0], rotate: [0, 5, 0] } : undefined}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       >
         <div className="relative">
@@ -156,10 +167,7 @@ export function FloatingAnalyticsEmpty({
 
       <motion.div
         className="absolute bottom-12 right-16"
-        animate={{
-          y: [0, 12, 0],
-          rotate: [0, -5, 0],
-        }}
+        animate={floating ? { y: [0, 12, 0], rotate: [0, -5, 0] } : undefined}
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
       >
         <PieChart size={40} className="opacity-10" style={{ color: 'var(--color-success)' }} />
@@ -167,10 +175,7 @@ export function FloatingAnalyticsEmpty({
 
       <motion.div
         className="absolute top-16 right-20"
-        animate={{
-          y: [0, -10, 0],
-          x: [0, 5, 0],
-        }}
+        animate={floating ? { y: [0, -10, 0], x: [0, 5, 0] } : undefined}
         transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
       >
         <TrendingUp size={36} className="opacity-10" style={{ color: 'var(--color-info)' }} />
@@ -178,10 +183,7 @@ export function FloatingAnalyticsEmpty({
 
       <motion.div
         className="absolute bottom-20 left-20"
-        animate={{
-          y: [0, 10, 0],
-          rotate: [0, 10, 0],
-        }}
+        animate={floating ? { y: [0, 10, 0], rotate: [0, 10, 0] } : undefined}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
       >
         <Activity size={44} className="opacity-10" style={{ color: 'var(--color-warning)' }} />
@@ -205,10 +207,14 @@ export function FloatingAnalyticsEmpty({
             fill="currentColor"
             rx="4"
             initial={{ height: 0, y: 120 }}
-            animate={{
-              height: [0, height, height * 0.9, height],
-              y: [120, 120 - height, 120 - height * 0.9, 120 - height],
-            }}
+            animate={
+              floating
+                ? {
+                    height: [0, height, height * 0.9, height],
+                    y: [120, 120 - height, 120 - height * 0.9, 120 - height],
+                  }
+                : undefined
+            }
             transition={{
               duration: 2,
               delay: i * 0.2,

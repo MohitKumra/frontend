@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingNotesEmptyProps {
   title?: string;
@@ -17,6 +18,7 @@ export function FloatingNotesEmpty({
   actionText,
   isJournal = false,
 }: FloatingNotesEmptyProps = {}) {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-10">
       <motion.div
@@ -37,7 +39,7 @@ export function FloatingNotesEmpty({
             strokeWidth="1"
             strokeDasharray="5 8"
             opacity="0.35"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '100px 80px' }}
           />
@@ -51,7 +53,7 @@ export function FloatingNotesEmpty({
           height="62"
           viewBox="0 0 74 62"
           fill="none"
-          animate={{ y: [0, -6, 0], rotate: [-5, -7, -5] }}
+          animate={floating ? { y: [0, -6, 0], rotate: [-5, -7, -5] } : undefined}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
           <rect
@@ -106,7 +108,7 @@ export function FloatingNotesEmpty({
           height="74"
           viewBox="0 0 84 74"
           fill="none"
-          animate={{ y: [0, -8, 0], rotate: [2, 4, 2] }}
+          animate={floating ? { y: [0, -8, 0], rotate: [2, 4, 2] } : undefined}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
           {/* Book spine */}
@@ -175,7 +177,7 @@ export function FloatingNotesEmpty({
           height="90"
           viewBox="0 0 102 90"
           fill="none"
-          animate={{ y: [0, -11, 0] }}
+          animate={floating ? { y: [0, -11, 0] } : undefined}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         >
           <defs>
@@ -269,7 +271,7 @@ export function FloatingNotesEmpty({
 
           {/* Quill / Pen tip decoration */}
           <motion.g
-            animate={{ rotate: [-4, 4, -4], y: [0, -2, 0] }}
+            animate={floating ? { rotate: [-4, 4, -4], y: [0, -2, 0] } : undefined}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             style={{ transformOrigin: '78px 68px' }}
           >
@@ -317,11 +319,7 @@ export function FloatingNotesEmpty({
               background:
                 i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
-            animate={{
-              scale: [1, 1.6, 1],
-              opacity: [0.25, 0.7, 0.25],
-              y: [0, -6, 0],
-            }}
+            animate={floating ? { scale: [1, 1.6, 1], opacity: [0.25, 0.7, 0.25], y: [0, -6, 0] } : undefined}
             transition={{
               duration: 2.2 + i * 0.3,
               repeat: Infinity,

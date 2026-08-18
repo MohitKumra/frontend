@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -276,6 +276,7 @@ function statusCount(goals: GoalDTO[], filter: GoalFilter): number {
 }
 
 export function GoalsPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
@@ -950,6 +951,7 @@ function GoalsHero({
   onCreateGoal: () => void;
   onOpenPlanner: () => void;
 }) {
+  const { itemVariants } = usePageVariants();
   const heroRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);

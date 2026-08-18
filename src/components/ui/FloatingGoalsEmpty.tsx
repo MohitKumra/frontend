@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingGoalsEmptyProps {
   title?: string;
@@ -14,6 +15,7 @@ export function FloatingGoalsEmpty({
   onCreateGoal,
   ctaText = 'Create your first goal',
 }: FloatingGoalsEmptyProps = {}) {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-8 sm:py-12">
       <motion.div
@@ -34,7 +36,7 @@ export function FloatingGoalsEmpty({
             strokeWidth="1"
             strokeDasharray="5 8"
             opacity="0.35"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '110px 90px' }}
           />
@@ -48,7 +50,7 @@ export function FloatingGoalsEmpty({
           height="68"
           viewBox="0 0 68 68"
           fill="none"
-          animate={{ y: [0, -6, 0], rotate: [-4, -6, -4] }}
+          animate={floating ? { y: [0, -6, 0], rotate: [-4, -6, -4] } : undefined}
           transition={{ duration: 4.4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
         >
           <circle
@@ -73,7 +75,7 @@ export function FloatingGoalsEmpty({
           height="82"
           viewBox="0 0 82 82"
           fill="none"
-          animate={{ y: [0, -9, 0], rotate: [2, 4, 2] }}
+          animate={floating ? { y: [0, -9, 0], rotate: [2, 4, 2] } : undefined}
           transition={{ duration: 3.9, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
         >
           <defs>
@@ -108,7 +110,7 @@ export function FloatingGoalsEmpty({
           height="108"
           viewBox="0 0 108 108"
           fill="none"
-          animate={{ y: [0, -13, 0] }}
+          animate={floating ? { y: [0, -13, 0] } : undefined}
           transition={{ duration: 3.3, repeat: Infinity, ease: 'easeInOut' }}
         >
           <defs>
@@ -137,7 +139,7 @@ export function FloatingGoalsEmpty({
             stroke="var(--color-accent)"
             strokeWidth="2"
             filter="url(#goalShadow)"
-            animate={{ opacity: [0.8, 1, 0.8] }}
+            animate={floating ? { opacity: [0.8, 1, 0.8] } : undefined}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           />
 
@@ -153,7 +155,7 @@ export function FloatingGoalsEmpty({
             strokeLinecap="round"
             strokeDashoffset="-20"
             opacity="0.75"
-            animate={{ strokeDasharray: ['140 112', '200 52', '140 112'] }}
+            animate={floating ? { strokeDasharray: ['140 112', '200 52', '140 112'] } : undefined}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           />
 
@@ -176,14 +178,14 @@ export function FloatingGoalsEmpty({
             r="12"
             fill="var(--color-accent)"
             opacity="0.2"
-            animate={{ r: [10, 14, 10] }}
+            animate={floating ? { r: [10, 14, 10] } : undefined}
             transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           />
           <circle cx="54" cy="54" r="7" fill="var(--color-accent)" filter="url(#goalGlow)" opacity="0.9" />
 
           {/* Arrow pointing to center */}
           <motion.g
-            animate={{ x: [0, 3, 0] }}
+            animate={floating ? { x: [0, 3, 0] } : undefined}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
           >
             <line
@@ -231,7 +233,7 @@ export function FloatingGoalsEmpty({
 
           {/* Small star at top milestone */}
           <motion.g
-            animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
+            animate={floating ? { scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] } : undefined}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             style={{ transformOrigin: '54px 6px' }}
           >
@@ -279,11 +281,7 @@ export function FloatingGoalsEmpty({
               background:
                 i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-warning)' : 'var(--color-success)',
             }}
-            animate={{
-              scale: [1, 1.7, 1],
-              opacity: [0.25, 0.75, 0.25],
-              y: [0, -7, 0],
-            }}
+            animate={floating ? { scale: [1, 1.7, 1], opacity: [0.25, 0.75, 0.25], y: [0, -7, 0] } : undefined}
             transition={{
               duration: 2.2 + i * 0.3,
               repeat: Infinity,

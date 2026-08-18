@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 export function FloatingCalendarEmpty() {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <motion.div
@@ -16,9 +18,13 @@ export function FloatingCalendarEmpty() {
           viewBox="0 0 120 120"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          animate={{
-            y: [0, -10, 0],
-          }}
+          animate={
+            floating
+              ? {
+                  y: [0, -10, 0],
+                }
+              : undefined
+          }
           transition={{
             duration: 3,
             repeat: Infinity,
@@ -166,11 +172,15 @@ export function FloatingCalendarEmpty() {
               left: `${20 + i * 15}%`,
               top: `${10 + (i % 3) * 20}%`,
             }}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.3, 0.8, 0.3],
-              scale: [1, 1.5, 1],
-            }}
+            animate={
+              floating
+                ? {
+                    y: [0, -20, 0],
+                    opacity: [0.3, 0.8, 0.3],
+                    scale: [1, 1.5, 1],
+                  }
+                : undefined
+            }
             transition={{
               duration: 2 + i * 0.3,
               repeat: Infinity,

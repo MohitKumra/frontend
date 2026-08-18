@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
+import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 import {
   CheckSquare,
   Plus,
@@ -380,6 +381,8 @@ function TasksHero({
   isFetching: boolean;
   tabsDisabled: boolean;
 }) {
+  const { itemVariants } = usePageVariants();
+  const floating = useFloatingEnabled();
   const heroRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);
@@ -438,7 +441,7 @@ function TasksHero({
         style={{ x: blob1X, y: blob1Y }}
         className="pointer-events-none absolute -top-20 -left-20 h-[380px] w-[380px] rounded-full"
         aria-hidden="true"
-        animate={{ scale: [1, 1.07, 1] }}
+        animate={floating ? { scale: [1, 1.07, 1] } : undefined}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       >
         <div
@@ -454,7 +457,7 @@ function TasksHero({
         style={{ x: blob2X, y: blob2Y }}
         className="pointer-events-none absolute -bottom-12 right-0 h-[300px] w-[300px] rounded-full"
         aria-hidden="true"
-        animate={{ scale: [1, 1.09, 1] }}
+        animate={floating ? { scale: [1, 1.09, 1] } : undefined}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
       >
         <div
@@ -490,7 +493,7 @@ function TasksHero({
             }}
           >
             <motion.span
-              animate={{ rotate: [0, 12, -8, 0] }}
+              animate={floating ? { rotate: [0, 12, -8, 0] } : undefined}
               transition={{ duration: 3, repeat: Infinity, repeatDelay: 5 }}
             >
               <CheckSquare size={11} />
@@ -853,6 +856,7 @@ function formatTrend(current: number, previous: number): string {
 // ── component ──────────────────────────────────────────────────────────────
 
 export function TasksPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);

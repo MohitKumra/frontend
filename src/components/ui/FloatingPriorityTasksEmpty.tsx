@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Flag, Target, Zap } from 'lucide-react';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingPriorityTasksEmptyProps {
   title?: string;
@@ -12,6 +13,7 @@ export function FloatingPriorityTasksEmpty({
   description = "All clear! When you mark tasks as high priority, they'll appear here.",
   onViewAllTasks,
 }: FloatingPriorityTasksEmptyProps = {}) {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-8">
       <motion.div
@@ -32,7 +34,7 @@ export function FloatingPriorityTasksEmpty({
             strokeWidth="1"
             strokeDasharray="5 8"
             opacity="0.35"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '90px 70px' }}
           />
@@ -46,7 +48,7 @@ export function FloatingPriorityTasksEmpty({
           height="58"
           viewBox="0 0 66 58"
           fill="none"
-          animate={{ y: [0, -5, 0], rotate: [-3, -5, -3] }}
+          animate={floating ? { y: [0, -5, 0], rotate: [-3, -5, -3] } : undefined}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
           <rect
@@ -83,7 +85,7 @@ export function FloatingPriorityTasksEmpty({
           height="64"
           viewBox="0 0 76 64"
           fill="none"
-          animate={{ y: [0, -8, 0], rotate: [1, 3, 1] }}
+          animate={floating ? { y: [0, -8, 0], rotate: [1, 3, 1] } : undefined}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
           <rect
@@ -120,7 +122,7 @@ export function FloatingPriorityTasksEmpty({
           height="76"
           viewBox="0 0 90 76"
           fill="none"
-          animate={{ y: [0, -10, 0] }}
+          animate={floating ? { y: [0, -10, 0] } : undefined}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         >
           <defs>
@@ -161,7 +163,7 @@ export function FloatingPriorityTasksEmpty({
               r="12"
               fill="var(--color-danger)"
               opacity="0.15"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.25, 0.15] }}
+              animate={floating ? { scale: [1, 1.3, 1], opacity: [0.15, 0.25, 0.15] } : undefined}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             />
             <rect x="2" y="2" width="16" height="16" rx="4" fill="var(--color-danger)" opacity="0.25" />
@@ -186,7 +188,7 @@ export function FloatingPriorityTasksEmpty({
               cy="10"
               r="3"
               fill="var(--color-warning)"
-              animate={{ scale: [0.9, 1.2, 0.9] }}
+              animate={floating ? { scale: [0.9, 1.2, 0.9] } : undefined}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
             />
           </g>
@@ -204,7 +206,7 @@ export function FloatingPriorityTasksEmpty({
             height="4"
             rx="2"
             fill="var(--color-danger)"
-            animate={{ width: [18, 48, 18] }}
+            animate={floating ? { width: [18, 48, 18] } : undefined}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           />
         </motion.svg>
@@ -248,11 +250,7 @@ export function FloatingPriorityTasksEmpty({
               background:
                 i % 3 === 0 ? 'var(--color-danger)' : i % 3 === 1 ? 'var(--color-warning)' : 'var(--color-accent)',
             }}
-            animate={{
-              scale: [1, 1.6, 1],
-              opacity: [0.25, 0.7, 0.25],
-              y: [0, -6, 0],
-            }}
+            animate={floating ? { scale: [1, 1.6, 1], opacity: [0.25, 0.7, 0.25], y: [0, -6, 0] } : undefined}
             transition={{
               duration: 2.2 + i * 0.3,
               repeat: Infinity,

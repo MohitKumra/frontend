@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 
 interface FloatingProjectsEmptyProps {
   title?: string;
@@ -16,6 +17,7 @@ export function FloatingProjectsEmpty({
   ctaText = 'Click "View all" to get started',
   showCtaHint = true,
 }: FloatingProjectsEmptyProps = {}) {
+  const floating = useFloatingEnabled();
   return (
     <div className="flex flex-col items-center justify-center py-6 sm:py-10">
       <motion.div
@@ -36,7 +38,7 @@ export function FloatingProjectsEmpty({
             strokeWidth="1"
             strokeDasharray="5 8"
             opacity="0.35"
-            animate={{ rotate: 360 }}
+            animate={floating ? { rotate: 360 } : undefined}
             transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
             style={{ transformOrigin: '100px 80px' }}
           />
@@ -50,7 +52,7 @@ export function FloatingProjectsEmpty({
           height="60"
           viewBox="0 0 72 60"
           fill="none"
-          animate={{ y: [0, -7, 0], rotate: [-3, -5, -3] }}
+          animate={floating ? { y: [0, -7, 0], rotate: [-3, -5, -3] } : undefined}
           transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
         >
           <rect
@@ -78,7 +80,7 @@ export function FloatingProjectsEmpty({
           height="66"
           viewBox="0 0 82 66"
           fill="none"
-          animate={{ y: [0, -9, 0], rotate: [1, 3, 1] }}
+          animate={floating ? { y: [0, -9, 0], rotate: [1, 3, 1] } : undefined}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
         >
           <rect
@@ -109,7 +111,7 @@ export function FloatingProjectsEmpty({
           height="82"
           viewBox="0 0 100 82"
           fill="none"
-          animate={{ y: [0, -12, 0] }}
+          animate={floating ? { y: [0, -12, 0] } : undefined}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         >
           <defs>
@@ -187,11 +189,7 @@ export function FloatingProjectsEmpty({
               background:
                 i % 3 === 0 ? 'var(--color-accent)' : i % 3 === 1 ? 'var(--color-info)' : 'var(--color-warning)',
             }}
-            animate={{
-              scale: [1, 1.6, 1],
-              opacity: [0.25, 0.7, 0.25],
-              y: [0, -6, 0],
-            }}
+            animate={floating ? { scale: [1, 1.6, 1], opacity: [0.25, 0.7, 0.25], y: [0, -6, 0] } : undefined}
             transition={{
               duration: 2.2 + i * 0.3,
               repeat: Infinity,

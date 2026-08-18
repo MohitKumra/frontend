@@ -13,7 +13,7 @@ import {
   Timer,
   Link2,
 } from 'lucide-react';
-import { containerVariants, itemVariants } from '../lib/motionVariants';
+import { usePageVariants } from '../lib/motionVariants';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -39,6 +39,7 @@ type MilestoneForm = {
 };
 
 export function GoalDetailPage() {
+  const { containerVariants, itemVariants } = usePageVariants();
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { data: goal, isLoading } = useGoal(id);

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, CheckSquare, Target, ArrowLeft, Sparkles, MapPin } from 'lucide-react';
+import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 
 const quickLinks = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
@@ -10,6 +11,7 @@ const quickLinks = [
 
 export function NotFoundPage() {
   const navigate = useNavigate();
+  const floating = useFloatingEnabled();
 
   return (
     <div
@@ -54,7 +56,7 @@ export function NotFoundPage() {
 
           {/* floating sparkle */}
           <motion.div
-            animate={{ y: [-4, 4, -4], rotate: [0, 10, 0] }}
+            animate={floating ? { y: [-4, 4, -4], rotate: [0, 10, 0] } : undefined}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute -top-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center"
             style={{
