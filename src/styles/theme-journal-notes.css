@@ -585,6 +585,18 @@
   white-space: pre-wrap;
 }
 
+/* Off-screen hidden probe used for height-aware pagination. It inherits the
+   same font metrics as .journal-text (kept in sync by sharing that class) and
+   is measured at the page's real content width to decide page breaks. */
+.journal-pagination-probe {
+  position: fixed;
+  left: -100000px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
 .journal-paper-footer {
   display: flex;
   align-items: center;
@@ -2822,3 +2834,1480 @@
 .dark .note-edit-extras {
   border-top-color: rgba(255, 255, 255, 0.08);
 }
+
+/* ============================================================
+   JOURNAL EDIT — OPEN BOOK SPREAD (v4 — two paper pages)
+   LEFT  = editable paper page (matches viewer left page exactly)
+   RIGHT = read-only paper page (next-page preview or blank lines)
+   Both pages share the same .journal-paper-face visual treatment.
+   ============================================================ */
+
+/* ── Scrollable column wrapper for edit shell ── */
+.journal-edit-stage-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;                    /* spread + extras panel sit flush */
+  overflow-y: auto;
+  max-height: calc(100dvh - 90px);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.journal-edit-stage-wrap::-webkit-scrollbar { display: none; }
+
+/* ── Two-page spread — same dimensions as the viewer flipbook ── */
+.journal-edit-book-spread {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  width: min(92vw, 860px);
+  height: min(70dvh, 560px);
+  flex-shrink: 0;
+  /* Match viewer's drop-shadow */
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
+  overflow: hidden;
+}
+
+/* ── Both paper pages share the same base style ── */
+.journal-edit-paper-page {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Exact match of .journal-paper-face */
+  background: var(--journal-paper);
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent, transparent 2px,
+      rgba(139, 111, 71, 0.03) 2px,
+      rgba(139, 111, 71, 0.03) 4px
+    ),
+    radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.06), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(92, 64, 51, 0.05), transparent 45%);
+  box-shadow: inset 0 0 40px rgba(92, 64, 51, 0.12);
+  /* 9% V padding, 8% H padding — same as .journal-paper-face */
+  padding: 9% 8% 0;
+}
+
+/* Left page: spine-crease shadow on right edge */
+.journal-edit-paper-page--left {
+  border-right: 1px solid rgba(92, 64, 51, 0.18);
+}
+.journal-edit-crease-right {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 24px;
+  background: linear-gradient(to left, rgba(92, 64, 51, 0.16), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Right page: spine-crease shadow on left edge */
+.journal-edit-paper-page--right {
+  border-left: none; /* covered by crease */
+}
+.journal-edit-crease-left {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, rgba(92, 64, 51, 0.16), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Page header ── */
+.journal-edit-paper-header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+/* Editable title — visually identical to .journal-header-title */
+.journal-edit-inline-title {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(92, 64, 51, 0.2);
+  color: var(--journal-dark);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: clamp(16px, 2.5vw, 22px);
+  line-height: 1.3;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s ease;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.journal-edit-inline-title:focus {
+  outline: none;
+  border-bottom-color: var(--journal-accent);
+}
+.journal-edit-inline-title::placeholder {
+  color: rgba(62, 39, 35, 0.3);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.journal-edit-type-row {
+  margin-bottom: 8px;
+}
+
+/* ── Page body — fixed height, no scroll (pagination handles overflow) ── */
+.journal-edit-paper-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* Right-page read-only preview (next page content or blank lines) */
+.journal-edit-page-preview {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.journal-edit-preview-text {
+  margin: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+/* Blank ruled lines when right page has no content yet */
+.journal-edit-blank-lines {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.journal-edit-blank-line {
+  flex: 1;
+  border-bottom: 1px solid rgba(139, 111, 71, 0.1);
+}
+
+/* Visible textarea — styled identically to .journal-text in the viewer */
+.journal-edit-visible-textarea {  display: block;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  /* Same font/color/line-height as .journal-text */
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  color: var(--journal-text);
+  font-size: clamp(13px, 1.8vw, 16px);
+  line-height: 1.8;
+  letter-spacing: 0.3px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  padding: 0;
+  /* No scrollbar — content that overflows feeds the next page */
+  overflow: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.journal-edit-visible-textarea::-webkit-scrollbar { display: none; }
+.journal-edit-visible-textarea::placeholder {
+  color: rgba(62, 39, 35, 0.32);
+  font-style: italic;
+}
+.journal-edit-visible-textarea:focus { outline: none; }
+
+/* ── Page nav controls inside the footer ── */
+.journal-edit-page-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+}
+.journal-edit-page-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(139, 111, 71, 0.12);
+  border: 1px solid rgba(92, 64, 51, 0.2);
+  color: var(--journal-dark);
+  transition: background 0.15s ease;
+}
+.journal-edit-page-nav-btn:hover:not(:disabled) {
+  background: rgba(139, 111, 71, 0.26);
+  border-color: rgba(92, 64, 51, 0.4);
+}
+.journal-edit-page-nav-btn:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+.journal-edit-page-nav-label {
+  font-family: Georgia, serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--journal-text);
+  opacity: 0.55;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ── Extras panel below the spread ── */
+.journal-edit-extras-panel {
+  width: min(92vw, 860px);
+  padding: 14px 20px 16px;
+  background: var(--journal-paper);
+  background-image: radial-gradient(circle at 15% 15%, rgba(212,175,55,0.04), transparent 45%);
+  border-radius: 0 0 8px 8px;
+  border: 1px solid rgba(92, 64, 51, 0.14);
+  border-top: none;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+.journal-edit-extras-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+.journal-extra-label {
+  color: var(--journal-accent) !important;
+}
+.journal-edit-extras-panel .tag-input-wrap {
+  background: rgba(244, 232, 216, 0.5) !important;
+  border-color: rgba(92, 64, 51, 0.2) !important;
+}
+.journal-edit-extras-panel .tag-input-wrap.is-focused {
+  border-color: var(--journal-accent) !important;
+  box-shadow: 0 0 0 2px rgba(193, 154, 107, 0.18) !important;
+}
+.journal-edit-extras-panel .tag-input { color: var(--journal-text) !important; }
+.journal-edit-extras-panel .tag-chip {
+  background: rgba(139, 111, 71, 0.13) !important;
+  color: var(--journal-dark) !important;
+  border: 1px solid rgba(92, 64, 51, 0.18) !important;
+}
+.journal-edit-extras-panel .journal-media-field-wrap .rounded-2xl {
+  background: rgba(139, 111, 71, 0.09) !important;
+  border-color: rgba(92, 64, 51, 0.22) !important;
+}
+.journal-edit-extras-panel .journal-media-field-wrap button {
+  background: rgba(244, 232, 216, 0.6) !important;
+  border-color: rgba(92, 64, 51, 0.2) !important;
+  color: var(--journal-text) !important;
+}
+.journal-edit-extras-panel .journal-media-field-wrap p,
+.journal-edit-extras-panel .journal-media-field-wrap label,
+.journal-edit-extras-panel .journal-media-field-wrap .text-xs {
+  color: var(--journal-accent) !important;
+}
+
+/* ── Mobile: single page ── */
+@media (max-width: 640px) {
+  .journal-edit-book-spread {
+    width: 94vw;
+    height: min(68dvh, 460px);
+  }
+  .journal-edit-paper-page--right {
+    display: none;
+  }
+  .journal-edit-paper-page--left {
+    border-right: none;
+    border-radius: 4px;
+  }
+  .journal-edit-extras-panel {
+    width: 94vw;
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .journal-edit-inline-title { transition: none !important; }
+}
+
+/* ============================================================
+   APPLE BOOKS INTERACTIVE JOURNAL SYSTEM
+   ============================================================ */
+
+.apple-book-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--book-bg, #3a281c);
+  color: var(--book-text, #3e2723);
+  font-family: var(--book-font-family, Georgia, serif);
+  overflow: hidden;
+  animation: appleBookFadeIn 0.3s var(--ease-book) forwards;
+}
+
+.apple-book-overlay.is-closing {
+  animation: appleBookFadeOut 0.25s ease forwards;
+}
+
+@keyframes appleBookFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes appleBookFadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+/* Top App Bar */
+.apple-book-topbar {
+  height: 58px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 30;
+  shrink: 0;
+}
+
+.apple-book-topbar-left,
+.apple-book-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apple-book-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.apple-book-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.apple-book-icon-btn.is-active {
+  background: var(--book-accent, #c19a6b);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.apple-book-icon-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.apple-book-title-meta {
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+  max-width: 260px;
+}
+
+.apple-book-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.apple-book-header-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Mode Switcher */
+.apple-book-mode-switcher {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.apple-book-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.apple-book-mode-btn.is-active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.apple-book-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  transition: all 0.18s ease;
+}
+
+.apple-book-save-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+}
+
+.apple-book-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Edit Formatting Toolbar */
+.apple-book-edit-toolbar {
+  position: absolute;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: rgba(18, 18, 18, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 4px 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.apple-book-toolbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.apple-book-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.apple-book-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 4px;
+}
+
+.apple-book-tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.apple-book-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* Drawers */
+.apple-book-drawer {
+  position: absolute;
+  top: 58px;
+  bottom: 50px;
+  right: 0;
+  width: min(340px, 90vw);
+  background: rgba(20, 20, 25, 0.92);
+  backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  animation: appleBookSlideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes appleBookSlideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.apple-book-drawer-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.apple-book-drawer-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.apple-book-drawer-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.apple-book-toc-card {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 16px;
+}
+
+.apple-book-toc-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.apple-book-toc-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+}
+
+.apple-book-toc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.apple-book-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.apple-book-toc-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 10px;
+}
+
+.apple-book-toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.apple-book-toc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.apple-book-toc-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.apple-book-toc-item.is-active {
+  background: rgba(193, 154, 107, 0.2);
+  border-color: rgba(193, 154, 107, 0.4);
+  color: #ffffff;
+}
+
+/* Themes & Appearance Grid */
+.apple-book-theme-grid {
+  display: grid;
+  grid-template-cols: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.apple-book-theme-card {
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.apple-book-theme-card:hover {
+  transform: translateY(-2px);
+}
+
+.apple-book-theme-card.is-active {
+  box-shadow: 0 0 0 2px var(--book-accent, #c19a6b);
+}
+
+.apple-book-font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.apple-book-font-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.apple-book-font-item.is-active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--book-accent, #c19a6b);
+}
+
+.apple-book-size-segmented {
+  display: grid;
+  grid-template-cols: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.apple-book-size-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.apple-book-size-btn.is-active {
+  background: var(--book-accent, #c19a6b);
+  color: #ffffff;
+}
+
+/* Stage & Physical Book */
+.apple-book-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  overflow: hidden;
+  position: relative;
+  max-height: calc(100dvh - 108px);
+  box-sizing: border-box;
+}
+
+.apple-book-stage.is-fullscreen {
+  padding: 0;
+  max-height: calc(100dvh - 108px);
+}
+
+.apple-book-spread-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: min(1200px, 94vw);
+  height: min(620px, calc(100dvh - 140px));
+  max-height: calc(100dvh - 140px);
+}
+
+.apple-book-nav-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  shrink: 0;
+}
+
+.apple-book-nav-arrow:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.6);
+  transform: scale(1.08);
+}
+
+.apple-book-nav-arrow:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.apple-book-spread {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px 14px 14px 6px;
+  background: var(--book-bg, #3a281c);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.apple-book-ribbon {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 120px;
+  background: linear-gradient(180deg, #d4af37 0%, #b8860b 100%);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.4);
+  z-index: 15;
+  pointer-events: none;
+}
+
+.apple-book-spine-crease {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.05) 45%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  z-index: 10;
+  pointer-events: none;
+}
+
+.apple-book-page {
+  flex: 1;
+  height: 100%;
+  background: var(--book-paper, #f4e8d8);
+  color: var(--book-text, #3e2723);
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.apple-book-page--left {
+  border-radius: 4px 0 0 4px;
+  box-shadow: inset -10px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.apple-book-page--right {
+  border-radius: 0 8px 8px 0;
+  box-shadow: inset 10px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.apple-book-page-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 5.5% 7.5% 4.5% 7.5%;
+  box-sizing: border-box;
+}
+
+.apple-book-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  opacity: 0.65;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 5px;
+}
+
+.apple-book-header-tag {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.apple-book-title-area {
+  margin-bottom: 10px;
+}
+
+.apple-book-page-title {
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.apple-book-inline-title-input {
+  width: 100%;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 800;
+  background: transparent;
+  border: none;
+  border-bottom: 2px dashed var(--book-accent, #c19a6b);
+  color: var(--book-text, #3e2723);
+  font-family: inherit;
+  outline: none;
+  padding-bottom: 4px;
+}
+
+.apple-book-page-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.apple-book-live-textarea {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--book-text, #3e2723);
+  font-family: var(--book-font-family, Georgia, serif);
+  font-size: var(--book-font-size, 15px);
+  line-height: var(--book-leading, 1.75);
+  box-sizing: border-box;
+}
+
+.apple-book-text-content {
+  font-size: var(--book-font-size, 15px);
+  line-height: var(--book-leading, 1.75);
+  display: block;
+}
+
+.apple-book-paragraph {
+  margin-bottom: 0.7em;
+}
+
+.apple-book-empty-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 10px;
+}
+
+.apple-book-guided-line {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.apple-book-page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 6px;
+}
+
+/* Extras Bar below spread */
+.apple-book-extras-bar {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  width: min(840px, 92vw);
+  background: rgba(18, 18, 22, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.apple-book-extras-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.apple-book-extra-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.apple-book-extra-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Bottom Progress Slider Bar */
+.apple-book-bottom-bar {
+  height: 50px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 30;
+}
+
+.apple-book-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(450px, 60vw);
+}
+
+.apple-book-step-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.apple-book-step-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.apple-book-slider {
+  flex: 1;
+  accent-color: var(--book-accent, #c19a6b);
+  cursor: pointer;
+}
+
+.apple-book-bottom-counter {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Hardcover Stage */
+.apple-book-cover-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.apple-book-hardcover {
+  position: relative;
+  width: min(420px, 85vw);
+  aspect-ratio: 3 / 4.3;
+  border-radius: 4px 14px 14px 4px;
+  background: #3a281c;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+  display: flex;
+  overflow: hidden;
+}
+
+.apple-book-hardcover-spine {
+  width: 18px;
+  background: linear-gradient(90deg, #1f140e 0%, #3a281c 100%);
+  border-right: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.apple-book-hardcover-face {
+  flex: 1;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(circle at 50% 50%, #4a3320 0%, #2b1c12 100%);
+  color: #f4e8d8;
+  position: relative;
+}
+
+.apple-book-cover-gold-border {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.apple-book-cover-emblem {
+  color: #d4af37;
+  margin-bottom: 16px;
+}
+
+.apple-book-cover-title {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #d4af37;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.apple-book-cover-subtitle {
+  font-size: 12px;
+  color: rgba(244, 232, 216, 0.8);
+  margin-bottom: 24px;
+}
+
+.apple-book-cover-divider {
+  width: 60px;
+  height: 2px;
+  background: #d4af37;
+  margin-bottom: 24px;
+  opacity: 0.6;
+}
+
+.apple-book-cover-author {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(244, 232, 216, 0.6);
+  margin-bottom: 32px;
+}
+
+.apple-book-open-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #d4af37 0%, #aa820a 100%);
+  color: #1f140e;
+  font-weight: 800;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+  transition: all 0.2s ease;
+}
+
+.apple-book-open-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.5);
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN BREAKPOINTS (8XL Ultra-wide to Mobile)
+   ============================================================ */
+
+/* 8XL & 4K Ultra-wide Displays (> 1920px) */
+@media (min-width: 1920px) {
+  .apple-book-spread-wrapper {
+    max-width: 1680px;
+    height: min(86vh, 900px);
+  }
+  .apple-book-page-inner {
+    padding: 8% 10%;
+  }
+  .apple-book-live-textarea,
+  .apple-book-text-content {
+    font-size: calc(var(--book-font-size, 15px) * 1.15);
+  }
+}
+
+/* Tablets & Small Laptops (768px - 1024px) */
+@media (max-width: 1024px) {
+  .apple-book-nav-arrow {
+    display: none;
+  }
+  .apple-book-spread-wrapper {
+    height: min(80vh, 640px);
+  }
+}
+
+/* 3D FlipBook Stage (Reading Mode) */
+.apple-book-flip-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.apple-book-3d-flipbook {
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+}
+
+.apple-book-flip-page {
+  background: var(--book-paper, #f4e8d8);
+  color: var(--book-text, #3e2723);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   CLEAN NORMAL DOCUMENT EDITOR STAGE
+   ============================================================ */
+
+.apple-book-normal-editor-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.apple-book-normal-editor-card {
+  width: 100%;
+  max-width: 860px;
+  height: 100%;
+  max-height: calc(100dvh - 120px);
+  background: var(--book-paper, #f4e8d8);
+  color: var(--book-text, #3e2723);
+  border-radius: 16px;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(92, 64, 51, 0.15);
+}
+
+.apple-book-normal-toolbar {
+  padding: 10px 18px;
+  background: rgba(92, 64, 51, 0.06);
+  border-bottom: 1px solid rgba(92, 64, 51, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.apple-book-normal-toolbar .apple-book-tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--book-text, #3e2723);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.apple-book-normal-toolbar .apple-book-tool-btn:hover,
+.apple-book-normal-toolbar .apple-book-tool-btn.is-active {
+  background: rgba(193, 154, 107, 0.25);
+  color: var(--book-dark, #2c1a0e);
+  border-color: var(--book-accent, #c19a6b);
+  transform: translateY(-1px);
+}
+
+.apple-book-highlight-palette {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #2b1e16;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+  z-index: 50;
+}
+
+.apple-book-color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+}
+
+.apple-book-color-swatch:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+}
+
+.apple-book-normal-body {
+  flex: 1;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.apple-book-normal-date {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.apple-book-normal-title {
+  width: 100%;
+  font-size: 28px;
+  font-weight: 800;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--book-accent, #c19a6b);
+  color: var(--book-text, #3e2723);
+  font-family: var(--book-font-family, Georgia, serif);
+  outline: none;
+  padding-bottom: 8px;
+  margin-bottom: 24px;
+  transition: border-color 0.2s ease;
+}
+
+.apple-book-normal-title:focus {
+  border-bottom-color: var(--journal-gold, #d4af37);
+}
+
+.apple-book-normal-content {
+  flex: 1;
+  min-height: 280px;
+  width: 100%;
+  outline: none;
+  border: none;
+  color: var(--book-text, #3e2723);
+  font-family: var(--book-font-family, Georgia, serif);
+  font-size: var(--book-font-size, 16px);
+  line-height: var(--book-leading, 1.85);
+  box-sizing: border-box;
+}
+
+.apple-book-normal-content h2,
+.apple-book-text-content h2,
+.apple-book-h1 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  margin: 18px 0 8px 0 !important;
+  color: var(--book-text, #3e2723) !important;
+  border-bottom: 2px solid var(--book-accent, #c19a6b) !important;
+  padding-bottom: 4px !important;
+}
+
+.apple-book-normal-content h3,
+.apple-book-text-content h3,
+.apple-book-h2 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin: 14px 0 6px 0 !important;
+  color: var(--book-text, #3e2723) !important;
+}
+
+.apple-book-normal-content blockquote,
+.apple-book-text-content blockquote,
+.apple-book-quote {
+  border-left: 4px solid var(--book-accent, #c19a6b) !important;
+  padding: 8px 16px !important;
+  margin: 14px 0 !important;
+  font-style: italic !important;
+  background: rgba(193, 154, 107, 0.15) !important;
+  border-radius: 0 8px 8px 0 !important;
+  color: var(--book-text, #3e2723) !important;
+}
+
+.apple-book-normal-content ul,
+.apple-book-text-content ul {
+  list-style-type: disc !important;
+  padding-left: 24px !important;
+  margin: 10px 0 !important;
+}
+
+.apple-book-normal-content ol,
+.apple-book-text-content ol {
+  list-style-type: decimal !important;
+  padding-left: 24px !important;
+  margin: 10px 0 !important;
+}
+
+.apple-book-normal-content:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(62, 39, 35, 0.4);
+  font-style: italic;
+  pointer-events: none;
+}
+
+.apple-book-normal-footer {
+  padding: 16px 28px;
+  background: rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.apple-book-clean-spread-container {
+  width: 100%;
+  height: 100%;
+  max-width: 1080px;
+  max-height: min(650px, calc(100dvh - 160px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.apple-book-clean-spread-container .apple-book-spread {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  background: var(--book-paper, #f4e8d8);
+  color: var(--book-text, #3e2723);
+  font-family: var(--book-font-family, Georgia, serif);
+  border-radius: 4px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  position: relative;
+}
+
+.apple-book-studio-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  color: #d4af37;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Live Rich Text Formatting Styles */
+.apple-book-highlight {
+  background: rgba(253, 224, 71, 0.55);
+  color: inherit;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.apple-book-h1 {
+  font-size: 1.4em;
+  font-weight: 800;
+  margin-top: 0.8em;
+  margin-bottom: 0.4em;
+  line-height: 1.25;
+  color: var(--book-text, #3e2723);
+}
+
+.apple-book-h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-top: 0.6em;
+  margin-bottom: 0.3em;
+  line-height: 1.3;
+}
+
+.apple-book-quote {
+  border-left: 3px solid var(--book-accent, #c19a6b);
+  padding-left: 14px;
+  margin: 1em 0;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.apple-book-text-content strong {
+  font-weight: 800;
+}
+
+.apple-book-text-content em {
+  font-style: italic;
+}
+
+.apple-book-text-content u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.apple-book-text-content del {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+
+
+
+

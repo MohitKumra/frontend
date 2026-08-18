@@ -30,7 +30,7 @@ import { VoiceNotePlayer } from '../components/media/VoiceNotePlayer';
 import { uploadMediaFile } from '../lib/mediaUpload';
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { useProject, useUpdateProject } from '../features/projects/hooks/useProjects';
-import { useDeleteNote } from '../features/notes/hooks/useNotes';
+import { useDeleteNote, useUpdateNote } from '../features/notes/hooks/useNotes';
 import { notesApi } from '../features/notes/api';
 import apiClient from '../lib/apiClient';
 import type { ListResponse, MediaItemDTO, NoteDTO, ProjectStatus, TaskDTO } from '../types';
@@ -93,6 +93,7 @@ export function ProjectDetailPage() {
   const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const deleteNote = useDeleteNote();
+  const updateNote = useUpdateNote();
 
   // Media upload state
   const attachInputRef = useRef<HTMLInputElement>(null);
@@ -651,6 +652,13 @@ export function ProjectDetailPage() {
               },
             });
           }}
+          onSave={async (data) => {
+            const updated = await updateNote.mutateAsync({ id: viewingNote.id, data });
+            // Refresh the open book so the edited content is shown immediately.
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            queryClient.invalidateQueries({ queryKey: ['notes', { projectId: id }] });
+          }}
+          autoSaveOnClose
         />
       )}
       {editingNote && (

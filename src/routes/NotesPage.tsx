@@ -369,7 +369,8 @@ export function NotesPage() {
     const starred = note.isPinned;
     const theme = themeForNote(note, starred);
     const Icon = iconForNote(note);
-    const preview = note.content?.length > 140 ? note.content.slice(0, 140) + '…' : note.content;
+    const plainContent = note.content ? note.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+    const preview = plainContent.length > 140 ? plainContent.slice(0, 140) + '…' : plainContent;
     const moodEmoji = note.mood ? MOOD_EMOJI[note.mood] : null;
 
     return (
@@ -1171,6 +1172,12 @@ export function NotesPage() {
             setViewingNote(null);
           }}
           onDelete={() => handleDeleteNote(viewingNote.id)}
+          onSave={async (data) => {
+            const updated = await updateNote.mutateAsync({ id: viewingNote.id, data });
+            // Refresh the open book so the edited content is shown immediately.
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+          }}
+          autoSaveOnClose
         />
       )}
       {editingNote && <EntryFormModal isOpen mode="edit" note={editingNote} onClose={() => setEditingNote(null)} />}

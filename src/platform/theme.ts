@@ -73,13 +73,22 @@ async function animatedThemeSwitch(newTheme: Theme, onMutate?: () => void): Prom
     root.classList.add('theme-sweeping');
 
     const transition = document.startViewTransition(() => {
+      // Flip the theme attribute INSIDE the callback so the old snapshot still
+      // has the old theme and the new snapshot has the new one — this is what
+      // makes the directional sweep visible.
       applyThemeToDocument(newTheme);
-      // Fire onMutate inside the callback so React state updates
-      // are captured in the "new" snapshot, not before the "old" one.
+      // IMPORTANT: do NOT wrap onMutate in flushSync here. Forcing a synchronous
+      // React commit inside the full-root view transition corrupts the live DOM
+      // ("insertBefore ... is not a child of this node") because the CSS View
+      // Transitions API has already cloned/moved the root. Let React 19 commit
+      // through its own safe view-transition path instead (deferred within the
+      // transition, or right after it — both are crash-free).
       if (onMutate) {
-        flushSync(() => {
+        try {
           onMutate();
-        });
+        } catch {
+          // A failed state update must never take down the app.
+        }
       }
     });
 
@@ -88,6 +97,8 @@ async function animatedThemeSwitch(newTheme: Theme, onMutate?: () => void): Prom
     } catch {
       // Transition was skipped/aborted — nothing to do
     } finally {
+      // Re-assert the theme in case the transition was aborted mid-way.
+      applyThemeToDocument(newTheme);
       root.classList.remove('theme-sweeping');
       root.removeAttribute('data-theme-target');
       isTransitioning = false;

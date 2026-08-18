@@ -65,7 +65,11 @@ export function NotePageModal({ note, onClose, onEdit, onDelete }: NotePageModal
         </div>
 
         <div className="note-sheet-scroll">
-          <p className="note-text">{note.content}</p>
+          {/<[a-z][\s\S]*>/i.test(note.content) ? (
+            <div className="note-text apple-book-text-content" dangerouslySetInnerHTML={{ __html: note.content }} />
+          ) : (
+            <p className="note-text">{note.content}</p>
+          )}
           {(note.attachmentUrl || note.voiceNoteUrl) && (
             <div className="note-media-field-wrap" style={{ marginTop: '20px' }}>
               <MediaPreview attachmentUrl={note.attachmentUrl} voiceNoteUrl={note.voiceNoteUrl} compact />

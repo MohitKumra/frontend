@@ -78,14 +78,18 @@ export function EntryFormModal({
 
   const isSaving = activeMode === 'create' ? createNote.isPending : updateNote.isPending;
 
-  const handleSubmit = async () => {
-    if (!formData.content.trim() || isSaving) return;
+  const handleSubmit = async (data?: EntryFormState) => {
+    // The journal/book shells pass their freshly-edited form state through here.
+    // Use it directly — the modal's own `formData` may be stale (state updates
+    // applied async), which previously caused edited content to be dropped.
+    const final = data ?? formData;
+    if (!final.content.trim() || isSaving) return;
 
     try {
       if (activeMode === 'edit' && activeNote) {
-        await updateNote.mutateAsync({ id: activeNote.id, data: formData });
+        await updateNote.mutateAsync({ id: activeNote.id, data: final });
       } else {
-        await createNote.mutateAsync(formData);
+        await createNote.mutateAsync(final);
         setFormData({
           title: '',
           content: '',

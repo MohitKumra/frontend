@@ -550,6 +550,7 @@ export interface NoteDTO {
   archived: boolean;
   bookmarkPage?: number | null; // Legacy single bookmark support
   bookmarks?: Bookmark[]; // Multi-bookmark system
+  contentVersion?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -581,6 +582,7 @@ export interface UpdateNoteRequest {
   archived?: boolean;
   bookmarkPage?: number | null;
   bookmarks?: Bookmark[];
+  contentVersion?: number;
 }
 
 // ─── Focus Sessions ──────────────────────────────────────────────────────────

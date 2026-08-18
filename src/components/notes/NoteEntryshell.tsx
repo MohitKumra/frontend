@@ -11,7 +11,7 @@ interface NoteEntryShellProps {
   note?: NoteDTO;
   formData: EntryFormState;
   setFormData: React.Dispatch<React.SetStateAction<EntryFormState>>;
-  onSubmit: () => void;
+  onSubmit: (data?: EntryFormState) => void | Promise<void>;
   onClose: () => void;
   isSaving: boolean;
   allowTypeChange: boolean;
