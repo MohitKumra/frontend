@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import {
+  Book,
   BookOpen,
   Edit3,
   Trash2,
@@ -8,8 +9,6 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
-  Maximize2,
-  Minimize2,
   Check,
   Sparkles,
   Sliders,
@@ -300,7 +299,6 @@ export function AppleBookJournalModal({
   const [showCover, setShowCover] = useState(true);
   // 'idle' | 'opening' — drives the CSS animation when user clicks "Open Book"
   const [coverOpening, setCoverOpening] = useState<'idle' | 'opening'>('idle');
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showExtrasDrawer, setShowExtrasDrawer] = useState(false);
 
   // ── Bookmark state — seeded from note prop, updated optimistically on toggle ──
@@ -609,6 +607,21 @@ export function AppleBookJournalModal({
   };
 
   /**
+   * Open/close the book from the top-bar toggle.
+   * - Closed (cover): opens the book (plays the cover-open animation).
+   * - Open: returns to the cover and closes any open drawers.
+   */
+  const handleToggleBook = () => {
+    if (showCover) {
+      handleOpenBook();
+    } else {
+      setShowCover(true);
+      setShowTOC(false);
+      setShowAppearance(false);
+    }
+  };
+
+  /**
    * Open the book directly to the spread that contains `pageNumber`.
    * Used by the cover bookmark ribbon (single bookmark) and the
    * picker popup (multiple bookmarks).
@@ -687,6 +700,49 @@ export function AppleBookJournalModal({
     }
   }, [mode, showCover]);
 
+  /**
+   * Jump an already-mounted flip book to a given spread (0-based) WITH a single
+   * animated page-flip. The library's single flip() opens directly toward the
+   * target in one animation (fast even for far pages — no page-by-page chain),
+   * but it doesn't always land exactly on a far target, so we verify afterwards
+   * and, if needed, hard-correct with turnToPage() (instant, always exact) to
+   * guarantee we arrive at the marked page.
+   */
+  const jumpFlipBookTo = (flip: any, targetSpread: number) => {
+    const targetSpreadIdx = targetSpread;
+    const targetPage = targetSpreadIdx * 2;
+    if (Math.floor(flip.getCurrentPageIndex() / 2) === targetSpreadIdx) return; // already there
+
+    // Single animated flip that opens directly toward the target page.
+    try {
+      flip.flip(targetPage);
+    } catch {
+      try {
+        flip.turnToPage(targetPage);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+
+    // Verify the single flip landed; if not, correct it exactly (instant).
+    const verify = (elapsed: number) => {
+      const f = flipBookRef.current?.pageFlip();
+      if (!f) return;
+      if (Math.floor(f.getCurrentPageIndex() / 2) === targetSpreadIdx) return; // landed
+      if (elapsed < 800) {
+        setTimeout(() => verify(elapsed + 100), 100);
+      } else {
+        try {
+          f.turnToPage(targetPage); // exact correction, no further animation
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+    setTimeout(() => verify(0), 150);
+  };
+
   // Once the flip book is fully mounted and pagination is ready, if we opened
   // to a specific bookmark spread, flip to it now.
   // NOTE: The real StPageFlip controller is only assigned inside the child
@@ -706,21 +762,16 @@ export function AppleBookJournalModal({
       openToSpreadRef.current = null;
       return;
     }
-    const targetPage = targetSpread * 2;
 
     let cancelled = false;
     let attempts = 0;
 
     const tryFlip = () => {
       if (cancelled) return;
-      // pageFlip() returns the underlying controller (or undefined until the
-      // child effect has created it).
       const flip = flipBookRef.current?.pageFlip();
       if (flip) {
-        // Only flip if we are not already on the target spread.
-        if (flip.getCurrentPageIndex() !== targetPage) {
-          flip.flip(targetPage);
-        }
+        // Jump to the target spread (animates adjacent jumps, hard-jumps far ones).
+        jumpFlipBookTo(flip, targetSpread);
         openToSpreadRef.current = null;
         return;
       }
@@ -740,6 +791,31 @@ export function AppleBookJournalModal({
       cancelAnimationFrame(raf);
     };
   }, [paginationReady]);
+
+  /**
+   * Flip the open book to a given spread (0-based), waiting until the real
+   * StPageFlip controller exists. The imperative handle (flipBookRef.current
+   * .pageFlip) is exposed as soon as the component mounts, but the underlying
+   * controller is only created in a child effect — calling .flip() before that
+   * silently drops the request. Poll a short window, then flip exactly once.
+   */
+  const flipToSpread = (targetSpread: number) => {
+    let attempts = 0;
+    const tryFlip = () => {
+      const flip = flipBookRef.current?.pageFlip();
+      if (flip) {
+        // Jump to the target spread (animates adjacent jumps, hard-jumps far ones).
+        jumpFlipBookTo(flip, targetSpread);
+        return;
+      }
+      // Controller not ready yet — retry for ~400ms, then give up gracefully.
+      if (attempts < 20) {
+        attempts += 1;
+        requestAnimationFrame(tryFlip);
+      }
+    };
+    requestAnimationFrame(tryFlip);
+  };
 
   const handleSave = async () => {
     if (!onSave || isSaving) return;
@@ -1180,10 +1256,10 @@ export function AppleBookJournalModal({
 
           <button
             className="apple-book-icon-btn hidden sm:flex"
-            onClick={() => setIsFullscreen((v) => !v)}
-            title="Toggle Fullscreen"
+            onClick={handleToggleBook}
+            title={showCover ? 'Open Book' : 'Close Book'}
           >
-            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            {showCover ? <BookOpen size={18} /> : <Book size={18} />}
           </button>
 
           {onDelete && (
@@ -1256,19 +1332,17 @@ export function AppleBookJournalModal({
                           className="apple-book-toc-item"
                           onClick={() => {
                             const targetSpread = Math.floor((bm.pageNumber - 1) / 2);
+                            // When opening from the cover, hand the target to the
+                            // paginationReady effect so it flips after the book mounts.
+                            if (showCover) {
+                              openToSpreadRef.current = targetSpread;
+                            }
                             setShowCover(false);
                             setShowTOC(false);
-                            // Defer the flip() call so the HTMLFlipBook has time to
-                            // mount after setShowCover(false) triggers a re-render.
-                            // setSpreadIndex is updated automatically via onFlip.
-                            setTimeout(() => {
-                              if (flipBookRef.current?.pageFlip) {
-                                flipBookRef.current.pageFlip().flip(targetSpread * 2);
-                              } else {
-                                // Flip book not yet mounted — set state directly
-                                setSpreadIndex(targetSpread);
-                              }
-                            }, 80);
+                            setMode('read');
+                            setSpreadIndex(targetSpread);
+                            // Also flip directly (works when the book is already open).
+                            flipToSpread(targetSpread);
                           }}
                         >
                           {/* Ribbon swatch */}
@@ -1317,9 +1391,7 @@ export function AppleBookJournalModal({
                         setSpreadIndex(idx);
                         setShowCover(false);
                         setShowTOC(false);
-                        if (flipBookRef.current?.pageFlip) {
-                          flipBookRef.current.pageFlip().flip(idx * 2);
-                        }
+                        flipToSpread(idx);
                       }}
                     >
                       <BookOpen size={14} />
@@ -1425,7 +1497,7 @@ export function AppleBookJournalModal({
       )}
 
       {/* ── MAIN STAGE ─────────────────────────────────────────────────── */}
-      <main className={`apple-book-stage ${isFullscreen ? 'is-fullscreen' : ''}`}>
+      <main className="apple-book-stage">
         {showCover ? (
           /* Hardcover presentation */
           <div className="apple-book-cover-stage">
@@ -1911,9 +1983,7 @@ export function AppleBookJournalModal({
             onClick={() => {
               const prev = Math.max(0, spreadIndex - 1);
               setSpreadIndex(prev);
-              if (flipBookRef.current?.pageFlip) {
-                flipBookRef.current.pageFlip().flip(prev * 2);
-              }
+              flipToSpread(prev);
             }}
             disabled={spreadIndex === 0 || showCover}
           >
@@ -1929,9 +1999,7 @@ export function AppleBookJournalModal({
               const targetIdx = Number(e.target.value);
               setSpreadIndex(targetIdx);
               setShowCover(false);
-              if (flipBookRef.current?.pageFlip) {
-                flipBookRef.current.pageFlip().flip(targetIdx * 2);
-              }
+              flipToSpread(targetIdx);
             }}
             className="apple-book-slider"
           />
@@ -1941,9 +2009,7 @@ export function AppleBookJournalModal({
             onClick={() => {
               const next = Math.min(totalSpreads - 1, spreadIndex + 1);
               setSpreadIndex(next);
-              if (flipBookRef.current?.pageFlip) {
-                flipBookRef.current.pageFlip().flip(next * 2);
-              }
+              flipToSpread(next);
             }}
             disabled={spreadIndex >= totalSpreads - 1 || showCover}
           >
@@ -1977,11 +2043,7 @@ export function AppleBookJournalModal({
                     style={{ '--bm-btn-color': BOOKMARK_COLORS[bm.color] } as React.CSSProperties}
                     onClick={() => {
                       setSpreadIndex(spreadIdx);
-                      setTimeout(() => {
-                        if (flipBookRef.current?.pageFlip) {
-                          flipBookRef.current.pageFlip().flip(spreadIdx * 2);
-                        }
-                      }, 30);
+                      flipToSpread(spreadIdx);
                     }}
                     title={bm.label || `Page ${bm.pageNumber}`}
                   >
