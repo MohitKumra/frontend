@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
@@ -45,6 +45,8 @@ import {
   useUpdateRecoveryEmail,
 } from '../features/settings';
 import { useChangePassword, useSetPassword } from '../features/auth';
+import { useGoogleOAuthPopup } from '../features/auth/hooks/useGoogleOAuthPopup';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePushNotifications } from '../features/notifications';
 import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
 import { AISettingsPanel } from '../components/settings/AISettingsPanel';
@@ -589,9 +591,21 @@ export function SettingsPage() {
   const notificationsMutation = useUpdateNotifications();
   const aiMutation = useUpdateAIPreferences();
   const recoveryMutation = useUpdateRecoveryEmail();
-  const googleStart = useGoogleCalendarStart();
+  const queryClient = useQueryClient();
   const syncGoogleCalendar = useSyncGoogleCalendar();
   const disconnectGoogleCalendar = useDisconnectGoogleCalendar();
+
+  const googleCalendarOAuth = useGoogleOAuthPopup({
+    buildUrl: useCallback(
+      (nonce: string) =>
+        `${import.meta.env.VITE_BACKEND_URL}/settings/google-calendar/start?redirect=1&nonce=${encodeURIComponent(nonce)}`,
+      []
+    ),
+    onSuccess: useCallback(() => {
+      void queryClient.invalidateQueries({ queryKey: ['settings'] });
+      toast.success('Google Calendar connected');
+    }, [queryClient]),
+  });
   const changePassword = useChangePassword();
   const setPassword = useSetPassword();
   const {
@@ -696,16 +710,8 @@ export function SettingsPage() {
     notificationsMutation.mutate(next);
   };
 
-  const handleConnectGoogle = async () => {
-    try {
-      const result = await googleStart.mutateAsync('/settings?integration=google-calendar');
-      window.location.href = result.url;
-    } catch (err) {
-      toast.error(
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
-          'Google Calendar could not be started.'
-      );
-    }
+  const handleConnectGoogle = () => {
+    googleCalendarOAuth.open();
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -1455,7 +1461,7 @@ export function SettingsPage() {
                           <Button
                             size="sm"
                             leftIcon={<PlugZap size={14} />}
-                            loading={googleStart.isPending}
+                            loading={googleCalendarOAuth.isGoogleLoading}
                             onClick={handleConnectGoogle}
                           >
                             {googleCalendar?.connected ? 'Reconnect' : 'Connect Google'}

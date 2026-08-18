@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSignup } from '../hooks/useAuth';
-import { authApi } from '../api';
+import { useGoogleSignInPopup } from '../hooks/useGoogleOAuthPopup';
 
 export function SignupForm() {
   const [name, setName] = useState('');
@@ -12,6 +12,7 @@ export function SignupForm() {
   const [showPass, setShowPass] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const signup = useSignup();
+  const googleOAuth = useGoogleSignInPopup();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,16 +23,8 @@ export function SignupForm() {
     signup.mutate({ email, password, name: name || undefined });
   };
 
-  const handleGoogleSignUp = async () => {
-    try {
-      const { url } = await authApi.googleStart('signin', '/google/callback');
-      window.location.href = url;
-    } catch (err) {
-      toast.error(
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
-          'Google sign-up is not available right now.'
-      );
-    }
+  const handleGoogleSignUp = () => {
+    googleOAuth.open();
   };
 
   return (
@@ -151,9 +144,14 @@ export function SignupForm() {
           }
           handleGoogleSignUp();
         }}
+        disabled={googleOAuth.isGoogleLoading || signup.isPending}
       >
-        <span className="text-[19px] font-black text-[#4285f4]">G</span>
-        Continue with Google
+        {googleOAuth.isGoogleLoading ? (
+          <span className="h-5 w-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-text-secondary)' }} />
+        ) : (
+          <span className="text-[19px] font-black text-[#4285f4]">G</span>
+        )}
+        {googleOAuth.isGoogleLoading ? 'Opening Google…' : 'Continue with Google'}
       </button>
 
       <p className="text-center text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>

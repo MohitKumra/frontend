@@ -1,34 +1,23 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useLogin } from '../hooks/useAuth';
-import { authApi } from '../api';
+import { useGoogleSignInPopup } from '../hooks/useGoogleOAuthPopup';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const login = useLogin();
+  const googleOAuth = useGoogleSignInPopup();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     login.mutate({ email, password });
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const { url } = await authApi.googleStart(
-        'signin',
-        `${import.meta.env.VITE_APP_BASE_URL}/google/callback` || 'http://localhost:5173/google/callback'
-      );
-      window.location.href = url;
-    } catch (err) {
-      toast.error(
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
-          'Google sign-in is not available right now.'
-      );
-    }
+  const handleGoogleSignIn = () => {
+    googleOAuth.open();
   };
 
   return (
@@ -116,11 +105,16 @@ export function LoginForm() {
         type="button"
         className="auth-secondary-button flex w-full items-center justify-center gap-3"
         onClick={handleGoogleSignIn}
+        disabled={googleOAuth.isGoogleLoading || login.isPending}
       >
-        <span className="text-[19px] font-black" style={{ color: '#4285f4' }}>
-          G
-        </span>
-        Continue with Google
+        {googleOAuth.isGoogleLoading ? (
+          <span className="h-5 w-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-text-secondary)' }} />
+        ) : (
+          <span className="text-[19px] font-black" style={{ color: '#4285f4' }}>
+            G
+          </span>
+        )}
+        {googleOAuth.isGoogleLoading ? 'Opening Google…' : 'Continue with Google'}
       </button>
 
       <div className="text-center">
