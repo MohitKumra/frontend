@@ -1208,6 +1208,12 @@ export function NotesPage() {
             // Refresh the open book so the edited content is shown immediately.
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
           }}
+          onToggleBookmark={async (bookmarks) => {
+            const updated = await updateNote.mutateAsync({ id: viewingNote.id, data: { bookmarks } });
+            // Keep viewingNote in sync so the bookmark ribbon stays accurate
+            // if the user closes and reopens the book in the same session.
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+          }}
           autoSaveOnClose
         />
       )}

@@ -1,6 +1,6 @@
 // frontend/src/features/notes/api.ts
 import apiClient from '../../lib/apiClient';
-import type { NoteDTO, CreateNoteRequest, UpdateNoteRequest, NoteListParams, PaginatedResponse } from '../../types';
+import type { NoteDTO, CreateNoteRequest, UpdateNoteRequest, NoteListParams, PaginatedResponse, Bookmark } from '../../types';
 
 export const notesApi = {
   list: (params?: NoteListParams) =>
@@ -23,4 +23,12 @@ export const notesApi = {
 
   /** Unarchive a note */
   unarchive: (id: string) => apiClient.patch<NoteDTO>(`/notes/${id}`, { archived: false }).then((r) => r.data),
+
+  /**
+   * Persist the full bookmarks array for a note.
+   * Pass the complete desired array — backend replaces it entirely.
+   * Max 5 bookmarks enforced server-side.
+   */
+  updateBookmarks: (id: string, bookmarks: Bookmark[]) =>
+    apiClient.patch<NoteDTO>(`/notes/${id}`, { bookmarks }).then((r) => r.data),
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { NoteDTO } from '../../types';
+import type { NoteDTO, Bookmark } from '../../types';
 import { AppleBookJournalModal } from './AppleBookJournalModal';
 
 interface JournalBookModalProps {
@@ -17,6 +17,7 @@ interface JournalBookModalProps {
     attachmentUrl: string;
     voiceNoteUrl: string;
   }) => Promise<void> | void;
+  onToggleBookmark?: (bookmarks: Bookmark[]) => Promise<void> | void;
   autoSaveOnClose?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function JournalBookModal({
   onEdit,
   onDelete,
   onSave,
+  onToggleBookmark,
   autoSaveOnClose,
 }: JournalBookModalProps) {
   return (
@@ -37,6 +39,7 @@ export function JournalBookModal({
       onClose={onClose}
       onSave={onSave}
       onDelete={onDelete}
+      onToggleBookmark={onToggleBookmark}
       autoSaveOnClose={autoSaveOnClose}
     />
   );

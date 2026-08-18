@@ -1,7 +1,7 @@
 import { JournalBookModal } from './JournalBookModal';
 import { NotePageModal } from './NotesPageModal';
 import { ModalPortal } from '../ui/ModalRoot';
-import type { NoteDTO } from '../../types';
+import type { NoteDTO, Bookmark } from '../../types';
 
 interface NoteViewModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ interface NoteViewModalProps {
     attachmentUrl: string;
     voiceNoteUrl: string;
   }) => Promise<void> | void;
+  onToggleBookmark?: (bookmarks: Bookmark[]) => Promise<void> | void;
   autoSaveOnClose?: boolean;
 }
 
@@ -30,6 +31,7 @@ export function NoteViewModal({
   onEdit,
   onDelete,
   onSave,
+  onToggleBookmark,
   autoSaveOnClose,
 }: NoteViewModalProps) {
   if (!isOpen) return null;
@@ -44,6 +46,7 @@ export function NoteViewModal({
           onEdit={onEdit}
           onDelete={onDelete}
           onSave={onSave}
+          onToggleBookmark={onToggleBookmark}
           autoSaveOnClose={autoSaveOnClose}
         />
       ) : (

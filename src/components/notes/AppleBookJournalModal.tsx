@@ -90,6 +90,13 @@ interface AppleBookJournalModalProps {
     meta?: { reason: JournalSaveReason }
   ) => Promise<NoteDTO | void> | void;
   onDelete?: () => void;
+  /**
+   * Called whenever the bookmarks array changes (add or remove).
+   * The parent is responsible for persisting to the backend and
+   * returning (or updating) the refreshed NoteDTO so the modal
+   * stays in sync.
+   */
+  onToggleBookmark?: (bookmarks: import('../../types').Bookmark[]) => Promise<void> | void;
   isSaving?: boolean;
   /** When true, persist the current editor contents before the modal closes (used by the read-book flow). */
   autoSaveOnClose?: boolean;
@@ -169,15 +176,36 @@ const FlippableBookPage = React.forwardRef<
     content: string;
     isJournal: boolean;
     wordCount: number;
+    /** If set, renders a coloured ribbon bookmark tab on the top-right corner */
+    bookmarkColor?: import('../../types').BookmarkColor;
     /** Called with the inner page element so the parent can measure real page dimensions */
     onInnerMount?: (el: HTMLDivElement | null) => void;
     /** Called with the page-body element so the parent can measure available text height */
     onBodyMount?: (el: HTMLDivElement | null) => void;
   }
 >((props, ref) => {
+  // Map BookmarkColor → CSS custom-property value used by the tab
+  const colorMap: Record<import('../../types').BookmarkColor, string> = {
+    red:    '#c0392b',
+    yellow: '#d4a017',
+    blue:   '#2563eb',
+    green:  '#16a34a',
+    purple: '#7c3aed',
+  };
+  const tabColor = props.bookmarkColor ? colorMap[props.bookmarkColor] : null;
+
   return (
     <div className="apple-book-flip-page" ref={ref} data-density="soft">
       <div className="apple-book-page-inner" ref={props.onInnerMount}>
+        {/* ── Bookmark ribbon tab ────────────────────────────────────── */}
+        {tabColor && (
+          <div
+            className="apple-book-page-bookmark-tab"
+            style={{ '--bm-color': tabColor } as React.CSSProperties}
+            title={`Bookmarked page ${props.pageNumber}`}
+          />
+        )}
+
         <div className="apple-book-page-header">
           <span className="apple-book-page-date">{props.dateLabel}</span>
           <span className="apple-book-header-tag">{props.isJournal ? 'JOURNAL' : 'NOTES'}</span>
@@ -254,6 +282,7 @@ export function AppleBookJournalModal({
   onClose,
   onSave,
   onDelete,
+  onToggleBookmark,
   isSaving = false,
   autoSaveOnClose = false,
 }: AppleBookJournalModalProps) {
@@ -271,6 +300,30 @@ export function AppleBookJournalModal({
   const [coverOpening, setCoverOpening] = useState<'idle' | 'opening'>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showExtrasDrawer, setShowExtrasDrawer] = useState(false);
+
+  // ── Bookmark state — seeded from note prop, updated optimistically on toggle ──
+  const [bookmarks, setBookmarks] = useState<import('../../types').Bookmark[]>(
+    () => note?.bookmarks ?? []
+  );
+  const [bookmarkSaving, setBookmarkSaving] = useState(false);
+  // Toast shown when user tries to add a 6th bookmark
+  const [bookmarkLimitToast, setBookmarkLimitToast] = useState(false);
+
+  // Keep bookmarks in sync if the note prop changes (e.g. after a save)
+  // Only update when note.id changes or bookmarks array reference changes
+  // to avoid overwriting an optimistic update with stale data.
+  React.useEffect(() => {
+    if (note?.bookmarks !== undefined) {
+      setBookmarks(note.bookmarks);
+    }
+  }, [note?.id, note?.bookmarks]);
+
+  // Auto-dismiss the bookmark limit toast after 3 s
+  React.useEffect(() => {
+    if (!bookmarkLimitToast) return;
+    const t = setTimeout(() => setBookmarkLimitToast(false), 3000);
+    return () => clearTimeout(t);
+  }, [bookmarkLimitToast]);
 
   // Form State for Book Content — always complete journal document
   const [formData, setFormData] = useState({
@@ -499,6 +552,9 @@ export function AppleBookJournalModal({
   const leftPageIndex = spreadIndex * 2;
   const rightPageIndex = spreadIndex * 2 + 1;
 
+  // Is the left page of the current spread already bookmarked?
+  const isCurrentPageBookmarked = bookmarks.some((b) => b.pageNumber === leftPageIndex + 1);
+
   const leftPageText = pages[leftPageIndex] ?? '';
   const rightPageText = pages[rightPageIndex] ?? '';
 
@@ -543,6 +599,54 @@ export function AppleBookJournalModal({
       setCoverOpening('idle');
       setSpreadIndex(0);
     }, 650);
+  };
+
+  /**
+   * Toggle a bookmark for the currently visible spread's left page.
+   * - If that page is already bookmarked → remove it.
+   * - Otherwise → add it (default color 'red', max 5 enforced).
+   * Shows a toast notification when the 5-bookmark limit is reached.
+   * Updates state optimistically; calls onToggleBookmark to persist.
+   */
+  const handleToggleBookmark = async () => {
+    if (!onToggleBookmark || bookmarkSaving) return;
+
+    // Page number is 1-based; use the left page of the current spread
+    const pageNum = leftPageIndex + 1;
+
+    const existing = bookmarks.find((b) => b.pageNumber === pageNum);
+    let nextBookmarks: import('../../types').Bookmark[];
+
+    if (existing) {
+      // Remove — filter out this page's bookmark
+      nextBookmarks = bookmarks.filter((b) => b.pageNumber !== pageNum);
+    } else {
+      // Add — enforce max 5, show toast instead of silently returning
+      if (bookmarks.length >= 5) {
+        setBookmarkLimitToast(true);
+        return;
+      }
+      const newBookmark: import('../../types').Bookmark = {
+        id: `bm-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        pageNumber: pageNum,
+        color: 'red',
+        createdAt: new Date().toISOString(),
+      };
+      nextBookmarks = [...bookmarks, newBookmark];
+    }
+
+    // Optimistic update
+    setBookmarks(nextBookmarks);
+    setBookmarkSaving(true);
+    try {
+      await onToggleBookmark(nextBookmarks);
+    } catch (err) {
+      console.error('[AppleBookJournal] Bookmark save failed:', err);
+      // Roll back
+      setBookmarks(bookmarks);
+    } finally {
+      setBookmarkSaving(false);
+    }
   };
 
   // Reset pagination gate whenever read mode is entered so the probe page
@@ -909,6 +1013,21 @@ export function AppleBookJournalModal({
       role="dialog"
       aria-modal="true"
     >
+      {/* ── BOOKMARK LIMIT TOAST ──────────────────────────────────────── */}
+      {bookmarkLimitToast && (
+        <div className="apple-book-toast apple-book-toast--warn" role="alert">
+          <Bookmark size={15} />
+          <span>Maximum 5 bookmarks reached. Remove one before adding another.</span>
+          <button
+            className="apple-book-toast-close"
+            onClick={() => setBookmarkLimitToast(false)}
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* ── TOP APP BAR ───────────────────────────────────────────────── */}
       <header className="apple-book-topbar">
         <div className="apple-book-topbar-left">
@@ -968,9 +1087,10 @@ export function AppleBookJournalModal({
           </button>
 
           <button
-            className={`apple-book-icon-btn ${showCover ? 'is-active' : ''}`}
-            onClick={() => setShowCover((v) => !v)}
-            title="Toggle Book Cover"
+            className={`apple-book-icon-btn ${isCurrentPageBookmarked ? 'is-active' : ''}`}
+            onClick={handleToggleBookmark}
+            disabled={bookmarkSaving || !onToggleBookmark || showCover}
+            title={isCurrentPageBookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
           >
             <Bookmark size={18} />
           </button>
@@ -1035,9 +1155,68 @@ export function AppleBookJournalModal({
               </div>
             </div>
 
+            {/* ── Bookmarks jump-to section ──────────────────────────── */}
+            {bookmarks.length > 0 && (
+              <div className="apple-book-toc-section" style={{ marginBottom: 16 }}>
+                <h5 className="apple-book-toc-label">
+                  <Bookmark size={11} style={{ display: 'inline', marginRight: 4 }} />
+                  Bookmarks
+                </h5>
+                <div className="apple-book-toc-list">
+                  {[...bookmarks]
+                    .sort((a, b) => a.pageNumber - b.pageNumber)
+                    .map((bm) => {
+                      const spreadIdx = Math.floor((bm.pageNumber - 1) / 2);
+                      const colorHex: Record<import('../../types').BookmarkColor, string> = {
+                        red:    '#c0392b',
+                        yellow: '#d4a017',
+                        blue:   '#2563eb',
+                        green:  '#16a34a',
+                        purple: '#7c3aed',
+                      };
+                      return (
+                        <button
+                          key={bm.id}
+                          className="apple-book-toc-item"
+                          onClick={() => {
+                            const targetSpread = Math.floor((bm.pageNumber - 1) / 2);
+                            setShowCover(false);
+                            setShowTOC(false);
+                            // Defer the flip() call so the HTMLFlipBook has time to
+                            // mount after setShowCover(false) triggers a re-render.
+                            // setSpreadIndex is updated automatically via onFlip.
+                            setTimeout(() => {
+                              if (flipBookRef.current?.pageFlip) {
+                                flipBookRef.current.pageFlip().flip(targetSpread * 2);
+                              } else {
+                                // Flip book not yet mounted — set state directly
+                                setSpreadIndex(targetSpread);
+                              }
+                            }, 80);
+                          }}
+                        >
+                          {/* Ribbon swatch */}
+                          <span
+                            className="apple-book-bm-swatch"
+                            style={{ background: colorHex[bm.color] }}
+                          />
+                          <div className="flex-1 text-left min-w-0">
+                            <span className="block font-semibold truncate">
+                              {bm.label || `Page ${bm.pageNumber}`}
+                            </span>
+                            <span className="block text-[11px] opacity-60">
+                              Page {bm.pageNumber} · Spread {spreadIdx + 1}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
             <div className="apple-book-toc-section">
-              <h5 className="apple-book-toc-label">Pages & Spreads</h5>
-              <div className="apple-book-toc-list">
+              <h5 className="apple-book-toc-label">Pages & Spreads</h5>              <div className="apple-book-toc-list">
                 <button
                   className={`apple-book-toc-item ${showCover ? 'is-active' : ''}`}
                   onClick={() => {
@@ -1278,6 +1457,9 @@ export function AppleBookJournalModal({
                     content={pageContent}
                     isJournal={formData.isJournal}
                     wordCount={0}
+                    bookmarkColor={
+                      bookmarks.find((b) => b.pageNumber === idx + 1)?.color ?? undefined
+                    }
                   />
                 ))}
               </HTMLFlipBook>
