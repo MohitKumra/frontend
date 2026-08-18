@@ -3604,11 +3604,14 @@
   display: flex;
   width: 100%;
   height: 100%;
-  border-radius: 6px 14px 14px 6px;
+  border-radius: 3px 10px 10px 3px;
   background: var(--book-bg, #3a281c);
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(0, 0, 0, 0.5);
+    0 25px 60px rgba(0, 0, 0, 0.65),
+    0 8px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    /* left spine edge */ -4px 0 8px rgba(0, 0, 0, 0.45),
+    /* right outer edge */ 4px 0 10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
@@ -3669,6 +3672,37 @@
   flex-direction: column;
   padding: 5.5% 7.5% 4.5% 7.5%;
   box-sizing: border-box;
+  /* Warm paper vignette — darker at edges, lighter in center */
+  background-image:
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(92, 64, 51, 0.08) 100%),
+    radial-gradient(ellipse at 15% 12%, rgba(255, 255, 255, 0.18) 0%, transparent 45%);
+  position: relative;
+}
+
+/* Left-page inner binding shadow (crease at right edge) */
+.apple-book-flip-page:nth-child(odd) .apple-book-page-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(to left, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.04) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Right-page inner binding shadow (crease at left edge) */
+.apple-book-flip-page:nth-child(even) .apple-book-page-inner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(to right, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.04) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .apple-book-page-header {
@@ -3859,25 +3893,69 @@
   justify-content: center;
   width: 100%;
   height: 100%;
+  perspective: 1400px;
+}
+
+/* Outer 3D wrapper — tilted to reveal depth */
+.apple-book-hardcover-wrapper {
+  position: relative;
+  transform: rotateY(-22deg) rotateX(4deg);
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(-24px 28px 48px rgba(0, 0, 0, 0.7));
+}
+
+.apple-book-hardcover-wrapper:hover {
+  transform: rotateY(-10deg) rotateX(2deg);
 }
 
 .apple-book-hardcover {
   position: relative;
-  width: min(420px, 85vw);
+  width: min(340px, 72vw);
   aspect-ratio: 3 / 4.3;
-  border-radius: 4px 14px 14px 4px;
+  border-radius: 3px 10px 10px 3px;
   background: #3a281c;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
   display: flex;
-  overflow: hidden;
+  transform-style: preserve-3d;
+  overflow: visible;
 }
 
+/* ── Left spine face (the narrow binding side) ── */
 .apple-book-hardcover-spine {
-  width: 18px;
-  background: linear-gradient(90deg, #1f140e 0%, #3a281c 100%);
-  border-right: 1px solid rgba(0, 0, 0, 0.4);
+  width: 26px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #120d08 0%, #2a1c12 60%, #3d2a1a 100%);
+  border-radius: 3px 0 0 3px;
+  position: relative;
+  overflow: hidden;
+  /* Raised ridges along the spine */
+  background-image:
+    linear-gradient(90deg, #120d08 0%, #2a1c12 60%, #3d2a1a 100%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(255, 255, 255, 0.06) 28px,
+      rgba(255, 255, 255, 0.06) 30px
+    );
+  box-shadow:
+    inset -3px 0 8px rgba(0, 0, 0, 0.5),
+    inset 2px 0 4px rgba(255, 255, 255, 0.05);
 }
 
+/* Gold spine label line */
+.apple-book-hardcover-spine::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  right: 3px;
+  height: 1px;
+  background: rgba(212, 175, 55, 0.35);
+  transform: translateY(-50%);
+}
+
+/* ── Main cover face ── */
 .apple-book-hardcover-face {
   flex: 1;
   padding: 32px 24px;
@@ -3886,53 +3964,135 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: radial-gradient(circle at 50% 50%, #4a3320 0%, #2b1c12 100%);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.3) 0%, transparent 50%),
+    linear-gradient(160deg, #5a3a22 0%, #3a2516 40%, #2b1c12 100%);
   color: #f4e8d8;
   position: relative;
+  overflow: hidden;
+  border-left: 1px solid rgba(0, 0, 0, 0.4);
+  /* Subtle leather grain */
+  background-size: cover;
+}
+
+/* Top-left corner light catch */
+.apple-book-hardcover-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 88%, rgba(0, 0, 0, 0.25) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Pages stack (right edge) — simulated page thickness ── */
+.apple-book-hardcover-pages-stack {
+  position: absolute;
+  right: -14px;
+  top: 3%;
+  bottom: 3%;
+  width: 14px;
+  border-radius: 0 3px 3px 0;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    180deg,
+    #f4e8d8 0px,
+    #f4e8d8 1.5px,
+    #e3d3ba 1.5px,
+    #e3d3ba 3px
+  );
+  box-shadow:
+    3px 0 6px rgba(0, 0, 0, 0.35),
+    inset -1px 0 2px rgba(0, 0, 0, 0.15);
+  /* Slight curve to mimic page bend */
+  clip-path: polygon(0 0, 100% 2%, 100% 98%, 0 100%);
+}
+
+/* Bottom shadow under the entire book */
+.apple-book-hardcover::after {
+  content: '';
+  position: absolute;
+  bottom: -22px;
+  left: 8%;
+  right: 5%;
+  height: 22px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0, 0, 0, 0.45) 0%, transparent 80%);
+  pointer-events: none;
+  border-radius: 50%;
 }
 
 .apple-book-cover-gold-border {
   position: absolute;
-  inset: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  border-radius: 4px;
+  inset: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 3px;
   pointer-events: none;
+  z-index: 2;
+  /* Double inset rule */
+  box-shadow: inset 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+
+/* Inner double-rule decorative border */
+.apple-book-cover-gold-border::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 2px;
 }
 
 .apple-book-cover-emblem {
   color: #d4af37;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 3;
+  filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.5));
 }
 
 .apple-book-cover-title {
   font-family: Georgia, serif;
-  font-size: 26px;
+  font-size: clamp(20px, 3.5vw, 28px);
   font-weight: 800;
   color: #d4af37;
   margin-bottom: 8px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(212, 175, 55, 0.3);
+  position: relative;
+  z-index: 3;
+  line-height: 1.25;
 }
 
 .apple-book-cover-subtitle {
-  font-size: 12px;
-  color: rgba(244, 232, 216, 0.8);
-  margin-bottom: 24px;
+  font-size: 11px;
+  color: rgba(244, 232, 216, 0.75);
+  margin-bottom: 22px;
+  position: relative;
+  z-index: 3;
+  letter-spacing: 0.3px;
 }
 
 .apple-book-cover-divider {
   width: 60px;
   height: 2px;
-  background: #d4af37;
-  margin-bottom: 24px;
-  opacity: 0.6;
+  background: linear-gradient(90deg, transparent, #d4af37, transparent);
+  margin-bottom: 22px;
+  opacity: 0.7;
+  position: relative;
+  z-index: 3;
 }
 
 .apple-book-cover-author {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: rgba(244, 232, 216, 0.6);
-  margin-bottom: 32px;
+  letter-spacing: 1.5px;
+  color: rgba(244, 232, 216, 0.55);
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 3;
 }
 
 .apple-book-open-btn {
@@ -3947,18 +4107,113 @@
   font-size: 13px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
+  box-shadow:
+    0 6px 20px rgba(212, 175, 55, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 3;
 }
 
 .apple-book-open-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.5);
+  box-shadow:
+    0 8px 28px rgba(212, 175, 55, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* ============================================================
-   RESPONSIVE DESIGN BREAKPOINTS (8XL Ultra-wide to Mobile)
+   BOOK OPEN ANIMATION SYSTEM
    ============================================================ */
+
+/* ── 1. Modal entry: cover drifts in from above and settles ── */
+@keyframes coverEnter {
+  0% {
+    opacity: 0;
+    transform: rotateY(-22deg) rotateX(4deg) translateY(-60px) scale(0.88);
+  }
+  60% {
+    opacity: 1;
+    transform: rotateY(-22deg) rotateX(4deg) translateY(6px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(-22deg) rotateX(4deg) translateY(0) scale(1);
+  }
+}
+
+.apple-book-hardcover-wrapper {
+  animation: coverEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── 2. Open sequence: book straightens, swings open to the left, fades ── */
+@keyframes coverOpen {
+  0% {
+    opacity: 1;
+    transform: rotateY(-22deg) rotateX(4deg) scale(1);
+  }
+  /* Straighten first — book faces the reader */
+  25% {
+    opacity: 1;
+    transform: rotateY(-5deg) rotateX(1deg) scale(1.06);
+  }
+  /* Swing the cover back as if opening — rotateY goes negative (left) */
+  70% {
+    opacity: 0.6;
+    transform: rotateY(55deg) rotateX(-3deg) scale(1.1) translateX(-60px);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(80deg) rotateX(-6deg) scale(1.08) translateX(-120px);
+  }
+}
+
+.apple-book-hardcover-wrapper.is-opening {
+  animation: coverOpen 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+/* Disable the idle hover tilt during the open animation */
+.apple-book-hardcover-wrapper.is-opening:hover {
+  transform: none;
+}
+
+/* ── 3. Flip-book / read view fades + rises in after cover exits ── */
+@keyframes readViewEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(28px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.01) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.apple-book-flip-container {
+  animation: readViewEnter 0.55s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Reduced motion: skip all book open animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .apple-book-hardcover-wrapper {
+    animation: none !important;
+    transform: none !important;
+  }
+  .apple-book-hardcover-wrapper.is-opening {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .apple-book-flip-container {
+    animation: none !important;
+  }
+}
+
+
 
 /* 8XL & 4K Ultra-wide Displays (> 1920px) */
 @media (min-width: 1920px) {
@@ -3992,10 +4247,14 @@
   justify-content: center;
   width: 100%;
   height: 100%;
+  perspective: 2000px;
 }
 
 .apple-book-3d-flipbook {
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+  /* Deep shadow under the whole book */
+  filter:
+    drop-shadow(0 30px 50px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
 }
 
 .apple-book-flip-page {
@@ -4305,6 +4564,65 @@
 .apple-book-text-content del {
   text-decoration: line-through;
   opacity: 0.7;
+}
+
+/* ── Hardcover satin ribbon bookmark ── */
+.apple-book-hardcover-ribbon {
+  position: absolute;
+  top: 0;
+  right: 36px;
+  width: 12px;
+  height: 90px;
+  background: linear-gradient(180deg, #c0392b 0%, #922b21 70%, #7b241c 100%);
+  border-radius: 0 0 3px 3px;
+  box-shadow:
+    1px 2px 6px rgba(0, 0, 0, 0.5),
+    inset 1px 0 2px rgba(255, 255, 255, 0.12);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Ribbon tail — V-cut at bottom */
+.apple-book-hardcover-ribbon::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid #7b241c;
+  border-right: 6px solid #7b241c;
+  border-top: 8px solid transparent;
+  /* creates the pointed bottom of the ribbon */
+  border-bottom: none;
+  filter: none;
+}
+
+/* Gold thin line on ribbon */
+.apple-book-hardcover-ribbon::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 60px;
+  background: rgba(212, 175, 55, 0.4);
+}
+
+/* ── Page curl / corner-fold hint on flip pages ── */
+.apple-book-page--right .apple-book-page-inner::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 28px 28px;
+  border-color: transparent transparent rgba(0, 0, 0, 0.07) transparent;
+  pointer-events: none;
+  z-index: 2;
 }
 
 

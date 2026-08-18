@@ -265,7 +265,10 @@ export function AppleBookJournalModal({
   const [spreadIndex, setSpreadIndex] = useState(0);
   const [showTOC, setShowTOC] = useState(false);
   const [showAppearance, setShowAppearance] = useState(false);
-  const [showCover, setShowCover] = useState(false);
+  // Always start on the cover — the user opens from there
+  const [showCover, setShowCover] = useState(true);
+  // 'idle' | 'opening' — drives the CSS animation when user clicks "Open Book"
+  const [coverOpening, setCoverOpening] = useState<'idle' | 'opening'>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showExtrasDrawer, setShowExtrasDrawer] = useState(false);
 
@@ -344,6 +347,15 @@ export function AppleBookJournalModal({
   const suppressInputRef = useRef(false);
   // Debounce timer for onInput — avoids re-paginating on every single keystroke.
   const inputDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Pagination readiness gate ──────────────────────────────────────────────
+  // The HTMLFlipBook must only mount ONCE with the correct final page set.
+  // Phase 1: render one invisible probe page to capture live DOM measurements.
+  // Phase 2: once both refs (inner + body) are populated, run a final pagination
+  //   pass then swap in the real flip book. This eliminates the first-flip
+  //   flicker caused by mounting with fallback geometry metrics.
+  const [paginationReady, setPaginationReady] = useState(false);
+  // Counts how many of the two probe refs (inner + body) have fired.
+  const refsPopulatedCountRef = useRef(0);
 
   const activeThemeConfig = useMemo(() => THEMES.find((t) => t.id === theme) ?? THEMES[0], [theme]);
   const activeFontConfig = useMemo(() => FONTS.find((f) => f.id === font) ?? FONTS[0], [font]);
@@ -425,7 +437,13 @@ export function AppleBookJournalModal({
       hasTitle: true,
     });
 
-    setPages(paginateDocument(probe, html, metrics));
+    const paginatedResult = paginateDocument(probe, html, metrics);
+    setPages(paginatedResult);
+    // Mark ready only after using live DOM refs — the authoritative page set
+    // the flip book should mount with (never the fallback-geometry first pass).
+    if (leftPageRef.current && pageBodyRef.current) {
+      setPaginationReady(true);
+    }
   }, [formData.content, dimensions.width, dimensions.height, activeFontConfig.css, activeSizeConfig.sizePx, activeSizeConfig.leading]);
 
   useEffect(() => {
@@ -510,6 +528,31 @@ export function AppleBookJournalModal({
     setClosing(true);
     setTimeout(onClose, 300);
   };
+
+  /**
+   * Plays the cover-open animation then transitions to the read view.
+   * Phase 1 (0–650ms): CSS class 'is-opening' drives a 3D tilt-open keyframe.
+   * Phase 2 (650ms): hide cover, reset animation state, show read mode.
+   */
+  const handleOpenBook = () => {
+    if (coverOpening === 'opening') return; // prevent double-click
+    setCoverOpening('opening');
+    setTimeout(() => {
+      setShowCover(false);
+      setMode('read');
+      setCoverOpening('idle');
+      setSpreadIndex(0);
+    }, 650);
+  };
+
+  // Reset pagination gate whenever read mode is entered so the probe page
+  // re-fires and we always get a fresh live-measurement pass.
+  useEffect(() => {
+    if (mode === 'read' && !showCover) {
+      setPaginationReady(false);
+      refsPopulatedCountRef.current = 0;
+    }
+  }, [mode, showCover]);
 
   const handleSave = async () => {
     if (!onSave || isSaving) return;
@@ -1131,75 +1174,114 @@ export function AppleBookJournalModal({
         {showCover ? (
           /* Hardcover presentation */
           <div className="apple-book-cover-stage">
-            <div className="apple-book-hardcover">
-              <div className="apple-book-hardcover-spine" />
-              <div className="apple-book-hardcover-face">
-                <div className="apple-book-cover-gold-border" />
-                <div className="apple-book-cover-emblem">
-                  <Sparkles size={36} />
-                </div>
-                <h1 className="apple-book-cover-title">
-                  {formData.title || (formData.isJournal ? 'Daily Reflections' : 'My Notebook')}
-                </h1>
-                <p className="apple-book-cover-subtitle">{dateLabel}</p>
-                <div className="apple-book-cover-divider" />
-                <p className="apple-book-cover-author">Personal Journal Edition</p>
+            <div className={`apple-book-hardcover-wrapper ${coverOpening === 'opening' ? 'is-opening' : ''}`}>
+              <div className="apple-book-hardcover">
+                <div className="apple-book-hardcover-spine" />
+                <div className="apple-book-hardcover-face">
+                  <div className="apple-book-cover-gold-border" />
+                  <div className="apple-book-cover-emblem">
+                    <Sparkles size={36} />
+                  </div>
+                  <h1 className="apple-book-cover-title">
+                    {formData.title || (formData.isJournal ? 'Daily Reflections' : 'My Notebook')}
+                  </h1>
+                  <p className="apple-book-cover-subtitle">{dateLabel}</p>
+                  <div className="apple-book-cover-divider" />
+                  <p className="apple-book-cover-author">Personal Journal Edition</p>
 
-                <button
-                  className="apple-book-open-btn"
-                  onClick={() => {
-                    setShowCover(false);
-                    setSpreadIndex(0);
-                  }}
-                >
-                  <BookOpen size={18} />
-                  <span>Open Book</span>
-                </button>
+                  <button
+                    className="apple-book-open-btn"
+                    onClick={handleOpenBook}
+                    disabled={coverOpening === 'opening'}
+                  >
+                    <BookOpen size={18} />
+                    <span>{coverOpening === 'opening' ? 'Opening…' : 'Open Book'}</span>
+                  </button>
+                </div>
+                <div className="apple-book-hardcover-pages-stack" />
+                {/* Ribbon bookmark hanging from top */}
+                <div className="apple-book-hardcover-ribbon" />
               </div>
-              <div className="apple-book-hardcover-pages-stack" />
             </div>
           </div>
         ) : mode === 'read' ? (
           /* ── 3D FLIPPABLE BOOK READING MODE ──────────────────────────── */
           <div className="apple-book-flip-container">
-            {/* @ts-expect-error react-pageflip typings */}
-            <HTMLFlipBook
-              key={bookInstanceKey.current}
-              ref={flipBookRef}
-              width={dimensions.width}
-              height={dimensions.height}
-              size="stretch"
-              minWidth={280}
-              maxWidth={540}
-              minHeight={360}
-              maxHeight={640}
-              maxShadowOpacity={0.5}
-              showCover={false}
-              mobileScrollSupport={true}
-              onFlip={(e: any) => {
-                const currentFlipPage = e.data;
-                setSpreadIndex(Math.floor(currentFlipPage / 2));
-              }}
-              className="apple-book-3d-flipbook"
-            >
-              {flipBookPages.map((pageContent, idx) => (
+            {/*
+              Two-phase pagination render:
+              - Phase 1 (!paginationReady): render a single hidden probe page so
+                onInnerMount / onBodyMount fire and populate leftPageRef /
+                pageBodyRef with real DOM measurements.
+              - Phase 2 (paginationReady): recalculatePagination has now run with
+                live refs and produced the authoritative page set. Mount the real
+                HTMLFlipBook exactly once with that final set — no re-mount, no
+                flicker on the first page-flip.
+            */}
+            {!paginationReady ? (
+              /* Phase 1 — invisible single probe page to capture live refs */
+              <div style={{ position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}>
                 <FlippableBookPage
-                  key={idx}
-                  pageNumber={idx + 1}
-                  totalPages={flipBookPages.length}
+                  pageNumber={1}
+                  totalPages={1}
                   title={formData.title}
                   dateLabel={dateLabel}
                   shortDate={shortDate}
-                  content={pageContent}
+                  content={flipBookPages[0] ?? ''}
                   isJournal={formData.isJournal}
                   wordCount={0}
-                  // Capture the inner page element and body element of the FIRST
-                  // page so we can measure real content dimensions for pagination.
-                  onInnerMount={idx === 0 ? (el) => { leftPageRef.current = el; } : undefined}
-                  onBodyMount={idx === 0 ? (el) => { pageBodyRef.current = el; } : undefined}
+                  onInnerMount={(el) => {
+                    leftPageRef.current = el;
+                    refsPopulatedCountRef.current += 1;
+                    if (refsPopulatedCountRef.current >= 2) {
+                      recalculatePagination();
+                    }
+                  }}
+                  onBodyMount={(el) => {
+                    pageBodyRef.current = el;
+                    refsPopulatedCountRef.current += 1;
+                    if (refsPopulatedCountRef.current >= 2) {
+                      recalculatePagination();
+                    }
+                  }}
                 />
-              ))}
-            </HTMLFlipBook>
+              </div>
+            ) : (
+              /* Phase 2 — real flip book, mounted once with authoritative pages */
+              /* @ts-expect-error react-pageflip typings */
+              <HTMLFlipBook
+                key={bookInstanceKey.current}
+                ref={flipBookRef}
+                width={dimensions.width}
+                height={dimensions.height}
+                size="stretch"
+                minWidth={280}
+                maxWidth={540}
+                minHeight={360}
+                maxHeight={640}
+                maxShadowOpacity={0.5}
+                showCover={false}
+                mobileScrollSupport={true}
+                onFlip={(e: any) => {
+                  const currentFlipPage = e.data;
+                  setSpreadIndex(Math.floor(currentFlipPage / 2));
+                }}
+                className="apple-book-3d-flipbook"
+              >
+                {flipBookPages.map((pageContent, idx) => (
+                  <FlippableBookPage
+                    key={idx}
+                    pageNumber={idx + 1}
+                    totalPages={flipBookPages.length}
+                    title={formData.title}
+                    dateLabel={dateLabel}
+                    shortDate={shortDate}
+                    content={pageContent}
+                    isJournal={formData.isJournal}
+                    wordCount={0}
+                  />
+                ))}
+              </HTMLFlipBook>
+            )}
           </div>
         ) : (
           /* ── CLEAN NORMAL DOCUMENT EDITOR ── */
