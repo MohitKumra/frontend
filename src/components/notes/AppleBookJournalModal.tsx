@@ -51,6 +51,7 @@ import {
   type JournalDraft,
 } from './journalDocument';
 import {
+  computePageMetrics,
   createPaginationProbe,
   paginateDocument,
   updateProbeFonts,
@@ -396,66 +397,36 @@ export function AppleBookJournalModal({
 
   const recalculatePagination = useCallback(() => {
     const html = normalizeDocumentHtml(formData.content || '');
-    const blocks = extractDocumentBlocks(html);
-
-    if (blocks.length === 0) {
+    if (!html.trim()) {
       setPages(['']);
       return;
     }
 
+    const probe = probeRef.current;
     const pageWidth = Math.max(300, Math.min(540, leftPageRef.current?.clientWidth ?? dimensions.width));
-    const charsPerPage = Math.max(420, Math.min(720, Math.floor(pageWidth * 1.7)));
-    const nextPages: string[] = [];
-    let current = '';
+    const pageHeight = Math.max(360, Math.min(640, dimensions.height));
 
-    const flushCurrent = () => {
-      if (current.trim()) {
-        nextPages.push(current.trim());
-        current = '';
-      }
-    };
-
-    for (const block of blocks) {
-      const blockText = block.replace(/<[^>]*>/g, ' ');
-      const blockLength = blockText.replace(/\s+/g, ' ').trim().length;
-      const candidate = current ? `${current}${block}` : block;
-      const candidateLength = candidate.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().length;
-
-      if (current && candidateLength > charsPerPage && blockLength <= charsPerPage) {
-        flushCurrent();
-      }
-
-      if (blockLength > charsPerPage) {
-        if (current.trim()) flushCurrent();
-        const split = block.split(/\s+(?=\S)/g);
-        let chunk = '';
-        for (const part of split) {
-          const candidateChunk = chunk ? `${chunk} ${part}` : part;
-          const chunkLength = candidateChunk.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().length;
-          if (chunk && chunkLength > charsPerPage) {
-            nextPages.push(chunk.trim());
-            chunk = part;
-          } else {
-            chunk = candidateChunk;
-          }
-        }
-        if (chunk.trim()) nextPages.push(chunk.trim());
-        continue;
-      }
-
-      if (current && candidateLength > charsPerPage) {
-        flushCurrent();
-      }
-
-      current = candidate;
+    if (!probe) {
+      setPages([html]);
+      return;
     }
 
-    if (current.trim()) {
-      nextPages.push(current.trim());
-    }
+    updateProbeFonts(probe, {
+      fontFamily: activeFontConfig.css,
+      fontSizePx: activeSizeConfig.sizePx,
+      lineHeight: activeSizeConfig.leading,
+    });
 
-    setPages(nextPages.length ? nextPages : ['']);
-  }, [formData.content, dimensions.width]);
+    const metrics = computePageMetrics({
+      pageWidth,
+      pageHeight,
+      liveInner: leftPageRef.current,
+      liveBody: pageBodyRef.current,
+      hasTitle: true,
+    });
+
+    setPages(paginateDocument(probe, html, metrics));
+  }, [formData.content, dimensions.width, dimensions.height, activeFontConfig.css, activeSizeConfig.sizePx, activeSizeConfig.leading]);
 
   useEffect(() => {
     recalculatePagination();
@@ -483,6 +454,12 @@ export function AppleBookJournalModal({
     if (mode !== 'read' || showCover) return;
     recalculatePagination();
   }, [mode, showCover, recalculatePagination]);
+
+  useEffect(() => {
+    if (mode === 'read') {
+      recalculatePagination();
+    }
+  }, [mode, theme, font, fontSize, recalculatePagination]);
 
   const flipBookPages = useMemo(() => {
     const list = pages.length > 0 ? [...pages] : [formData.content || ''];
@@ -624,6 +601,23 @@ export function AppleBookJournalModal({
     return () => document.removeEventListener('selectionchange', updateActiveFormats);
   }, [updateActiveFormats]);
 
+  const saveSelectionRange = useCallback(() => {
+    const el = editorRef.current;
+    const sel = window.getSelection();
+    if (!el || !sel || sel.rangeCount === 0) return null;
+
+    const range = sel.getRangeAt(0);
+    if (!el.contains(range.commonAncestorContainer)) return null;
+    return range.cloneRange();
+  }, []);
+
+  const restoreSelectionRange = useCallback((range: Range | null) => {
+    const sel = window.getSelection();
+    if (!sel || !range) return;
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }, []);
+
   // ─── Shared: capture full innerHTML after any programmatic DOM mutation ───
   // Sets suppressInputRef so the onInput handler ignores spurious events fired
   // by execCommand / DOM mutation ops, then reads the final innerHTML in the
@@ -654,123 +648,74 @@ export function AppleBookJournalModal({
   const applyHighlight = useCallback((color: string) => {
     const el = editorRef.current;
     if (!el) return;
-    el.focus();
+
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
+    const activeRange = saveSelectionRange();
+    if (!activeRange || activeRange.collapsed) return;
+
+    el.focus();
     suppressInputRef.current = true;
 
     if (color === 'transparent') {
-      // ── Remove highlight ─────────────────────────────────────────────────
-      // Strategy: find every highlighted <span>/<mark> that overlaps the
-      // selection and strip its backgroundColor. If the element becomes
-      // style-less afterwards, replace it with its own children (unwrap).
-      // We work on a snapshot of all descendants so DOM mutations during the
-      // loop don't affect the iterator.
-      const allSpans = Array.from(
-        el.querySelectorAll<HTMLElement>('span[style], mark[style]')
-      );
-
-      const range = sel.isCollapsed ? null : sel.getRangeAt(0);
+      const range = activeRange.cloneRange();
+      const allSpans = Array.from(el.querySelectorAll<HTMLElement>('span[style], mark[style]'));
 
       for (const span of allSpans) {
         if (!span.style.backgroundColor) continue;
-
-        // Only touch nodes that overlap the current selection (or all if
-        // the cursor is just positioned somewhere — strip the nearest one).
-        const overlaps = !range || sel.containsNode(span, true);
-        if (!overlaps) continue;
+        if (!range.intersectsNode(span)) continue;
 
         span.style.backgroundColor = '';
-
-        // Unwrap if no styles remain and the tag is purely decorative.
-        if (
-          !span.style.cssText.trim() &&
-          (span.tagName === 'SPAN' || span.tagName === 'MARK')
-        ) {
+        if (!span.style.cssText.trim() && (span.tagName === 'SPAN' || span.tagName === 'MARK')) {
           span.replaceWith(...Array.from(span.childNodes));
         }
       }
-
-      // If nothing was stripped via selection (e.g. collapsed cursor inside
-      // a highlight), walk up the ancestor chain and strip the nearest parent.
-      if (allSpans.every((s) => s.style.backgroundColor)) {
-        let node: Node | null = sel.focusNode;
-        while (node && node !== el) {
-          if (
-            node.nodeType === Node.ELEMENT_NODE &&
-            (node as HTMLElement).style?.backgroundColor
-          ) {
-            (node as HTMLElement).style.backgroundColor = '';
-            if (
-              !(node as HTMLElement).style.cssText.trim() &&
-              ((node as HTMLElement).tagName === 'SPAN' || (node as HTMLElement).tagName === 'MARK')
-            ) {
-              (node as HTMLElement).replaceWith(...Array.from(node.childNodes));
-            }
-            break;
-          }
-          node = node.parentNode;
-        }
-      }
     } else {
-      // ── Apply highlight ──────────────────────────────────────────────────
-      if (sel.isCollapsed) {
-        suppressInputRef.current = false;
-        return; // nothing to highlight if no text selected
-      }
-      const range = sel.getRangeAt(0);
+      const range = activeRange.cloneRange();
       const span = document.createElement('span');
       span.style.backgroundColor = color;
+
       try {
         range.surroundContents(span);
       } catch {
-        // Cross-element selection — extract then wrap
         const fragment = range.extractContents();
         span.appendChild(fragment);
         range.insertNode(span);
       }
     }
 
-    sel.removeAllRanges();
+    restoreSelectionRange(activeRange.cloneRange());
     commitEditorContent();
-  }, [commitEditorContent]);
+  }, [commitEditorContent, restoreSelectionRange, saveSelectionRange]);
 
   // ─── Block format with toggle: applies the tag, or removes it if already active ─
   const applyBlockFormat = useCallback((tag: 'h2' | 'h3' | 'blockquote') => {
     const el = editorRef.current;
     if (!el) return;
-    el.focus();
 
+    const activeRange = saveSelectionRange();
+    if (!activeRange || activeRange.collapsed) return;
+
+    el.focus();
     suppressInputRef.current = true;
 
-    const sel = window.getSelection();
-    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-
-    // Detect whether the cursor/selection is already inside the target tag.
-    // If so, unwrap it back to a plain paragraph (toggle off).
+    const range = activeRange.cloneRange();
     const isActive = (() => {
-      if (!range) return false;
       let node: Node | null = range.commonAncestorContainer;
       while (node && node !== el) {
-        if (
-          node.nodeType === Node.ELEMENT_NODE &&
-          (node as HTMLElement).tagName.toLowerCase() === tag
-        ) return true;
+        if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName.toLowerCase() === tag) {
+          return true;
+        }
         node = node.parentNode;
       }
       return false;
     })();
 
     if (isActive) {
-      // Toggle OFF — replace the block element with a plain <p> containing
-      // the same HTML content.
-      let node: Node | null = range!.commonAncestorContainer;
+      let node: Node | null = range.commonAncestorContainer;
       while (node && node !== el) {
-        if (
-          node.nodeType === Node.ELEMENT_NODE &&
-          (node as HTMLElement).tagName.toLowerCase() === tag
-        ) break;
+        if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName.toLowerCase() === tag) break;
         node = node.parentNode;
       }
       if (node && node !== el) {
@@ -779,28 +724,18 @@ export function AppleBookJournalModal({
         el.replaceChild(p, node);
       }
     } else {
-      // Toggle ON — try native execCommand first, then manual wrap.
-      let ok = false;
-      try { ok = document.execCommand('formatBlock', false, `<${tag}>`); } catch { ok = false; }
-      if (!ok) {
-        try { ok = document.execCommand('formatBlock', false, tag); } catch { ok = false; }
-      }
-      if (!ok && range) {
-        let node: Node | null = range.commonAncestorContainer;
-        while (node && node.parentNode !== el) node = node.parentNode;
-        if (node && node !== el) {
-          const wrapper = document.createElement(tag);
-          wrapper.innerHTML =
-            node.nodeType === Node.ELEMENT_NODE
-              ? (node as HTMLElement).innerHTML
-              : node.textContent ?? '';
-          el.replaceChild(wrapper, node);
-        }
-      }
+      const wrapper = document.createElement(tag);
+      const fragment = range.extractContents();
+      wrapper.appendChild(fragment);
+      range.insertNode(wrapper);
+      const newRange = document.createRange();
+      newRange.selectNodeContents(wrapper);
+      restoreSelectionRange(newRange);
     }
 
+    restoreSelectionRange(activeRange.cloneRange());
     commitEditorContent();
-  }, [commitEditorContent]);
+  }, [commitEditorContent, restoreSelectionRange, saveSelectionRange]);
 
   // ─── Generic rich format (bold, italic, underline, lists …) ──────────────
   const applyRichFormat = useCallback((command: string, value?: string) => {
@@ -814,13 +749,29 @@ export function AppleBookJournalModal({
 
     const el = editorRef.current;
     if (!el) return;
-    suppressInputRef.current = true;
+
+    const savedRange = saveSelectionRange();
     el.focus();
-    try { document.execCommand(command, false, value); } catch (e) {
+    suppressInputRef.current = true;
+
+    try {
+      if (savedRange) {
+        const sel = window.getSelection();
+        if (sel) {
+          sel.removeAllRanges();
+          sel.addRange(savedRange);
+        }
+      }
+      document.execCommand(command, false, value);
+      if (savedRange) {
+        restoreSelectionRange(savedRange.cloneRange());
+      }
+    } catch (e) {
       console.warn('execCommand:', e);
     }
+
     commitEditorContent();
-  }, [applyHighlight, applyBlockFormat, commitEditorContent]);
+  }, [applyHighlight, applyBlockFormat, commitEditorContent, restoreSelectionRange, saveSelectionRange]);
 
   // ─── Undo / Redo ─────────────────────────────────────────────────────────
   // Let the browser handle its own contentEditable undo stack natively.
