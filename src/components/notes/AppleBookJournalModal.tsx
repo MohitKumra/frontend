@@ -124,6 +124,15 @@ const FONT_SIZES: Record<BookFontSize, { sizePx: number; leading: number }> = {
   xl: { sizePx: 21, leading: 1.95 },
 };
 
+/** Shared bookmark colour → hex map used across the cover picker, page tab and TOC */
+const BOOKMARK_COLORS: Record<string, string> = {
+  red:    '#c0392b',
+  yellow: '#d4a017',
+  blue:   '#2563eb',
+  green:  '#16a34a',
+  purple: '#7c3aed',
+} as const;
+
 /**
  * Render journal content for the read view.
  *
@@ -185,14 +194,7 @@ const FlippableBookPage = React.forwardRef<
   }
 >((props, ref) => {
   // Map BookmarkColor → CSS custom-property value used by the tab
-  const colorMap: Record<import('../../types').BookmarkColor, string> = {
-    red:    '#c0392b',
-    yellow: '#d4a017',
-    blue:   '#2563eb',
-    green:  '#16a34a',
-    purple: '#7c3aed',
-  };
-  const tabColor = props.bookmarkColor ? colorMap[props.bookmarkColor] : null;
+  const tabColor = props.bookmarkColor ? BOOKMARK_COLORS[props.bookmarkColor] : null;
 
   return (
     <div className="apple-book-flip-page" ref={ref} data-density="soft">
@@ -308,6 +310,8 @@ export function AppleBookJournalModal({
   const [bookmarkSaving, setBookmarkSaving] = useState(false);
   // Toast shown when user tries to add a 6th bookmark
   const [bookmarkLimitToast, setBookmarkLimitToast] = useState(false);
+  // Picker shown on the cover when there are multiple bookmarks
+  const [bookmarkPickerOpen, setBookmarkPickerOpen] = useState(false);
 
   // Keep bookmarks in sync if the note prop changes (e.g. after a save)
   // Only update when note.id changes or bookmarks array reference changes
@@ -409,6 +413,9 @@ export function AppleBookJournalModal({
   const [paginationReady, setPaginationReady] = useState(false);
   // Counts how many of the two probe refs (inner + body) have fired.
   const refsPopulatedCountRef = useRef(0);
+  // When opening to a specific bookmark, store the target spread here so the
+  // useEffect below can flip to it once paginationReady fires.
+  const openToSpreadRef = useRef<number | null>(null);
 
   const activeThemeConfig = useMemo(() => THEMES.find((t) => t.id === theme) ?? THEMES[0], [theme]);
   const activeFontConfig = useMemo(() => FONTS.find((f) => f.id === font) ?? FONTS[0], [font]);
@@ -597,7 +604,29 @@ export function AppleBookJournalModal({
       setShowCover(false);
       setMode('read');
       setCoverOpening('idle');
-      setSpreadIndex(0);
+      setSpreadIndex(0);   // always page 1
+    }, 650);
+  };
+
+  /**
+   * Open the book directly to the spread that contains `pageNumber`.
+   * Used by the cover bookmark ribbon (single bookmark) and the
+   * picker popup (multiple bookmarks).
+   */
+  const openToBookmark = (pageNumber: number) => {
+    if (coverOpening === 'opening') return;
+    const targetSpread = Math.floor((pageNumber - 1) / 2);
+    // Store the target so the paginationReady effect can flip to it after mount
+    openToSpreadRef.current = targetSpread;
+    setBookmarkPickerOpen(false);
+    setCoverOpening('opening');
+    setTimeout(() => {
+      // Set spreadIndex so the probe renders the right page count context,
+      // then let the paginationReady effect do the actual flip() call.
+      setSpreadIndex(targetSpread);
+      setShowCover(false);
+      setMode('read');
+      setCoverOpening('idle');
     }, 650);
   };
 
@@ -657,6 +686,60 @@ export function AppleBookJournalModal({
       refsPopulatedCountRef.current = 0;
     }
   }, [mode, showCover]);
+
+  // Once the flip book is fully mounted and pagination is ready, if we opened
+  // to a specific bookmark spread, flip to it now.
+  // NOTE: The real StPageFlip controller is only assigned inside the child
+  // HTMLFlipBook effect, one render AFTER paginationReady flips to true. The
+  // imperative handle (flipBookRef.current.pageFlip) is exposed immediately,
+  // so a single requestAnimationFrame can fire before the controller exists,
+  // silently dropping the flip and leaving the book stuck on page 1. We poll a
+  // short window until the controller is genuinely available and only clear
+  // openToSpreadRef once the flip has actually been applied.
+  useEffect(() => {
+    if (!paginationReady) return;
+    const targetSpread = openToSpreadRef.current;
+    if (targetSpread === null) return;
+    // Target is the very first spread (pages 1-2) — the book already mounts
+    // there, so there is nothing to flip to.
+    if (targetSpread <= 0) {
+      openToSpreadRef.current = null;
+      return;
+    }
+    const targetPage = targetSpread * 2;
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const tryFlip = () => {
+      if (cancelled) return;
+      // pageFlip() returns the underlying controller (or undefined until the
+      // child effect has created it).
+      const flip = flipBookRef.current?.pageFlip();
+      if (flip) {
+        // Only flip if we are not already on the target spread.
+        if (flip.getCurrentPageIndex() !== targetPage) {
+          flip.flip(targetPage);
+        }
+        openToSpreadRef.current = null;
+        return;
+      }
+      // Controller not ready yet — retry for ~800ms, then give up gracefully.
+      if (attempts < 40) {
+        attempts += 1;
+        requestAnimationFrame(tryFlip);
+      } else {
+        openToSpreadRef.current = null;
+      }
+    };
+
+    // Defer one frame so the flip book sibling renders before we start polling.
+    const raf = requestAnimationFrame(tryFlip);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [paginationReady]);
 
   const handleSave = async () => {
     if (!onSave || isSaving) return;
@@ -1167,13 +1250,6 @@ export function AppleBookJournalModal({
                     .sort((a, b) => a.pageNumber - b.pageNumber)
                     .map((bm) => {
                       const spreadIdx = Math.floor((bm.pageNumber - 1) / 2);
-                      const colorHex: Record<import('../../types').BookmarkColor, string> = {
-                        red:    '#c0392b',
-                        yellow: '#d4a017',
-                        blue:   '#2563eb',
-                        green:  '#16a34a',
-                        purple: '#7c3aed',
-                      };
                       return (
                         <button
                           key={bm.id}
@@ -1198,7 +1274,7 @@ export function AppleBookJournalModal({
                           {/* Ribbon swatch */}
                           <span
                             className="apple-book-bm-swatch"
-                            style={{ background: colorHex[bm.color] }}
+                            style={{ background: BOOKMARK_COLORS[bm.color] }}
                           />
                           <div className="flex-1 text-left min-w-0">
                             <span className="block font-semibold truncate">
@@ -1353,6 +1429,7 @@ export function AppleBookJournalModal({
         {showCover ? (
           /* Hardcover presentation */
           <div className="apple-book-cover-stage">
+            {/* 3D book — purely visual, NO interactive children inside the transform */}
             <div className={`apple-book-hardcover-wrapper ${coverOpening === 'opening' ? 'is-opening' : ''}`}>
               <div className="apple-book-hardcover">
                 <div className="apple-book-hardcover-spine" />
@@ -1378,10 +1455,77 @@ export function AppleBookJournalModal({
                   </button>
                 </div>
                 <div className="apple-book-hardcover-pages-stack" />
-                {/* Ribbon bookmark hanging from top */}
-                <div className="apple-book-hardcover-ribbon" />
+                {/* Decorative ribbon — purely visual div, never interactive */}
+                {bookmarks.length > 0 && <div className="apple-book-hardcover-ribbon" />}
               </div>
             </div>
+
+            {/* ── Bookmark pill — completely outside the 3D transform wrapper.
+                 No pointer-events, stacking-context, or overflow issues here. ── */}
+            {bookmarks.length > 0 && coverOpening !== 'opening' && (
+              <button
+                className="apple-book-cover-bm-trigger"
+                onClick={() => {
+                  if (bookmarks.length === 1) {
+                    openToBookmark(bookmarks[0].pageNumber);
+                  } else {
+                    setBookmarkPickerOpen((v) => !v);
+                  }
+                }}
+              >
+                <Bookmark size={14} />
+                <span>
+                  {bookmarks.length === 1
+                    ? `Jump to page ${bookmarks[0].pageNumber}`
+                    : `${bookmarks.length} Bookmarks`}
+                </span>
+              </button>
+            )}
+
+            {/* ── Bookmark picker popup ─────────────────────────────── */}
+            {bookmarkPickerOpen && bookmarks.length > 1 && (
+              <>
+                <div
+                  className="apple-book-cover-bm-backdrop"
+                  onClick={() => setBookmarkPickerOpen(false)}
+                />
+                <div className="apple-book-cover-bm-picker" role="dialog" aria-label="Choose a bookmarked page">
+                  <div className="apple-book-cover-bm-picker-header">
+                    <Bookmark size={13} />
+                    <span>Jump to bookmark</span>
+                    <button
+                      className="apple-book-cover-bm-picker-close"
+                      onClick={() => setBookmarkPickerOpen(false)}
+                      aria-label="Close"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                  <div className="apple-book-cover-bm-picker-list">
+                    {[...bookmarks]
+                      .sort((a, b) => a.pageNumber - b.pageNumber)
+                      .map((bm) => (
+                        <button
+                          key={bm.id}
+                          className="apple-book-cover-bm-picker-item"
+                          onClick={() => openToBookmark(bm.pageNumber)}
+                        >
+                          <span
+                            className="apple-book-cover-bm-picker-swatch"
+                            style={{ background: BOOKMARK_COLORS[bm.color] }}
+                          />
+                          <span className="apple-book-cover-bm-picker-label">
+                            {bm.label || `Page ${bm.pageNumber}`}
+                          </span>
+                          <span className="apple-book-cover-bm-picker-page">
+                            p.{bm.pageNumber}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : mode === 'read' ? (
           /* ── 3D FLIPPABLE BOOK READING MODE ──────────────────────────── */
@@ -1817,6 +1961,37 @@ export function AppleBookJournalModal({
             </span>
           )}
         </div>
+
+        {/* ── In-read bookmark jump — only shown when book is open and bookmarks exist ── */}
+        {!showCover && bookmarks.length > 0 && (
+          <div className="apple-book-bm-jump-bar">
+            {[...bookmarks]
+              .sort((a, b) => a.pageNumber - b.pageNumber)
+              .map((bm) => {
+                const spreadIdx = Math.floor((bm.pageNumber - 1) / 2);
+                const isActive = spreadIndex === spreadIdx;
+                return (
+                  <button
+                    key={bm.id}
+                    className={`apple-book-bm-jump-btn ${isActive ? 'is-active' : ''}`}
+                    style={{ '--bm-btn-color': BOOKMARK_COLORS[bm.color] } as React.CSSProperties}
+                    onClick={() => {
+                      setSpreadIndex(spreadIdx);
+                      setTimeout(() => {
+                        if (flipBookRef.current?.pageFlip) {
+                          flipBookRef.current.pageFlip().flip(spreadIdx * 2);
+                        }
+                      }, 30);
+                    }}
+                    title={bm.label || `Page ${bm.pageNumber}`}
+                  >
+                    <Bookmark size={11} />
+                    <span>p.{bm.pageNumber}</span>
+                  </button>
+                );
+              })}
+          </div>
+        )}
       </footer>
     </div>
   );

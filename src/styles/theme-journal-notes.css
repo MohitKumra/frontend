@@ -3888,6 +3888,7 @@
 
 /* Hardcover Stage */
 .apple-book-cover-stage {
+  position: relative;  /* anchors the picker popup and backdrop */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4666,6 +4667,229 @@
   box-shadow: inset -1px 0 2px rgba(255, 255, 255, 0.1);
 }
 
+/* ── Clickable ribbon button variant (REMOVED — ribbon is now purely decorative) ── */
+
+/* ── Cover bookmark floating pill trigger ─────────────────────────────── */
+/*
+  Lives directly in .apple-book-cover-stage, completely outside the 3D
+  transform wrapper. No pointer-event, stacking-context or overflow issues.
+*/
+.apple-book-cover-bm-trigger {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  /* !important: the global `button:not(:disabled)` rules in premium-motion.css
+     (hover => translateY(-1px), active => scale) have higher specificity and
+     would otherwise override this centering, making the pill jump left/up on
+     hover. Always keep the translateX(-50%) so it stays centered. */
+  transform: translateX(-50%) !important;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c0392b 0%, #922b21 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  box-shadow:
+    0 6px 20px rgba(192, 57, 43, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Transition transform + glow — NO translate-jump on hover. !important beats
+     the global `button:not(:disabled)` transition so the glow animates too. */
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+  white-space: nowrap;
+}
+
+/* Hover: a subtle scale + brighter glow (keeps centering, no translate). */
+.apple-book-cover-bm-trigger:hover {
+  transform: translateX(-50%) scale(1.05) !important;
+  box-shadow:
+    0 10px 28px rgba(192, 57, 43, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  filter: brightness(1.1);
+}
+
+/* Press: stay centered, only a tiny scale-down. */
+.apple-book-cover-bm-trigger:active {
+  transform: translateX(-50%) scale(0.97) !important;
+}
+
+/* ── In-read bookmark jump bar (bottom bar) ───────────────────────────── */
+.apple-book-bm-jump-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.apple-book-bm-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.apple-book-bm-jump-btn:hover {
+  background: var(--bm-btn-color, #c0392b);
+  border-color: transparent;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.apple-book-bm-jump-btn.is-active {
+  background: var(--bm-btn-color, #c0392b);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Cover bookmark picker popup ─────────────────────────────────────── */
+
+/* Full cover-stage backdrop — transparent, just catches outside clicks */
+.apple-book-cover-bm-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: transparent;
+}
+
+.apple-book-cover-bm-picker {
+  position: absolute;
+  /* Sits just below the ribbon, offset from the right edge of the cover */
+  top: 100px;
+  right: calc(50% - min(170px, 36vw) + 10px);
+  z-index: 40;
+  width: 220px;
+  background: linear-gradient(160deg, #2b1e14 0%, #1e1510 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 14px;
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  animation: bmPickerIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
+}
+
+@keyframes bmPickerIn {
+  from { opacity: 0; transform: scale(0.88) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Header row */
+.apple-book-cover-bm-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 14px 10px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+  color: #d4af37;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* Push close button to the right */
+.apple-book-cover-bm-picker-header span {
+  flex: 1;
+}
+
+.apple-book-cover-bm-picker-close {
+  background: transparent;
+  border: none;
+  color: rgba(212, 175, 55, 0.6);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.apple-book-cover-bm-picker-close:hover {
+  color: #d4af37;
+}
+
+/* Scrollable list */
+.apple-book-cover-bm-picker-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 6px 0;
+}
+
+.apple-book-cover-bm-picker-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Individual bookmark row */
+.apple-book-cover-bm-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.apple-book-cover-bm-picker-item:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.apple-book-cover-bm-picker-item:active {
+  background: rgba(212, 175, 55, 0.18);
+}
+
+/* Colour swatch — narrow ribbon strip */
+.apple-book-cover-bm-picker-swatch {
+  display: inline-block;
+  width: 6px;
+  height: 28px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Label — truncates if too long */
+.apple-book-cover-bm-picker-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f4e8d8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Page number badge on the right */
+.apple-book-cover-bm-picker-page {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(212, 175, 55, 0.7);
+  flex-shrink: 0;
+  font-family: Georgia, serif;
+}
+
 /* ── Hardcover satin ribbon bookmark ── */
 .apple-book-hardcover-ribbon {
   position: absolute;
@@ -4678,8 +4902,9 @@
   box-shadow:
     1px 2px 6px rgba(0, 0, 0, 0.5),
     inset 1px 0 2px rgba(255, 255, 255, 0.12);
-  z-index: 10;
-  pointer-events: none;
+  z-index: 20;          /* above the cover face */
+  pointer-events: none; /* plain div — not interactive */
+  padding: 0;
 }
 
 /* Ribbon tail — V-cut at bottom */
