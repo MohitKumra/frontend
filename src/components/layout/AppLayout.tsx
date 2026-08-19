@@ -58,7 +58,7 @@ const navItems = [
   { to: '/tasks', icon: CheckSquare, label: 'Tasks', badgeKey: 'tasks', onboarding: 'tasks' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar', onboarding: 'calendar' },
   { to: '/habits', icon: Target, label: 'Habits', badgeKey: 'habits', onboarding: 'habits' },
-  { to: '/notes', icon: FileText, label: 'Notes', onboarding: 'notes' },
+  { to: '/notes', icon: FileText, label: 'Notes & Journals', onboarding: 'notes' },
   { to: '/focus', icon: Timer, label: 'Focus', onboarding: 'focus' },
   { to: '/projects', icon: FolderKanban, label: 'Projects', onboarding: 'projects' },
   { to: '/goals', icon: Flag, label: 'Goals', onboarding: 'goals' },

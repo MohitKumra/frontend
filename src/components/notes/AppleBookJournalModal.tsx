@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  Sparkles,
   Sliders,
   Type,
   Palette,
@@ -32,8 +31,12 @@ import {
   Undo2,
   Redo2,
   Eraser,
+  ChevronDown,
+  Pencil,
+  Loader2,
 } from 'lucide-react';
-import type { NoteDTO } from '../../types';
+import type { NoteDTO, CoverStyle, BookStyle } from '../../types';
+import toast from 'react-hot-toast';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 import { MoodPicker } from './MoodPicker';
 import { TagInput } from './TagInput';
@@ -58,6 +61,20 @@ import {
   type PaginationFonts,
   type PaginationProbe,
 } from './journalPagination';
+import { BookCoverPickerModal, COVER_TEMPLATES } from './BookCoverPickerModal';
+import { LiveBookCover } from './LiveBookCover';
+import type { CoverProcessResult } from '../../lib/coverImageProcessor';
+import {
+  resolveCoverStyle,
+  setCachedCoverStyle,
+} from '../../features/notes/coverStyleCache';
+import {
+  resolveBookStyle,
+  setCachedBookStyle,
+} from '../../features/notes/bookStyleCache';
+
+export type JournalSaveReason = 'auto' | 'manual' | 'close' | 'cover';
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'unsaved';
 
 export type JournalSavePayload = {
   title: string;
@@ -68,11 +85,8 @@ export type JournalSavePayload = {
   attachmentUrl: string;
   voiceNoteUrl: string;
   contentVersion?: number;
+  coverStyle: CoverStyle | null;
 };
-
-export type JournalSaveReason = 'auto' | 'manual' | 'close';
-
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'unsaved';
 
 export type BookTheme = 'parchment' | 'sepia' | 'midnight' | 'paper' | 'emerald';
 export type BookFont = 'serif' | 'book' | 'sans' | 'script';
@@ -96,6 +110,26 @@ interface AppleBookJournalModalProps {
    * stays in sync.
    */
   onToggleBookmark?: (bookmarks: import('../../types').Bookmark[]) => Promise<void> | void;
+  /**
+   * Called when the user uploads a new custom cover.
+   * Receives the pre-processed image data — the parent must call
+   * notesApi.uploadCover() and return the updated NoteDTO.
+   */
+  onUploadCover?: (processed: CoverProcessResult) => Promise<NoteDTO | void>;
+  /** Called when the user removes the current cover. */
+  onRemoveCover?: () => Promise<void>;
+  /**
+   * Called when the user commits a cover text-style change (font, color, size).
+   * The parent persists it to the backend via notesApi.saveCoverStyle() and
+   * returns (or updates) the refreshed NoteDTO so the modal stays in sync.
+   */
+  onSaveCoverStyle?: (coverStyle: CoverStyle | null) => Promise<NoteDTO | void> | void;
+  /**
+   * Called when the user commits a reader-side book style change (theme, font,
+   * fontSize). The parent persists it to the backend via notesApi.saveBookStyle()
+   * and returns (or updates) the refreshed NoteDTO so the modal stays in sync.
+   */
+  onSaveBookStyle?: (bookStyle: BookStyle | null) => Promise<NoteDTO | void> | void;
   isSaving?: boolean;
   /** When true, persist the current editor contents before the modal closes (used by the read-book flow). */
   autoSaveOnClose?: boolean;
@@ -284,22 +318,120 @@ export function AppleBookJournalModal({
   onSave,
   onDelete,
   onToggleBookmark,
+  onUploadCover,
+  onRemoveCover,
+  onSaveCoverStyle,
+  onSaveBookStyle,
   isSaving = false,
   autoSaveOnClose = false,
 }: AppleBookJournalModalProps) {
   const [mode, setMode] = useState<'read' | 'edit'>(initialMode);
   const [closing, setClosing] = useState(false);
-  const [theme, setTheme] = useState<BookTheme>('parchment');
-  const [font, setFont] = useState<BookFont>('serif');
-  const [fontSize, setFontSize] = useState<BookFontSize>('md');
+  const [theme, setTheme] = useState<BookTheme>(
+    (resolveBookStyle(note?.id, note?.bookStyle)?.theme as BookTheme) ?? 'parchment',
+  );
+  const [font, setFont] = useState<BookFont>(
+    (resolveBookStyle(note?.id, note?.bookStyle)?.font as BookFont) ?? 'serif',
+  );
+  const [fontSize, setFontSize] = useState<BookFontSize>(
+    (resolveBookStyle(note?.id, note?.bookStyle)?.fontSize as BookFontSize) ?? 'md',
+  );
   const [spreadIndex, setSpreadIndex] = useState(0);
   const [showTOC, setShowTOC] = useState(false);
   const [showAppearance, setShowAppearance] = useState(false);
-  // Always start on the cover — the user opens from there
-  const [showCover, setShowCover] = useState(true);
-  // 'idle' | 'opening' — drives the CSS animation when user clicks "Open Book"
-  const [coverOpening, setCoverOpening] = useState<'idle' | 'opening'>('idle');
+  // Open directly in the editor for the create/edit flow; otherwise start on
+  // the cover (read flow opens the book from there).
+  const [showCover, setShowCover] = useState(initialMode !== 'edit');
+  // 'idle' | 'opening' | 'closing' — drives the CSS open/close animations
+  const [coverOpening, setCoverOpening] = useState<'idle' | 'opening' | 'closing'>('idle');
+  // Only the very first cover mount plays the drift-in animation; after the
+  // book has opened once, remounts (on close) should not re-trigger it.
+  const [hasAnimatedCoverEnter, setHasAnimatedCoverEnter] = useState(false);
+  // True while the book is still measuring/paginating. The open animation is
+  // deferred until `paginationReady`; meanwhile "Opening…" is shown on the
+  // cover so the book never appears stuck mid-animation.
+  const [pendingOpen, setPendingOpen] = useState(false);
   const [showExtrasDrawer, setShowExtrasDrawer] = useState(false);
+
+  // ── Cover picker state ─────────────────────────────────────────────────
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    resolveCoverStyle(note?.id, note?.coverStyle)?.templateId || null,
+  );
+  // Local cover URL — updated optimistically on upload success
+  const [localCoverUrl, setLocalCoverUrl] = useState<string | null>(note?.coverUrl ?? null);
+  // Cover typography / style customization — edited via the Text Style tab and
+  // applied live to the rendered cover, persisted on save. Initialized from the
+  // fast localStorage cache (falls back to the note's DB value) so the cover
+  // opens with the right style immediately.
+  const [coverStyle, setCoverStyle] = useState<CoverStyle | null>(
+    resolveCoverStyle(note?.id, note?.coverStyle),
+  );
+
+  // Keep localCoverUrl in sync when the note prop changes (e.g. after a save)
+  React.useEffect(() => {
+    setLocalCoverUrl(note?.coverUrl ?? null);
+  }, [note?.id, note?.coverUrl]);
+
+  // Keep coverStyle in sync when the note prop changes (e.g. after a save).
+  // Read the fast localStorage cache first (if present) so the cover opens
+  // instantly without waiting on a DB round-trip for the style.
+  React.useEffect(() => {
+    const cached = resolveCoverStyle(note?.id, note?.coverStyle);
+    setCoverStyle(cached);
+    setSelectedTemplateId(cached?.templateId || note?.coverStyle?.templateId || null);
+  }, [note?.id, note?.coverStyle]);
+
+  // Keep the localStorage cache fresh whenever the cover style changes so the
+  // cache always matches what the user last customized (mirrors backend).
+  React.useEffect(() => {
+    if (!note?.id) return;
+    setCachedCoverStyle(note.id, {
+      ...(coverStyle ?? {}),
+      templateId: selectedTemplateId ?? '',
+    } as CoverStyle);
+  }, [note?.id, coverStyle, selectedTemplateId]);
+
+  // ── Reader-side book style (theme / font / fontSize) persistence ─────────
+  // Debounced timer so swiping through appearance options doesn't fire a
+  // backend request on every click.
+  const bookStyleSaveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hydrate reader-side appearance from the fast cache (falls back to the
+  // note's DB value) whenever the note changes, so the pages open correctly.
+  React.useEffect(() => {
+    const bs = resolveBookStyle(note?.id, note?.bookStyle);
+    setTheme((bs?.theme as BookTheme) ?? 'parchment');
+    setFont((bs?.font as BookFont) ?? 'serif');
+    setFontSize((bs?.fontSize as BookFontSize) ?? 'md');
+  }, [note?.id, note?.bookStyle]);
+
+  // Keep the book-style cache fresh whenever the appearance changes.
+  React.useEffect(() => {
+    if (!note?.id) return;
+    setCachedBookStyle(note.id, { theme, font, fontSize });
+  }, [note?.id, theme, font, fontSize]);
+
+  // Apply an appearance change optimistically (instant UI), write the local
+  // cache immediately, and debounce the backend save so it never feels laggy.
+  const updateBookStyle = React.useCallback(
+    (patch: Partial<BookStyle>) => {
+      setTheme((t) => (patch.theme as BookTheme) ?? t);
+      setFont((f) => (patch.font as BookFont) ?? f);
+      setFontSize((s) => (patch.fontSize as BookFontSize) ?? s);
+      if (!note?.id || !onSaveBookStyle) return;
+      const next: BookStyle = { theme, font, fontSize, ...patch };
+      if (bookStyleSaveTimerRef.current) clearTimeout(bookStyleSaveTimerRef.current);
+      bookStyleSaveTimerRef.current = setTimeout(() => {
+        void Promise.resolve(onSaveBookStyle(next)).catch((err) => {
+          console.error('[AppleBookJournal] Save book style failed:', err);
+        });
+      }, 500);
+    },
+    [theme, font, fontSize, note?.id, onSaveBookStyle],
+  );
+
+  // coverFaceStyle, activeCoverStyle, and cs are computed inside LiveBookCover.
 
   // ── Bookmark state — seeded from note prop, updated optimistically on toggle ──
   const [bookmarks, setBookmarks] = useState<import('../../types').Bookmark[]>(
@@ -342,6 +474,9 @@ export function AppleBookJournalModal({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [contentVersion, setContentVersion] = useState(note?.contentVersion ?? 1);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the content has unsaved edits since the last save, so closing
+  // the book can prompt the user to save or discard (there is no autosave).
+  const isDirtyRef = useRef(false);
 
   const [dimensions, setDimensions] = useState({
     width: Math.min(500, Math.max(300, Math.floor((window.innerWidth - 100) / 2))),
@@ -352,7 +487,7 @@ export function AppleBookJournalModal({
   // callback never closes over a stale value — the ref is updated on every
   // render, so whenever setEditorRef fires it reads the current note.
   const noteContentRef = useRef<string>(note?.content ?? '');
-  noteContentRef.current = note?.content ?? formData.content ?? '';
+  noteContentRef.current = formData.content || note?.content || '';
 
   useEffect(() => {
     if (note) {
@@ -397,6 +532,26 @@ export function AppleBookJournalModal({
   const probeRef = useRef<PaginationProbe | null>(null);
   const flipBookRef = useRef<any>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
+
+  // ── Page-flip sound ───────────────────────────────────────────────────────
+  const pageFlipAudioRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    const audio = new Audio('/sounds/page-flip.mp3');
+    audio.preload = 'auto';
+    audio.volume = 0.45;
+    pageFlipAudioRef.current = audio;
+    return () => {
+      audio.pause();
+      pageFlipAudioRef.current = null;
+    };
+  }, []);
+
+  const playPageFlip = useCallback(() => {
+    const audio = pageFlipAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {/* autoplay blocked — ignore */});
+  }, []);
   // Set to true while applyHighlight / applyBlockFormat are mutating the DOM
   // so the onInput handler ignores the spurious input event those ops fire.
   const suppressInputRef = useRef(false);
@@ -469,6 +624,11 @@ export function AppleBookJournalModal({
     const html = normalizeDocumentHtml(formData.content || '');
     if (!html.trim()) {
       setPages(['']);
+      // Empty/blank journals still need to be "ready" so the measurement probe
+      // unmounts (otherwise its refs keep firing and the open animation hangs).
+      if (leftPageRef.current && pageBodyRef.current) {
+        setPaginationReady(true);
+      }
       return;
     }
 
@@ -503,6 +663,34 @@ export function AppleBookJournalModal({
       setPaginationReady(true);
     }
   }, [formData.content, dimensions.width, dimensions.height, activeFontConfig.css, activeSizeConfig.sizePx, activeSizeConfig.leading]);
+
+  // Stable page-measurement ref callbacks. MUST be memoized + null-guarded:
+  // inline arrow refs are recreated every render, so React re-invokes them
+  // (null, then element) on every render; combined with recalculatePagination()
+  // calling setState that produced a "Maximum update depth exceeded" infinite
+  // loop — especially on empty journals where the probe never unmounts.
+  const handleInnerMount = useCallback(
+    (el: HTMLDivElement | null) => {
+      leftPageRef.current = el;
+      if (!el) return; // unmount — don't count or repaginate
+      refsPopulatedCountRef.current += 1;
+      if (refsPopulatedCountRef.current >= 2) {
+        recalculatePagination();
+      }
+    },
+    [recalculatePagination],
+  );
+  const handleBodyMount = useCallback(
+    (el: HTMLDivElement | null) => {
+      pageBodyRef.current = el;
+      if (!el) return;
+      refsPopulatedCountRef.current += 1;
+      if (refsPopulatedCountRef.current >= 2) {
+        recalculatePagination();
+      }
+    },
+    [recalculatePagination],
+  );
 
   useEffect(() => {
     recalculatePagination();
@@ -575,49 +763,184 @@ export function AppleBookJournalModal({
       ...formData,
       content: normalized,
       contentVersion,
+      // Persist the selected template id inside the coverStyle JSON so the
+      // preset survives save/reload (coverStyle is a JSON column — no migration).
+      coverStyle: { ...(coverStyle ?? {}), templateId: selectedTemplateId ?? '' } as CoverStyle | null,
     };
   };
 
-  const handleClose = async () => {
-    if (autoSaveOnClose && mode === 'edit' && onSave && !isSaving) {
-      try {
-        await onSave(buildSavePayload());
-      } catch (err) {
-        console.error('Auto-save on close failed:', err);
-      }
+  /**
+   * Persist a preset-template cover selection to the backend immediately,
+   * mirroring the photo-upload path. Without this the selection is only local
+   * React state and is lost in read mode (autosave-on-close only runs while
+   * editing), so preset covers would silently revert on close/reopen.
+   */
+  const persistCoverTemplate = async (tplId: string) => {
+    if (!onSave) {
+      console.warn('[AppleBookJournal] Cover template not persisted: onSave not provided', { tplId });
+      return;
     }
+    try {
+      const payload = buildSavePayload();
+      // The handler runs before the setSelectedTemplateId() render lands, so
+      // bake the newly-chosen id directly into the payload's coverStyle.
+      payload.coverStyle = { ...(coverStyle ?? {}), templateId: tplId } as CoverStyle | null;
+      console.log('[AppleBookJournal] Saving cover template:', tplId);
+      const result = await onSave(payload, { reason: 'cover' });
+      console.log('[AppleBookJournal] Cover template saved:', tplId, result);
+    } catch (err) {
+      console.error('[AppleBookJournal] Failed to save cover template:', tplId, err);
+    }
+  };
+
+  const closeModal = () => {
+    setClosing(true);
+    setTimeout(onClose, 300);
+  };
+
+  const doSaveAndClose = async () => {
+    if (!onSave) {
+      isDirtyRef.current = false;
+      return closeModal();
+    }
+    try {
+      setSaveStatus('saving');
+      await onSave(buildSavePayload(), { reason: 'manual' });
+      isDirtyRef.current = false;
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error('[AppleBookJournal] Save before close failed:', err);
+      setSaveStatus('error');
+      return;
+    }
+    closeModal();
+  };
+
+  const doDiscardAndClose = () => {
+    isDirtyRef.current = false;
+    closeModal();
+  };
+
+  const handleClose = async () => {
+    // Flush any pending (debounced) book-style save before closing so the last
+    // appearance change is never lost.
+    if (bookStyleSaveTimerRef.current && onSaveBookStyle && note?.id) {
+      clearTimeout(bookStyleSaveTimerRef.current);
+      bookStyleSaveTimerRef.current = null;
+      void Promise.resolve(onSaveBookStyle({ theme, font, fontSize })).catch(() => {});
+    }
+
+    // If there are unsaved edits, ask the user to save or discard instead of
+    // silently saving or closing (there is no autosave while typing).
+    if (isDirtyRef.current && onSave && !isSaving) {
+      toast(
+        (t) => (
+          <div style={{ padding: '12px 14px', minWidth: 280 }}>
+            <p style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 700 }}>You have unsaved changes</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  void doSaveAndClose();
+                }}
+                style={{
+                  padding: '6px 12px', fontSize: 13, fontWeight: 700, borderRadius: 8,
+                  border: 'none', cursor: 'pointer', color: '#fff',
+                  background: 'var(--gradient-accent, #7c5cff)',
+                }}
+              >
+                Save changes
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  doDiscardAndClose();
+                }}
+                style={{
+                  padding: '6px 12px', fontSize: 13, fontWeight: 600, borderRadius: 8,
+                  border: '1px solid rgba(128,128,128,0.4)', background: 'transparent',
+                  color: 'inherit', cursor: 'pointer',
+                }}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: Infinity },
+      );
+      return; // keep the modal open until the user chooses
+    }
+
     setClosing(true);
     setTimeout(onClose, 300);
   };
 
   /**
    * Plays the cover-open animation then transitions to the read view.
-   * Phase 1 (0–650ms): CSS class 'is-opening' drives a 3D tilt-open keyframe.
+   * Phase 1 (0–650ms): CSS class 'is-opening' drives the cover swinging open.
    * Phase 2 (650ms): hide cover, reset animation state, show read mode.
    */
-  const handleOpenBook = () => {
-    if (coverOpening === 'opening') return; // prevent double-click
+  const performOpen = (onDone?: () => void) => {
+    if (coverOpening !== 'idle') return;
+    setHasAnimatedCoverEnter(true);
     setCoverOpening('opening');
     setTimeout(() => {
       setShowCover(false);
       setMode('read');
       setCoverOpening('idle');
-      setSpreadIndex(0);   // always page 1
+      setSpreadIndex(0);
+      onDone?.();
     }, 650);
+  };
+
+  /**
+   * Opens the book only once it is ready (measured/paginated). If the book
+   * isn't ready yet, it defers the animation and shows "Opening…" on the cover
+   * so the book never appears stuck mid-animation.
+   */
+  const handleOpenBook = () => {
+    if (coverOpening !== 'idle' || pendingOpen) return;
+    if (!paginationReady) {
+      setPendingOpen(true);
+      return;
+    }
+    performOpen();
+  };
+
+  // When the book becomes ready while an open is pending, kick off the animation.
+  useEffect(() => {
+    if (pendingOpen && paginationReady) {
+      setPendingOpen(false);
+      performOpen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingOpen, paginationReady]);
+
+  /**
+   * Plays the cover-close animation (mirror of the open) and settles the book
+   * back onto the cover. Mirrored poses make open→close a connected loop.
+   */
+  const handleCloseBook = () => {
+    if (coverOpening !== 'idle' || pendingOpen) return;
+    setShowCover(true);       // swap to the cover stage so it can animate shut
+    setCoverOpening('closing');
+    setShowTOC(false);
+    setShowAppearance(false);
+    setTimeout(() => setCoverOpening('idle'), 650);
   };
 
   /**
    * Open/close the book from the top-bar toggle.
    * - Closed (cover): opens the book (plays the cover-open animation).
-   * - Open: returns to the cover and closes any open drawers.
+   * - Open: closes the book (plays the cover-close animation).
    */
   const handleToggleBook = () => {
+    if (coverOpening !== 'idle' || pendingOpen) return;
     if (showCover) {
       handleOpenBook();
     } else {
-      setShowCover(true);
-      setShowTOC(false);
-      setShowAppearance(false);
+      handleCloseBook();
     }
   };
 
@@ -627,20 +950,16 @@ export function AppleBookJournalModal({
    * picker popup (multiple bookmarks).
    */
   const openToBookmark = (pageNumber: number) => {
-    if (coverOpening === 'opening') return;
+    if (coverOpening !== 'idle' || pendingOpen) return;
     const targetSpread = Math.floor((pageNumber - 1) / 2);
     // Store the target so the paginationReady effect can flip to it after mount
     openToSpreadRef.current = targetSpread;
     setBookmarkPickerOpen(false);
-    setCoverOpening('opening');
-    setTimeout(() => {
-      // Set spreadIndex so the probe renders the right page count context,
-      // then let the paginationReady effect do the actual flip() call.
-      setSpreadIndex(targetSpread);
-      setShowCover(false);
-      setMode('read');
-      setCoverOpening('idle');
-    }, 650);
+    if (!paginationReady) {
+      setPendingOpen(true);
+      return;
+    }
+    performOpen(() => setSpreadIndex(targetSpread));
   };
 
   /**
@@ -690,15 +1009,6 @@ export function AppleBookJournalModal({
       setBookmarkSaving(false);
     }
   };
-
-  // Reset pagination gate whenever read mode is entered so the probe page
-  // re-fires and we always get a fresh live-measurement pass.
-  useEffect(() => {
-    if (mode === 'read' && !showCover) {
-      setPaginationReady(false);
-      refsPopulatedCountRef.current = 0;
-    }
-  }, [mode, showCover]);
 
   /**
    * Jump an already-mounted flip book to a given spread (0-based) WITH a single
@@ -790,7 +1100,7 @@ export function AppleBookJournalModal({
       cancelled = true;
       cancelAnimationFrame(raf);
     };
-  }, [paginationReady]);
+  }, [paginationReady, showCover]);
 
   /**
    * Flip the open book to a given spread (0-based), waiting until the real
@@ -817,6 +1127,26 @@ export function AppleBookJournalModal({
     requestAnimationFrame(tryFlip);
   };
 
+  // Commit any in-flight (still-debounced) editor changes to state BEFORE
+  // leaving the editor, so the reader paginates the latest text and nothing
+  // typed is lost when switching between Edit and 3D Reader.
+  const switchToReader = () => {
+    if (mode === 'edit' && editorRef.current) {
+      if (inputDebounceRef.current) {
+        clearTimeout(inputDebounceRef.current);
+        inputDebounceRef.current = null;
+      }
+      const raw = editorRef.current.innerHTML;
+      const normalized = normalizeDocumentHtml(raw) || raw || '';
+      const target = normalized || formData.content || '';
+      noteContentRef.current = target;
+      if (formData.content !== target) {
+        setFormData((prev) => ({ ...prev, content: target }));
+      }
+    }
+    setMode('read');
+  };
+
   const handleSave = async () => {
     if (!onSave || isSaving) return;
 
@@ -825,6 +1155,7 @@ export function AppleBookJournalModal({
       const payload = buildSavePayload();
       setFormData((prev) => ({ ...prev, content: payload.content }));
       await onSave(payload, { reason: 'manual' });
+      isDirtyRef.current = false;
       setSaveStatus('saved');
       setMode('read');
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -996,50 +1327,118 @@ export function AppleBookJournalModal({
   }, [commitEditorContent, restoreSelectionRange, saveSelectionRange]);
 
   // ─── Block format with toggle: applies the tag, or removes it if already active ─
+  // Operates on the exact block(s) containing the caret/selection and converts
+  // them IN PLACE (replace the element), so a heading can never be wrapped
+  // inside another block to create nesting like <p><h2>…</h2></p>. Removing a
+  // heading unwraps every heading ancestor down to a plain <p>, so nothing
+  // heading-like is left behind.
   const applyBlockFormat = useCallback((tag: 'h2' | 'h3' | 'blockquote') => {
     const el = editorRef.current;
     if (!el) return;
 
     const activeRange = saveSelectionRange();
-    if (!activeRange || activeRange.collapsed) return;
+    if (!activeRange) return;
 
     el.focus();
     suppressInputRef.current = true;
 
     const range = activeRange.cloneRange();
-    const isActive = (() => {
-      let node: Node | null = range.commonAncestorContainer;
-      while (node && node !== el) {
-        if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName.toLowerCase() === tag) {
-          return true;
-        }
-        node = node.parentNode;
-      }
-      return false;
-    })();
 
-    if (isActive) {
+    const BLOCK_RE = /^(p|h[1-6]|blockquote|li|pre|div)$/i;
+    const HEADING_RE = /^h[1-6]$/i;
+    // A leaf block is the smallest block that holds text/inline content. A
+    // <div> (or any block) containing further blocks is a container (e.g.
+    // Chrome's per-paragraph wrapper) and is skipped so we never collapse
+    // several paragraphs into one heading.
+    const isLeafBlock = (elm: Element) =>
+      BLOCK_RE.test(elm.tagName) &&
+      !elm.querySelector('p, h1, h2, h3, h4, h5, h6, blockquote, li, pre, div');
+
+    // Collect every leaf block touched by the caret/selection.
+    const affected = new Set<HTMLElement>();
+    const collect = (root: Node | null) => {
+      if (!root) return;
+      if (root.nodeType === Node.ELEMENT_NODE) {
+        const elm = root as HTMLElement;
+        if (isLeafBlock(elm)) {
+          affected.add(elm);
+          return;
+        }
+      }
+      root.childNodes.forEach(collect);
+    };
+    collect(range.commonAncestorContainer);
+
+    // For a collapsed caret, ensure the block containing the caret is included.
+    if (activeRange.collapsed) {
       let node: Node | null = range.commonAncestorContainer;
       while (node && node !== el) {
-        if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName.toLowerCase() === tag) break;
-        node = node.parentNode;
+        if (node.nodeType === Node.ELEMENT_NODE && isLeafBlock(node as HTMLElement)) {
+          affected.add(node as HTMLElement);
+          break;
+        }
+        node = node.parentElement;
       }
-      if (node && node !== el) {
-        const p = document.createElement('p');
-        p.innerHTML = (node as HTMLElement).innerHTML;
-        el.replaceChild(p, node);
-      }
-    } else {
-      const wrapper = document.createElement(tag);
-      const fragment = range.extractContents();
-      wrapper.appendChild(fragment);
-      range.insertNode(wrapper);
-      const newRange = document.createRange();
-      newRange.selectNodeContents(wrapper);
-      restoreSelectionRange(newRange);
     }
 
-    restoreSelectionRange(activeRange.cloneRange());
+    const toggled: HTMLElement[] = [];
+
+    for (const block of affected) {
+      // Only act on blocks that actually intersect a non-collapsed selection.
+      if (!activeRange.collapsed && !range.intersectsNode(block)) continue;
+
+      // Walk the ancestor chain collecting every heading above this block.
+      const headings: HTMLElement[] = [];
+      let cur: HTMLElement | null = block;
+      while (cur && cur !== el) {
+        if (HEADING_RE.test(cur.tagName)) headings.unshift(cur);
+        cur = cur.parentElement as HTMLElement | null;
+      }
+      const active = headings.some((h) => h.tagName.toLowerCase() === tag);
+
+      if (active) {
+        // Remove: replace the OUTERMOST heading ancestor with a plain <p> and
+        // flatten any headings nested inside it, so the text is a clean
+        // paragraph with no heading wrappers anywhere.
+        const outer = headings[0];
+        const flat = outer.innerHTML.replace(/<h[1-6][\s\S]*?<\/h[1-6]>/gi, (m) => {
+          const tmp = document.createElement('div');
+          tmp.innerHTML = m;
+          return tmp.textContent ?? '';
+        });
+        const p = document.createElement('p');
+        p.innerHTML = flat;
+        outer.replaceWith(p);
+        toggled.push(p);
+      } else {
+        // Apply: convert this leaf block to the target tag in place.
+        const node = document.createElement(tag);
+        node.innerHTML = block.innerHTML;
+        block.replaceWith(node);
+        toggled.push(node);
+      }
+    }
+
+    // Empty collapsed line (e.g. caret in the editor root) — create a heading.
+    if (toggled.length === 0 && activeRange.collapsed) {
+      const wrapper = document.createElement(tag);
+      wrapper.appendChild(document.createElement('br'));
+      range.insertNode(wrapper);
+      const finalRange = document.createRange();
+      finalRange.setStart(wrapper, 0);
+      finalRange.collapse(true);
+      restoreSelectionRange(finalRange);
+      toggled.push(wrapper);
+    }
+
+    // Put the caret back inside the first toggled block so typing continues.
+    if (toggled.length > 0) {
+      const finalRange = document.createRange();
+      finalRange.selectNodeContents(toggled[0]);
+      finalRange.collapse(false);
+      restoreSelectionRange(finalRange);
+    }
+
     commitEditorContent();
   }, [commitEditorContent, restoreSelectionRange, saveSelectionRange]);
 
@@ -1208,14 +1607,18 @@ export function AppleBookJournalModal({
         <div className="apple-book-mode-switcher">
           <button
             className={`apple-book-mode-btn ${mode === 'read' ? 'is-active' : ''}`}
-            onClick={() => setMode('read')}
+            onClick={switchToReader}
           >
             <BookOpen size={14} />
             <span>3D Reader</span>
           </button>
           <button
             className={`apple-book-mode-btn ${mode === 'edit' ? 'is-active' : ''}`}
-            onClick={() => setMode('edit')}
+            onClick={() => {
+              setMode('edit');
+              // Skip the cover and jump straight into the editor.
+              setShowCover(false);
+            }}
           >
             <PenTool size={14} />
             <span>Direct Book Editor</span>
@@ -1343,6 +1746,7 @@ export function AppleBookJournalModal({
                             setSpreadIndex(targetSpread);
                             // Also flip directly (works when the book is already open).
                             flipToSpread(targetSpread);
+                            playPageFlip();
                           }}
                         >
                           {/* Ribbon swatch */}
@@ -1392,6 +1796,7 @@ export function AppleBookJournalModal({
                         setShowCover(false);
                         setShowTOC(false);
                         flipToSpread(idx);
+                        playPageFlip();
                       }}
                     >
                       <BookOpen size={14} />
@@ -1443,7 +1848,7 @@ export function AppleBookJournalModal({
                     key={t.id}
                     className={`apple-book-theme-card ${theme === t.id ? 'is-active' : ''}`}
                     style={{ background: t.paper, color: t.text, borderColor: t.accent }}
-                    onClick={() => setTheme(t.id)}
+                    onClick={() => updateBookStyle({ theme: t.id })}
                   >
                     <span className="font-serif font-bold text-xs">Aa</span>
                     <span className="text-[10px] font-semibold mt-1">{t.name}</span>
@@ -1462,7 +1867,7 @@ export function AppleBookJournalModal({
                   <button
                     key={f.id}
                     className={`apple-book-font-item ${font === f.id ? 'is-active' : ''}`}
-                    onClick={() => setFont(f.id)}
+                    onClick={() => updateBookStyle({ font: f.id })}
                     style={{ fontFamily: f.css }}
                   >
                     <span>{f.name}</span>
@@ -1482,7 +1887,7 @@ export function AppleBookJournalModal({
                   <button
                     key={sz}
                     className={`apple-book-size-btn ${fontSize === sz ? 'is-active' : ''}`}
-                    onClick={() => setFontSize(sz)}
+                    onClick={() => updateBookStyle({ fontSize: sz })}
                   >
                     <span style={{ fontSize: sz === 'sm' ? 12 : sz === 'md' ? 14 : sz === 'lg' ? 16 : 19 }}>
                       Aa
@@ -1498,60 +1903,118 @@ export function AppleBookJournalModal({
 
       {/* ── MAIN STAGE ─────────────────────────────────────────────────── */}
       <main className="apple-book-stage">
+        {/*
+          Background pagination probe — measures the read layout in the
+          background while the cover is still shown, so paginationReady becomes
+          true before the user clicks "Open Book". Invisible and non-interactive;
+          fires onInnerMount / onBodyMount so recalculatePagination() can run
+          with real DOM measurements BEFORE the cover-open animation starts,
+          preventing the book from getting stuck mid-animation.
+        */}
+        {!paginationReady && (
+          <div
+            aria-hidden="true"
+            style={{ position: 'fixed', visibility: 'hidden', pointerEvents: 'none', top: 0, left: 0 }}
+          >
+            <FlippableBookPage
+              pageNumber={1}
+              totalPages={1}
+              title={formData.title}
+              dateLabel={dateLabel}
+              shortDate={shortDate}
+              content={flipBookPages[0] ?? ''}
+              isJournal={formData.isJournal}
+              wordCount={0}
+              onInnerMount={handleInnerMount}
+              onBodyMount={handleBodyMount}
+            />
+          </div>
+        )}
+
         {showCover ? (
           /* Hardcover presentation */
           <div className="apple-book-cover-stage">
             {/* 3D book — purely visual, NO interactive children inside the transform */}
-            <div className={`apple-book-hardcover-wrapper ${coverOpening === 'opening' ? 'is-opening' : ''}`}>
+            <div className={`apple-book-hardcover-wrapper ${!hasAnimatedCoverEnter ? 'is-entering' : ''} ${coverOpening === 'opening' ? 'is-opening' : coverOpening === 'closing' ? 'is-closing' : ''}`}>
               <div className="apple-book-hardcover">
                 <div className="apple-book-hardcover-spine" />
-                <div className="apple-book-hardcover-face">
-                  <div className="apple-book-cover-gold-border" />
-                  <div className="apple-book-cover-emblem">
-                    <Sparkles size={36} />
-                  </div>
-                  <h1 className="apple-book-cover-title">
-                    {formData.title || (formData.isJournal ? 'Daily Reflections' : 'My Notebook')}
-                  </h1>
-                  <p className="apple-book-cover-subtitle">{dateLabel}</p>
-                  <div className="apple-book-cover-divider" />
-                  <p className="apple-book-cover-author">Personal Journal Edition</p>
+                {/* Parchment first page revealed when the front cover swings open */}
+                <div className="apple-book-inside-page" />
 
+                {/* ── Cover face — rendered by LiveBookCover, identical to picker preview ── */}
+                <LiveBookCover
+                  title={formData.title || (formData.isJournal ? 'Daily Reflections' : 'My Notebook')}
+                  dateLabel={dateLabel}
+                  coverUrl={localCoverUrl}
+                  templateId={selectedTemplateId}
+                  coverStyle={coverStyle}
+                >
+                  {/* "Open Book" button lives inside the cover as a child slot */}
                   <button
                     className="apple-book-open-btn"
                     onClick={handleOpenBook}
-                    disabled={coverOpening === 'opening'}
+                    disabled={coverOpening !== 'idle' || pendingOpen}
+                    style={{ position: 'relative', zIndex: 3 }}
                   >
                     <BookOpen size={18} />
-                    <span>{coverOpening === 'opening' ? 'Opening…' : 'Open Book'}</span>
+                    <span>
+                      {coverOpening === 'opening' || pendingOpen
+                        ? 'Opening\u2026'
+                        : coverOpening === 'closing'
+                          ? 'Closing\u2026'
+                          : 'Open Book'}
+                    </span>
                   </button>
-                </div>
+                </LiveBookCover>
+
                 <div className="apple-book-hardcover-pages-stack" />
                 {/* Decorative ribbon — purely visual div, never interactive */}
                 {bookmarks.length > 0 && <div className="apple-book-hardcover-ribbon" />}
               </div>
             </div>
 
-            {/* ── Bookmark pill — completely outside the 3D transform wrapper.
-                 No pointer-events, stacking-context, or overflow issues here. ── */}
-            {bookmarks.length > 0 && coverOpening !== 'opening' && (
-              <button
-                className="apple-book-cover-bm-trigger"
-                onClick={() => {
-                  if (bookmarks.length === 1) {
-                    openToBookmark(bookmarks[0].pageNumber);
-                  } else {
-                    setBookmarkPickerOpen((v) => !v);
-                  }
-                }}
-              >
-                <Bookmark size={14} />
-                <span>
-                  {bookmarks.length === 1
-                    ? `Jump to page ${bookmarks[0].pageNumber}`
-                    : `${bookmarks.length} Bookmarks`}
-                </span>
-              </button>
+            {/* "Opening…" status shown on the outside of the book while it's
+                still measuring — the animation kicks in only when ready. */}
+            {pendingOpen && (
+              <div className="apple-book-opening-badge" role="status">
+                <Loader2 size={16} className="apple-book-opening-spinner" />
+                <span>Opening book\u2026</span>
+              </div>
+            )}
+
+            {/* ── Buttons row: Customize Cover + Bookmark pill ──────── */}
+            {coverOpening === 'idle' && (
+              <div className="apple-book-cover-actions-row">
+                <button
+                  className={`apple-book-cover-customize-btn ${showCoverPicker ? 'is-open' : ''}`}
+                  onClick={() => setShowCoverPicker((v) => !v)}
+                  type="button"
+                >
+                  <Pencil size={14} />
+                  <span>Customize Cover</span>
+                  <ChevronDown size={13} className="bcp-chevron" />
+                </button>
+
+                {bookmarks.length > 0 && (
+                  <button
+                    className="apple-book-cover-bm-trigger"
+                    onClick={() => {
+                      if (bookmarks.length === 1) {
+                        openToBookmark(bookmarks[0].pageNumber);
+                      } else {
+                        setBookmarkPickerOpen((v) => !v);
+                      }
+                    }}
+                  >
+                    <Bookmark size={14} />
+                    <span>
+                      {bookmarks.length === 1
+                        ? `Jump to page ${bookmarks[0].pageNumber}`
+                        : `${bookmarks.length} Bookmarks`}
+                    </span>
+                  </button>
+                )}
+              </div>
             )}
 
             {/* ── Bookmark picker popup ─────────────────────────────── */}
@@ -1598,6 +2061,68 @@ export function AppleBookJournalModal({
                 </div>
               </>
             )}
+
+            {/* ── Cover Picker Modal ────────────────────────────────── */}
+            {showCoverPicker && note && onUploadCover && onRemoveCover && (
+              <BookCoverPickerModal
+                note={note}
+                liveTitle={formData.title}
+                liveDateLabel={dateLabel}
+                selectedTemplateId={selectedTemplateId}
+                currentCoverUrl={localCoverUrl}
+                coverStyle={coverStyle ?? {}}
+                onStyleChange={async (style) => {
+                  // Apply the new style to the live cover immediately.
+                  setCoverStyle(style);
+                  if (!note?.id) return;
+                  // Preserve the current template alongside the style fields.
+                  const effective = {
+                    ...(coverStyle ?? {}),
+                    ...style,
+                    templateId:
+                      selectedTemplateId ?? (note?.coverStyle?.templateId as string | undefined) ?? '',
+                  } as CoverStyle;
+                  // Keep the fast same-device cache fresh right away.
+                  setCachedCoverStyle(note.id, effective);
+                  // Persist to the backend so it syncs across devices.
+                  if (onSaveCoverStyle) {
+                    try {
+                      const updated = await onSaveCoverStyle(effective);
+                      if (updated && typeof updated === 'object' && 'coverStyle' in updated) {
+                        setCoverStyle(
+                          (updated as import('../../types').NoteDTO).coverStyle ?? null,
+                        );
+                      }
+                    } catch (err) {
+                      console.error('[AppleBookJournal] Save cover style failed:', err);
+                    }
+                  }
+                }}
+                onSelectTemplate={(tplId) => {
+                  setSelectedTemplateId(tplId);
+                  // When a template is chosen, clear any custom photo so the
+                  // CSS template style takes over
+                  setLocalCoverUrl(null);
+                  // Persist the preset so it survives close/reopen — mirrors
+                  // the photo-upload path which hits the backend immediately.
+                  persistCoverTemplate(tplId);
+                }}
+                onUploadCover={async (processed) => {
+                  const updated = await onUploadCover(processed);
+                  // A photo replaces any template — clear the selected preset.
+                  setSelectedTemplateId(null);
+                  if (updated && typeof updated === 'object' && 'coverUrl' in updated) {
+                    setLocalCoverUrl((updated as import('../../types').NoteDTO).coverUrl ?? null);
+                  }
+                  return updated;
+                }}
+                onRemoveCover={async () => {
+                  setLocalCoverUrl(null);
+                  await onRemoveCover();
+                }}
+                onClose={() => setShowCoverPicker(false)}
+              />
+            )}
           </div>
         ) : mode === 'read' ? (
           /* ── 3D FLIPPABLE BOOK READING MODE ──────────────────────────── */
@@ -1624,20 +2149,8 @@ export function AppleBookJournalModal({
                   content={flipBookPages[0] ?? ''}
                   isJournal={formData.isJournal}
                   wordCount={0}
-                  onInnerMount={(el) => {
-                    leftPageRef.current = el;
-                    refsPopulatedCountRef.current += 1;
-                    if (refsPopulatedCountRef.current >= 2) {
-                      recalculatePagination();
-                    }
-                  }}
-                  onBodyMount={(el) => {
-                    pageBodyRef.current = el;
-                    refsPopulatedCountRef.current += 1;
-                    if (refsPopulatedCountRef.current >= 2) {
-                      recalculatePagination();
-                    }
-                  }}
+                  onInnerMount={handleInnerMount}
+                  onBodyMount={handleBodyMount}
                 />
               </div>
             ) : (
@@ -1653,12 +2166,13 @@ export function AppleBookJournalModal({
                 maxWidth={540}
                 minHeight={360}
                 maxHeight={640}
-                maxShadowOpacity={0.5}
+                maxShadowOpacity={0.35}
                 showCover={false}
                 mobileScrollSupport={true}
                 onFlip={(e: any) => {
                   const currentFlipPage = e.data;
                   setSpreadIndex(Math.floor(currentFlipPage / 2));
+                  playPageFlip();
                 }}
                 className="apple-book-3d-flipbook"
               >
@@ -1884,7 +2398,13 @@ export function AppleBookJournalModal({
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, title: e.target.value }));
+                      // Track title-only edits as unsaved too, so closing the
+                      // journal prompts to save/discard and the title persists.
+                      isDirtyRef.current = true;
+                      setSaveStatus('unsaved');
+                    }}
                   placeholder={formData.isJournal ? "Today's Reflection Title…" : "Entry Title…"}
                   className="apple-book-normal-title"
                   autoFocus
@@ -1908,36 +2428,8 @@ export function AppleBookJournalModal({
                       // Update both content and mark as unsaved
                       setFormData((prev) => ({ ...prev, content: normalized }));
                       setSaveStatus('unsaved');
+                      isDirtyRef.current = true;
                       
-                      // Schedule autosave after another debounce
-                      if (autosaveTimerRef.current) {
-                        clearTimeout(autosaveTimerRef.current);
-                      }
-                      autosaveTimerRef.current = setTimeout(async () => {
-                        if (!onSave) {
-                          console.log('[AppleBookJournal] Autosave skipped: onSave callback not provided');
-                          return;
-                        }
-                        if (isSaving) {
-                          console.log('[AppleBookJournal] Autosave skipped: already saving');
-                          return;
-                        }
-                        try {
-                          setSaveStatus('saving');
-                          const payload = buildSavePayload();
-                          console.log('[AppleBookJournal] Autosave: triggering', { contentLength: payload.content.length, version: payload.contentVersion });
-                          const result = await onSave(payload, { reason: 'auto' });
-                          console.log('[AppleBookJournal] Autosave: successful', result);
-                          setSaveStatus('saved');
-                          // Auto-reset saved status after 2 seconds
-                          setTimeout(() => setSaveStatus('idle'), 2000);
-                        } catch (err) {
-                          console.error('[AppleBookJournal] Autosave failed:', err);
-                          setSaveStatus('error');
-                          // Keep unsaved state on error for retry
-                          setTimeout(() => setSaveStatus('unsaved'), 2000);
-                        }
-                      }, 500);
                     }, 150);
                   }}
                   className="apple-book-normal-content"
@@ -1984,6 +2476,7 @@ export function AppleBookJournalModal({
               const prev = Math.max(0, spreadIndex - 1);
               setSpreadIndex(prev);
               flipToSpread(prev);
+              playPageFlip();
             }}
             disabled={spreadIndex === 0 || showCover}
           >
@@ -2000,6 +2493,7 @@ export function AppleBookJournalModal({
               setSpreadIndex(targetIdx);
               setShowCover(false);
               flipToSpread(targetIdx);
+              playPageFlip();
             }}
             className="apple-book-slider"
           />
@@ -2010,6 +2504,7 @@ export function AppleBookJournalModal({
               const next = Math.min(totalSpreads - 1, spreadIndex + 1);
               setSpreadIndex(next);
               flipToSpread(next);
+              playPageFlip();
             }}
             disabled={spreadIndex >= totalSpreads - 1 || showCover}
           >
@@ -2044,6 +2539,7 @@ export function AppleBookJournalModal({
                     onClick={() => {
                       setSpreadIndex(spreadIdx);
                       flipToSpread(spreadIdx);
+                      playPageFlip();
                     }}
                     title={bm.label || `Page ${bm.pageNumber}`}
                   >

@@ -1,7 +1,8 @@
 import { JournalBookModal } from './JournalBookModal';
 import { NotePageModal } from './NotesPageModal';
 import { ModalPortal } from '../ui/ModalRoot';
-import type { NoteDTO, Bookmark } from '../../types';
+import type { NoteDTO, Bookmark, CoverStyle, BookStyle } from '../../types';
+import type { CoverProcessResult } from '../../lib/coverImageProcessor';
 
 interface NoteViewModalProps {
   isOpen: boolean;
@@ -20,6 +21,10 @@ interface NoteViewModalProps {
     voiceNoteUrl: string;
   }) => Promise<void> | void;
   onToggleBookmark?: (bookmarks: Bookmark[]) => Promise<void> | void;
+  onUploadCover?: (processed: CoverProcessResult) => Promise<NoteDTO | void>;
+  onRemoveCover?: () => Promise<void>;
+  onSaveCoverStyle?: (coverStyle: CoverStyle | null) => Promise<NoteDTO | void> | void;
+  onSaveBookStyle?: (bookStyle: BookStyle | null) => Promise<NoteDTO | void> | void;
   autoSaveOnClose?: boolean;
 }
 
@@ -32,6 +37,10 @@ export function NoteViewModal({
   onDelete,
   onSave,
   onToggleBookmark,
+  onUploadCover,
+  onRemoveCover,
+  onSaveCoverStyle,
+  onSaveBookStyle,
   autoSaveOnClose,
 }: NoteViewModalProps) {
   if (!isOpen) return null;
@@ -47,6 +56,10 @@ export function NoteViewModal({
           onDelete={onDelete}
           onSave={onSave}
           onToggleBookmark={onToggleBookmark}
+          onUploadCover={onUploadCover}
+          onRemoveCover={onRemoveCover}
+          onSaveCoverStyle={onSaveCoverStyle}
+          onSaveBookStyle={onSaveBookStyle}
           autoSaveOnClose={autoSaveOnClose}
         />
       ) : (

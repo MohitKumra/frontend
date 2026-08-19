@@ -1,6 +1,7 @@
 import React from 'react';
-import type { NoteDTO, Bookmark } from '../../types';
+import type { NoteDTO, Bookmark, CoverStyle, BookStyle } from '../../types';
 import { AppleBookJournalModal } from './AppleBookJournalModal';
+import type { CoverProcessResult } from '../../lib/coverImageProcessor';
 
 interface JournalBookModalProps {
   note: NoteDTO;
@@ -18,6 +19,10 @@ interface JournalBookModalProps {
     voiceNoteUrl: string;
   }) => Promise<void> | void;
   onToggleBookmark?: (bookmarks: Bookmark[]) => Promise<void> | void;
+  onUploadCover?: (processed: CoverProcessResult) => Promise<NoteDTO | void>;
+  onRemoveCover?: () => Promise<void>;
+  onSaveCoverStyle?: (coverStyle: CoverStyle | null) => Promise<NoteDTO | void> | void;
+  onSaveBookStyle?: (bookStyle: BookStyle | null) => Promise<NoteDTO | void> | void;
   autoSaveOnClose?: boolean;
 }
 
@@ -29,6 +34,10 @@ export function JournalBookModal({
   onDelete,
   onSave,
   onToggleBookmark,
+  onUploadCover,
+  onRemoveCover,
+  onSaveCoverStyle,
+  onSaveBookStyle,
   autoSaveOnClose,
 }: JournalBookModalProps) {
   return (
@@ -40,6 +49,10 @@ export function JournalBookModal({
       onSave={onSave}
       onDelete={onDelete}
       onToggleBookmark={onToggleBookmark}
+      onUploadCover={onUploadCover}
+      onRemoveCover={onRemoveCover}
+      onSaveCoverStyle={onSaveCoverStyle}
+      onSaveBookStyle={onSaveBookStyle}
       autoSaveOnClose={autoSaveOnClose}
     />
   );

@@ -27,6 +27,7 @@ import {
   ArrowUpDown,
   Loader2,
   Sparkles,
+  Boxes,
 } from 'lucide-react';
 import {
   useNotes,
@@ -45,14 +46,16 @@ import { EntryFormModal } from '../components/notes/EnteryFormModal';
 import { NotionImportModal } from '../components/notion/NotionImportModal';
 import { useNotionStatus } from '../features/notion/hooks/useNotion';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
+import { Notes3DCard } from '../components/notes/Notes3DCard';
 import { TagInput } from '../components/notes/TagInput';
 import { MoodPicker } from '../components/notes/MoodPicker';
 import type { NoteDTO, NoteSortField, NoteSortOrder, NoteMood } from '../types';
 import { isImageMedia } from '../components/media/MediaPreview';
 import { JournalWeeklyAnalysis } from '../components/notes/JournalAnalysis';
+import { notesApi } from '../features/notes/api';
 import '../styles/theme-journal-notes.css';
 
-type ViewMode = 'grid' | 'list';
+type ViewMode = 'grid' | 'list' | '3d';
 type NoteFilter = 'all' | 'notes' | 'journal' | 'archived';
 type CardTheme = 'violet' | 'amber' | 'green' | 'blue' | 'pink';
 
@@ -884,6 +887,27 @@ export function NotesPage() {
                 );
               })}
             </div>
+          ) : viewMode === '3d' ? (
+            <div className="np3d-grid">
+              {filteredNotes.map((note) => (
+                <Notes3DCard
+                  key={note.id}
+                  note={note}
+                  showArchived={showArchived}
+                  starred={note.isPinned}
+                  menuOpen={noteMenuOpen === note.id}
+                  onOpen={(e, n) => {
+                    setOriginRect(e.currentTarget.getBoundingClientRect());
+                    setViewingNote(n);
+                  }}
+                  onTogglePin={handleTogglePin}
+                  onArchive={handleArchive}
+                  onUnarchive={handleUnarchive}
+                  onMenuToggle={(id) => setNoteMenuOpen(noteMenuOpen === id ? null : id)}
+                  menu={noteMenuOpen === note.id ? <EntryMenu note={note} /> : null}
+                />
+              ))}
+            </div>
           ) : (
             <>
               {/* Grid View — Pinned section */}
@@ -1214,6 +1238,25 @@ export function NotesPage() {
             // if the user closes and reopens the book in the same session.
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
           }}
+          onUploadCover={async (processed) => {
+            const updated = await notesApi.uploadCover(viewingNote.id, processed);
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            return updated;
+          }}
+          onRemoveCover={async () => {
+            const updated = await notesApi.removeCover(viewingNote.id);
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+          }}
+          onSaveCoverStyle={async (style) => {
+            const updated = await notesApi.saveCoverStyle(viewingNote.id, style);
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            return updated;
+          }}
+          onSaveBookStyle={async (bookStyle) => {
+            const updated = await notesApi.saveBookStyle(viewingNote.id, bookStyle);
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            return updated;
+          }}
           autoSaveOnClose
         />
       )}
@@ -1390,7 +1433,7 @@ function NotesHero({
               className="flex items-center gap-1 rounded-2xl border p-1"
               style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
             >
-              {(['grid', 'list'] as ViewMode[]).map((vm) => (
+              {(['grid', 'list', '3d'] as ViewMode[]).map((vm) => (
                 <button
                   key={vm}
                   onClick={() => setViewMode(vm)}
@@ -1401,7 +1444,7 @@ function NotesHero({
                       : { color: 'var(--color-text-muted)' }
                   }
                 >
-                  {vm === 'grid' ? <Grid3x3 size={14} /> : <List size={14} />}
+                  {vm === 'grid' ? <Grid3x3 size={14} /> : vm === 'list' ? <List size={14} /> : <Boxes size={14} />}
                 </button>
               ))}
             </div>
@@ -1450,18 +1493,6 @@ function NotesHero({
                   className="absolute right-0 top-full mt-1.5 w-40 overflow-hidden rounded-2xl border shadow-lg z-30"
                   style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onNewNote();
-                      setNewMenuOpen(() => false);
-                    }}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-xs font-bold text-left transition-colors hover:opacity-80"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    <StickyNote size={13} style={{ color: 'var(--color-accent)' }} />
-                    New Note
-                  </button>
                   <button
                     type="button"
                     onClick={() => {

@@ -31,4 +31,43 @@ export const notesApi = {
    */
   updateBookmarks: (id: string, bookmarks: Bookmark[]) =>
     apiClient.patch<NoteDTO>(`/notes/${id}`, { bookmarks }).then((r) => r.data),
+
+  /**
+   * Upload a pre-processed book cover image.
+   *
+   * The caller must run the image through `processCoverImage()` from
+   * `lib/coverImageProcessor.ts` first — this endpoint expects an already-
+   * optimized WebP or JPEG base64 payload.
+   *
+   * Returns the updated NoteDTO with the new coverUrl set.
+   */
+  uploadCover: (
+    noteId: string,
+    payload: {
+      fileName: string;
+      mimeType: 'image/webp' | 'image/jpeg';
+      base64Data: string;
+    },
+  ) =>
+    apiClient
+      .post<NoteDTO>('/media/upload-cover', { noteId, ...payload })
+      .then((r) => r.data),
+
+  /** Remove the cover photo from a note (sets coverUrl to null). */
+  removeCover: (id: string) =>
+    apiClient.patch<NoteDTO>(`/notes/${id}`, { coverUrl: null }).then((r) => r.data),
+
+  /**
+   * Persist cover typography / style customization.
+   * Sends only the coverStyle field to avoid overwriting other note data.
+   */
+  saveCoverStyle: (id: string, coverStyle: import('../../types').CoverStyle | null) =>
+    apiClient.patch<NoteDTO>(`/notes/${id}`, { coverStyle }).then((r) => r.data),
+
+  /**
+   * Persist reader-side book styling (theme, font, fontSize).
+   * Sends only the bookStyle field to avoid overwriting other note data.
+   */
+  saveBookStyle: (id: string, bookStyle: import('../../types').BookStyle | null) =>
+    apiClient.patch<NoteDTO>(`/notes/${id}`, { bookStyle }).then((r) => r.data),
 };

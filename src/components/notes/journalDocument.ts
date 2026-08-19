@@ -56,6 +56,36 @@ function hasBlockChild(el: HTMLElement): boolean {
   return Array.from(el.children).some(isBlockElement);
 }
 
+const HEADING_RE = /^h[1-6]$/i;
+
+/**
+ * Flatten nested heading elements inside a heading. Browsers auto-close
+ * headings, so malformed markup like <h2><h3>a</h3>b</h2> or <h2><h2>a</h2></h2>
+ * can end up persisted and then render as multiple headings on a single line.
+ * This keeps the outer heading but pulls any nested heading content up into it,
+ * so already-saved journals get repaired on load/save.
+ */
+function sanitizeHeading(html: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const flatten = (root: Element, depth: number) => {
+    for (const child of Array.from(root.children)) {
+      const t = child.tagName.toLowerCase();
+      if (HEADING_RE.test(t)) {
+        if (depth > 0) {
+          child.replaceWith(...Array.from(child.childNodes));
+        } else {
+          flatten(child, depth + 1);
+        }
+      } else if (t !== 'br') {
+        flatten(child, depth);
+      }
+    }
+  };
+  flatten(tmp, 0);
+  return tmp.innerHTML;
+}
+
 /**
  * Flatten contentEditable HTML into a list of block-level HTML strings.
  *
@@ -89,7 +119,8 @@ function extractBlocksFromElement(container: HTMLElement): string[] {
     const tag = el.tagName.toLowerCase();
 
     if (PRESERVE_AS_UNIT.has(tag)) {
-      blocks.push(el.outerHTML);
+      // Headings must never contain other headings — repair any nesting.
+      blocks.push(HEADING_RE.test(tag) ? sanitizeHeading(el.outerHTML) : el.outerHTML);
       continue;
     }
 

@@ -659,6 +659,16 @@ export function ProjectDetailPage() {
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
             queryClient.invalidateQueries({ queryKey: ['notes', { projectId: id }] });
           }}
+          onSaveCoverStyle={async (style) => {
+            const updated = await notesApi.saveCoverStyle(viewingNote.id, style);
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            return updated;
+          }}
+          onSaveBookStyle={async (bookStyle) => {
+            const updated = await notesApi.saveBookStyle(viewingNote.id, bookStyle);
+            setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            return updated;
+          }}
           autoSaveOnClose
         />
       )}

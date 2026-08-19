@@ -3888,13 +3888,15 @@
 
 /* Hardcover Stage */
 .apple-book-cover-stage {
-  position: relative;  /* anchors the picker popup and backdrop */
+  position: relative;
   display: flex;
+  flex-direction: column;      /* book on top, action row below */
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
   perspective: 1400px;
+  gap: 0;                      /* gap controlled by margin on the wrapper */
 }
 
 /* Outer 3D wrapper — tilted to reveal depth */
@@ -3977,7 +3979,8 @@
   background-size: cover;
 }
 
-/* Top-left corner light catch */
+/* Top-left corner light catch — suppressed when a custom cover photo is active
+   (the photo has its own inline scrim overlay applied in JSX instead) */
 .apple-book-hardcover-face::before {
   content: '';
   position: absolute;
@@ -3987,6 +3990,13 @@
     radial-gradient(ellipse at 85% 88%, rgba(0, 0, 0, 0.25) 0%, transparent 40%);
   pointer-events: none;
   z-index: 1;
+}
+
+/* When a custom photo is applied via inline backgroundImage, suppress the
+   default vignette — the JSX renders its own lighter scrim div instead */
+.apple-book-hardcover-face[style*="backgroundImage"]::before,
+.apple-book-hardcover-face[style*="background-image"]::before {
+  display: none;
 }
 
 /* ── Pages stack (right edge) — simulated page thickness ── */
@@ -4041,7 +4051,7 @@
   content: '';
   position: absolute;
   inset: 5px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid var(--cover-border-color, rgba(212, 175, 55, 0.2));
   border-radius: 2px;
 }
 
@@ -4144,40 +4154,140 @@
 }
 
 .apple-book-hardcover-wrapper {
+  /* No persistent animation here — the enter/exit animations are applied via
+     the .is-entering / .is-opening / .is-closing classes so removing one never
+     re-triggers another (e.g. coverEnter replaying after a close). */
+}
+
+.apple-book-hardcover-wrapper.is-entering {
   animation: coverEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── 2. Open sequence: book straightens, swings open to the left, fades ── */
-@keyframes coverOpen {
-  0% {
-    opacity: 1;
-    transform: rotateY(-22deg) rotateX(4deg) scale(1);
-  }
-  /* Straighten first — book faces the reader */
-  25% {
-    opacity: 1;
-    transform: rotateY(-5deg) rotateX(1deg) scale(1.06);
-  }
-  /* Swing the cover back as if opening — rotateY goes negative (left) */
-  70% {
-    opacity: 0.6;
-    transform: rotateY(55deg) rotateX(-3deg) scale(1.1) translateX(-60px);
-  }
-  100% {
-    opacity: 0;
-    transform: rotateY(80deg) rotateX(-6deg) scale(1.08) translateX(-120px);
-  }
+/* ── 2. Realistic book open/close: the front cover swings on the spine hinge.
+       The wrapper keeps its 3D tilt; only the cover face rotates open/shut,
+       revealing the parchment first page behind it. ── */
+
+/* Cover swings open around the left (spine) edge, like a real hardback. */
+@keyframes coverFlapOpen {
+  0%   { transform: rotateY(0deg); }
+  55%  { transform: rotateY(-55deg); }
+  100% { transform: rotateY(-108deg); }
+}
+
+/* Cover swings shut back onto the book. */
+@keyframes coverFlapClose {
+  0%   { transform: rotateY(-108deg); }
+  100% { transform: rotateY(0deg); }
 }
 
 .apple-book-hardcover-wrapper.is-opening {
-  animation: coverOpen 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+.apple-book-hardcover-wrapper.is-closing {
   pointer-events: none;
 }
 
-/* Disable the idle hover tilt during the open animation */
-.apple-book-hardcover-wrapper.is-opening:hover {
+/* Apply the flap motion to the cover face (shared with the preview, which never
+   gets is-opening/is-closing, so the preview stays static). */
+.apple-book-hardcover-wrapper.is-opening .apple-book-hardcover-face {
+  animation: coverFlapOpen 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+.apple-book-hardcover-wrapper.is-closing .apple-book-hardcover-face {
+  animation: coverFlapClose 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: left center;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Disable the idle hover tilt while animating */
+.apple-book-hardcover-wrapper.is-opening:hover,
+.apple-book-hardcover-wrapper.is-closing:hover {
   transform: none;
 }
+
+/* Parchment first page revealed as the cover swings open */
+.apple-book-inside-page {
+  position: absolute;
+  left: 26px;                 /* right of the spine */
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  border-radius: 0 4px 4px 0;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.35) 0%, transparent 45%),
+    linear-gradient(180deg, #fdf6e6 0%, #f4e8d8 60%, #e7d6bd 100%);
+  box-shadow:
+    inset 2px 0 6px rgba(0, 0, 0, 0.08),
+    inset 0 0 24px rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  overflow: hidden;
+}
+
+/* A faint ruled first-line hint so it reads as a page, not a blank panel. */
+.apple-book-inside-page::before {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 16%;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(120, 96, 64, 0.35), transparent);
+}
+
+/* Keep the page visible while the cover is swinging (open or shut). */
+.apple-book-hardcover-wrapper.is-opening .apple-book-inside-page,
+.apple-book-hardcover-wrapper.is-closing .apple-book-inside-page {
+  opacity: 1;
+}
+
+/* ── "Opening…" status badge — shown on the outside of the cover while the
+       book is still measuring/paginating. The open animation only starts once
+       paginationReady is true, so the book never gets stuck mid-animation. ── */
+.apple-book-opening-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #f5e6c8;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  animation: appleBookBadgePulse 1.4s ease-in-out infinite;
+}
+
+.apple-book-opening-spinner {
+  color: #d4af37;
+  animation: appleBookSpin 0.9s linear infinite;
+}
+
+@keyframes appleBookBadgePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+@keyframes appleBookSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fallback placeholder while the read view is still paginating. */
+.apple-book-paginating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #a08060;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 
 /* ── 3. Flip-book / read view fades + rises in after cover exits ── */
 @keyframes readViewEnter {
@@ -4199,14 +4309,23 @@
   animation: readViewEnter 0.55s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Reduced motion: skip all book open animations ── */
+/* ── Reduced motion: skip all book open/close animations ── */
 @media (prefers-reduced-motion: reduce) {
   .apple-book-hardcover-wrapper {
     animation: none !important;
     transform: none !important;
   }
-  .apple-book-hardcover-wrapper.is-opening {
+  .apple-book-hardcover-wrapper.is-opening,
+  .apple-book-hardcover-wrapper.is-closing {
     animation: none !important;
+    opacity: 1 !important;
+  }
+  .apple-book-hardcover-wrapper.is-opening .apple-book-hardcover-face,
+  .apple-book-hardcover-wrapper.is-closing .apple-book-hardcover-face {
+    animation: none !important;
+    transform: none !important;
+  }
+  .apple-book-inside-page {
     opacity: 0 !important;
   }
   .apple-book-flip-container {
@@ -4249,13 +4368,19 @@
   width: 100%;
   height: 100%;
   perspective: 2000px;
+  /* Keep the 3D layer GPU-composited across idle so the first flip after a
+     pause doesn't have to rebuild the layer (avoids the stutter). */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .apple-book-3d-flipbook {
-  /* Deep shadow under the whole book */
-  filter:
-    drop-shadow(0 30px 50px rgba(0, 0, 0, 0.65))
-    drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+  /* Cheap under-book shadow (box-shadow is composited efficiently and does NOT
+     re-rasterize the whole book on every flip, unlike filter: drop-shadow).
+     Adding will-change keeps the layer warm across idle for smooth flips. */
+  will-change: transform;
+  transform: translateZ(0);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
 }
 
 .apple-book-flip-page {
@@ -4954,3 +5079,1186 @@
 
 
 
+
+
+/* ============================================================
+   BOOK COVER PICKER MODAL  (BookCoverPickerModal.tsx)
+   ============================================================ */
+
+/* Backdrop */
+.bcp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+/* Panel */
+.bcp-panel {
+  width: 100%;
+  max-width: 860px;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #2a1e14;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  animation: bcpSlideIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes bcpSlideIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+/* Header */
+.bcp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 12px;
+}
+
+.bcp-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f5e6c8;
+  margin: 0;
+}
+
+.bcp-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a08060;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bcp-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5e6c8;
+}
+
+/* Tabs */
+.bcp-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bcp-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a6040;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.bcp-tab.is-active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+}
+
+.bcp-tab:hover:not(.is-active) {
+  color: #c8a060;
+}
+
+/* Body */
+.bcp-body {
+  padding: 16px 20px;
+  height: 460px;
+  max-height: 72vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab pane — each tab scrolls its own content so the preview stays fixed. */
+.bcp-tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  flex: 1;
+}
+
+/* Templates grid — fixed-width cells that match the cover preview so the
+   preset fills the whole tile (no dark background gap). */
+.bcp-templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 150px);
+  gap: 12px;
+  justify-content: center;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  align-content: start;
+}
+
+/* Template thumbnail */
+.bcp-thumb {
+  position: relative;
+  aspect-ratio: 3 / 4.5;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+.bcp-thumb:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.bcp-thumb.is-selected {
+  outline: 2.5px solid #d4af37;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25), 0 10px 28px rgba(0,0,0,0.5);
+}
+
+/* Template name label — shown on hover */
+.bcp-thumb-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  color: rgba(255,255,255,0.85);
+  font-size: 8.5px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.4px;
+  padding: 4px 4px 5px;
+  transform: translateY(100%);
+  transition: transform 0.15s ease;
+  pointer-events: none;
+  font-family: system-ui, sans-serif;
+}
+
+.bcp-thumb:hover .bcp-thumb-label {
+  transform: translateY(0);
+}
+
+.bcp-thumb-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  color: #1a1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* My Covers tab */
+.bcp-my-covers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+/* Current cover preview */
+.bcp-current-cover {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bcp-current-cover-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #7a6040;
+}
+
+.bcp-current-cover-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bcp-current-cover-img {
+  width: 64px;
+  height: 85px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1.5px solid rgba(212, 175, 55, 0.3);
+  flex-shrink: 0;
+}
+
+.bcp-remove-cover-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bcp-remove-cover-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.bcp-remove-cover-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Upload zone */
+.bcp-upload-zone {
+  border: 1.5px dashed rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.bcp-upload-zone:hover:not(.is-loading),
+.bcp-upload-zone.is-dragging {
+  background: rgba(212, 175, 55, 0.06);
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
+.bcp-upload-zone.is-loading {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.bcp-upload-icon {
+  color: #d4af37;
+  margin-bottom: 4px;
+}
+
+.bcp-upload-icon--spin {
+  animation: bcpSpin 0.9s linear infinite;
+}
+
+.bcp-upload-icon--success {
+  color: #4ade80;
+}
+
+@keyframes bcpSpin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+.bcp-upload-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #d4b896;
+}
+
+.bcp-upload-sub {
+  font-size: 11px;
+  color: #7a6040;
+}
+
+/* Upload error */
+.bcp-upload-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.bcp-upload-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Footer — Save / Cancel + tip */
+.bcp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.bcp-footer-tip-inline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: #6a5030;
+}
+
+.bcp-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bcp-btn-cancel {
+  padding: 6px 16px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #a07840;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bcp-btn-cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bcp-btn-save {
+  padding: 6px 20px;
+  border-radius: 7px;
+  border: none;
+  background: #d4af37;
+  color: #1a0e00;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.bcp-btn-save:hover:not(:disabled) {
+  background: #e8c84a;
+}
+
+.bcp-btn-save:disabled,
+.bcp-btn-cancel:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Live cover preview ─────────────────────────────────────────── */
+
+.bcp-live-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* In scrolling tabs (templates / my-covers) keep the preview pinned on top. */
+.bcp-live-preview--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #2a1e14;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.bcp-live-preview-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #7a6040;
+}
+
+.bcp-preview {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(212, 175, 55, 0.25);
+  background: #1a1000;
+  transform: translateZ(0);
+}
+
+.bcp-preview-book {
+  position: relative;
+}
+
+/* Make the cover face fill the preview book so the scaled content uses the
+   full reference size (260x390) before being scaled down. */
+.bcp-preview-book .apple-book-hardcover-face {
+  width: 100%;
+  height: 100%;
+  border-left: none;
+  /* Remove default padding so SVG templates fill edge-to-edge */
+  padding: 0;
+  overflow: hidden;
+}
+
+/* When a DOM text layer IS needed (custom photo or no-template cover),
+   restore inner padding so the text isn't flush with the edges. */
+.bcp-preview-book .apple-book-hardcover-face.has-text-layer {
+  padding: 20px 16px;
+}
+
+/* Text Style tab — fixed preview on the left, scrolling editor on the right. */
+/* bcp-side-tab is the shared base; bcp-text-style-tab is kept for specificity. */
+.bcp-text-style-tab,
+.bcp-side-tab {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Right-column scroll wrapper used by Templates and My Covers side layout */
+.bcp-side-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  min-width: 0;
+  padding: 4px 6px 8px 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.bcp-side-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.bcp-side-scroll::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+  border-radius: 4px;
+}
+
+/* In the side layout the templates grid fills 3 columns (smaller than default) */
+.bcp-side-tab .bcp-templates-grid {
+  grid-template-columns: repeat(auto-fill, 150px);
+  overflow: visible; /* parent .bcp-side-scroll handles scrolling */
+  flex: none;
+  min-height: auto;
+  width: 100%;
+  align-content: start;
+}
+
+/* My Covers content inside side layout also uses the scroll wrapper styling */
+.bcp-side-tab .bcp-my-covers {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  min-width: 0;
+  padding: 4px 6px 8px 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  flex: unset;
+}
+
+.bcp-side-tab .bcp-my-covers::-webkit-scrollbar {
+  width: 8px;
+}
+.bcp-side-tab .bcp-my-covers::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+  border-radius: 4px;
+}
+
+.bcp-tst-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  padding-top: 4px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.bcp-tst-editor {
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0 6px 8px 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.bcp-tst-editor::-webkit-scrollbar {
+  width: 8px;
+}
+.bcp-tst-editor::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+  border-radius: 8px;
+}
+.bcp-tst-editor::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+/* ============================================================
+   COVER TEXT EDITOR  (CoverTextEditor.tsx)
+   Typography / style control panel inside the cover picker.
+   ============================================================ */
+
+.cte-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #f5e6c8;
+}
+
+.cte-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.cte-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #d4af37;
+}
+
+.cte-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cte-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a6040;
+}
+
+.cte-select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  color: #f5e6c8;
+  font-size: 13px;
+  outline: none;
+}
+
+.cte-select:focus {
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
+/* Segmented control */
+.cte-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.24);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.cte-segmented-btn {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #a08060;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cte-segmented-btn.is-active {
+  background: rgba(212, 175, 55, 0.16);
+  color: #d4af37;
+}
+
+.cte-segmented-btn:hover:not(.is-active) {
+  color: #f5e6c8;
+}
+
+/* Alignment */
+.cte-align-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.cte-align-btn {
+  flex: 1;
+  padding: 7px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a08060;
+  background: rgba(0, 0, 0, 0.24);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cte-align-btn.is-active {
+  background: rgba(212, 175, 55, 0.16);
+  color: #d4af37;
+}
+
+/* Weight grid */
+.cte-weight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.cte-weight-btn {
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #a08060;
+  background: rgba(0, 0, 0, 0.24);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.cte-weight-btn.is-active {
+  background: rgba(212, 175, 55, 0.16);
+  color: #d4af37;
+}
+
+/* Toggle switch */
+.cte-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cte-toggle-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4b896;
+}
+
+.cte-toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.cte-toggle.is-on {
+  background: rgba(212, 175, 55, 0.45);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.cte-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f5e6c8;
+  transition: transform 0.18s ease;
+}
+
+.cte-toggle.is-on .cte-toggle-knob {
+  transform: translateX(18px);
+}
+
+/* Color picker */
+.cte-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cte-color-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4b896;
+  flex-shrink: 0;
+}
+
+.cte-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cte-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.cte-swatch:hover {
+  transform: scale(1.12);
+}
+
+.cte-swatch.is-selected {
+  box-shadow: 0 0 0 2px #2a1e14, 0 0 0 3.5px #d4af37;
+}
+
+.cte-swatch--custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a08060;
+  background: rgba(255, 255, 255, 0.08);
+  border-style: dashed;
+}
+
+/* Number stepper */
+.cte-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cte-stepper-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4b896;
+}
+
+.cte-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cte-stepper-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.28);
+  color: #a08060;
+}
+
+.cte-stepper-btn:hover {
+  color: #d4af37;
+}
+
+.cte-stepper-input {
+  width: 46px;
+  padding: 5px 4px;
+  text-align: center;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  color: #f5e6c8;
+  font-size: 13px;
+}
+
+.cte-stepper-unit {
+  font-size: 11px;
+  color: #7a6040;
+}
+
+/* Slider */
+.cte-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cte-slider-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cte-slider-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4b896;
+}
+
+.cte-slider-value {
+  font-size: 11px;
+  color: #a08060;
+  font-variant-numeric: tabular-nums;
+}
+
+.cte-slider {
+  width: 100%;
+  height: 4px;
+  accent-color: #d4af37;
+  cursor: pointer;
+}
+
+/* Text input */
+.cte-text-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  color: #f5e6c8;
+  font-size: 13px;
+  outline: none;
+}
+
+.cte-text-input:focus {
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
+.cte-text-input::placeholder {
+  color: #7a6040;
+}
+
+.cte-text-input--mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+/* Hint + reset */
+.cte-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #7a6040;
+}
+
+.cte-hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #c8a060;
+}
+
+.cte-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f5e6c8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cte-reset-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+
+/* ============================================================
+   JOURNAL CARD — custom cover photo support
+   When note.coverUrl is set, the card background shows the photo.
+   ============================================================ */
+
+.journal-card-has-cover .journal-card-inner {
+  /* background-image is set inline via style prop — the CSS vars ensure
+     the leather texture fallback is available but the inline image wins. */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Cover overlay — darkens the photo so title text stays readable */
+.journal-card-has-cover .journal-card-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.5) 60%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* All text/icons sit above the overlay */
+.journal-card-has-cover .journal-card-inner > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================================
+   APPLE BOOK HARDCOVER — custom cover photo support
+   ============================================================ */
+
+.apple-book-hardcover-has-cover .apple-book-hardcover-face {
+  background-image: var(--cover-photo-url);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Darken the photo so the gold title and buttons stay readable */
+.apple-book-hardcover-has-cover .apple-book-hardcover-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.12) 0%,
+    rgba(0, 0, 0, 0.42) 55%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  z-index: 0;
+  pointer-events: none;
+}
+
+.apple-book-hardcover-has-cover .apple-book-hardcover-face > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Customize Cover button (inside .apple-book-cover-actions-row) ── */
+.apple-book-cover-customize-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #d4b896;
+  background: rgba(26, 14, 4, 0.75);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+
+.apple-book-cover-customize-btn:hover {
+  background: rgba(212, 175, 55, 0.14);
+  border-color: rgba(212, 175, 55, 0.6);
+  transform: translateY(-1px);
+}
+
+.apple-book-cover-customize-btn svg {
+  color: #d4af37;
+}
+
+.apple-book-cover-customize-btn .bcp-chevron {
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+
+.apple-book-cover-customize-btn.is-open .bcp-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Actions row below the 3D book ── */
+.apple-book-cover-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  position: relative;
+  z-index: 50;
+}
+
+/* Bookmark pill inside the row — reset absolute positioning */
+.apple-book-cover-actions-row .apple-book-cover-bm-trigger {
+  position: static !important;
+  transform: none !important;
+  bottom: auto !important;
+  left: auto !important;
+}
+
+.apple-book-cover-actions-row .apple-book-cover-bm-trigger:hover {
+  transform: scale(1.05) !important;
+}
+
+.apple-book-cover-actions-row .apple-book-cover-bm-trigger:active {
+  transform: scale(0.97) !important;
+}
+
+/* ── Notes 3D view (books + sticky notes) ──────────────────────────────── */
+
+.np3d-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 30px 26px;
+  padding: 10px 4px 24px;
+}
+
+.np3d-card {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Tilted 3D book (journals) — mirrors the journal-modal cover look */
+.np3d-book {
+  perspective: 1200px;
+}
+.np3d-book-face {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), 0 2px 0 rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.np3d-card:hover .np3d-book-face {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.42);
+}
+
+/* 3D sticky note (plain notes) — layered paper with texture */
+.np3d-sticky {
+  position: relative;
+  width: 100%;
+  min-height: 132px;
+  padding: 18px 14px 14px;
+  border-radius: 3px;
+  background: linear-gradient(160deg, #fff9e6 0%, #f7e9c2 55%, #f0d7a3 100%);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(0, 0, 0, 0.24),
+    inset 0 -6px 8px rgba(0, 0, 0, 0.06);
+  transform: rotate(-2deg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.np3d-card:nth-child(even) .np3d-sticky {
+  transform: rotate(1.5deg);
+}
+.np3d-sticky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(120, 90, 30, 0.05) 0 2px,
+    transparent 2px 6px
+  );
+  pointer-events: none;
+}
+.np3d-sticky:hover {
+  transform: rotate(-0.5deg) translateY(-3px);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.14), 0 18px 28px rgba(0, 0, 0, 0.3);
+}
+.np3d-card:nth-child(even) .np3d-sticky:hover {
+  transform: rotate(0.4deg) translateY(-3px);
+}
+.np3d-sticky-title {
+  position: relative;
+  font-weight: 800;
+  font-size: 14px;
+  color: #3d2f14;
+  line-height: 1.3;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.np3d-sticky-preview {
+  position: relative;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #6b5733;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.np3d-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  display: flex;
+  gap: 2px;
+}
+.np3d-action-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.np3d-action-btn:hover {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+[data-theme='dark'] .np3d-sticky {
+  background: linear-gradient(160deg, #3c3a20 0%, #2b2a16 100%);
+}
+[data-theme='dark'] .np3d-sticky-title {
+  color: #efe6c8;
+}
+[data-theme='dark'] .np3d-sticky-preview {
+  color: #c9ba8a;
+}
+
+/* end of theme-journal-notes.css */
