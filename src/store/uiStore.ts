@@ -14,7 +14,7 @@ import {
   applyLayoutPreference as applyShellLayout,
   type LayoutPreference as ShellLayoutPreference,
 } from '../platform/layout';
-import type { TaskViewPreference } from '../types';
+import type { TaskViewPreference, NotesViewPreference } from '../types';
 
 interface UIState {
   theme: Theme;
@@ -22,6 +22,7 @@ interface UIState {
   layoutPreference: ShellLayoutPreference;
   calendarViewPreference: 'day' | 'week' | 'month' | 'agenda';
   taskViewPreference: TaskViewPreference;
+  notesViewPreference: NotesViewPreference;
   pageTransitionsEnabled: boolean;
   floatingAnimationsEnabled: boolean;
   sidebarOpen: boolean;
@@ -32,6 +33,7 @@ interface UIState {
   setLayoutPreference: (layout: ShellLayoutPreference) => void;
   setCalendarViewPreference: (view: 'day' | 'week' | 'month' | 'agenda') => void;
   setTaskViewPreference: (view: TaskViewPreference) => void;
+  setNotesViewPreference: (view: NotesViewPreference) => void;
   setPageTransitionsEnabled: (enabled: boolean) => void;
   setFloatingAnimationsEnabled: (enabled: boolean) => void;
   toggleTheme: (options?: { animate?: boolean; onMutate?: () => void }) => Promise<Theme>;
@@ -51,6 +53,7 @@ export const useUIStore = create<UIState>()(
       layoutPreference: 'COMFORTABLE',
       calendarViewPreference: 'month',
       taskViewPreference: 'board',
+      notesViewPreference: 'grid',
       pageTransitionsEnabled: true,
       floatingAnimationsEnabled: true,
       sidebarOpen: true,
@@ -72,6 +75,7 @@ export const useUIStore = create<UIState>()(
       },
       setCalendarViewPreference: (view) => set({ calendarViewPreference: view }),
       setTaskViewPreference: (view) => set({ taskViewPreference: view }),
+      setNotesViewPreference: (view) => set({ notesViewPreference: view }),
       setPageTransitionsEnabled: (enabled) => set({ pageTransitionsEnabled: enabled }),
       setFloatingAnimationsEnabled: (enabled) => set({ floatingAnimationsEnabled: enabled }),
       toggleTheme: async (options) => {

@@ -28,6 +28,9 @@ import {
   Unplug,
   Sparkles,
   CreditCard,
+  FileText,
+  LayoutList,
+  Box,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -50,12 +53,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { usePushNotifications } from '../features/notifications';
 import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
 import { AISettingsPanel } from '../components/settings/AISettingsPanel';
-import type { AIPreferenceDTO, LayoutPreference, ThemePreference, TaskViewPreference } from '../types';
+import type { AIPreferenceDTO, LayoutPreference, ThemePreference, TaskViewPreference, NotesViewPreference } from '../types';
 import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 
 type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security' | 'ai';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
 type TaskView = 'list' | 'board';
+type NotesView = NotesViewPreference;
 
 // Each module gets one color that threads through the whole page: hero
 // satellite, tab LED, and section badge all share this token.
@@ -625,6 +629,7 @@ export function SettingsPage() {
     layoutPreference: uiLayout as LayoutPreference,
     calendarView: 'month' as CalendarView,
     taskView: 'board' as TaskView,
+    notesView: 'grid' as NotesView,
     pageTransitionsEnabled: true,
     floatingAnimationsEnabled: true,
   });
@@ -702,6 +707,9 @@ export function SettingsPage() {
           if (next.taskView) {
             useUIStore.getState().setTaskViewPreference(next.taskView as TaskViewPreference);
           }
+          if (next.notesView) {
+            useUIStore.getState().setNotesViewPreference(next.notesView as NotesViewPreference);
+          }
         },
       });
     } else {
@@ -713,6 +721,9 @@ export function SettingsPage() {
       }
       if (next.taskView) {
         useUIStore.getState().setTaskViewPreference(next.taskView as TaskViewPreference);
+      }
+      if (next.notesView) {
+        useUIStore.getState().setNotesViewPreference(next.notesView as NotesViewPreference);
       }
     }
 
@@ -946,6 +957,32 @@ export function SettingsPage() {
                                 description={id === 'board' ? 'Kanban-style columns' : 'Vertical task cards'}
                                 icon={id === 'board' ? <Columns3 size={16} /> : <CreditCard size={16} />}
                                 onClick={() => applyAppearance({ taskView: id })}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <FileText size={16} className="text-accent" />
+                          <h3 className="text-sm font-bold text-text-primary">Notes view</h3>
+                        </div>
+                        <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-3">
+                          {([
+                            { id: 'grid', title: 'Grid', description: 'Book covers in a grid', icon: <LayoutGrid size={16} /> },
+                            { id: 'list', title: 'List', description: 'Compact row layout', icon: <LayoutList size={16} /> },
+                            { id: '3d', title: '3D', description: 'Perspective card stack', icon: <Box size={16} /> },
+                          ] as Array<{ id: NotesView; title: string; description: string; icon: ReactNode }>).map(({ id, title, description, icon }) => {
+                            const active = appearance.notesView === id;
+                            return (
+                              <ChoiceChip
+                                key={id}
+                                active={active}
+                                title={title}
+                                description={description}
+                                icon={icon}
+                                onClick={() => applyAppearance({ notesView: id })}
                               />
                             );
                           })}

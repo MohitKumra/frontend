@@ -185,6 +185,7 @@ export function AppLayout() {
     setLayoutPreference,
     setCalendarViewPreference,
     setTaskViewPreference,
+    setNotesViewPreference,
     pageTransitionsEnabled,
     floatingAnimationsEnabled,
     setPageTransitionsEnabled,
@@ -298,6 +299,9 @@ export function AppLayout() {
     if (settings.appearance.taskView) {
       setTaskViewPreference(settings.appearance.taskView);
     }
+    if (settings.appearance.notesView) {
+      setNotesViewPreference(settings.appearance.notesView);
+    }
     if (typeof settings.appearance.pageTransitionsEnabled === 'boolean') {
       setPageTransitionsEnabled(settings.appearance.pageTransitionsEnabled);
     }
@@ -313,6 +317,7 @@ export function AppLayout() {
     setCalendarViewPreference,
     setLayoutPreference,
     setTaskViewPreference,
+    setNotesViewPreference,
     setPageTransitionsEnabled,
     setFloatingAnimationsEnabled,
     setTheme,

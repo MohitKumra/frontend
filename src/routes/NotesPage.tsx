@@ -47,6 +47,7 @@ import { NotionImportModal } from '../components/notion/NotionImportModal';
 import { useNotionStatus } from '../features/notion/hooks/useNotion';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
 import { Notes3DCard } from '../components/notes/Notes3DCard';
+import { useUIStore } from '../store/uiStore';
 import { TagInput } from '../components/notes/TagInput';
 import { MoodPicker } from '../components/notes/MoodPicker';
 import type { NoteDTO, NoteSortField, NoteSortOrder, NoteMood } from '../types';
@@ -82,8 +83,10 @@ const MOOD_EMOJI: Record<string, string> = {
 
 export function NotesPage() {
   const { containerVariants, itemVariants } = usePageVariants();
+  const savedNotesView = useUIStore((s) => s.notesViewPreference);
+  const setNotesViewPreference = useUIStore((s) => s.setNotesViewPreference);
   const [filter, setFilter] = useState<NoteFilter>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>(savedNotesView);
   const [searchQuery, setSearchQuery] = useState('');
   const [attachmentsOnly, setAttachmentsOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -1349,6 +1352,10 @@ function NotesHero({
   const noteBarPct = Math.round((noteCount / barTotal) * 100);
   const journalBarPct = 100 - noteBarPct;
 
+  function setNotesViewPreference(vm: string) {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <div
       ref={heroRef}
@@ -1436,7 +1443,10 @@ function NotesHero({
               {(['grid', 'list', '3d'] as ViewMode[]).map((vm) => (
                 <button
                   key={vm}
-                  onClick={() => setViewMode(vm)}
+                  onClick={() => {
+                    setViewMode(vm);
+                    setNotesViewPreference(vm);
+                  }}
                   className="flex items-center justify-center rounded-xl p-2 transition-all"
                   style={
                     viewMode === vm
