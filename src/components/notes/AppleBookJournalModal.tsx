@@ -478,10 +478,20 @@ export function AppleBookJournalModal({
   // the book can prompt the user to save or discard (there is no autosave).
   const isDirtyRef = useRef(false);
 
-  const [dimensions, setDimensions] = useState({
-    width: Math.min(500, Math.max(300, Math.floor((window.innerWidth - 100) / 2))),
-    height: Math.min(620, Math.max(380, Math.floor(window.innerHeight - 170))),
-  });
+  // On mobile (narrow screens) cap the page height so it never fills the whole
+  // viewport — roughly 55 % of screen height keeps both bars visible with room.
+  const calcDimensions = () => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const isMobile = vw <= 640;
+    const w = Math.min(500, Math.max(300, Math.floor((vw - 100) / 2)));
+    const h = isMobile
+      ? Math.min(420, Math.max(300, Math.floor(vh * 0.55)))
+      : Math.min(620, Math.max(380, Math.floor(vh - 170)));
+    return { width: w, height: h };
+  };
+
+  const [dimensions, setDimensions] = useState(calcDimensions);
 
   // Always keep a stable ref to the latest note content so the editor seed
   // callback never closes over a stale value — the ref is updated on every
@@ -698,10 +708,7 @@ export function AppleBookJournalModal({
 
   useEffect(() => {
     const handleResize = () => {
-      setDimensions({
-        width:  Math.min(500, Math.max(300, Math.floor((window.innerWidth  - 100) / 2))),
-        height: Math.min(620, Math.max(380, Math.floor(window.innerHeight - 170))),
-      });
+      setDimensions(calcDimensions());
       // No manual recalculatePagination() call needed — setDimensions triggers
       // a re-render which changes the recalculatePagination dep and the
       // useEffect([recalculatePagination]) fires automatically.
@@ -1584,9 +1591,10 @@ export function AppleBookJournalModal({
           <button
             className={`apple-book-mode-btn ${mode === 'read' ? 'is-active' : ''}`}
             onClick={switchToReader}
+            title="3D Reader"
           >
             <BookOpen size={14} />
-            <span>3D Reader</span>
+            <span className="apple-book-mode-btn-label">3D Reader</span>
           </button>
           <button
             className={`apple-book-mode-btn ${mode === 'edit' ? 'is-active' : ''}`}
@@ -1595,9 +1603,10 @@ export function AppleBookJournalModal({
               // Skip the cover and jump straight into the editor.
               setShowCover(false);
             }}
+            title="Direct Book Editor"
           >
             <PenTool size={14} />
-            <span>Direct Book Editor</span>
+            <span className="apple-book-mode-btn-label">Direct Book Editor</span>
           </button>
         </div>
 
@@ -1654,7 +1663,7 @@ export function AppleBookJournalModal({
               disabled={isSaving || !formData.content.trim()}
             >
               <Check size={16} />
-              <span>{isSaving ? 'Saving…' : 'Save Book'}</span>
+              <span className="apple-book-save-btn-label">{isSaving ? 'Saving…' : 'Save Book'}</span>
             </button>
           )}
         </div>
@@ -2179,7 +2188,7 @@ export function AppleBookJournalModal({
                 size="stretch"
                 minWidth={280}
                 maxWidth={540}
-                minHeight={360}
+                minHeight={280}
                 maxHeight={640}
                 maxShadowOpacity={0.5}
                 showCover={false}

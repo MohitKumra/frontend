@@ -994,7 +994,11 @@ export function BookCoverPickerModal({
   );
 
   // ── Dirty check ─────────────────────────────────────────────────────────────
+  // Consider the picker dirty whenever the user has interacted with a template
+  // (even if re-selecting the currently-cached one) so Save is never blocked.
+  const [hasPickedTemplate, setHasPickedTemplate] = useState(false);
   const isDirty =
+    hasPickedTemplate ||
     draftTemplateId !== selectedTemplateId ||
     draftCoverRemoved ||
     previewUrl !== null ||
@@ -1004,9 +1008,12 @@ export function BookCoverPickerModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      // Commit preset selection — fire onSelectPreset with the full theme so
-      // the parent applies both the cover style AND the interior book style.
-      if (draftTemplateId !== selectedTemplateId && draftTemplateId) {
+      // Commit preset selection — always fire onSelectPreset when a template is
+      // set, regardless of whether the id changed. This ensures the cover
+      // updates even when the user re-selects the same template that was already
+      // cached (which would make draftTemplateId === selectedTemplateId and
+      // previously caused the cover to silently skip the update).
+      if (draftTemplateId) {
         const preset = PRESET_THEMES[draftTemplateId];
         onSelectPreset(
           draftTemplateId,
@@ -1158,6 +1165,7 @@ export function BookCoverPickerModal({
                       isSelected={draftTemplateId === tpl.id && !previewCoverUrl}
                       onClick={() => {
                         setDraftTemplateId(tpl.id);
+                        setHasPickedTemplate(true);
                         // Seed draftStyle with this preset's cover style so the
                         // preview panel updates immediately to show the full look.
                         // Preserve authorText so any custom text the user typed

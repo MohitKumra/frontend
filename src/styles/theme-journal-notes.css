@@ -3172,7 +3172,9 @@
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 30;
-  shrink: 0;
+  flex-shrink: 0;
+  gap: 8px;
+  min-width: 0;
 }
 
 .apple-book-topbar-left,
@@ -3180,6 +3182,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Left side should not grow — keep close btn + title compact */
+.apple-book-topbar-left {
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .apple-book-icon-btn {
@@ -3194,6 +3203,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
   transition: all 0.18s ease;
+  flex-shrink: 0;
 }
 
 .apple-book-icon-btn:hover {
@@ -3216,7 +3226,8 @@
   display: flex;
   flex-direction: column;
   margin-left: 8px;
-  max-width: 260px;
+  min-width: 0;
+  max-width: 200px;
 }
 
 .apple-book-badge {
@@ -3228,12 +3239,16 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
 }
 
 .apple-book-header-title {
   font-size: 13px;
   font-weight: 700;
   color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Mode Switcher */
@@ -3245,6 +3260,7 @@
   background: rgba(0, 0, 0, 0.35);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .apple-book-mode-btn {
@@ -3260,12 +3276,18 @@
   background: transparent;
   cursor: pointer;
   transition: all 0.18s ease;
+  white-space: nowrap;
 }
 
 .apple-book-mode-btn.is-active {
   background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Label spans inside mode buttons — hidden on small screens */
+.apple-book-mode-btn-label {
+  display: inline;
 }
 
 .apple-book-save-btn {
@@ -3282,6 +3304,8 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
   transition: all 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .apple-book-save-btn:hover:not(:disabled) {
@@ -3292,6 +3316,135 @@
 .apple-book-save-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Save-btn label span — hidden on very small screens */
+.apple-book-save-btn-label {
+  display: inline;
+}
+
+/* ── Responsive top bar ─────────────────────────────────────────────────────
+   Breakpoints:
+   ≤ 640px  — hide title badge + title text; shrink mode buttons to icon-only
+   ≤ 480px  — move mode switcher below the bar as a second row; hide save label
+   ≤ 360px  — tighten spacing further, drop delete + book-toggle btns if needed
+----------------------------------------------------------------------------- */
+
+/* Wrap the topbar content so the mode row can drop below on tiny screens */
+.apple-book-topbar-inner {
+  display: contents; /* no-op on desktop — children flow normally */
+}
+
+@media (max-width: 640px) {
+  .apple-book-topbar {
+    padding: 0 10px;
+    gap: 6px;
+  }
+
+  /* Hide the badge line ("Interactive Journal") — keep title only */
+  .apple-book-badge {
+    display: none;
+  }
+
+  /* Tighten title column */
+  .apple-book-title-meta {
+    margin-left: 4px;
+    max-width: 110px;
+  }
+
+  /* Mode buttons: icon only — hide the text label */
+  .apple-book-mode-btn-label {
+    display: none;
+  }
+
+  .apple-book-mode-btn {
+    padding: 6px 10px;
+    gap: 0;
+  }
+
+  /* Shrink right-side icon gap */
+  .apple-book-topbar-right {
+    gap: 4px;
+  }
+
+  /* Slightly smaller icon buttons */
+  .apple-book-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stack: top bar becomes two rows */
+  .apple-book-topbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 8px 10px 6px;
+    gap: 6px;
+    row-gap: 6px;
+  }
+
+  /* Left takes full row width; right aligns to the far end */
+  .apple-book-topbar-left {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Mode switcher drops to its own centred row */
+  .apple-book-mode-switcher {
+    order: 10;          /* push below left + right */
+    width: 100%;
+    justify-content: center;
+    border-radius: 9px;
+    padding: 3px 6px;
+  }
+
+  /* Restore labels inside mode buttons on the full-width row */
+  .apple-book-mode-btn-label {
+    display: inline;
+  }
+
+  .apple-book-mode-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 8px;
+    font-size: 11px;
+    gap: 5px;
+  }
+
+  /* Hide save-btn text label — icon only */
+  .apple-book-save-btn-label {
+    display: none;
+  }
+
+  .apple-book-save-btn {
+    padding: 8px 10px;
+  }
+
+  /* Tight right group */
+  .apple-book-topbar-right {
+    flex-shrink: 0;
+    gap: 3px;
+  }
+
+  /* Slightly tighter icons */
+  .apple-book-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .apple-book-topbar {
+    padding: 7px 8px 5px;
+  }
+
+  /* Title completely hidden — only close button remains on left */
+  .apple-book-title-meta {
+    display: none;
+  }
 }
 
 /* Edit Formatting Toolbar */
@@ -3362,6 +3515,13 @@
   flex-direction: column;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
   animation: appleBookSlideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* On mobile the topbar wraps to two rows (~104px tall) so push the drawer down */
+@media (max-width: 480px) {
+  .apple-book-drawer {
+    top: 104px;
+  }
 }
 
 @keyframes appleBookSlideLeft {
