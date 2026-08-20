@@ -37,6 +37,7 @@ import {
   useArchiveNote,
   useUnarchiveNote,
 } from '../features/notes/hooks/useNotes';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
@@ -118,6 +119,7 @@ export function NotesPage() {
   const togglePin = useTogglePin();
   const archiveNote = useArchiveNote();
   const unarchiveNote = useUnarchiveNote();
+  const queryClient = useQueryClient();
   const { data: notionStatus } = useNotionStatus();
 
   // Build query filters
@@ -1244,20 +1246,24 @@ export function NotesPage() {
           onUploadCover={async (processed) => {
             const updated = await notesApi.uploadCover(viewingNote.id, processed);
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            void queryClient.invalidateQueries({ queryKey: ['notes'] });
             return updated;
           }}
           onRemoveCover={async () => {
             const updated = await notesApi.removeCover(viewingNote.id);
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            void queryClient.invalidateQueries({ queryKey: ['notes'] });
           }}
           onSaveCoverStyle={async (style) => {
             const updated = await notesApi.saveCoverStyle(viewingNote.id, style);
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            void queryClient.invalidateQueries({ queryKey: ['notes'] });
             return updated;
           }}
           onSaveBookStyle={async (bookStyle) => {
             const updated = await notesApi.saveBookStyle(viewingNote.id, bookStyle);
             setViewingNote((cur) => (cur && cur.id === updated.id ? updated : cur));
+            void queryClient.invalidateQueries({ queryKey: ['notes'] });
             return updated;
           }}
           autoSaveOnClose

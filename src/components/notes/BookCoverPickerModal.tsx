@@ -24,7 +24,7 @@ import {
   Type,
 } from 'lucide-react';
 import { processCoverImage, CoverProcessError } from '../../lib/coverImageProcessor';
-import type { NoteDTO, CoverStyle } from '../../types';
+import type { NoteDTO, CoverStyle, BookStyle } from '../../types';
 import { CoverTextEditor } from './CoverTextEditor';
 import { LiveBookCoverPreview as CoverPreview } from './LiveBookCover';
 
@@ -38,6 +38,18 @@ export interface CoverTemplate {
   titlePos: 'top' | 'center' | 'bottom';
   /** Title colour used in thumbnail and preview */
   titleColor: string;
+}
+
+/**
+ * Full preset theme — bundled cover style + interior book style.
+ * Every template ships with its own complete look so clicking a preset
+ * applies both the cover artwork AND the inside-page appearance at once.
+ */
+export interface PresetTheme {
+  /** Cover typography / decoration overrides (merged on top of CoverStyle defaults) */
+  coverStyle: Partial<CoverStyle>;
+  /** Interior page appearance applied to BookStyle */
+  bookStyle: BookStyle;
 }
 
 // ─── SVG Cover artwork ───────────────────────────────────────────────────────
@@ -562,6 +574,274 @@ export const COVER_TEMPLATES: CoverTemplate[] = [
   },
 ];
 
+// ─── Preset themes ──────────────────────────────────────────────────────────
+// Each preset ships with its OWN complete look: cover typography/colors AND
+// interior book style. Selecting a preset applies ALL of this at once so the
+// cover and pages are always visually coherent.
+
+export const PRESET_THEMES: Record<string, PresetTheme> = {
+  'dark-leather': {
+    coverStyle: {
+      titleFont:          "Cinzel, 'Trajan Pro', 'Times New Roman', serif",
+      titleSize:          30,
+      titleColor:         '#d4af37',
+      titleWeight:        800,
+      titleAlign:         'center',
+      titleShadow:        true,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'uppercase',
+      titleLetterSpacing: 0.06,
+      subtitleColor:      'rgba(244,232,216,0.7)',
+      subtitleFont:       "Georgia, 'Times New Roman', serif",
+      subtitleSize:       11,
+      authorColor:        'rgba(244,232,216,0.5)',
+      authorFont:         "Georgia, 'Times New Roman', serif",
+      authorSize:         10,
+      showBorder:         true,
+      borderColor:        'rgba(212,175,55,0.5)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#d4af37',
+      showEmblem:         true,
+      overlayOpacity:     0.3,
+    },
+    bookStyle: { theme: 'parchment', font: 'book', fontSize: 'md' },
+  },
+
+  'forest-green': {
+    coverStyle: {
+      titleFont:          "Baskerville, Garamond, 'Palatino Linotype', serif",
+      titleSize:          28,
+      titleColor:         '#86efac',
+      titleWeight:        700,
+      titleAlign:         'center',
+      titleShadow:        true,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'none',
+      titleLetterSpacing: 0.02,
+      subtitleColor:      'rgba(134,239,172,0.65)',
+      subtitleFont:       "Baskerville, Garamond, 'Palatino Linotype', serif",
+      subtitleSize:       11,
+      authorColor:        'rgba(134,239,172,0.45)',
+      authorFont:         "Baskerville, Garamond, 'Palatino Linotype', serif",
+      authorSize:         10,
+      showBorder:         true,
+      borderColor:        'rgba(74,222,128,0.35)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#4ade80',
+      showEmblem:         true,
+      overlayOpacity:     0.25,
+    },
+    bookStyle: { theme: 'emerald', font: 'book', fontSize: 'md' },
+  },
+
+  'midnight-blue': {
+    coverStyle: {
+      titleFont:          "'Playfair Display', 'IM Fell English', 'Times New Roman', serif",
+      titleSize:          27,
+      titleColor:         '#c7d2fe',
+      titleWeight:        700,
+      titleAlign:         'center',
+      titleShadow:        true,
+      titleItalic:        true,
+      titlePosition:      'center',
+      titleTransform:     'none',
+      titleLetterSpacing: 0.03,
+      subtitleColor:      'rgba(165,180,252,0.65)',
+      subtitleFont:       "Georgia, 'Times New Roman', serif",
+      subtitleSize:       11,
+      authorColor:        'rgba(165,180,252,0.4)',
+      authorFont:         "Georgia, 'Times New Roman', serif",
+      authorSize:         10,
+      showBorder:         true,
+      borderColor:        'rgba(99,102,241,0.45)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#6366f1',
+      showEmblem:         false,
+      overlayOpacity:     0.2,
+    },
+    bookStyle: { theme: 'midnight', font: 'serif', fontSize: 'md' },
+  },
+
+  'parchment': {
+    coverStyle: {
+      titleFont:          "Georgia, 'Times New Roman', serif",
+      titleSize:          29,
+      titleColor:         '#3e2200',
+      titleWeight:        800,
+      titleAlign:         'center',
+      titleShadow:        false,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'none',
+      titleLetterSpacing: 0.01,
+      subtitleColor:      'rgba(62,34,0,0.65)',
+      subtitleFont:       "Georgia, 'Times New Roman', serif",
+      subtitleSize:       11,
+      authorColor:        'rgba(62,34,0,0.5)',
+      authorFont:         "Georgia, 'Times New Roman', serif",
+      authorSize:         10,
+      showBorder:         true,
+      borderColor:        'rgba(122,92,42,0.6)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#7a5c2a',
+      showEmblem:         true,
+      overlayOpacity:     0.15,
+    },
+    bookStyle: { theme: 'parchment', font: 'serif', fontSize: 'md' },
+  },
+
+  'obsidian': {
+    coverStyle: {
+      titleFont:          "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      titleSize:          26,
+      titleColor:         '#d4d4d8',
+      titleWeight:        600,
+      titleAlign:         'center',
+      titleShadow:        true,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'uppercase',
+      titleLetterSpacing: 0.1,
+      subtitleColor:      'rgba(212,212,216,0.55)',
+      subtitleFont:       "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      subtitleSize:       10,
+      authorColor:        'rgba(212,212,216,0.4)',
+      authorFont:         "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      authorSize:         9,
+      showBorder:         true,
+      borderColor:        'rgba(161,161,170,0.3)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#71717a',
+      showEmblem:         false,
+      overlayOpacity:     0.2,
+    },
+    bookStyle: { theme: 'midnight', font: 'sans', fontSize: 'sm' },
+  },
+
+  'watercolor': {
+    coverStyle: {
+      titleFont:          "'Caveat', 'Comic Sans MS', cursive",
+      titleSize:          32,
+      titleColor:         '#4c1d95',
+      titleWeight:        700,
+      titleAlign:         'center',
+      titleShadow:        false,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'none',
+      titleLetterSpacing: 0.01,
+      subtitleColor:      'rgba(76,29,149,0.6)',
+      subtitleFont:       "'Caveat', 'Comic Sans MS', cursive",
+      subtitleSize:       13,
+      authorColor:        'rgba(76,29,149,0.45)',
+      authorFont:         "'Caveat', 'Comic Sans MS', cursive",
+      authorSize:         11,
+      showBorder:         false,
+      borderColor:        'rgba(129,140,248,0.3)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#a78bfa',
+      showEmblem:         true,
+      overlayOpacity:     0.1,
+    },
+    bookStyle: { theme: 'paper', font: 'script', fontSize: 'lg' },
+  },
+
+  'crimson-velvet': {
+    coverStyle: {
+      titleFont:          "Cinzel, 'Trajan Pro', 'Times New Roman', serif",
+      titleSize:          27,
+      titleColor:         '#fca5a5',
+      titleWeight:        700,
+      titleAlign:         'center',
+      titleShadow:        true,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'uppercase',
+      titleLetterSpacing: 0.08,
+      subtitleColor:      'rgba(252,165,165,0.6)',
+      subtitleFont:       "Georgia, 'Times New Roman', serif",
+      subtitleSize:       11,
+      authorColor:        'rgba(252,165,165,0.45)',
+      authorFont:         "Georgia, 'Times New Roman', serif",
+      authorSize:         10,
+      showBorder:         true,
+      borderColor:        'rgba(252,165,165,0.35)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#f87171',
+      showEmblem:         false,
+      overlayOpacity:     0.25,
+    },
+    bookStyle: { theme: 'sepia', font: 'book', fontSize: 'md' },
+  },
+
+  'golden-hour': {
+    coverStyle: {
+      titleFont:          "Baskerville, Garamond, 'Palatino Linotype', serif",
+      titleSize:          28,
+      titleColor:         '#1c0a00',
+      titleWeight:        800,
+      titleAlign:         'center',
+      titleShadow:        false,
+      titleItalic:        false,
+      titlePosition:      'top',
+      titleTransform:     'none',
+      titleLetterSpacing: 0.02,
+      subtitleColor:      'rgba(28,10,0,0.6)',
+      subtitleFont:       "Georgia, 'Times New Roman', serif",
+      subtitleSize:       11,
+      authorColor:        'rgba(28,10,0,0.45)',
+      authorFont:         "Georgia, 'Times New Roman', serif",
+      authorSize:         10,
+      showBorder:         true,
+      borderColor:        'rgba(253,230,138,0.6)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#f59e0b',
+      showEmblem:         true,
+      overlayOpacity:     0.1,
+    },
+    bookStyle: { theme: 'sepia', font: 'serif', fontSize: 'md' },
+  },
+
+  'arctic-marble': {
+    coverStyle: {
+      titleFont:          "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      titleSize:          24,
+      titleColor:         '#1e293b',
+      titleWeight:        600,
+      titleAlign:         'center',
+      titleShadow:        false,
+      titleItalic:        false,
+      titlePosition:      'center',
+      titleTransform:     'uppercase',
+      titleLetterSpacing: 0.12,
+      subtitleColor:      'rgba(30,41,59,0.55)',
+      subtitleFont:       "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      subtitleSize:       10,
+      authorColor:        'rgba(30,41,59,0.4)',
+      authorFont:         "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      authorSize:         9,
+      showBorder:         true,
+      borderColor:        'rgba(148,163,184,0.5)',
+      borderWidth:        1,
+      borderStyle:        'solid',
+      dividerColor:       '#94a3b8',
+      showEmblem:         false,
+      overlayOpacity:     0.08,
+    },
+    bookStyle: { theme: 'paper', font: 'sans', fontSize: 'sm' },
+  },
+};
+
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 export interface BookCoverPickerModalProps {
@@ -573,7 +853,12 @@ export interface BookCoverPickerModalProps {
   selectedTemplateId: string | null;
   currentCoverUrl: string | null;
   coverStyle: CoverStyle;
-  onSelectTemplate: (templateId: string) => void;
+  /**
+   * Called when the user saves a preset selection.
+   * Receives the full theme so the parent can apply cover style AND interior
+   * book style (theme/font/fontSize) in one shot.
+   */
+  onSelectPreset: (templateId: string, preset: PresetTheme) => void;
   onUploadCover: (
     processed: import('../../lib/coverImageProcessor').CoverProcessResult,
   ) => Promise<NoteDTO | void>;
@@ -588,17 +873,21 @@ function TemplateThumbnail({
   template,
   title,
   dateLabel,
-  style,
   isSelected,
   onClick,
 }: {
   template: CoverTemplate;
   title: string;
   dateLabel: string;
-  style: CoverStyle;
   isSelected: boolean;
   onClick: () => void;
 }) {
+  // Thumbnails render ONLY the preset's own cover style so each card looks
+  // distinct. The user's manual text-style tweaks are shown in the live
+  // preview panel on the left, not baked into every thumbnail.
+  const preset = PRESET_THEMES[template.id];
+  const thumbnailStyle: CoverStyle = preset ? (preset.coverStyle as CoverStyle) : {};
+
   return (
     <button
       className={`bcp-thumb ${isSelected ? 'is-selected' : ''}`}
@@ -607,20 +896,15 @@ function TemplateThumbnail({
       aria-pressed={isSelected}
       type="button"
     >
-      {/* Render the exact cover the user will get — this template's background
-          art + their styled text — so the preset matches the real cover. */}
       <CoverPreview
         title={title || 'My Journal'}
         dateLabel={dateLabel}
         coverUrl={null}
         templateId={template.id}
-        coverStyle={style}
+        coverStyle={thumbnailStyle}
         width={150}
       />
-
-      {/* Label badge at bottom */}
       <span className="bcp-thumb-label">{template.label}</span>
-
       {isSelected && (
         <span className="bcp-thumb-check" aria-hidden="true">
           <Check size={12} strokeWidth={3} />
@@ -642,7 +926,7 @@ export function BookCoverPickerModal({
   selectedTemplateId,
   currentCoverUrl,
   coverStyle,
-  onSelectTemplate,
+  onSelectPreset,
   onUploadCover,
   onRemoveCover,
   onStyleChange,
@@ -690,6 +974,12 @@ export function BookCoverPickerModal({
   const previewCoverUrl = draftCoverRemoved ? null : (previewUrl ?? currentCoverUrl);
   const previewTemplateId = previewCoverUrl ? null : draftTemplateId;
 
+  // For the preview panel, merge the active preset's cover style with any
+  // manual text-style tweaks so the preview is always honest.
+  const previewCoverStyle = previewTemplateId
+    ? { ...(PRESET_THEMES[previewTemplateId]?.coverStyle ?? {}), ...draftStyle }
+    : draftStyle;
+
   // Single preview element — works for all three tabs.
   // Uses LiveBookCoverPreview which renders the exact same DOM as the real
   // cover in AppleBookJournalModal, so every change is immediately visible.
@@ -699,7 +989,7 @@ export function BookCoverPickerModal({
       dateLabel={dateLabel}
       coverUrl={previewCoverUrl}
       templateId={previewTemplateId}
-      coverStyle={draftStyle}
+      coverStyle={previewCoverStyle}
     />
   );
 
@@ -714,11 +1004,16 @@ export function BookCoverPickerModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      // Commit template selection
+      // Commit preset selection — fire onSelectPreset with the full theme so
+      // the parent applies both the cover style AND the interior book style.
       if (draftTemplateId !== selectedTemplateId && draftTemplateId) {
-        onSelectTemplate(draftTemplateId);
+        const preset = PRESET_THEMES[draftTemplateId];
+        onSelectPreset(
+          draftTemplateId,
+          preset ?? { coverStyle: {}, bookStyle: { theme: 'parchment', font: 'serif', fontSize: 'md' } },
+        );
       }
-      // Commit text style
+      // Commit text style (manual tweaks from the Text Style tab)
       if (JSON.stringify(draftStyle) !== JSON.stringify(coverStyle ?? {})) {
         onStyleChange(draftStyle);
       }
@@ -737,7 +1032,7 @@ export function BookCoverPickerModal({
     }
   }, [
     draftTemplateId, selectedTemplateId, draftStyle, coverStyle, draftCoverRemoved,
-    onSelectTemplate, onStyleChange, onUploadCover, onRemoveCover, onClose,
+    onSelectPreset, onStyleChange, onUploadCover, onRemoveCover, onClose,
   ]);
 
   // ── File processing ─────────────────────────────────────────────────────────
@@ -860,11 +1155,20 @@ export function BookCoverPickerModal({
                       template={tpl}
                       title={bookTitle}
                       dateLabel={dateLabel}
-                      style={draftStyle}
                       isSelected={draftTemplateId === tpl.id && !previewCoverUrl}
                       onClick={() => {
                         setDraftTemplateId(tpl.id);
-                        // Selecting a template clears any pending photo draft
+                        // Seed draftStyle with this preset's cover style so the
+                        // preview panel updates immediately to show the full look.
+                        // Preserve authorText so any custom text the user typed
+                        // isn't wiped when switching presets.
+                        const preset = PRESET_THEMES[tpl.id];
+                        if (preset) {
+                          setDraftStyle((prev) => ({
+                            ...(preset.coverStyle as CoverStyle),
+                            authorText: prev.authorText,
+                          }));
+                        }
                         if (previewUrlRef.current) {
                           URL.revokeObjectURL(previewUrlRef.current);
                           previewUrlRef.current = null;

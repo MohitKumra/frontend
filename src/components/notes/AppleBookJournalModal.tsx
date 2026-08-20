@@ -61,7 +61,7 @@ import {
   type PaginationFonts,
   type PaginationProbe,
 } from './journalPagination';
-import { BookCoverPickerModal, COVER_TEMPLATES } from './BookCoverPickerModal';
+import { BookCoverPickerModal } from './BookCoverPickerModal';
 import { LiveBookCover } from './LiveBookCover';
 import type { CoverProcessResult } from '../../lib/coverImageProcessor';
 import {
@@ -767,30 +767,6 @@ export function AppleBookJournalModal({
       // preset survives save/reload (coverStyle is a JSON column — no migration).
       coverStyle: { ...(coverStyle ?? {}), templateId: selectedTemplateId ?? '' } as CoverStyle | null,
     };
-  };
-
-  /**
-   * Persist a preset-template cover selection to the backend immediately,
-   * mirroring the photo-upload path. Without this the selection is only local
-   * React state and is lost in read mode (autosave-on-close only runs while
-   * editing), so preset covers would silently revert on close/reopen.
-   */
-  const persistCoverTemplate = async (tplId: string) => {
-    if (!onSave) {
-      console.warn('[AppleBookJournal] Cover template not persisted: onSave not provided', { tplId });
-      return;
-    }
-    try {
-      const payload = buildSavePayload();
-      // The handler runs before the setSelectedTemplateId() render lands, so
-      // bake the newly-chosen id directly into the payload's coverStyle.
-      payload.coverStyle = { ...(coverStyle ?? {}), templateId: tplId } as CoverStyle | null;
-      console.log('[AppleBookJournal] Saving cover template:', tplId);
-      const result = await onSave(payload, { reason: 'cover' });
-      console.log('[AppleBookJournal] Cover template saved:', tplId, result);
-    } catch (err) {
-      console.error('[AppleBookJournal] Failed to save cover template:', tplId, err);
-    }
   };
 
   const closeModal = () => {
@@ -2098,14 +2074,53 @@ export function AppleBookJournalModal({
                     }
                   }
                 }}
-                onSelectTemplate={(tplId) => {
+                onSelectPreset={async (tplId, preset) => {
+                  // ── 1. Apply cover style from preset ──────────────────
+                  const effectiveCoverStyle: CoverStyle = {
+                    ...preset.coverStyle,
+                    templateId: tplId,
+                  };
                   setSelectedTemplateId(tplId);
-                  // When a template is chosen, clear any custom photo so the
-                  // CSS template style takes over
+                  setCoverStyle(effectiveCoverStyle);
+                  // Clear any custom photo so the template takes over
                   setLocalCoverUrl(null);
-                  // Persist the preset so it survives close/reopen — mirrors
-                  // the photo-upload path which hits the backend immediately.
-                  persistCoverTemplate(tplId);
+
+                  // ── 2. Apply interior book style from preset ───────────
+                  const bs = preset.bookStyle;
+                  setTheme((bs.theme as BookTheme) ?? 'parchment');
+                  setFont((bs.font as BookFont) ?? 'serif');
+                  setFontSize((bs.fontSize as BookFontSize) ?? 'md');
+
+                  if (!note?.id) return;
+
+                  // ── 3. Update both caches immediately ─────────────────
+                  setCachedCoverStyle(note.id, effectiveCoverStyle);
+                  setCachedBookStyle(note.id, bs);
+
+                  // ── 4. Persist cover + book style to backend ───────────
+                  try {
+                    // Cover style via onSaveCoverStyle (if available)
+                    if (onSaveCoverStyle) {
+                      const updatedNote = await onSaveCoverStyle(effectiveCoverStyle);
+                      if (updatedNote && typeof updatedNote === 'object' && 'coverStyle' in updatedNote) {
+                        setCoverStyle((updatedNote as NoteDTO).coverStyle ?? null);
+                      }
+                    } else {
+                      // Fall back to saving via the main onSave path
+                      const payload = buildSavePayload();
+                      payload.coverStyle = effectiveCoverStyle;
+                      await onSave?.(payload, { reason: 'cover' });
+                    }
+
+                    // Book style via onSaveBookStyle (if available)
+                    if (onSaveBookStyle) {
+                      void Promise.resolve(onSaveBookStyle(bs)).catch((err) => {
+                        console.error('[AppleBookJournal] Save preset book style failed:', err);
+                      });
+                    }
+                  } catch (err) {
+                    console.error('[AppleBookJournal] Failed to save preset theme:', tplId, err);
+                  }
                 }}
                 onUploadCover={async (processed) => {
                   const updated = await onUploadCover(processed);
@@ -2166,7 +2181,7 @@ export function AppleBookJournalModal({
                 maxWidth={540}
                 minHeight={360}
                 maxHeight={640}
-                maxShadowOpacity={0.35}
+                maxShadowOpacity={0.5}
                 showCover={false}
                 mobileScrollSupport={true}
                 onFlip={(e: any) => {
