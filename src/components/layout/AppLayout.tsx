@@ -361,6 +361,7 @@ export function AppLayout() {
   //   G then F         → Navigate to Focus
   //   G then P         → Navigate to Projects
   //   G then O         → Navigate to Goals
+  //   G then A         → Navigate to AI Coach  
   //   G then S         → Navigate to Settings
   //
   useEffect(() => {
@@ -421,6 +422,7 @@ export function AppLayout() {
           f: '/focus', // Focus
           p: '/projects', // Projects
           o: '/goals', // Goals
+          a: '/coach',
           s: '/settings', // Settings
         };
 
@@ -1081,6 +1083,7 @@ export function AppLayout() {
                   ['G + F', 'Go to Focus'],
                   ['G + P', 'Go to Projects'],
                   ['G + O', 'Go to Goals'],
+                  ['G + A' , 'Go to AI Coach'],
                   ['G + S', 'Go to Settings'],
                 ].map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between">

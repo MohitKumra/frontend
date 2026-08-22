@@ -4615,10 +4615,18 @@
   transform: translateY(-1px);
 }
 
+/* Portal wrapper — fixed positioning is set inline via JS (getBoundingClientRect).
+   This rule just ensures it sits above everything and doesn't intercept pointer
+   events outside the palette itself. */
+.apple-book-highlight-palette-portal {
+  pointer-events: none; /* let clicks through the transparent wrapper area */
+}
+.apple-book-highlight-palette-portal .apple-book-highlight-palette {
+  pointer-events: auto;
+}
+
 .apple-book-highlight-palette {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  position: relative; /* portal wrapper owns the fixed placement */
   display: flex;
   align-items: center;
   gap: 6px;
@@ -4627,7 +4635,8 @@
   border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
-  z-index: 50;
+  z-index: 9999;
+  white-space: nowrap;
 }
 
 .apple-book-color-swatch {
@@ -4807,6 +4816,33 @@
   color: inherit;
   padding: 0 4px;
   border-radius: 3px;
+}
+
+/* ── Highlight contrast fix ─────────────────────────────────────────────────
+   Highlights are stored as inline background-color spans. On dark-paper themes
+   (midnight, etc.) the inherited text colour is near-white, which becomes
+   invisible against the light pastel highlight background.
+   Force any highlighted span/font back to near-black so text stays readable
+   regardless of which theme is active.
+----------------------------------------------------------------------------- */
+.apple-book-page span[style*="background-color"],
+.apple-book-page font[style*="background-color"],
+.apple-book-page mark,
+.apple-book-flip-page span[style*="background-color"],
+.apple-book-flip-page font[style*="background-color"],
+.apple-book-flip-page mark,
+.apple-book-normal-content span[style*="background-color"],
+.apple-book-normal-content font[style*="background-color"],
+.apple-book-normal-content mark,
+.apple-book-text-content span[style*="background-color"],
+.apple-book-text-content font[style*="background-color"],
+.apple-book-text-content mark,
+.apple-book-rich-content span[style*="background-color"],
+.apple-book-rich-content font[style*="background-color"],
+.apple-book-rich-content mark,
+.apple-book-live-textarea span[style*="background-color"],
+.apple-book-live-textarea font[style*="background-color"] {
+  color: #1a1a1a !important;
 }
 
 .apple-book-h1 {

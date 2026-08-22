@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import HTMLFlipBook from 'react-pageflip';
 import {
   Book,
@@ -167,6 +168,80 @@ const BOOKMARK_COLORS: Record<string, string> = {
   green:  '#16a34a',
   purple: '#7c3aed',
 } as const;
+
+// ─── Highlight colour swatches ────────────────────────────────────────────────
+const HIGHLIGHT_COLORS = [
+  { id: 'yellow', color: '#fef08a', name: 'Yellow'           },
+  { id: 'green',  color: '#bbf7d0', name: 'Green'            },
+  { id: 'blue',   color: '#bfdbfe', name: 'Blue'             },
+  { id: 'pink',   color: '#fbcfe8', name: 'Pink'             },
+  { id: 'orange', color: '#fed7aa', name: 'Orange'           },
+  { id: 'purple', color: '#e9d5ff', name: 'Purple'           },
+  { id: 'clear',  color: 'transparent', name: 'Remove Highlight' },
+] as const;
+
+/**
+ * Highlight colour palette rendered via a portal so it escapes any
+ * overflow:hidden ancestor (the editor card clips absolutely-positioned
+ * children, which was causing colors 3-7 to be unreachable).
+ * Positions itself below the anchor button using getBoundingClientRect.
+ */
+function HighlightPalette({
+  anchorRef,
+  onPick,
+  onClose,
+}: {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  onPick: (color: string) => void;
+  onClose: () => void;
+}) {
+  const [pos, setPos] = React.useState<{ top: number; left: number } | null>(null);
+
+  React.useLayoutEffect(() => {
+    const btn = anchorRef.current;
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    setPos({ top: r.bottom + 6, left: r.left });
+  }, [anchorRef]);
+
+  // Close on outside click (mousedown so it fires before onClick elsewhere)
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('.apple-book-highlight-palette-portal')) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  if (!pos) return null;
+
+  return (
+    <div
+      className="apple-book-highlight-palette-portal"
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
+    >
+      <div className="apple-book-highlight-palette">
+        {HIGHLIGHT_COLORS.map((hp) => (
+          <button
+            key={hp.id}
+            type="button"
+            className="apple-book-color-swatch"
+            style={{ background: hp.color === 'transparent' ? '#ffffff' : hp.color }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onPick(hp.color)}
+            title={hp.name}
+          >
+            {hp.color === 'transparent' && (
+              <span className="text-[10px] text-red-500 font-bold">✕</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Render journal content for the read view.
@@ -1164,8 +1239,13 @@ export function AppleBookJournalModal({
   };
 
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+  // Snapshot of the selection taken when the colour picker opens, so that
+  // clicking a swatch (which blurs the editor via the portal) can still apply
+  // the highlight to the originally-selected text.
+  const savedPickerRangeRef = useRef<Range | null>(null);
 
   const bookInstanceKey = useRef(`journal-book-${note?.id ?? 'new'}-${Date.now()}`);
+  const highlighterBtnRef = useRef<HTMLButtonElement>(null);
 
   const [selectedHighlightColor, setSelectedHighlightColor] = useState('#fef08a');
 
@@ -1282,16 +1362,17 @@ export function AppleBookJournalModal({
     const el = editorRef.current;
     if (!el) return;
 
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-
-    const activeRange = saveSelectionRange();
+    // Prefer the range we snapshotted when the picker opened (the editor may
+    // have lost focus by the time a swatch is clicked via the portal).
+    const activeRange = savedPickerRangeRef.current ?? saveSelectionRange();
+    savedPickerRangeRef.current = null; // consume it
     if (!activeRange || activeRange.collapsed) return;
 
     el.focus();
     suppressInputRef.current = true;
 
     if (color === 'transparent') {
+      // Remove: strip backgroundColor from every span/mark that intersects the range.
       const range = activeRange.cloneRange();
       const allSpans = Array.from(el.querySelectorAll<HTMLElement>('span[style], mark[style]'));
 
@@ -1305,20 +1386,71 @@ export function AppleBookJournalModal({
         }
       }
     } else {
+      // Apply: walk every text node touched by the range and wrap it in a
+      // background-color span. This avoids extractContents (which removes DOM
+      // nodes and can corrupt the document if anything goes wrong) and works
+      // correctly across block / paragraph boundaries.
       const range = activeRange.cloneRange();
-      const span = document.createElement('span');
-      span.style.backgroundColor = color;
 
-      try {
-        range.surroundContents(span);
-      } catch {
-        const fragment = range.extractContents();
-        span.appendChild(fragment);
-        range.insertNode(span);
+      // Collect all text nodes that fall inside the range.
+      const textNodes: Text[] = [];
+      const walker = document.createTreeWalker(
+        range.commonAncestorContainer,
+        NodeFilter.SHOW_TEXT,
+      );
+      let node = walker.nextNode();
+      while (node) {
+        if (range.intersectsNode(node)) {
+          textNodes.push(node as Text);
+        }
+        node = walker.nextNode();
+      }
+
+      // If no text nodes found (e.g. range inside a single element), fall back
+      // to the simple surroundContents path which is safe for inline-only ranges.
+      if (textNodes.length === 0) {
+        try {
+          const span = document.createElement('span');
+          span.style.backgroundColor = color;
+          range.surroundContents(span);
+        } catch { /* range was invalid — do nothing rather than corrupt */ }
+      } else {
+        for (const textNode of textNodes) {
+          // Clip to the actual selected portion of the first/last text node.
+          const nodeRange = document.createRange();
+          nodeRange.selectNodeContents(textNode);
+
+          if (textNode === range.startContainer) {
+            nodeRange.setStart(textNode, range.startOffset);
+          }
+          if (textNode === range.endContainer) {
+            nodeRange.setEnd(textNode, range.endOffset);
+          }
+
+          // Skip empty ranges (e.g. cursor at edge of a text node).
+          if (nodeRange.collapsed) continue;
+
+          // Don't double-wrap — if the text node is already inside a
+          // background-color span with the same colour, skip it.
+          const parent = textNode.parentElement;
+          if (
+            parent &&
+            parent !== el &&
+            parent.style?.backgroundColor === color
+          ) continue;
+
+          const span = document.createElement('span');
+          span.style.backgroundColor = color;
+          try {
+            nodeRange.surroundContents(span);
+          } catch { /* skip malformed ranges */ }
+        }
       }
     }
 
-    restoreSelectionRange(activeRange.cloneRange());
+    try {
+      restoreSelectionRange(activeRange.cloneRange());
+    } catch { /* range may be stale after DOM mutation — safe to ignore */ }
     commitEditorContent();
   }, [commitEditorContent, restoreSelectionRange, saveSelectionRange]);
 
@@ -2358,6 +2490,7 @@ export function AppleBookJournalModal({
                       opening the colour picker. */}
                   <div className="relative inline-block">
                     <button
+                      ref={highlighterBtnRef}
                       type="button"
                       className={`apple-book-tool-btn ${activeFormats.highlight || showHighlightPicker ? 'is-active' : ''}`}
                       onMouseDown={(e) => e.preventDefault()}
@@ -2367,6 +2500,9 @@ export function AppleBookJournalModal({
                           applyRichFormat('hiliteColor', 'transparent');
                           setShowHighlightPicker(false);
                         } else {
+                          // Snapshot the selection NOW, before the picker renders
+                          // and the portal click can blur the editor.
+                          savedPickerRangeRef.current = saveSelectionRange();
                           setShowHighlightPicker((v) => !v);
                         }
                       }}
@@ -2375,36 +2511,20 @@ export function AppleBookJournalModal({
                       <Highlighter size={15} />
                     </button>
 
-                    {showHighlightPicker && (
-                      <div className="apple-book-highlight-palette">
-                        {[
-                          { id: 'yellow',  color: '#fef08a', name: 'Yellow'           },
-                          { id: 'green',   color: '#bbf7d0', name: 'Green'            },
-                          { id: 'blue',    color: '#bfdbfe', name: 'Blue'             },
-                          { id: 'pink',    color: '#fbcfe8', name: 'Pink'             },
-                          { id: 'orange',  color: '#fed7aa', name: 'Orange'           },
-                          { id: 'purple',  color: '#e9d5ff', name: 'Purple'           },
-                          { id: 'clear',   color: 'transparent', name: 'Remove Highlight' },
-                        ].map((hp) => (
-                          <button
-                            key={hp.id}
-                            type="button"
-                            className="apple-book-color-swatch"
-                            style={{ background: hp.color === 'transparent' ? '#ffffff' : hp.color }}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => {
-                              setSelectedHighlightColor(hp.color);
-                              applyRichFormat('hiliteColor', hp.color);
-                              setShowHighlightPicker(false);
-                            }}
-                            title={hp.name}
-                          >
-                            {hp.color === 'transparent' && (
-                              <span className="text-[10px] text-red-500 font-bold">✕</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
+                    {showHighlightPicker && createPortal(
+                      <HighlightPalette
+                        anchorRef={highlighterBtnRef}
+                        onPick={(color) => {
+                          setSelectedHighlightColor(color);
+                          applyRichFormat('hiliteColor', color);
+                          setShowHighlightPicker(false);
+                        }}
+                        onClose={() => {
+                          savedPickerRangeRef.current = null;
+                          setShowHighlightPicker(false);
+                        }}
+                      />,
+                      document.body
                     )}
                   </div>
                 </div>

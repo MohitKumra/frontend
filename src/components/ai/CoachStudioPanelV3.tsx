@@ -1514,10 +1514,9 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 style={{
                   background: 'var(--color-surface-raised)',
                   borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-primary)',
+                  color: 'var(--color-text-primary)', 
                   maxHeight: '160px',
                   lineHeight: '1.5',
-                  overflowY: 'auto',
                 }}
                 onInput={(e) => {
                   const el = e.currentTarget;
