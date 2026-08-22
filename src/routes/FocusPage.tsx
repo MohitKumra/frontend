@@ -432,9 +432,20 @@ function FocusModeFullScreen({
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 overflow-hidden" style={{ background: 'var(--color-bg)', zIndex: 9999 }}>
-      <div
-        className="absolute inset-0 transition-all duration-700 pointer-events-none"
+    <motion.div
+      className="fixed inset-0 overflow-hidden"
+      style={{ background: 'var(--color-bg)', zIndex: 9999 }}
+      initial={{ opacity: 0, scale: 1.04 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <motion.div
+        className="absolute inset-0 transition-none pointer-events-none"
+        key={mode}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, ease: 'easeInOut' }}
         style={{
           background: `linear-gradient(180deg, ${MODE_SKY[mode][0]} 0%, ${MODE_SKY[mode][1]} 38%, ${MODE_SKY[mode][2]} 72%, ${MODE_SKY[mode][3]} 100%)`,
         }}
@@ -542,7 +553,15 @@ function FocusModeFullScreen({
       )}
 
       <div className="relative h-full flex items-center justify-center px-3 sm:px-4 pointer-events-none z-10">
-        <div className="flex flex-col items-center gap-4 sm:gap-8 w-full max-w-[94vw] sm:max-w-lg p-4 sm:p-8 pointer-events-auto">
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={mode}
+          className="flex flex-col items-center gap-4 sm:gap-8 w-full max-w-[94vw] sm:max-w-lg p-4 sm:p-8 pointer-events-auto"
+          initial={{ opacity: 0, scale: 0.93, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 1.04, y: -20 }}
+          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+        >
           <div className="flex flex-col items-center gap-2 sm:gap-3 w-full px-2">
             <p
               className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.25em] sm:tracking-[0.35em]"
@@ -680,7 +699,8 @@ function FocusModeFullScreen({
           >
             💡 Tip: Take short breaks to recharge. You'll come back stronger!
           </p>
-        </div>
+        </motion.div>
+        </AnimatePresence>
 
         {quotes.length > 0 && (
           <div
@@ -823,7 +843,7 @@ function FocusModeFullScreen({
           div[style*="focus-breathe"] { animation: none !important; }
         }
       `}</style>
-    </div>,
+    </motion.div>,
     document.body
   );
 }
@@ -2201,7 +2221,8 @@ export function FocusPage() {
   return (
     <>
       {focusMode && (
-        <FocusModeFullScreen
+        <AnimatePresence>
+          <FocusModeFullScreen
           mode={mode}
           minutes={minutes}
           seconds={seconds}
@@ -2222,7 +2243,8 @@ export function FocusPage() {
           onStartPause={handleStartPause}
           onSkipBack={handleSkipBack}
           onSkipForward={handleSkipForward}
-        />
+          />
+        </AnimatePresence>
       )}
 
       <div className="w-full flex flex-col gap-4 sm:gap-5">

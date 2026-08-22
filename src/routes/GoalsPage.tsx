@@ -41,6 +41,7 @@ import { GoalCardView } from '../components/goals/GoalCardView';
 import { GoalDeleteModal } from '../components/goals/GoalDeleteModal';
 import { GoalFormModal } from '../components/goals/GoalFormModal';
 import { GoalPlannerModal } from '../components/goals/GoalPlannerModal';
+import { AICoachWidget } from '../components/ai/AICoachWidget';
 import type {
   EnhancedDashboardDTO,
   GoalDTO,
@@ -779,11 +780,12 @@ export function GoalsPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <CoachPanel
-              insights={insights}
-              upcomingDeadlines={upcomingDeadlines}
-              updatedAt={dashboardData?.gamification.recentPoints?.[0]?.createdAt ?? null}
-            />
+            <AICoachWidget
+                context="goals"
+                insights={insights}
+                upcomingDeadlines={upcomingDeadlines}
+                updatedAt={dashboardData?.gamification.recentPoints?.[0]?.createdAt ?? null}
+              />
             <RecentAchievementsPanel achievements={recentAchievements} />
           </div>
         </motion.div>
@@ -1510,117 +1512,6 @@ function SectionHeader({
           actionLabel && <ArrowRight size={14} />
         } 
       </button>
-    </div>
-  );
-}
-
-function CoachPanel({
-  insights,
-  upcomingDeadlines,
-  updatedAt,
-}: {
-  insights: EnhancedDashboardDTO['insights'];
-  upcomingDeadlines: EnhancedDashboardDTO['upcomingDeadlines'];
-  updatedAt: string | null;
-}) {
-  return (
-    <div
-      className="rounded-xl border p-5"
-      style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Sparkles size={18} className="text-accent" />
-          <h2 className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
-            AI Coach
-          </h2>
-        </div>
-        <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
-          Updated {formatRelativeTime(updatedAt)}
-        </span>
-      </div>
-
-      <div
-        className="mt-4 rounded-2xl border p-4"
-        style={{
-          background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-raised))',
-          borderColor: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
-        }}
-      >
-        <p className="text-sm font-semibold leading-6" style={{ color: 'var(--color-text-secondary)' }}>
-          You are progressing faster than expected. Keep it up.
-        </p>
-      </div>
-
-      <div className="mt-5 space-y-3">
-        <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-          Suggestions
-        </p>
-        {insights.slice(0, 3).map((insight) => (
-          <div
-            key={insight.id}
-            className="flex items-start gap-3 rounded-2xl border p-3"
-            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-          >
-            <span
-              className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl"
-              style={{
-                background: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
-                color: 'var(--color-info)',
-              }}
-            >
-              <Brain size={14} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm leading-6" style={{ color: 'var(--color-text-secondary)' }}>
-                {insight.text}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-5 space-y-3">
-        <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-          Upcoming Deadlines
-        </p>
-        {upcomingDeadlines.slice(0, 3).map((deadline) => (
-          <div
-            key={`${deadline.type}-${deadline.id}`}
-            className="flex items-center justify-between gap-3 rounded-2xl border p-3"
-            style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-                {deadline.title}
-              </p>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                {deadline.type.toUpperCase()} - {deadline.daysUntilDue} day{deadline.daysUntilDue === 1 ? '' : 's'} left
-              </p>
-            </div>
-            <span
-              className="rounded-full px-2.5 py-1 text-[11px] font-bold"
-              style={{
-                background:
-                  deadline.daysUntilDue <= 1
-                    ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
-                    : 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
-                color: deadline.daysUntilDue <= 1 ? 'var(--color-danger)' : 'var(--color-warning)',
-              }}
-            >
-              {formatDate(deadline.dueDate)}
-            </span>
-          </div>
-        ))}
-        {upcomingDeadlines.length === 0 && (
-          <div
-            className="rounded-2xl border border-dashed p-4 text-sm"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
-          >
-            No upcoming deadlines. Your plan is clear for now.
-          </div>
-        )}
-      </div>
     </div>
   );
 }
