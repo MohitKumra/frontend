@@ -26,6 +26,7 @@ interface NoteViewModalProps {
   onSaveCoverStyle?: (coverStyle: CoverStyle | null) => Promise<NoteDTO | void> | void;
   onSaveBookStyle?: (bookStyle: BookStyle | null) => Promise<NoteDTO | void> | void;
   autoSaveOnClose?: boolean;
+  onReady?: () => void;
 }
 
 export function NoteViewModal({
@@ -42,6 +43,7 @@ export function NoteViewModal({
   onSaveCoverStyle,
   onSaveBookStyle,
   autoSaveOnClose,
+  onReady,
 }: NoteViewModalProps) {
   if (!isOpen) return null;
 
@@ -61,6 +63,7 @@ export function NoteViewModal({
           onSaveCoverStyle={onSaveCoverStyle}
           onSaveBookStyle={onSaveBookStyle}
           autoSaveOnClose={autoSaveOnClose}
+          onReady={onReady}
         />
       ) : (
         <NotePageModal note={note} originRect={originRect} onClose={onClose} onEdit={onEdit} onDelete={onDelete} />

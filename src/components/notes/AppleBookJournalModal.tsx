@@ -133,6 +133,8 @@ interface AppleBookJournalModalProps {
   isSaving?: boolean;
   /** When true, persist the current editor contents before the modal closes (used by the read-book flow). */
   autoSaveOnClose?: boolean;
+  /** Called once the book has finished measuring/paginating and is visually ready. */
+  onReady?: () => void;
 }
 
 const THEMES: { id: BookTheme; name: string; bg: string; text: string; accent: string; paper: string }[] = [
@@ -324,6 +326,7 @@ export function AppleBookJournalModal({
   onSaveBookStyle,
   isSaving = false,
   autoSaveOnClose = false,
+  onReady,
 }: AppleBookJournalModalProps) {
   const [mode, setMode] = useState<'read' | 'edit'>(initialMode);
   const [closing, setClosing] = useState(false);
@@ -705,6 +708,16 @@ export function AppleBookJournalModal({
   useEffect(() => {
     recalculatePagination();
   }, [recalculatePagination]);
+
+  // Signal to the parent (e.g. NotesPage overlay) that the book is ready to
+  // display — fires once pagination has settled so the loader can be dismissed.
+  const onReadyFiredRef = useRef(false);
+  useEffect(() => {
+    if (paginationReady && onReady && !onReadyFiredRef.current) {
+      onReadyFiredRef.current = true;
+      onReady();
+    }
+  }, [paginationReady, onReady]);
 
   useEffect(() => {
     const handleResize = () => {

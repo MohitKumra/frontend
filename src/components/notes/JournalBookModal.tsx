@@ -24,6 +24,7 @@ interface JournalBookModalProps {
   onSaveCoverStyle?: (coverStyle: CoverStyle | null) => Promise<NoteDTO | void> | void;
   onSaveBookStyle?: (bookStyle: BookStyle | null) => Promise<NoteDTO | void> | void;
   autoSaveOnClose?: boolean;
+  onReady?: () => void;
 }
 
 export function JournalBookModal({
@@ -39,6 +40,7 @@ export function JournalBookModal({
   onSaveCoverStyle,
   onSaveBookStyle,
   autoSaveOnClose,
+  onReady,
 }: JournalBookModalProps) {
   return (
     <AppleBookJournalModal
@@ -54,6 +56,7 @@ export function JournalBookModal({
       onSaveCoverStyle={onSaveCoverStyle}
       onSaveBookStyle={onSaveBookStyle}
       autoSaveOnClose={autoSaveOnClose}
+      onReady={onReady}
     />
   );
 }

@@ -101,6 +101,8 @@ export function NotesPage() {
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [originRect, setOriginRect] = useState<DOMRect | null>(null);
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [openingJournal, setOpeningJournal] = useState(false);
+  const openingJournalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sort & filter state
   const [sortField, setSortField] = useState<NoteSortField>('updatedAt');
@@ -262,6 +264,25 @@ export function NotesPage() {
     setNoteMenuOpen(null);
   };
 
+  const handleOpenNote = useCallback(
+    (note: NoteDTO, rect: DOMRect) => {
+      setOriginRect(rect);
+      setViewingNote(note);
+      if (note.isJournal) {
+        setOpeningJournal(true);
+        // Safety fallback: dismiss the loader after 6 s if onReady never fires
+        if (openingJournalTimeoutRef.current) clearTimeout(openingJournalTimeoutRef.current);
+        openingJournalTimeoutRef.current = setTimeout(() => setOpeningJournal(false), 6000);
+      }
+    },
+    [],
+  );
+
+  const handleJournalReady = useCallback(() => {
+    if (openingJournalTimeoutRef.current) clearTimeout(openingJournalTimeoutRef.current);
+    setOpeningJournal(false);
+  }, []);
+
   const handleConfirmDelete = useCallback(() => {
     if (!deleteConfirmation) return;
     deleteNote.mutate(deleteConfirmation);
@@ -398,8 +419,7 @@ export function NotesPage() {
       <div
         key={note.id}
         onClick={(e) => {
-          setOriginRect(e.currentTarget.getBoundingClientRect());
-          setViewingNote(note);
+          handleOpenNote(note, e.currentTarget.getBoundingClientRect());
         }}
         className={`np-card np-theme-${theme} group`}
       >
@@ -779,8 +799,7 @@ export function NotesPage() {
                   <div
                     key={note.id}
                     onClick={(e) => {
-                      setOriginRect(e.currentTarget.getBoundingClientRect());
-                      setViewingNote(note);
+                      handleOpenNote(note, e.currentTarget.getBoundingClientRect());
                     }}
                     className="np-list-item group"
                   >
@@ -902,8 +921,7 @@ export function NotesPage() {
                   starred={note.isPinned}
                   menuOpen={noteMenuOpen === note.id}
                   onOpen={(e, n) => {
-                    setOriginRect(e.currentTarget.getBoundingClientRect());
-                    setViewingNote(n);
+                    handleOpenNote(n, e.currentTarget.getBoundingClientRect());
                   }}
                   onTogglePin={handleTogglePin}
                   onArchive={handleArchive}
@@ -1019,8 +1037,7 @@ export function NotesPage() {
                     <div
                       className="np-featured-body cursor-pointer"
                       onClick={(e) => {
-                        setOriginRect(e.currentTarget.getBoundingClientRect());
-                        setViewingNote(entry);
+                        handleOpenNote(entry, e.currentTarget.getBoundingClientRect());
                       }}
                     >
                       <h3
@@ -1266,10 +1283,63 @@ export function NotesPage() {
             void queryClient.invalidateQueries({ queryKey: ['notes'] });
             return updated;
           }}
+          onReady={handleJournalReady}
           autoSaveOnClose
         />
       )}
       {editingNote && <EntryFormModal isOpen mode="edit" note={editingNote} onClose={() => setEditingNote(null)} />}
+
+      {/* Journal opening loader — shown from click until the book is ready */}
+      {openingJournal && (
+        <div
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)' }}
+          aria-label="Opening journal…"
+        >
+          <div
+            className="flex flex-col items-center gap-4 rounded-2xl px-10 py-8 shadow-2xl"
+            style={{
+              background: 'var(--color-surface-raised)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            {/* Animated book icon */}
+            <div className="relative flex items-center justify-center">
+              <div
+                className="absolute h-16 w-16 rounded-full animate-ping opacity-20"
+                style={{ background: 'var(--color-accent)' }}
+              />
+              <div
+                className="relative flex h-14 w-14 items-center justify-center rounded-2xl"
+                style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))' }}
+              >
+                <BookOpen size={28} style={{ color: 'var(--color-accent)' }} />
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-sm font-black" style={{ color: 'var(--color-text-primary)' }}>
+                Opening Journal
+              </span>
+              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+                Preparing your pages…
+              </span>
+            </div>
+            {/* Dot progress indicator */}
+            <div className="flex items-center gap-1.5">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-1.5 w-1.5 rounded-full animate-bounce"
+                  style={{
+                    background: 'var(--color-accent)',
+                    animationDelay: `${i * 0.15}s`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       <Modal open={deleteConfirmation !== null} onClose={() => setDeleteConfirmation(null)} title="Confirm Deletion">
