@@ -60,24 +60,39 @@ interface CardHeaderProps {
   className?: string;
 }
 
-Card.Header = function CardHeader({ children, className = '' }: CardHeaderProps) {
-  return <div className={['px-6 py-5 border-b border-border-subtle', className].join(' ')}>{children}</div>;
-};
+export function CardHeader({ children, className = '' }: CardHeaderProps) {
+  return <div className={['px-6 py-5 border-b border-border/60', className].join(' ')}>{children}</div>;
+}
+
+interface CardTitleProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardTitle({ children, className = '' }: CardTitleProps) {
+  return <h2 className={['text-base font-bold text-text-primary', className].join(' ')}>{children}</h2>;
+}
 
 interface CardContentProps {
   children: React.ReactNode;
   className?: string;
 }
 
-Card.Content = function CardContent({ children, className = '' }: CardContentProps) {
+export function CardContent({ children, className = '' }: CardContentProps) {
   return <div className={['px-6 py-5', className].join(' ')}>{children}</div>;
-};
+}
 
 interface CardFooterProps {
   children: React.ReactNode;
   className?: string;
 }
 
-Card.Footer = function CardFooter({ children, className = '' }: CardFooterProps) {
-  return <div className={['px-6 py-5 border-t border-border-subtle', className].join(' ')}>{children}</div>;
-};
+export function CardFooter({ children, className = '' }: CardFooterProps) {
+  return <div className={['px-6 py-5 border-t border-border/60', className].join(' ')}>{children}</div>;
+}
+
+Card.Header = CardHeader;
+Card.Title = CardTitle;
+Card.Content = CardContent;
+Card.Footer = CardFooter;
+

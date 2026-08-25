@@ -34,6 +34,24 @@ import { TaskDetailPage } from './routes/TaskDetailPage';
 import { ProjectDetailPage } from './routes/ProjectDetailPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 
+// Admin portal
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminGuard } from './components/admin/AdminGuard';
+import { AdminLoginPage } from './routes/admin/AdminLoginPage';
+import { AdminVerifyOtpPage } from './routes/admin/AdminVerifyOtpPage';
+import { AdminDashboardPage } from './routes/admin/AdminDashboardPage';
+import { AdminUsersPage } from './routes/admin/AdminUsersPage';
+import { AdminUserDetailPage } from './routes/admin/AdminUserDetailPage';
+import { AdminPlansPage } from './routes/admin/AdminPlansPage';
+import { AdminCouponsPage } from './routes/admin/AdminCouponsPage';
+import { AdminSubscriptionsPage } from './routes/admin/AdminSubscriptionsPage';
+import { AdminTransactionsPage } from './routes/admin/AdminTransactionsPage';
+import { AdminAnalyticsPage } from './routes/admin/AdminAnalyticsPage';
+import { AdminAuditLogPage } from './routes/admin/AdminAuditLogPage';
+import { AdminSystemPage } from './routes/admin/AdminSystemPage';
+import { AdminSettingsPage } from './routes/admin/AdminSettingsPage';
+
+
 /** Redirects unauthenticated users to /login. */
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -164,6 +182,35 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
+        {/* ──────────────────────────────────────────────────────────
+            Admin Portal — completely isolated from the user app.
+            Public:    /admin/login, /admin/verify-otp
+            Protected: everything under AdminLayout + AdminGuard
+        ────────────────────────────────────────────────────────── */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/verify-otp" element={<AdminVerifyOtpPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminGuard>
+              <AdminLayout />
+            </AdminGuard>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:id" element={<AdminUserDetailPage />} />
+          <Route path="plans" element={<AdminPlansPage />} />
+          <Route path="coupons" element={<AdminCouponsPage />} />
+          <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
+          <Route path="transactions" element={<AdminTransactionsPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
+          <Route path="audit-log" element={<AdminAuditLogPage />} />
+          <Route path="system" element={<AdminSystemPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+
         {/* Fallback */}
         <Route
           path="*"
@@ -177,3 +224,4 @@ export default function App() {
     </>
   );
 }
+

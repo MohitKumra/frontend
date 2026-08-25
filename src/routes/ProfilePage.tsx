@@ -739,27 +739,6 @@ export function ProfilePage() {
                   </p>
                 </div>
               </div>
-
-              {/* User ID */}
-              <div
-                className="flex items-center gap-3 rounded-xl border p-3.5"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, var(--color-surface))', color: 'var(--color-warning)' }}
-                >
-                  <Hash size={15} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                    User ID
-                  </p>
-                  <p className="text-xs font-mono mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                    {user.id}
-                  </p>
-                </div>
-              </div>
             </div>
           </Card>
 

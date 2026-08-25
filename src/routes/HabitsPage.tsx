@@ -23,6 +23,9 @@ import { HabitHeatmapCombined } from '../components/habits/HabitHeatmapCombined'
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
 import { AICoachWidget } from '../components/ai/AICoachWidget';
 import { CreateHabitWizard } from '../components/habits/CreateHabitWizard';
+import { UpgradeModal } from '../components/billing/UpgradeModal';
+import { CheckoutModal } from '../components/billing/CheckoutModal';
+import { type PlanDTO } from '../features/billing/useUserPlan';
 import { useGamificationProfile } from '../features/dashboard/hooks/useDashboard';
 import type { HabitDTO } from '../types';
 
@@ -43,6 +46,8 @@ export function HabitsPage() {
   const [taskPrefill, setTaskPrefill] = useState<{ title: string; duration: number }>({ title: '', duration: 30 });
   const [habitPrefill, setHabitPrefill] = useState<{ title: string; time: string }>({ title: '', time: '' });
   const [focusedHabitId, setFocusedHabitId] = useState<string | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<HabitFilter>('all');
@@ -207,6 +212,20 @@ export function HabitsPage() {
   const handleOpenCreateHabit = (title?: string, time?: string) => {
     setHabitPrefill({ title: title || '', time: time || '' });
     setShowCreate(true);
+  };
+
+  const handleHabitPlanLimit = () => {
+    setShowCreate(false);
+    setHabitPrefill({ title: '', time: '' });
+    // Wait for the create-habit Modal's exit animation (0.28s) to finish
+    // so the plan-selection modal appears on top of an already-closed
+    // backdrop instead of overlapping with a still-exiting modal.
+    window.setTimeout(() => setUpgradeModalOpen(true), 300);
+  };
+
+  const handleSelectPlanForCheckout = (plan: PlanDTO) => {
+    setUpgradeModalOpen(false);
+    setCheckoutPlan(plan);
   };
 
   const heroProps = {
@@ -506,6 +525,7 @@ export function HabitsPage() {
               }}
               initialTitle={habitPrefill.title}
               initialReminderTime={habitPrefill.time}
+              onPlanLimit={handleHabitPlanLimit}
             />
           </Modal>
         )}
@@ -520,6 +540,28 @@ export function HabitsPage() {
         }}
         initialTitle={taskPrefill.title}
         initialDuration={taskPrefill.duration}
+      />
+
+      {/* Upgrade modal — opened when the backend rejects habit creation with
+          a PLAN_LIMIT_REACHED error. Rendered at the page level so it survives
+          the create-habit modal being closed on the same error path. */}
+      <UpgradeModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        highlightFeature="Habit Tracking"
+        onSelectPlan={handleSelectPlanForCheckout}
+      />
+
+      {/* Full checkout review with bill summary + Razorpay payment. */}
+      <CheckoutModal
+        isOpen={!!checkoutPlan}
+        onClose={() => setCheckoutPlan(null)}
+        plan={checkoutPlan}
+        onBack={() => {
+          setCheckoutPlan(null);
+          setUpgradeModalOpen(true);
+        }}
+        highlightFeature="Habit Tracking"
       />
 
     </motion.div>

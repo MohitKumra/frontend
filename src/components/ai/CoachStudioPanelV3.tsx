@@ -40,6 +40,7 @@ import {
   type CoachEntityDraft,
 } from '../../features/ai/api';
 import { goalPlannerApi } from '../../features/goals/api';
+import { UpgradeModal } from '../billing/UpgradeModal';
 import { useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
 import { useSettings } from '../../features/settings';
 import { useGoals } from '../../features/goals/hooks/useGoals';
@@ -893,6 +894,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   // Entity draft — set when the coach returns an entityDraft in its response
   const [pendingEntityDraft, setPendingEntityDraft] = useState<CoachEntityDraft | null>(null);
   const [isConfirmingEntity, setIsConfirmingEntity] = useState(false);
+  const [quotaUpgradeOpen, setQuotaUpgradeOpen] = useState(false);
 
   const hasAutoSentRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1142,14 +1144,20 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
       } else {
         setStatus(null);
       }
-    } catch {
-      if (createdChatId && wasDraft) {
-        try { await deleteAICoachChat(createdChatId); removeChatCache(createdChatId); } catch { /* ignore */ }
-        if (selectedChatId === createdChatId) { setSelectedChatId(null); setIsDraftMode(true); }
+    } catch (err: any) {
+      const code = err?.response?.data?.error?.code;
+      if (code === 'AI_QUOTA_EXCEEDED') {
+        setStatus('Monthly AI request limit reached. Upgrade your plan to continue.');
+        setQuotaUpgradeOpen(true);
+      } else {
+        if (createdChatId && wasDraft) {
+          try { await deleteAICoachChat(createdChatId); removeChatCache(createdChatId); } catch { /* ignore */ }
+          if (selectedChatId === createdChatId) { setSelectedChatId(null); setIsDraftMode(true); }
+        }
+        setInput(trimmed);
+        setComposerAttachments(outgoingAttachments);
+        setStatus('Could not reach the coach. Please try again.');
       }
-      setInput(trimmed);
-      setComposerAttachments(outgoingAttachments);
-      setStatus('Could not reach the coach. Please try again.');
     } finally {
       setPendingExchange(null);
       setIsSending(false);
@@ -1594,6 +1602,11 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           </div>
         </div>
       </Modal>
+      <UpgradeModal
+        isOpen={quotaUpgradeOpen}
+        onClose={() => setQuotaUpgradeOpen(false)}
+        highlightFeature="AI Coach (Monthly Quota Reached)"
+      />
     </div>
   );
 }

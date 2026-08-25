@@ -53,10 +53,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { usePushNotifications } from '../features/notifications';
 import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
 import { AISettingsPanel } from '../components/settings/AISettingsPanel';
+import { BillingSettingsPanel } from '../components/settings/BillingSettingsPanel';
 import type { AIPreferenceDTO, LayoutPreference, ThemePreference, TaskViewPreference, NotesViewPreference } from '../types';
 import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 
-type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security' | 'ai';
+type SettingsTab = 'appearance' | 'notifications' | 'integrations' | 'security' | 'ai' | 'billing';
 type CalendarView = 'day' | 'week' | 'month' | 'agenda';
 type TaskView = 'list' | 'board';
 type NotesView = NotesViewPreference;
@@ -69,6 +70,7 @@ const TAB_COLOR: Record<SettingsTab, string> = {
   integrations: '--color-success',
   security: '--color-warning',
   ai: '--color-accent',
+  billing: '--color-accent',
 };
 
 const SETTINGS_TABS: Array<{
@@ -81,6 +83,7 @@ const SETTINGS_TABS: Array<{
   { id: 'integrations', label: 'Integrations', icon: <Cloud size={14} /> },
   { id: 'security', label: 'Security', icon: <ShieldCheck size={14} /> },
   { id: 'ai', label: 'AI & Tokens', icon: <Sparkles size={14} /> },
+  { id: 'billing', label: 'Billing & Plans', icon: <CreditCard size={14} /> },
 ];
 
 const APPEARANCE_OPTIONS: Array<{
@@ -1856,6 +1859,12 @@ export function SettingsPage() {
                     </Button>
                   </form>
                 </Card>
+              </TabPanel>
+            )}
+
+            {activeTab === 'billing' && (
+              <TabPanel key="billing" panelKey="billing" className="space-y-5">
+                <BillingSettingsPanel />
               </TabPanel>
             )}
           </AnimatePresence>

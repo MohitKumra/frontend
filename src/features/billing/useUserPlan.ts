@@ -1,0 +1,201 @@
+﻿// frontend/src/features/billing/useUserPlan.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../../lib/apiClient';
+
+export interface PlanDTO {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  currency: string;
+  priceCents: number;
+  billingInterval: 'MONTH' | 'YEAR';
+  features: Record<string, any>;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface EffectivePlanDTO {
+  planId: string | null;
+  planName: string;
+  planSlug: string;
+  source: 'ADMIN_OVERRIDE' | 'SUBSCRIPTION' | 'FREE';
+  status: 'ACTIVE' | 'PAST_DUE' | 'FREE' | 'INACTIVE';
+  features: Record<string, any>;
+  expiresAt?: string | null;
+  subscriptionId?: string | null;
+  overrideId?: string | null;
+}
+
+export interface UserSubscriptionResponse {
+  effectivePlan: EffectivePlanDTO;
+  subscription: any | null;
+  usage: {
+    projects: number;
+    habits: number;
+    tasks: number;
+    aiRequests: number;
+  };
+  transactions: Array<{
+    id: string;
+    grossAmountCents: number;
+    discountCents: number;
+    netAmountCents: number;
+    currency: string;
+    status: string;
+    providerPaymentId: string;
+    createdAt: string;
+    plan?: { name: string };
+  }>;
+}
+
+export const BILLING_QUERY_KEY = ['billing', 'subscription'];
+export const PLANS_QUERY_KEY = ['billing', 'plans'];
+
+export function useUserPlan() {
+  const queryClient = useQueryClient();
+
+  const subscriptionQuery = useQuery<UserSubscriptionResponse>({
+    queryKey: BILLING_QUERY_KEY,
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: UserSubscriptionResponse }>('/billing/subscription');
+      return res.data.data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const plansQuery = useQuery<PlanDTO[]>({
+    queryKey: PLANS_QUERY_KEY,
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: PlanDTO[] }>('/billing/plans');
+      return res.data.data;
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
+
+  const effectivePlan = subscriptionQuery.data?.effectivePlan || {
+    planId: null,
+    planName: 'Free',
+    planSlug: 'free',
+    source: 'FREE' as const,
+    status: 'FREE' as const,
+    features: {
+      aiRequestsPerMonth: 50,
+      projects: 3,
+      habits: 5,
+      tasks: 100,
+      storageMb: 100,
+      voiceNotes: false,
+      notionSync: false,
+      advancedAnalytics: false,
+      prioritySupport: false,
+      teamMembers: 0,
+    },
+    expiresAt: null,
+  };
+
+  const usage = subscriptionQuery.data?.usage || {
+    projects: 0,
+    habits: 0,
+    tasks: 0,
+    aiRequests: 0,
+  };
+
+  /**
+   * Returns true if a boolean feature is false or if usage has exceeded numeric limit.
+   */
+  function isFeatureLocked(featureKey: string): boolean {
+    const val = effectivePlan.features[featureKey];
+    if (val === undefined) return true;
+    if (typeof val === 'boolean') return !val;
+    if (typeof val === 'number') {
+      const currentUsage = (usage as any)[featureKey] || 0;
+      return currentUsage >= val;
+    }
+    return false;
+  }
+
+  /**
+   * Returns the numerical limit or boolean status of a feature.
+   */
+  function getFeatureLimit(featureKey: string): any {
+    return effectivePlan.features[featureKey];
+  }
+
+  /**
+   * Returns remaining numerical quota for a feature (e.g. remaining projects).
+   */
+  function getRemainingQuota(featureKey: 'projects' | 'habits' | 'tasks' | 'aiRequests'): number {
+    const limitKey = featureKey === 'aiRequests' ? 'aiRequestsPerMonth' : featureKey;
+    const limit = effectivePlan.features[limitKey];
+    if (typeof limit !== 'number') return Infinity;
+    const current = usage[featureKey] || 0;
+    return Math.max(0, limit - current);
+  }
+
+  // Mutations
+  const createCheckoutMutation = useMutation({
+    mutationFn: async (payload: { planId: string; couponCode?: string }) => {
+      const res = await apiClient.post('/billing/checkout', payload);
+      return res.data.data;
+    },
+  });
+
+  const verifyPaymentMutation = useMutation({
+    mutationFn: async (payload: {
+      razorpayOrderId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+      orderId?: string;
+    }) => {
+      const res = await apiClient.post('/billing/verify-payment', payload);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY });
+    },
+  });
+
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async (payload?: { reason?: string; immediately?: boolean }) => {
+      const res = await apiClient.post('/billing/cancel-subscription', payload || {});
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY });
+    },
+  });
+
+  const applyCouponMutation = useMutation({
+    mutationFn: async (payload: { code: string; planId: string }) => {
+      const res = await apiClient.post('/billing/apply-coupon', payload);
+      return res.data.data;
+    },
+  });
+
+  return {
+    subscriptionQuery,
+    plansQuery,
+    effectivePlan,
+    subscription: subscriptionQuery.data?.subscription,
+    usage,
+    transactions: subscriptionQuery.data?.transactions || [],
+    plans: plansQuery.data || [],
+    isLoading: subscriptionQuery.isLoading || plansQuery.isLoading,
+    // True if either request failed. A failure should never leave the UI stuck
+    // on an infinite spinner — the settings panel surfaces this as an error state.
+    isError: !!subscriptionQuery.isError || !!plansQuery.isError,
+
+    isFeatureLocked,
+    getFeatureLimit,
+    getRemainingQuota,
+    createCheckout: createCheckoutMutation.mutateAsync,
+    verifyPayment: verifyPaymentMutation.mutateAsync,
+    cancelSubscription: cancelSubscriptionMutation.mutateAsync,
+    applyCoupon: applyCouponMutation.mutateAsync,
+    refetch: () => {
+      subscriptionQuery.refetch();
+      plansQuery.refetch();
+    },
+  };
+}

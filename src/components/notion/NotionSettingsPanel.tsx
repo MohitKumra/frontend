@@ -30,6 +30,8 @@ import {
   useNotionImportNotes,
 } from '../../features/notion/hooks/useNotion';
 import type { NotionDatabaseProperty } from '../../types';
+import { useUserPlan } from '../../features/billing/useUserPlan';
+import { LockedFeatureWrapper } from '../billing/LockedFeatureWrapper';
 
 function StatusPill({ label, active }: { label: string; active: boolean }) {
   return (
@@ -60,6 +62,7 @@ const SYSTEM_FIELDS_NOTES = [
 ];
 
 export function NotionSettingsPanel() {
+  const { isFeatureLocked } = useUserPlan();
   const { data: notionStatus, isLoading: statusLoading } = useNotionStatus();
   const notionStart = useNotionStartOAuth();
   const notionDisconnect = useNotionDisconnect();
@@ -133,7 +136,15 @@ export function NotionSettingsPanel() {
 
   const systemFields = importMode === 'tasks' ? SYSTEM_FIELDS_TASKS : SYSTEM_FIELDS_NOTES;
 
+  const notionLocked = isFeatureLocked('notionSync');
+
   return (
+    <LockedFeatureWrapper
+      isLocked={notionLocked}
+      featureName="Notion Workspace Sync"
+      minPlanName="Basic"
+      variant="overlay"
+    >
     <div
       className="rounded-xl sm:rounded-2xl border p-4"
       style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
@@ -332,5 +343,6 @@ export function NotionSettingsPanel() {
         </div>
       )}
     </div>
+    </LockedFeatureWrapper>
   );
 }

@@ -5,6 +5,10 @@ import { useGoals } from '../../features/goals/hooks/useGoals';
 import { DraggableModal } from '../ui/DraggableModal';
 import type { CreateProjectRequest, ProjectStatus } from '../../types';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
+import { UpgradeModal } from '../billing/UpgradeModal';
+import { CheckoutModal } from '../billing/CheckoutModal';
+import type { PlanDTO } from '../../features/billing/useUserPlan';
+import toast from 'react-hot-toast';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -25,6 +29,8 @@ const PROJECT_COLORS = [
 export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
   const createProject = useCreateProject();
   const goalsQuery = useGoals();
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
   const [formData, setFormData] = useState<CreateProjectRequest>({
     name: '',
     description: '',
@@ -57,8 +63,15 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         voiceNoteUrl: '',
         goalId: null,
       });
-    } catch (error) {
-      console.error('Failed to create project:', error);
+    } catch (error: any) {
+      const code = error?.response?.data?.error?.code;
+      if (code === 'PLAN_LIMIT_REACHED') {
+        onClose();
+        setUpgradeModalOpen(true);
+      } else {
+        toast.error(error?.response?.data?.error?.message || 'Failed to create project');
+        console.error('Failed to create project:', error);
+      }
     }
   };
 
@@ -71,6 +84,7 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
   };
 
   return (
+    <>
     <DraggableModal isOpen={isOpen} onClose={onClose} title="Create New Project">
       {/* Icon banner — visible in both desktop header and mobile sheet */}
       <div className="flex items-center gap-3 mb-5">
@@ -218,5 +232,25 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
         </div>
       </form>
     </DraggableModal>
+    <UpgradeModal
+      isOpen={upgradeModalOpen}
+      onClose={() => setUpgradeModalOpen(false)}
+      highlightFeature="Project Creation"
+      onSelectPlan={(plan) => {
+        setUpgradeModalOpen(false);
+        setCheckoutPlan(plan);
+      }}
+    />
+    <CheckoutModal
+      isOpen={!!checkoutPlan}
+      onClose={() => setCheckoutPlan(null)}
+      plan={checkoutPlan}
+      onBack={() => {
+        setCheckoutPlan(null);
+        setUpgradeModalOpen(true);
+      }}
+      highlightFeature="Project Creation"
+    />
+  </>
   );
 }

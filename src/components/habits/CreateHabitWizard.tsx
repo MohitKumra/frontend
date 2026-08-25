@@ -17,6 +17,14 @@ interface CreateHabitWizardProps {
   initialTitle?: string;
   initialReminderTime?: string;
   initialGoalId?: string | null;
+  /**
+   * Invoked when the backend rejects creation with a plan limit error.
+   * The parent (page-level) component is responsible for closing the
+   * wizard modal AND opening the UpgradeModal at the page level —
+   * the UpgradeModal cannot live inside the wizard, because the wizard
+   * is rendered inside a Modal that gets unmounted on `onClose()`.
+   */
+  onPlanLimit?: () => void;
 }
 
 export function CreateHabitWizard({
@@ -25,6 +33,7 @@ export function CreateHabitWizard({
   initialTitle = '',
   initialReminderTime = '',
   initialGoalId = null,
+  onPlanLimit,
 }: CreateHabitWizardProps) {
   const createHabit = useCreateHabit();
   const goalsQuery = useGoals();
@@ -89,6 +98,16 @@ export function CreateHabitWizard({
           setDurationMode('forever');
           setSkipDays([]);
           onClose();
+        },
+        onError: (error: any) => {
+          const code = error?.response?.data?.error?.code;
+          if (code === 'PLAN_LIMIT_REACHED') {
+            // Hand the upgrade flow to the page-level handler. We do NOT
+            // open the modal from inside the wizard — the wizard is
+            // rendered inside a Modal that gets unmounted on onClose(),
+            // which would tear the UpgradeModal down with it.
+            onPlanLimit?.();
+          }
         },
       }
     );
