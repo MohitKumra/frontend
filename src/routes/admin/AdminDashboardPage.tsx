@@ -26,7 +26,7 @@ import {
 } from "recharts";
 
 // ─── Mock data (swap for your live /overview API response) ──────────────
-const spark = (base) =>
+const spark = (base: number) =>
   Array.from({ length: 12 }, (_, i) => ({
     v: Math.max(0, base + Math.sin(i / 2) * base * 0.3 + i * (base * 0.05)),
   }));
@@ -70,11 +70,16 @@ const quickInsights = [
   { label: "Conversion Rate (30D)", sub: "—", value: "0%", icon: Percent, tint: "bg-orange-50", color: "text-orange-600" },
 ];
 
-const formatINR = (n) =>
+const formatINR = (n: number) =>
   "₹" + new Intl.NumberFormat("en-IN").format(n);
 
 // ─── Small building blocks ───────────────────────────────────────────────
-function Sparkline({ data, color }) {
+interface SparklineProps {
+  data: { v: number }[];
+  color: string;
+}
+
+function Sparkline({ data, color }: SparklineProps) {
   return (
     <div className="w-20 h-10 opacity-80">
       <ResponsiveContainer width="100%" height="100%">
@@ -92,7 +97,17 @@ function Sparkline({ data, color }) {
   );
 }
 
-function StatCard({ icon, iconTint, label, value, sub, sparkColor, sparkData }) {
+interface StatCardProps {
+  icon: React.ReactNode;
+  iconTint: string;
+  label: string;
+  value: React.ReactNode;
+  sub: string;
+  sparkColor: string;
+  sparkData: { v: number }[];
+}
+
+function StatCard({ icon, iconTint, label, value, sub, sparkColor, sparkData }: StatCardProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col gap-4">
       <div className="flex items-start justify-between">
@@ -122,7 +137,15 @@ function StatCard({ icon, iconTint, label, value, sub, sparkColor, sparkData }) 
   );
 }
 
-function SectionCard({ icon, title, subtitle, children, footer }) {
+interface SectionCardProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}
+
+function SectionCard({ icon, title, subtitle, children, footer }: SectionCardProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
       <div className="px-6 pt-5 pb-4 flex items-center gap-3 border-b border-slate-100">
@@ -146,7 +169,15 @@ function SectionCard({ icon, title, subtitle, children, footer }) {
   );
 }
 
-function DistributionRow({ icon: Icon, color, name, count, unit }) {
+interface DistributionRowProps {
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  name: string;
+  count: number;
+  unit: string;
+}
+
+function DistributionRow({ icon: Icon, color, name, count, unit }: DistributionRowProps) {
   const pct = count === 0 ? 4 : Math.min(100, count);
   return (
     <div className="rounded-xl border border-slate-200 p-3.5">
@@ -174,7 +205,15 @@ function DistributionRow({ icon: Icon, color, name, count, unit }) {
   );
 }
 
-function AuthRow({ icon: Icon, tint, ring, method, count }) {
+interface AuthRowProps {
+  icon: React.ComponentType<{ className?: string }>;
+  tint: string;
+  ring: string;
+  method: string;
+  count: number;
+}
+
+function AuthRow({ icon: Icon, tint, ring, method, count }: AuthRowProps) {
   return (
     <div className="rounded-xl border border-slate-200 p-3.5 flex items-center justify-between">
       <div className="flex items-center gap-2.5">
