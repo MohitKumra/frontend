@@ -19,9 +19,13 @@ import {
   Keyboard,
   Flag,
   CreditCard,
+  Database,
+  Lock,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import { useUpgradeModalStore } from '../../store/upgradeModalStore';
+import { useUserPlan } from '../../features/billing/useUserPlan';
 import { useLogout } from '../../features/auth/hooks/useAuth';
 import { useSettings } from '../../features/settings/hooks/useSettings';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
@@ -41,6 +45,7 @@ import { notesApi } from '../../features/notes/api';
 import { habitsApi } from '../../features/habits/api';
 import { calendarApi } from '../../features/calendar/api';
 import { settingsApi } from '../../features/settings/api';
+import { storageApi } from '../../features/storage/api';
 import apiClient from '../../lib/apiClient';
 import { AchievementCelebrationModal } from '../achievements/AchievementCelebrationModal';
 import { StreakBreakModal } from '../habits/StreakBreakModal';
@@ -65,6 +70,7 @@ const navItems = [
   { to: '/goals', icon: Flag, label: 'Goals', onboarding: 'goals' },
   { to: '/coach', icon: Sparkles, label: 'AI Coach', onboarding: 'coach' },
   { to: '/plans', icon: CreditCard, label: 'Plans & Pricing', onboarding: '' },
+  { to: '/storage', icon: Database, label: 'Storage', onboarding: 'storage' },
   { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings' },
 ];
 
@@ -144,6 +150,9 @@ function warmRouteData(route: string): void {
         queryFn: () => apiClient.get('/analytics/weekly').then((r) => r.data),
       });
       break;
+    case '/storage':
+      void queryClient.prefetchQuery({ queryKey: ['storage', 'files'], queryFn: storageApi.list });
+      break;
     case '/settings':
       void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
       break;
@@ -185,6 +194,15 @@ export function AppLayout() {
     setFloatingAnimationsEnabled,
   } = useUIStore();
   const logout = useLogout();
+  const { isFeatureLocked } = useUserPlan();
+  const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
+
+  const getLockFeature = (to: string): string | null => {
+    if (to === '/coach' || to === '/ai') return 'aiCoach';
+    if (to === '/goals') return 'goals';
+    return null;
+  };
+
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -631,6 +649,15 @@ export function AppLayout() {
           {/* Left 2 nav items */}
           {mobileLeftItems.map(({ to, icon: Icon, label, onboarding }) => {
             const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
+            const lockFeature = getLockFeature(to);
+            const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
+            const handleNavClick = (e: React.MouseEvent) => {
+              if (isLocked && lockFeature) {
+                e.preventDefault();
+                e.stopPropagation();
+                openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
+              }
+            };
             return (
               <NavLink
                 key={to}
@@ -639,6 +666,7 @@ export function AppLayout() {
                 onPointerEnter={() => warmRouteData(to)}
                 onFocus={() => warmRouteData(to)}
                 onPointerDown={() => warmRouteData(to)}
+                onClick={handleNavClick}
                 {...mobileOnboardingAttr}
                 className={({ isActive }) =>
                   [
@@ -662,6 +690,14 @@ export function AppLayout() {
                           className="absolute inset-0 rounded-2xl opacity-30 blur-md"
                           style={{ background: 'var(--color-accent)' }}
                         />
+                      )}
+                      {isLocked && (
+                        <div
+                          className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white shadow-sm"
+                          style={{ background: 'var(--color-accent)' }}
+                        >
+                          <Lock size={8} />
+                        </div>
                       )}
                     </div>
                     <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
@@ -691,6 +727,15 @@ export function AppLayout() {
           {/* Right 2 nav items */}
           {mobileRightItems.map(({ to, icon: Icon, label, onboarding }) => {
             const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
+            const lockFeature = getLockFeature(to);
+            const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
+            const handleNavClick = (e: React.MouseEvent) => {
+              if (isLocked && lockFeature) {
+                e.preventDefault();
+                e.stopPropagation();
+                openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
+              }
+            };
             return (
               <NavLink
                 key={to}
@@ -699,6 +744,7 @@ export function AppLayout() {
                 onPointerEnter={() => warmRouteData(to)}
                 onFocus={() => warmRouteData(to)}
                 onPointerDown={() => warmRouteData(to)}
+                onClick={handleNavClick}
                 {...mobileOnboardingAttr}
                 className={({ isActive }) =>
                   [
@@ -722,6 +768,14 @@ export function AppLayout() {
                           className="absolute inset-0 rounded-2xl opacity-30 blur-md"
                           style={{ background: 'var(--color-accent)' }}
                         />
+                      )}
+                      {isLocked && (
+                        <div
+                          className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white shadow-sm"
+                          style={{ background: 'var(--color-accent)' }}
+                        >
+                          <Lock size={8} />
+                        </div>
                       )}
                     </div>
                     <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
@@ -776,6 +830,8 @@ export function AppLayout() {
           <div className="grid grid-cols-3 gap-4">
             {mobileOverflowItems.map(({ to, icon: Icon, label, badgeKey }) => {
               const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
+              const lockFeature = getLockFeature(to);
+              const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
 
               const gradientMap: Record<string, string> = {
                 '/notes': 'var(--gradient-info)',
@@ -784,9 +840,22 @@ export function AppLayout() {
                 '/goals': 'var(--gradient-accent)',
                 '/projects': 'var(--gradient-accent)',
                 '/coach': 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                '/plans': 'linear-gradient(135deg, #059669, #10b981)',
+                '/storage': 'linear-gradient(135deg, #4f46e5, #6366f1)',
                 '/settings': 'linear-gradient(135deg, #6b7280, #4b5563)',
               };
               const gradient = gradientMap[to] ?? 'var(--gradient-accent)';
+
+              const handleItemClick = (e: React.MouseEvent) => {
+                if (isLocked && lockFeature) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMobileMoreOpen(false);
+                  openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
+                  return;
+                }
+                setMobileMoreOpen(false);
+              };
 
               return (
                 <NavLink
@@ -795,7 +864,7 @@ export function AppLayout() {
                   onPointerEnter={() => warmRouteData(to)}
                   onFocus={() => warmRouteData(to)}
                   onPointerDown={() => warmRouteData(to)}
-                  onClick={() => setMobileMoreOpen(false)}
+                  onClick={handleItemClick}
                   className="relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-transform active:scale-95"
                   style={{
                     background: 'var(--color-surface-raised)',
@@ -809,14 +878,22 @@ export function AppLayout() {
                     >
                       <Icon size={20} className="text-white" />
                     </div>
-                    {badgeValue && badgeValue > 0 && (
+                    {isLocked ? (
+                      <div
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shadow-md"
+                        style={{ background: 'var(--color-accent)' }}
+                        title="Locked"
+                      >
+                        <Lock size={10} />
+                      </div>
+                    ) : badgeValue && badgeValue > 0 ? (
                       <div
                         className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shadow-md"
                         style={{ background: 'var(--color-danger)' }}
                       >
                         {badgeValue > 9 ? '9+' : badgeValue}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                   <span className="text-[11px] font-bold text-text-primary text-center leading-tight">{label}</span>
                 </NavLink>

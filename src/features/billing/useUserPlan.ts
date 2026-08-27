@@ -1,4 +1,4 @@
-﻿// frontend/src/features/billing/useUserPlan.ts
+// frontend/src/features/billing/useUserPlan.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../lib/apiClient';
 
@@ -65,7 +65,8 @@ export function useUserPlan() {
       const res = await apiClient.get<{ data: UserSubscriptionResponse }>('/billing/subscription');
       return res.data.data;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 15, // 15 seconds
+    refetchOnMount: 'always',
   });
 
   const plansQuery = useQuery<PlanDTO[]>({

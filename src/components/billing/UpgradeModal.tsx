@@ -151,27 +151,27 @@ export function UpgradeModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="relative w-full max-w-[1060px] bg-white border border-slate-200 rounded-[32px] p-9 sm:p-10 shadow-2xl space-y-7 my-auto max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-[1060px] bg-white border border-slate-200 rounded-3xl sm:rounded-[32px] p-5 sm:p-7 md:p-10 shadow-2xl space-y-5 sm:space-y-7 my-auto max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
           aria-label="Close upgrade modal"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-2.5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold">
+        <div className="text-center max-w-2xl mx-auto space-y-2 sm:space-y-2.5 pt-2 sm:pt-0">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[11px] sm:text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Unlock Your Productivity Superpowers</span>
           </div>
-          <h2 className="text-[26px] font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-[26px] font-extrabold text-slate-900 tracking-tight">
             Choose the Perfect Plan for You
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500">
             {highlightFeature ? (
               <span className="text-indigo-600 font-medium">
                 {highlightFeature} requires an upgraded plan. Pick a plan to continue
@@ -183,7 +183,7 @@ export function UpgradeModal({
           </p>
           {message && (
             <div
-              className="mx-auto max-w-md rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700"
+              className="mx-auto max-w-md rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700"
               style={{ background: 'color-mix(in srgb, #6366F1 8%, white)', border: '1px solid #C7D2FE' }}
             >
               ⚠️ {message}
@@ -194,16 +194,18 @@ export function UpgradeModal({
         {/* Current plan status: Free is the default tier, not a selectable plan */}
         <div className="flex justify-center">
           <div
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border text-[11px] sm:text-xs font-semibold text-center ${
               effectivePlan.planSlug === 'free'
                 ? 'bg-slate-50 border-slate-200 text-slate-600'
                 : 'bg-white border-indigo-200 text-indigo-600'
             }`}
           >
-            <ShieldCheck className="w-4 h-4" />
-            {effectivePlan.planSlug === 'free'
-              ? 'You are on the Free plan — your default plan. Upgrade anytime to unlock more.'
-              : `Current plan: ${effectivePlan.planName}`}
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            <span>
+              {effectivePlan.planSlug === 'free'
+                ? 'You are on the Free plan — your default plan. Upgrade anytime to unlock more.'
+                : `Current plan: ${effectivePlan.planName}`}
+            </span>
           </div>
         </div>
 
@@ -215,7 +217,7 @@ export function UpgradeModal({
                 key={cycle}
                 type="button"
                 onClick={() => setBillingCycle(cycle)}
-                className={`px-5 py-2 rounded-full text-sm font-bold transition-colors ${
+                className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors ${
                   billingCycle === cycle
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -236,8 +238,8 @@ export function UpgradeModal({
           </div>
         </div>
 
-        {/* Plans Grid — 3 cards, ~314px each, matched to reference */}
-        <div className="grid grid-cols-3 gap-7">
+        {/* Plans Grid — responsive stacked on mobile, 3 columns on desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
           {visiblePlans.map((p) => {
             const tier = baseTierOf(p.slug);
             const activeTier = baseTierOf(effectivePlan.planSlug);

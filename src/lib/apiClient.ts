@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { useAppBlockedStore } from '../store/appBlockedStore';
 import { useUpgradeModalStore } from '../store/upgradeModalStore';
+import { queryClient } from './queryClient';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
@@ -30,7 +31,19 @@ apiClient.interceptors.request.use((config) => {
 // Skip the refresh attempt for auth endpoints (login, signup, etc.)
 // so a wrong-password 401 never triggers a page reload.
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const url = response.config?.url || '';
+    const method = response.config?.method?.toUpperCase() || '';
+    // Instantly invalidate storage and plan usage if any upload, media, or storage mutation succeeded
+    if (
+      (method === 'POST' || method === 'DELETE' || method === 'PUT' || method === 'PATCH') &&
+      (url.includes('/upload') || url.includes('/media') || url.includes('/storage') || url.includes('/avatars') || url.includes('/notes') || url.includes('/tasks') || url.includes('/projects'))
+    ) {
+      void queryClient.invalidateQueries({ queryKey: ['billing', 'subscription'] });
+      void queryClient.invalidateQueries({ queryKey: ['storage', 'files'] });
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

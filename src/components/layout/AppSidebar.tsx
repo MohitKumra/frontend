@@ -1,4 +1,4 @@
-﻿// frontend/src/components/layout/AppSidebar.tsx
+// frontend/src/components/layout/AppSidebar.tsx
 // Extracted desktop sidebar used by AppLayout. Keeps the sidebar markup in its
 // own component so it can be restyled independently.
 //
@@ -67,7 +67,9 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   },
   {
     label: 'Settings',
-    items: [{ to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings', trailing: true }],
+    items: [
+      { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings', trailing: true },
+    ],
   },
 ];
 
@@ -265,11 +267,15 @@ export function AppSidebar({
       </nav>
 
       {/* Storage capacity indicator (blue → red) */}
-      {sidebarOpen && (
+      {sidebarOpen ? (
         <div className={`shrink-0 ${navPaddingClass}`}>
           <NavLink
-            to="/settings"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border transition-colors hover:bg-[var(--sidebar-item-hover)]"
+            to="/storage"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border transition-colors hover:bg-[var(--sidebar-item-hover)] ${
+                isActive ? 'ring-2 ring-accent/30 border-accent/40' : ''
+              }`
+            }
             style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
           >
             <span
@@ -297,11 +303,27 @@ export function AppSidebar({
                   />
                 </div>
               )}
-              <p className="mt-1 text-[10px] text-text-muted">
+              <p className="mt-1 text-[10px] text-text-muted truncate">
                 {unlimitedStorage ? 'Unlimited storage' : `${formatBytes(storageUsedBytes)} of ${formatBytes(storageLimitBytes)} used`}
               </p>
             </div>
           </NavLink>
+        </div>
+      ) : (
+        <div className="shrink-0 flex justify-center py-1">
+          <Tooltip content={`Storage: ${unlimitedStorage ? 'Unlimited' : `${storagePct}% used`}`} side="right">
+            <NavLink
+              to="/storage"
+              className={({ isActive }) =>
+                `w-10 h-10 rounded-2xl flex items-center justify-center border transition-colors hover:bg-[var(--sidebar-item-hover)] ${
+                  isActive ? 'border-accent text-accent ring-2 ring-accent/20' : 'text-text-muted border-border/60'
+                }`
+              }
+              style={{ background: 'var(--color-surface-raised)' }}
+            >
+              <Database size={16} style={{ color: 'var(--color-accent)' }} />
+            </NavLink>
+          </Tooltip>
         </div>
       )}
 

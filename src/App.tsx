@@ -29,6 +29,7 @@ import { GoalsPage } from './routes/GoalsPage';
 import { GoalDetailPage } from './routes/GoalDetailPage';
 import { AIControlsPage } from './routes/AIControlsPage';
 import { SettingsPage } from './routes/SettingsPage';
+import { StoragePage } from './routes/StoragePage';
 import { ProfilePage } from './routes/ProfilePage';
 import { PlanPage } from './routes/PlanPage';
 import { BlockedOverlay } from './components/BlockedOverlay';
@@ -207,6 +208,7 @@ export default function App() {
           <Route path="ai" element={<CoachRedirectPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="plans" element={<PlanPage />} />
+          <Route path="storage" element={<StoragePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
