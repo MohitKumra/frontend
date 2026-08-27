@@ -18,6 +18,7 @@ import {
   FolderKanban,
   Keyboard,
   Flag,
+  CreditCard,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -25,11 +26,11 @@ import { useLogout } from '../../features/auth/hooks/useAuth';
 import { useSettings } from '../../features/settings/hooks/useSettings';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { SearchModal } from '../../features/search/components/SearchModal';
-import { Tooltip } from '../ui/Tooltip';
 import { Avatar } from '../ui/Avatar';
 import { DraggableModal } from '../ui/DraggableModal';
 import { Badge } from '../ui/Badge';
 import { PageTransition } from './PageTransition';
+import { AppSidebar } from './AppSidebar';
 import { useDashboardToday, useAchievements } from '../../features/dashboard/hooks/useDashboard';
 import { useStreakStatus } from '../../features/habits/hooks/useHabits';
 import { applyLayoutPreference } from '../../platform/layout';
@@ -63,6 +64,7 @@ const navItems = [
   { to: '/projects', icon: FolderKanban, label: 'Projects', onboarding: 'projects' },
   { to: '/goals', icon: Flag, label: 'Goals', onboarding: 'goals' },
   { to: '/coach', icon: Sparkles, label: 'AI Coach', onboarding: 'coach' },
+  { to: '/plans', icon: CreditCard, label: 'Plans & Pricing', onboarding: '' },
   { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings' },
 ];
 
@@ -159,15 +161,6 @@ function warmRouteData(route: string): void {
       break;
   }
 }
-
-/** Active link styles for desktop sidebar — plain CSS, no JS measurement */
-const sidebarLinkClass = ({ isActive }: { isActive: boolean }) =>
-  [
-    'sidebar-nav-link flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold select-none relative',
-    isActive
-      ? 'sidebar-nav-link-active text-accent'
-      : 'text-text-secondary hover:text-text-primary hover:bg-[var(--sidebar-item-hover)]',
-  ].join(' ');
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -502,132 +495,14 @@ export function AppLayout() {
       `}</style>
 
       {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
-      <aside
-        className={['sidebar-rail hidden md:flex flex-col shrink-0 border-r', sidebarOpen ? 'w-64' : 'w-20'].join(' ')}
-        style={{
-          background: 'var(--sidebar-bg)',
-          borderColor: 'var(--sidebar-border)',
-          width: sidebarOpen ? 'var(--sidebar-width)' : 'var(--sidebar-width-collapsed)',
-        }}
-        onMouseEnter={() => setSidebarOpen(true)}
-        onMouseLeave={() => setSidebarOpen(false)}
-      >
-        {/* Logo section */}
-        <div
-          className={`flex items-center gap-3 border-b shrink-0 justify-between ${headerPaddingClass}`}
-          style={{ height: 'var(--topbar-height)', borderColor: 'var(--sidebar-border)' }}
-        >
-          {sidebarOpen ? (
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
-                style={{ background: 'var(--gradient-accent)' }}
-              >
-                <Sparkles size={18} className="text-white" />
-              </div>
-              <span className="font-extrabold text-lg text-text-primary tracking-tight truncate">PMS</span>
-            </div>
-          ) : (
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm mx-auto"
-              style={{ background: 'var(--gradient-accent)' }}
-            >
-              <Sparkles size={18} className="text-white" />
-            </div>
-          )}
-
-          {sidebarOpen && (
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-lg text-text-muted hover:bg-[var(--sidebar-item-hover)] transition-colors"
-              aria-label="Collapse sidebar"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-
-        {/* Navigation links */}
-        <nav className={`flex-1 flex flex-col overflow-y-auto no-scrollbar ${navPaddingClass}`}>
-          {sidebarOpen && (
-            <span className="px-3.5 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2 select-none">
-              Navigation
-            </span>
-          )}
-
-          {navItems.map(({ to, icon: Icon, label, badgeKey, onboarding }) => {
-            const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
-
-            const content = (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                data-onboarding={onboarding || undefined}
-                onPointerEnter={() => warmRouteData(to)}
-                onFocus={() => warmRouteData(to)}
-                onPointerDown={() => warmRouteData(to)}
-                className={({ isActive }) =>
-                  [sidebarLinkClass({ isActive }), !sidebarOpen && 'justify-center'].filter(Boolean).join(' ')
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon size={19} className="shrink-0" />
-                    {sidebarOpen && <span className="truncate flex-1">{label}</span>}
-                    {sidebarOpen && badgeValue && badgeValue > 0 && (
-                      <Badge variant={isActive ? 'accent' : 'default'} size="sm" className="ml-auto">
-                        {badgeValue}
-                      </Badge>
-                    )}
-                  </>
-                )}
-              </NavLink>
-            );
-
-            return sidebarOpen ? (
-              content
-            ) : (
-              <Tooltip key={to} content={label} side="right">
-                {content}
-              </Tooltip>
-            );
-          })}
-        </nav>
-
-        {/* User profile & logout */}
-        <div className="p-3 border-t shrink-0 flex flex-col gap-2" style={{ borderColor: 'var(--sidebar-border)' }}>
-          {sidebarOpen && user && (
-            <NavLink
-              to="/profile"
-              className="px-3 py-2.5 rounded-lg border flex items-center gap-3 min-w-0 transition-colors hover:bg-[var(--sidebar-item-hover)]"
-              style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-            >
-              <Avatar src={user.avatarUrl} name={user.name} email={user.email} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-text-primary truncate">{user.name ?? user.email.split('@')[0]}</p>
-              </div>
-            </NavLink>
-          )}
-
-          {!sidebarOpen && user && (
-            <Tooltip content="Profile" side="right">
-              <NavLink to="/profile" className="flex justify-center py-2">
-                <Avatar src={user.avatarUrl} name={user.name} email={user.email} size="sm" />
-              </NavLink>
-            </Tooltip>
-          )}
-
-          <button
-            onClick={() => setLogoutConfirmOpen(true)}
-            className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150 select-none text-red-500 hover:bg-red-500/10 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-            aria-label="Log out"
-          >
-            <LogOut size={19} className="shrink-0" />
-            {sidebarOpen && <span className="flex-1 text-left">Sign out</span>}
-          </button>
-        </div>
-      </aside>
+      <AppSidebar
+        headerPaddingClass={headerPaddingClass}
+        navPaddingClass={navPaddingClass}
+        taskBadge={taskBadge}
+        habitBadge={habitBadge}
+        onRequestLogout={() => setLogoutConfirmOpen(true)}
+        warmRoute={warmRouteData}
+      />
 
       {/* ── Main content area (unchanged) ──────────────────────────────── */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
@@ -1108,6 +983,7 @@ export function AppLayout() {
 
       {/* Search Modal */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
     </div>
   );
 }

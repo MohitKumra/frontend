@@ -20,10 +20,9 @@ interface UserItem {
   };
   lastLoginAt: string | null;
   createdAt: string;
-  currentSubscription?: {
-    status: string;
-    plan: { name: string };
-  } | null;
+  plan: string;
+  planSlug: string;
+  planSource?: 'OVERRIDE' | 'SUBSCRIPTION' | 'FREE';
 }
 
 export function AdminUsersPage() {
@@ -176,7 +175,10 @@ export function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-5 py-4 text-text-secondary font-medium">
-                      {u.currentSubscription?.plan?.name || 'Free Tier'}
+                      {u.plan === 'Free' ? 'Free Tier' : u.plan}
+                      {u.planSource === 'OVERRIDE' && (
+                        <span className="ml-1 text-[10px] font-bold text-accent uppercase">(comped)</span>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-text-muted text-xs">
                       {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : 'Never'}

@@ -103,8 +103,15 @@ export function EntryFormModal({
         });
       }
       onClose();
-    } catch (error) {
-      console.error(`Failed to ${activeMode} note:`, error);
+    } catch (error: any) {
+      // On a plan-limit error, close the editor — the global apiClient
+      // interceptor already shows the toast + opens the upgrade/pricing modal.
+      const code = error?.response?.data?.error?.code;
+      if (code === 'PLAN_LIMIT_REACHED' || code === 'PLAN_EXPIRED') {
+        onClose();
+      } else {
+        console.error(`Failed to ${activeMode} note:`, error);
+      }
     }
   };
 

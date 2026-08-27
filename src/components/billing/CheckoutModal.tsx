@@ -58,6 +58,10 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  // The user can pay once or opt into recurring auto-pay. For a recurring plan
+  // the coupon only discounts this first/initial payment; renewals charge at
+  // the full plan price.
+  const [paymentMode, setPaymentMode] = useState<'ONE_TIME' | 'SUBSCRIPTION_INITIAL'>('SUBSCRIPTION_INITIAL');
 
   // Reset local state every time the modal opens for a new plan so the user
   // never sees a stale coupon from a previous plan session.
@@ -67,16 +71,14 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
     setAppliedCoupon(null);
     setCouponError(null);
     setIsProcessing(false);
+    setPaymentMode('SUBSCRIPTION_INITIAL');
   }, [isOpen, plan?.id]);
 
   // ── Bill math ─────────────────────────────────────────────────────────
   const planPriceCents = plan?.priceCents ?? 0;
   const discountCents = appliedCoupon?.discountCents ?? 0;
   const taxableCents = Math.max(0, planPriceCents - discountCents);
-  // No tax in India for sub-₹50L SaaS B2C; show "Tax" row as ₹0 for transparency
-  // and so the user can manually verify totals.
-  const taxCents = 0;
-  const finalCents = taxableCents + taxCents;
+  const finalCents = taxableCents;
 
   const hasFreeAccess =
     !!plan && plan.priceCents === 0 && effectivePlan.planSlug === 'free';
@@ -127,6 +129,7 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
       const checkoutRes = await createCheckout({
         planId: plan.id,
         couponCode: appliedCoupon ? appliedCoupon.couponCode : undefined,
+        type: paymentMode,
       });
 
       const { providerOrderId, keyId, amountCents, noPaymentRequired } = checkoutRes;
@@ -321,12 +324,6 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
                     Notion sync
                   </li>
                 )}
-                {plan.features?.voiceNotes && (
-                  <li className="flex items-center gap-1.5 text-[11px] text-text-secondary">
-                    <Check className="w-3 h-3 text-accent shrink-0" />
-                    Voice notes
-                  </li>
-                )}
               </ul>
             </div>
 
@@ -401,6 +398,51 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
               <h3 className="text-sm font-extrabold text-text-primary">Bill summary</h3>
             </div>
 
+            {/* Payment mode: one-time vs recurring auto-pay */}
+            {planPriceCents > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold text-text-secondary">How do you want to pay?</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode('SUBSCRIPTION_INITIAL')}
+                    className={`px-3 py-2.5 rounded-xl border text-left transition-colors ${
+                      paymentMode === 'SUBSCRIPTION_INITIAL'
+                        ? 'border-accent bg-accent-subtle/40'
+                        : 'border-border bg-surface hover:border-border-strong'
+                    }`}
+                  >
+                    <span className={`text-xs font-semibold ${paymentMode === 'SUBSCRIPTION_INITIAL' ? 'text-accent' : 'text-text-primary'}`}>
+                      Auto-pay (recurring)
+                    </span>
+                    <span className="block text-[10px] text-text-muted mt-0.5">Renews at the full price</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode('ONE_TIME')}
+                    className={`px-3 py-2.5 rounded-xl border text-left transition-colors ${
+                      paymentMode === 'ONE_TIME'
+                        ? 'border-accent bg-accent-subtle/40'
+                        : 'border-border bg-surface hover:border-border-strong'
+                    }`}
+                  >
+                    <span className={`text-xs font-semibold ${paymentMode === 'ONE_TIME' ? 'text-accent' : 'text-text-primary'}`}>
+                      One-time
+                    </span>
+                    <span className="block text-[10px] text-text-muted mt-0.5">
+                      Pay once for {plan.billingInterval === 'YEAR' ? '1 year' : '1 month'}
+                    </span>
+                  </button>
+                </div>
+                {paymentMode === 'SUBSCRIPTION_INITIAL' && appliedCoupon && (
+                  <p className="text-[10px] text-success">
+                    Coupon applies to this first payment only; renewals are charged at the full{' '}
+                    {plan.billingInterval === 'YEAR' ? 'annual' : 'monthly'} price.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2.5 text-sm">
               {/* Plan price */}
               <div className="flex items-baseline justify-between">
@@ -432,14 +474,6 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
                   <span className="font-semibold text-text-primary">{formatINR(taxableCents)}</span>
                 </div>
               )}
-
-              {/* Tax row — shown for transparency (0 today for sub-₹50L B2C SaaS) */}
-              {planPriceCents > 0 && (
-                <div className="flex items-baseline justify-between">
-                  <span className="text-text-muted">Tax (GST)</span>
-                  <span className="font-semibold text-text-secondary">{formatINR(taxCents)}</span>
-                </div>
-              )}
             </div>
 
             {/* Final amount */}
@@ -452,7 +486,9 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
               </div>
               {planPriceCents > 0 && (
                 <p className="text-[11px] text-text-muted text-right">
-                  Billed {plan.billingInterval === 'YEAR' ? 'annually' : 'monthly'}, auto-renews until cancelled.
+                  {paymentMode === 'SUBSCRIPTION_INITIAL'
+                    ? `Billed ${plan.billingInterval === 'YEAR' ? 'annually' : 'monthly'} and renews automatically at the full plan price. Cancel anytime.`
+                    : `One-time payment for ${plan.billingInterval === 'YEAR' ? '1 year' : '1 month'} — no auto-renewal.`}
                 </p>
               )}
               {appliedCoupon && (

@@ -21,6 +21,7 @@ interface Transaction {
   providerOrderId: string | null;
   createdAt: string;
   paidAt: string | null;
+  refunds: { id: string; amountCents: number; reason?: string | null; createdAt: string; status: string }[];
 }
 
 export function AdminTransactionsPage() {
@@ -38,6 +39,13 @@ export function AdminTransactionsPage() {
   const [refundLoading, setRefundLoading] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  function remainingRefundable(t: Transaction): number {
+    const refunded = (t.refunds || [])
+      .filter((r) => r.status === 'PROCESSED')
+      .reduce((sum, r) => sum + r.amountCents, 0);
+    return Math.max(0, t.netAmountCents - refunded);
+  }
 
   async function fetchTransactions() {
     setLoading(true);
@@ -205,13 +213,13 @@ export function AdminTransactionsPage() {
                       {new Date(t.createdAt).toLocaleString()}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      {t.status === 'CAPTURED' && (
+                      {(t.status === 'CAPTURED' || t.status === 'PARTIALLY_REFUNDED') && remainingRefundable(t) > 0 && (
                         <Button
                           variant="danger"
                           size="sm"
                           onClick={() => {
                             setRefundTx(t);
-                            setRefundAmountPaise(t.netAmountCents.toString());
+                            setRefundAmountPaise(remainingRefundable(t).toString());
                             setRefundReason('');
                             setRefundError(null);
                           }}
@@ -259,8 +267,27 @@ export function AdminTransactionsPage() {
           <Card variant="elevated" className="max-w-md w-full p-6 space-y-4">
             <h2 className="text-lg font-bold text-text-primary">Process Refund</h2>
             <p className="text-xs text-text-muted">
-              Triggering a refund will return funds via Razorpay and update the billing ledger.
+              Refund returns funds via Razorpay and updates the billing ledger.
             </p>
+
+            {/* Refund history */}
+            {refundTx && (refundTx.refunds || []).length > 0 && (
+              <div className="p-3 rounded-xl bg-surface-raised border border-border space-y-1.5 text-xs">
+                <p className="font-bold text-text-primary">Refund history</p>
+                {refundTx.refunds.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between">
+                    <span className="text-text-secondary">
+                      {new Date(r.createdAt).toLocaleDateString()} — {r.reason || 'Refund'}
+                    </span>
+                    <span className="font-bold text-text-primary">{formatINR(r.amountCents)}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                  <span className="text-text-muted">Remaining refundable</span>
+                  <span className="font-bold text-accent">{formatINR(remainingRefundable(refundTx))}</span>
+                </div>
+              </div>
+            )}
 
             {refundError && (
               <div className="p-3 bg-danger/10 border border-danger/20 text-danger text-xs rounded-xl flex items-center gap-2">
@@ -272,16 +299,20 @@ export function AdminTransactionsPage() {
             <form onSubmit={handleProcessRefund} className="space-y-3.5 text-xs">
               <div>
                 <label className="block text-xs font-semibold text-text-secondary mb-1">
-                  Refund Amount (Paise: {refundTx.netAmountCents} = {formatINR(refundTx.netAmountCents)})
+                  Refund Amount (Paise)
                 </label>
                 <input
                   type="number"
-                  max={refundTx.netAmountCents}
+                  min={1}
+                  max={remainingRefundable(refundTx!)}
                   value={refundAmountPaise}
                   onChange={(e) => setRefundAmountPaise(e.target.value)}
                   required
                   className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-xl text-sm text-text-primary"
                 />
+                <p className="text-[10px] text-text-muted mt-1">
+                  Max {formatINR(remainingRefundable(refundTx!))}
+                </p>
               </div>
 
               <div>

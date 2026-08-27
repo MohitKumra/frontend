@@ -18,6 +18,8 @@ import type { EnhancedDashboardDTO } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useAICoach, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
+import { useUserPlan } from '../../features/billing/useUserPlan';
+import { LockedFeatureWrapper } from '../billing/LockedFeatureWrapper';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -135,6 +137,8 @@ export function AICoachWidget(props: AICoachWidgetProps) {
   const { data: coachData, isLoading } = useAICoach();
   const coachEnabled = useAIFeatureEnabled('coachEnabled');
   const navigate = useNavigate();
+  const { isFeatureLocked } = useUserPlan();
+  const coachLocked = isFeatureLocked('aiCoach');
 
   // Derive context-specific values
   const pct =
@@ -165,6 +169,7 @@ export function AICoachWidget(props: AICoachWidgetProps) {
   };
 
   return (
+    <LockedFeatureWrapper isLocked={coachLocked} featureName="AI Coach" minPlanName="Basic">
     <Card
       variant="default"
       className={`p-3 sm:p-5 relative overflow-hidden${props.className ? ` ${props.className}` : ''}`}
@@ -227,6 +232,7 @@ export function AICoachWidget(props: AICoachWidgetProps) {
 
       <FloatingParticles color={color} />
     </Card>
+    </LockedFeatureWrapper>
   );
 }
 

@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { CheckCircle2, Gauge, Sparkles, Zap } from 'lucide-react';
+import { CheckCircle2, Gauge, Sparkles, Zap, Lock } from 'lucide-react';
 import { Card } from '../ui/Card';
+import { UpgradeModal } from '../billing/UpgradeModal';
+import { useUserPlan } from '../../features/billing/useUserPlan';
 import type { AIPreferenceDTO } from '../../types';
 
 type TokenLevel = 'low' | 'medium' | 'high' | 'very-high';
@@ -158,12 +160,13 @@ function SectionHeader({
   );
 }
 
-function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+function Toggle({ checked, onToggle, disabled = false }: { checked: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="relative inline-flex h-6 w-11 sm:h-7 sm:w-12 items-center rounded-full border transition-colors"
+      disabled={disabled}
+      className="relative inline-flex h-6 w-11 sm:h-7 sm:w-12 items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: checked ? 'var(--gradient-accent)' : 'var(--color-border-subtle)',
         borderColor: checked ? 'transparent' : 'var(--color-border)',
@@ -214,7 +217,11 @@ export function AISettingsPanel({
   onChange: (next: AIPreferenceDTO) => void;
 }) {
   const [draft, setDraft] = useState<AIPreferenceDTO | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const ai = draft ?? preferences;
+  const { isFeatureLocked, effectivePlan } = useUserPlan();
+  const aiQuota = effectivePlan.features?.aiRequestsPerMonth;
+  const aiLocked = isFeatureLocked('aiCoach') || aiQuota === 0;
 
   useEffect(() => {
     setDraft(null);
@@ -226,6 +233,12 @@ export function AISettingsPanel({
   const totalCount = AI_FEATURES.length;
 
   const update = (patch: Partial<AIPreferenceDTO>) => {
+    // AI is a paid feature: if the plan doesn't grant AI (locked or 0 quota),
+    // never change the value — just open the upgrade modal.
+    if (aiLocked) {
+      setUpgradeOpen(true);
+      return;
+    }
     const merged = { ...ai, ...patch };
     setDraft(merged);
     onChange(merged);
@@ -426,13 +439,24 @@ export function AISettingsPanel({
           </div>
         </div>
 
+        {aiLocked && (
+          <div className="mt-3 flex items-start gap-2.5 rounded-xl border p-3"
+            style={{ borderColor: 'var(--color-accent-soft, rgba(99,102,241,.3))', background: 'var(--color-surface-raised)' }}>
+            <Lock className="w-4 h-4 mt-0.5 text-accent shrink-0" />
+            <div className="text-xs text-text-secondary leading-snug">
+              <span className="font-bold text-text-primary">AI features are locked on your current plan.</span>{' '}
+              Upgrading unlocks AI Coach, insights, daily brief, journal analysis, task parser, and more.
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2.5 sm:space-y-3">
           {AI_FEATURES.map((feature) => {
             const isOn = Boolean(ai[feature.key]);
             return (
               <div
                 key={feature.key}
-                className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4 transition-colors"
+                className={`flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4 transition-colors ${aiLocked ? 'opacity-70' : ''}`}
                 style={{
                   borderColor: isOn
                     ? `color-mix(in srgb, var(--color-accent) 28%, var(--color-border))`
@@ -446,12 +470,14 @@ export function AISettingsPanel({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-text-primary">{feature.title}</span>
                     <TokenBadge level={feature.tokenLevel} />
+                    {aiLocked && <Lock className="w-3.5 h-3.5 text-accent shrink-0" aria-label="Locked" />}
                   </div>
                   <p className="text-xs text-text-muted mt-1 leading-snug">{feature.description}</p>
                 </div>
                 <div className="shrink-0">
                   <Toggle
                     checked={isOn}
+                    disabled={aiLocked}
                     onToggle={() => update({ [feature.key]: !ai[feature.key] } as Partial<AIPreferenceDTO>)}
                   />
                 </div>
@@ -460,6 +486,8 @@ export function AISettingsPanel({
           })}
         </div>
       </Card>
+
+      <UpgradeModal isOpen={upgradeOpen} onClose={() => setUpgradeOpen(false)} highlightFeature="AI Features" />
     </div>
   );
 }

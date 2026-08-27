@@ -49,6 +49,8 @@ import { useNotionStatus } from '../features/notion/hooks/useNotion';
 import { NoteViewModal } from '../components/notes/NoteViewModal';
 import { Notes3DCard } from '../components/notes/Notes3DCard';
 import { useUIStore } from '../store/uiStore';
+import { useUserPlan } from '../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import { TagInput } from '../components/notes/TagInput';
 import { MoodPicker } from '../components/notes/MoodPicker';
 import type { NoteDTO, NoteSortField, NoteSortOrder, NoteMood } from '../types';
@@ -123,6 +125,10 @@ export function NotesPage() {
   const unarchiveNote = useUnarchiveNote();
   const queryClient = useQueryClient();
   const { data: notionStatus } = useNotionStatus();
+  const { isFeatureLocked, effectivePlan } = useUserPlan();
+  const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
+  const notesLimit = effectivePlan.features?.notes as number | undefined;
+  const journalsLimit = effectivePlan.features?.journals as number | undefined; 
 
   // Build query filters
   const queryFilters = useMemo(
@@ -332,6 +338,24 @@ export function NotesPage() {
     }
   };
 
+  // Preventative limit UX: show the "remaining" counter and, when the free
+  // quota is used up, open the upgrade modal instead of creating a note.
+  const noteCount = filteredNotes.filter((n) => !n.isJournal && !n.archived).length;
+  const journalCount = filteredNotes.filter((n) => n.isJournal && !n.archived).length;
+  const remainingNotes = notesLimit === -1 || notesLimit === undefined ? Infinity : Math.max(0, notesLimit - noteCount);
+  const remainingJournals = journalsLimit === -1 || journalsLimit === undefined ? Infinity : Math.max(0, journalsLimit - journalCount);
+  const notesLocked = notesLimit !== undefined && notesLimit !== -1 && remainingNotes <= 0;
+  const journalsLocked = journalsLimit !== undefined && journalsLimit !== -1 && remainingJournals <= 0;
+
+  const openNoteCreation = (isJournal: boolean) => {
+    if (isJournal ? journalsLocked : notesLocked) {
+      openUpgrade(isJournal ? 'Journals' : 'Notes', `You've reached your ${isJournal ? 'journal' : 'note'} limit. Upgrading unlocks more.`);
+      return;
+    }
+    setCreateModalIsJournal(isJournal);
+    setCreateModalOpen(true);
+  };
+
   const EntryMenu = ({ note }: { note: NoteDTO }) => (
     <div
       className="absolute right-3 top-12 w-44 rounded-lg shadow-xl z-30 py-1"
@@ -538,22 +562,18 @@ export function NotesPage() {
         <motion.div variants={itemVariants}>
           <NotesHero
             totalCount={totalCount}
-            journalCount={filteredNotes.filter((n) => n.isJournal).length}
-            noteCount={filteredNotes.filter((n) => !n.isJournal).length}
             pinnedCount={filteredNotes.filter((n) => n.isPinned).length}
             filter={filter}
             viewMode={viewMode}
             setViewMode={setViewMode}
             notionConnected={!!notionStatus?.connected}
             onNotionImport={() => setNotionImportOpen(true)}
-            onNewNote={() => {
-              setCreateModalIsJournal(false);
-              setCreateModalOpen(true);
-            }}
-            onNewJournal={() => {
-              setCreateModalIsJournal(true);
-              setCreateModalOpen(true);
-            }}
+            onNewNote={() => openNoteCreation(false)}
+            onNewJournal={() => openNoteCreation(true)}
+            notesLimit={notesLimit}
+            journalsLimit={journalsLimit}
+            noteCount={filteredNotes.filter((n) => !n.isJournal && !n.archived).length}
+            journalCount={filteredNotes.filter((n) => n.isJournal && !n.archived).length}
             newMenuOpen={newMenuOpen}
             setNewMenuOpen={setNewMenuOpen}
           />
@@ -773,10 +793,7 @@ export function NotesPage() {
                 }
                 onCreateNote={
                   !showArchived
-                    ? () => {
-                        setCreateModalIsJournal(filter === 'journal');
-                        setCreateModalOpen(true);
-                      }
+                    ? () => openNoteCreation(filter === 'journal')
                     : undefined
                 }
                 actionText={
@@ -1386,6 +1403,8 @@ function NotesHero({
   onNotionImport,
   onNewNote,
   onNewJournal,
+  notesLimit,
+  journalsLimit,
   newMenuOpen,
   setNewMenuOpen,
 }: {
@@ -1400,6 +1419,8 @@ function NotesHero({
   onNotionImport: () => void;
   onNewNote: () => void;
   onNewJournal: () => void;
+  notesLimit?: number;
+  journalsLimit?: number;
   newMenuOpen: boolean;
   setNewMenuOpen: (fn: (v: boolean) => boolean) => void;
 }) {
@@ -1548,6 +1569,28 @@ function NotesHero({
               >
                 <BookOpen size={14} /> Notion Import
               </button>
+            )}
+
+            {/* Remaining quota badges */}
+            {(notesLimit === undefined || notesLimit === -1) && (journalsLimit === undefined || journalsLimit === -1) ? null : (
+              <div className="hidden sm:flex items-center gap-1.5">
+                {typeof notesLimit === 'number' && notesLimit !== -1 && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
+                    style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  >
+                    Notes: {Math.max(0, notesLimit - noteCount)} left
+                  </span>
+                )}
+                {typeof journalsLimit === 'number' && journalsLimit !== -1 && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold"
+                    style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  >
+                    Journals: {Math.max(0, journalsLimit - journalCount)} left
+                  </span>
+                )}
+              </div>
             )}
 
             {/* Split create button */}

@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import * as aiApi from '../api';
 import { useSettings } from '../../settings';
 import { useAuthStore } from '../../../store/authStore';
+import { useUserPlan } from '../../billing/useUserPlan';
 
 export type AIFeatureKey =
   | 'dailyBriefEnabled'
@@ -64,6 +65,19 @@ export function useAIFeatureEnabled(featureKey: AIFeatureKey): boolean {
   return settings?.ai?.[featureKey] !== false;
 }
 
+/**
+ * Whether the user's plan actually grants AI access. Passive/automatic AI
+ * queries must never fire (and never hit the backend) when this is false, so
+ * free users don't get a wall of "AI not available" errors + upgrade modals.
+ */
+function useAIGranted(): boolean {
+  const { isFeatureLocked, effectivePlan } = useUserPlan();
+  const quota = effectivePlan.features?.aiRequestsPerMonth;
+  const locked = isFeatureLocked('aiCoach');
+  const hasQuota = typeof quota === 'number' ? quota !== 0 : true;
+  return !locked && hasQuota;
+}
+
 export function useAIStatus() {
   return useQuery({
     queryKey: ['ai-status'],
@@ -80,7 +94,9 @@ export function useAIInsights() {
   const { data: settings } = useSettings();
   const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
   const refreshMs = refreshMinutes * 60 * 1000;
-  const enabled = settings?.ai?.insightsEnabled !== false;
+  const settingsEnabled = settings?.ai?.insightsEnabled !== false;
+  const aiGranted = useAIGranted();
+  const enabled = settingsEnabled && aiGranted;
   return useQuery({
     queryKey: ['ai-insights', refreshMinutes],
     queryFn: aiApi.getAIInsights,
@@ -100,7 +116,9 @@ export function useAICoach() {
   const userId = useAuthStore((s) => s.user?.id ?? '');
   const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
   const refreshMs = refreshMinutes * 60 * 1000;
-  const enabled = settings?.ai?.coachEnabled !== false;
+  const settingsEnabled = settings?.ai?.coachEnabled !== false;
+  const aiGranted = useAIGranted();
+  const enabled = settingsEnabled && aiGranted;
   const canQuery = Boolean(settings) && Boolean(userId) && enabled;
   const cached = canQuery ? readCoachCache(userId, refreshMinutes) : null;
   const isFreshCache = cached ? Date.now() - cached.fetchedAt < refreshMs : false;
@@ -134,7 +152,9 @@ export function useDailyBrief() {
   const { data: settings } = useSettings();
   const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
   const refreshMs = refreshMinutes * 60 * 1000;
-  const enabled = settings?.ai?.dailyBriefEnabled !== false;
+  const settingsEnabled = settings?.ai?.dailyBriefEnabled !== false;
+  const aiGranted = useAIGranted();
+  const enabled = settingsEnabled && aiGranted;
   return useQuery({
     queryKey: ['ai-daily-brief', refreshMinutes],
     queryFn: aiApi.getDailyBrief,
@@ -160,7 +180,9 @@ export function useJournalWeeklyAnalysis() {
   const { data: settings } = useSettings();
   const refreshMinutes = settings?.ai?.summaryRefreshMinutes ?? 60;
   const refreshMs = refreshMinutes * 60 * 1000;
-  const enabled = settings?.ai?.journalWeeklyEnabled !== false;
+  const settingsEnabled = settings?.ai?.journalWeeklyEnabled !== false;
+  const aiGranted = useAIGranted();
+  const enabled = settingsEnabled && aiGranted;
   return useQuery({
     queryKey: ['ai-journal-weekly', refreshMinutes],
     queryFn: aiApi.getJournalWeeklyAnalysis,

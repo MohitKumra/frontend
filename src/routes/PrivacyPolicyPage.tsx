@@ -111,7 +111,6 @@ You can ask us to delete your account and everything tied to it at any time — 
 - Your password is never stored in a form anyone could read — including us.
 - Your Google connection details are encrypted while stored.
 - Everything sent between your device and Finamite is encrypted in transit.
-- Only authorized team members can access production systems, and they need extra verification to do it.
 - We review and update our security practices regularly.
 
 No system connected to the internet can be guaranteed 100% secure, but we work hard to keep yours protected.`,

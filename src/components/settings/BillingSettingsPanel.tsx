@@ -16,6 +16,9 @@ import {
   Clock,
   ChevronRight,
   RefreshCw,
+  FileText,
+  BookOpen,
+  HardDrive,
 
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -26,6 +29,7 @@ import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { formatINR } from '../../utils/formatCurrency';
 import { UpgradeModal } from '../billing/UpgradeModal';
 import { CheckoutModal } from '../billing/CheckoutModal';
+import { PlanCard } from '../billing/PlanCard';
 import toast from 'react-hot-toast';
 
 export function BillingSettingsPanel() {
@@ -44,6 +48,7 @@ export function BillingSettingsPanel() {
 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
   const [cancelling, setCancelling] = useState(false);
 
   async function handleCancelSub() {
@@ -95,12 +100,26 @@ export function BillingSettingsPanel() {
 
 
   const isPaid = effectivePlan.planSlug !== 'free';
+  
+  // Base tier from a plan slug: strips the "_yearly" suffix so monthly and
+  // annual rows of the same tier group together (e.g. "premium" & "premium_yearly").
+  const baseTierOf = (slug: string) => (slug.endsWith('_yearly') ? slug.slice(0, -'_yearly'.length) : slug);
+  
+  // Compare section: show paid plans matching the selected billing cycle. Free
+  // is the default tier and is surfaced as a status banner, not a selectable card.
+  const comparePlans = plans.filter(
+    (p) => p.priceCents > 0 && p.billingInterval === billingCycle
+  );
 
   // Calculate usage percentages
-  const maxProjects = effectivePlan.features.projects || 3;
-  const maxHabits = effectivePlan.features.habits || 5;
-  const maxTasks = effectivePlan.features.tasks || 100;
-  const maxAI = effectivePlan.features.aiRequestsPerMonth || 50;
+  // Use ?? (not ||) so a limit deliberately set to 0 is respected instead of
+  // falling back to the default (0 || 50 would wrongly show 50 AI requests).
+  const maxProjects = effectivePlan.features.projects ?? 3;
+  const maxHabits = effectivePlan.features.habits ?? 5;
+  const maxTasks = effectivePlan.features.tasks ?? 100;
+  const maxAI = effectivePlan.features.aiRequestsPerMonth ?? 50;
+  const notesLimit = effectivePlan.features.notes ?? 0;
+  const journalsLimit = effectivePlan.features.journals ?? 0;
 
   const projectPct = Math.min(100, Math.round((usage.projects / maxProjects) * 100));
   const habitPct = Math.min(100, Math.round((usage.habits / maxHabits) * 100));
@@ -141,7 +160,7 @@ export function BillingSettingsPanel() {
                     ? 'Active VIP administrative access override'
                     : isPaid
                     ? 'Active monthly subscription with auto-renewal'
-                    : 'Default free workspace quota'}
+                    : 'The productivity engine (tasks, habits, projects) is free. The Free plan is your default starting point — upgrade anytime for AI, goals, and more.'}
                 </p>
               </div>
             </div>
@@ -151,7 +170,7 @@ export function BillingSettingsPanel() {
                 <Clock className="w-3.5 h-3.5 text-text-muted" />
                 <span>
                   Current period active until{' '}
-                  <strong>{new Date(effectivePlan.expiresAt).toLocaleDateString()}</strong>
+                  <strong>{new Date(effectivePlan.expiresAt).toLocaleDateString('es')}</strong>
                 </span>
               </div>
             )}
@@ -273,6 +292,75 @@ export function BillingSettingsPanel() {
                 />
               </div>
             </div>
+
+            {/* Notes */}
+            <div className="p-4 rounded-2xl bg-surface-raised border border-border space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-text-primary flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-info" /> Notes
+                </span>
+                <span className="font-mono text-text-secondary">
+                  {usage.notes} / {notesLimit === -1 ? '∞' : notesLimit}
+                </span>
+              </div>
+              {notesLimit !== -1 && (
+                <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-border/40">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      usage.notes >= notesLimit ? 'bg-danger' : 'bg-info'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.round((usage.notes / notesLimit) * 100))}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Journals */}
+            <div className="p-4 rounded-2xl bg-surface-raised border border-border space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-text-primary flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-success" /> Journals
+                </span>
+                <span className="font-mono text-text-secondary">
+                  {usage.journals} / {journalsLimit === -1 ? '∞' : journalsLimit}
+                </span>
+              </div>
+              {journalsLimit !== -1 && (
+                <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-border/40">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      usage.journals >= journalsLimit ? 'bg-danger' : 'bg-success'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.round((usage.journals / journalsLimit) * 100))}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Storage */}
+            <div className="p-4 rounded-2xl bg-surface-raised border border-border space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-text-primary flex items-center gap-1.5">
+                  <HardDrive className="w-4 h-4 text-warning" /> Storage
+                </span>
+                <span className="font-mono text-text-secondary">
+                  {(usage.storageUsedBytes / (1024 * 1024)).toFixed(1)} MB /{' '}
+                  {usage.storageLimitBytes === Infinity || usage.storageLimitBytes <= 0
+                    ? '∞'
+                    : `${(usage.storageLimitBytes / (1024 * 1024)).toFixed(0)} MB`}
+                </span>
+              </div>
+              {usage.storageLimitBytes > 0 && usage.storageLimitBytes !== Infinity && (
+                <div className="w-full h-2 rounded-full bg-surface overflow-hidden border border-border/40">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      usage.storageUsedBytes >= usage.storageLimitBytes ? 'bg-danger' : 'bg-warning'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.round((usage.storageUsedBytes / usage.storageLimitBytes) * 100))}%` }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -296,41 +384,63 @@ export function BillingSettingsPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {plans.map((p) => {
-              const isCurrent = p.slug.toLowerCase() === effectivePlan.planSlug.toLowerCase();
-              return (
-                <div
-                  key={p.id}
-                  className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-colors ${
-                    isCurrent
-                      ? 'border-accent bg-accent-subtle/20'
-                      : 'border-border bg-surface hover:border-border-strong'
+          {/* Current plan status: Free is the default tier, not a selectable plan */}
+          <div className="mb-4">
+            <div
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-semibold ${
+                effectivePlan.planSlug === 'free'
+                  ? 'bg-surface-raised border-border text-text-secondary'
+                  : 'bg-accent-subtle/40 border-accent-border text-accent'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              {effectivePlan.planSlug === 'free'
+                ? 'You are on the Free plan — your default plan. Upgrade anytime to unlock more.'
+                : `Current plan: ${effectivePlan.planName}`}
+            </div>
+          </div>
+
+          {/* Monthly / Annual toggle */}
+          <div className="flex justify-start mb-4">
+            <div className="inline-flex items-center rounded-2xl bg-surface-raised border border-border p-1">
+              {(['MONTH', 'YEAR'] as const).map((cycle) => (
+                <button
+                  key={cycle}
+                  type="button"
+                  onClick={() => setBillingCycle(cycle)}
+                  className={`px-5 py-2 rounded-xl text-sm font-bold transition-colors ${
+                    billingCycle === cycle
+                      ? 'bg-accent text-text-onaccent shadow-sm'
+                      : 'text-text-muted hover:text-text-primary'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-sm text-text-primary">{p.name}</h4>
-                      {isCurrent && <Badge variant="accent" size="sm">Active</Badge>}
-                    </div>
-                    <p className="text-base font-extrabold text-accent mt-1">
-                      {p.priceCents === 0 ? 'Free' : `${formatINR(p.priceCents)}/mo`}
-                    </p>
-                    <p className="text-[11px] text-text-muted mt-1 line-clamp-2">
-                      {p.description || 'Access powerful productivity features.'}
-                    </p>
-                  </div>
+                  {cycle === 'MONTH' ? 'Monthly' : 'Annual'}
+                  {cycle === 'YEAR' && (
+                    <span
+                      className={`ml-1.5 text-[10px] font-extrabold uppercase ${
+                        billingCycle === cycle ? 'text-text-onaccent/80' : 'text-success'
+                      }`}
+                    >
+                      Save
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                  <Button
-                    variant={isCurrent ? 'secondary' : 'outline'}
-                    size="sm"
-                    className="w-full"
-                    disabled={isCurrent}
-                    onClick={() => setUpgradeModalOpen(true)}
-                  >
-                    {isCurrent ? 'Current Plan' : 'Select Plan'}
-                  </Button>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {comparePlans.map((p) => {
+              const tier = baseTierOf(p.slug);
+              const activeTier = baseTierOf(effectivePlan.planSlug);
+              const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
+              return (
+                <PlanCard
+                  key={p.id}
+                  plan={p}
+                  isCurrent={isCurrent}
+                  onSelect={() => setUpgradeModalOpen(true)}
+                />
               );
             })}
           </div>

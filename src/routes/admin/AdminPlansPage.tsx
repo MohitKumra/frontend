@@ -10,9 +10,9 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  Tag,
   Sparkles,
   CircleDot,
+  ChevronDown,
 } from 'lucide-react';
 import { adminApiClient } from '../../lib/adminApiClient';
 import { Badge } from '../../components/ui/Badge';
@@ -33,13 +33,56 @@ interface Plan {
   version: number;
 }
 
+const EMPTY_FEATURES: Record<string, any> = {
+  aiRequestsPerMonth: 1000,
+  projects: 10,
+  habits: 20,
+  tasks: 500,
+  storageMb: 1000,
+  notionSync: false,
+  teamMembers: 0,
+  aiCoach: false,
+  goals: false,
+  focusAdvanced: false,
+  notes: 10,
+  journals: 5,
+};
+
+// Friendly, structured feature fields rendered as steppers / toggles so the
+// non-technical admin team can edit plans without writing JSON.
+interface FeatureFieldDef {
+  key: string;
+  label: string;
+  hint: string;
+  type: 'number' | 'boolean';
+}
+
+const NUMERIC_FEATURES: FeatureFieldDef[] = [
+  { key: 'aiRequestsPerMonth', label: 'AI requests / month', hint: 'How many AI assistant requests a user gets each month', type: 'number' },
+  { key: 'projects', label: 'Active projects', hint: 'Maximum projects a user can create', type: 'number' },
+  { key: 'habits', label: 'Habit trackers', hint: 'Maximum active habit trackers', type: 'number' },
+  { key: 'tasks', label: 'Tasks', hint: 'Maximum active tasks', type: 'number' },
+  { key: 'storageMb', label: 'Storage (MB)', hint: 'Storage allowance in megabytes', type: 'number' },
+  { key: 'notes', label: 'Notes', hint: 'Max notes; use -1 for unlimited', type: 'number' },
+  { key: 'journals', label: 'Journals', hint: 'Max journal entries; use -1 for unlimited', type: 'number' },
+];
+
+const BOOLEAN_FEATURES: FeatureFieldDef[] = [
+  { key: 'notionSync', label: 'Notion sync', hint: 'Sync tasks & notes with Notion', type: 'boolean' },
+  { key: 'aiCoach', label: 'AI Coach', hint: 'Personal AI productivity coach across the app', type: 'boolean' },
+  { key: 'goals', label: 'Goals', hint: 'Create and manage goals plus the AI goal planner', type: 'boolean' },
+  { key: 'focusAdvanced', label: 'Advanced Focus', hint: 'Custom timer durations + link tasks/goals/projects to the timer', type: 'boolean' },
+];
+
 const EMPTY_FORM = {
   slug: '',
   name: '',
   description: '',
   pricePaise: '49900',
   billingInterval: 'MONTH' as 'MONTH' | 'YEAR' | 'ONE_TIME',
-  featuresJson: '{\n  "aiRequestsPerMonth": 1000,\n  "projects": 10,\n  "habits": 20,\n  "tasks": 500,\n  "storageMb": 1000\n}',
+  features: { ...EMPTY_FEATURES },
+  advancedJson: '',
+  showAdvanced: false,
 };
 
 export function AdminPlansPage() {
@@ -75,6 +118,13 @@ export function AdminPlansPage() {
   }
 
   function handleOpenEdit(p: Plan) {
+    const features = { ...EMPTY_FEATURES };
+    const known = new Set([...NUMERIC_FEATURES, ...BOOLEAN_FEATURES].map((f) => f.key));
+    let extra: Record<string, any> = {};
+    for (const [k, v] of Object.entries(p.features || {})) {
+      if (known.has(k)) features[k] = v;
+      else extra[k] = v;
+    }
     setEditingPlan(p);
     setFormData({
       slug: p.slug,
@@ -82,7 +132,9 @@ export function AdminPlansPage() {
       description: p.description || '',
       pricePaise: p.priceCents.toString(),
       billingInterval: p.billingInterval,
-      featuresJson: JSON.stringify(p.features, null, 2),
+      features,
+      advancedJson: Object.keys(extra).length ? JSON.stringify(extra, null, 2) : '',
+      showAdvanced: false,
     });
     setShowModal(true);
   }
@@ -92,13 +144,24 @@ export function AdminPlansPage() {
     setSaving(true);
     setMessage(null);
 
-    let parsedFeatures: Record<string, any> = {};
-    try {
-      parsedFeatures = JSON.parse(formData.featuresJson);
-    } catch {
-      setMessage({ type: 'error', text: 'Features JSON is malformed.' });
-      setSaving(false);
-      return;
+    // Build the final features object from the structured form fields, merging
+    // any extra/custom keys the admin added via the advanced JSON section.
+    const parsedFeatures: Record<string, any> = {
+      ...EMPTY_FEATURES,
+      ...formData.features,
+    };
+    const advanced = formData.advancedJson.trim();
+    if (advanced) {
+      try {
+        const extra = JSON.parse(advanced);
+        for (const [k, v] of Object.entries(extra)) {
+          parsedFeatures[k] = (v as any);
+        }
+      } catch {
+        setMessage({ type: 'error', text: 'Advanced features JSON is malformed.' });
+        setSaving(false);
+        return;
+      }
     }
 
     try {
@@ -155,7 +218,7 @@ export function AdminPlansPage() {
             Plans &amp; Feature Tiers
           </h1>
           <p className="text-sm text-text-muted mt-0.5">
-            Configure subscription tiers, INR pricing, and JSON entitlement feature gates
+            Configure subscription plans, INR pricing, and the features each plan unlocks.
           </p>
         </div>
         <Button
@@ -395,7 +458,7 @@ function PlanFormModal({
                 {editingPlan ? `Edit Plan: ${editingPlan.name}` : 'Create New Subscription Plan'}
               </h2>
               <p className="text-xs text-text-muted mt-0.5">
-                Set the price, billing interval, and JSON entitlement feature gates.
+                Set the price, billing interval, and the features &amp; limits this plan provides.
               </p>
             </div>
           </div>
@@ -499,23 +562,144 @@ function PlanFormModal({
             />
           </div>
 
-          {/* Features JSON */}
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary mb-1.5">
-              <Tag className="w-3.5 h-3.5" />
-              Features JSON
-            </label>
-            <textarea
-              rows={6}
-              value={formData.featuresJson}
-              onChange={(e) => setFormData({ ...formData, featuresJson: e.target.value })}
-              className="w-full font-mono text-xs p-3 bg-surface-raised border border-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-focus"
-              spellCheck={false}
-            />
-            <p className="text-[11px] text-text-muted mt-1">
-              These values are exposed to the frontend entitlement system. Common keys:
-              <code className="mx-1 font-mono">aiRequestsPerMonth</code>·<code className="mx-1 font-mono">projects</code>·<code className="mx-1 font-mono">habits</code>·<code className="mx-1 font-mono">tasks</code>·<code className="mx-1 font-mono">storageMb</code>
-            </p>
+          {/* Features — friendly structured editor */}
+          <div className="border-t border-border/60 pt-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <Sparkles className="w-4 h-4 text-accent" />
+              <h3 className="text-sm font-bold text-text-primary">Features &amp; limits</h3>
+              <p className="text-[11px] text-text-muted ml-1">These are the capabilities this plan unlocks.</p>
+            </div>
+
+            {/* Numeric limits */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {NUMERIC_FEATURES.map((f) => (
+                <div key={f.key}>
+                  <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                    {f.label}
+                  </label>
+                  <div className="flex items-stretch gap-1.5">
+                    <button
+                      type="button"
+                      aria-label={`Decrease ${f.label}`}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          features: {
+                            ...formData.features,
+                            [f.key]: (f.key === 'notes' || f.key === 'journals')
+                              ? Math.max(-1, (Number(formData.features[f.key]) || 0) - 1)
+                              : Math.max(0, (Number(formData.features[f.key]) || 0) - 1),
+                          },
+                        })
+                      }
+                      className="px-3 rounded-xl bg-surface-raised border border-border text-text-secondary hover:bg-border/40 font-bold text-lg leading-none transition-colors"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={f.key === 'notes' || f.key === 'journals' ? -1 : 0}
+                      value={formData.features[f.key]}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          features: {
+                            ...formData.features,
+                            [f.key]: (f.key === 'notes' || f.key === 'journals')
+                              ? Math.max(-1, parseInt(e.target.value, 10) || 0)
+                              : Math.max(0, parseInt(e.target.value, 10) || 0),
+                          },
+                        })
+                      }
+                      className="w-full min-w-0 text-center px-2 py-2 bg-surface-raised border border-border rounded-xl text-sm text-text-primary font-mono focus:outline-none focus:ring-2 focus:ring-focus"
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Increase ${f.label}`}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          features: {
+                            ...formData.features,
+                            [f.key]: (Number(formData.features[f.key]) || 0) + 1,
+                          },
+                        })
+                      }
+                      className="px-3 rounded-xl bg-surface-raised border border-border text-text-secondary hover:bg-border/40 font-bold text-lg leading-none transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-text-muted mt-1">{f.hint}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Boolean capabilities */}
+            <div className="mt-5 space-y-2.5">
+              {BOOLEAN_FEATURES.map((f) => {
+                const on = Boolean(formData.features[f.key]);
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        features: { ...formData.features, [f.key]: !on },
+                      })
+                    }
+                    className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-border bg-surface-raised hover:border-border-strong transition-colors text-left"
+                  >
+                    <span>
+                      <span className="block text-xs font-semibold text-text-primary">{f.label}</span>
+                      <span className="block text-[10px] text-text-muted">{f.hint}</span>
+                    </span>
+                    <span
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                        on ? 'bg-accent' : 'bg-border'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                          on ? 'translate-x-[24px]' : 'translate-x-[3px]'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Advanced JSON (collapsible, for power users / extra keys) */}
+            <div className="mt-5 border-t border-border/60 pt-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, showAdvanced: !formData.showAdvanced })}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${formData.showAdvanced ? 'rotate-180' : ''}`}
+                />
+                Advanced (JSON)
+              </button>
+              {formData.showAdvanced && (
+                <div className="mt-2">
+                  <textarea
+                    rows={4}
+                    value={formData.advancedJson}
+                    onChange={(e) => setFormData({ ...formData, advancedJson: e.target.value })}
+                    className="w-full font-mono text-xs p-3 bg-surface-raised border border-border rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-focus"
+                    spellCheck={false}
+                    placeholder='{"customKey": true}'
+                  />
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Add any extra feature keys here. The friendly fields above already cover the
+                    common ones — you usually don't need to touch this.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Actions */}

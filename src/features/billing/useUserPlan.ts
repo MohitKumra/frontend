@@ -35,6 +35,10 @@ export interface UserSubscriptionResponse {
     habits: number;
     tasks: number;
     aiRequests: number;
+    notes: number;
+    journals: number;
+    storageUsedBytes: number;
+    storageLimitBytes: number;
   };
   transactions: Array<{
     id: string;
@@ -79,18 +83,10 @@ export function useUserPlan() {
     planSlug: 'free',
     source: 'FREE' as const,
     status: 'FREE' as const,
-    features: {
-      aiRequestsPerMonth: 50,
-      projects: 3,
-      habits: 5,
-      tasks: 100,
-      storageMb: 100,
-      voiceNotes: false,
-      notionSync: false,
-      advancedAnalytics: false,
-      prioritySupport: false,
-      teamMembers: 0,
-    },
+    // NOTE: Don't hardcode admin-controlled feature limits here. The backend's
+    // resolveEffectivePlan returns the DB plan's features (edited via Admin).
+    // Using an empty object means the real values apply once data loads.
+    features: {},
     expiresAt: null,
   };
 
@@ -99,6 +95,10 @@ export function useUserPlan() {
     habits: 0,
     tasks: 0,
     aiRequests: 0,
+    notes: 0,
+    journals: 0,
+    storageUsedBytes: 0,
+    storageLimitBytes: 0,
   };
 
   /**
@@ -124,18 +124,24 @@ export function useUserPlan() {
 
   /**
    * Returns remaining numerical quota for a feature (e.g. remaining projects).
+   * Works for any numeric limit key (projects, habits, tasks, aiRequests →
+   * aiRequestsPerMonth, notes, journals). Returns Infinity for unlimited (-1)
+   * plans.
    */
-  function getRemainingQuota(featureKey: 'projects' | 'habits' | 'tasks' | 'aiRequests'): number {
+  function getRemainingQuota(
+    featureKey: 'projects' | 'habits' | 'tasks' | 'aiRequests' | 'notes' | 'journals'
+  ): number {
     const limitKey = featureKey === 'aiRequests' ? 'aiRequestsPerMonth' : featureKey;
     const limit = effectivePlan.features[limitKey];
+    if (limit === -1) return Infinity; // unlimited
     if (typeof limit !== 'number') return Infinity;
-    const current = usage[featureKey] || 0;
+    const current = usage[featureKey as keyof typeof usage] || 0;
     return Math.max(0, limit - current);
   }
 
   // Mutations
   const createCheckoutMutation = useMutation({
-    mutationFn: async (payload: { planId: string; couponCode?: string }) => {
+    mutationFn: async (payload: { planId: string; couponCode?: string; type?: 'ONE_TIME' | 'SUBSCRIPTION_INITIAL' }) => {
       const res = await apiClient.post('/billing/checkout', payload);
       return res.data.data;
     },

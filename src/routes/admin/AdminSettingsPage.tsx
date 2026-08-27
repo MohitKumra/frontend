@@ -13,6 +13,7 @@ export function AdminSettingsPage() {
   const [defaultCurrency, setDefaultCurrency] = useState('INR');
   const [defaultTimezone, setDefaultTimezone] = useState('Asia/Kolkata');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -28,6 +29,7 @@ export function AdminSettingsPage() {
       setDefaultCurrency(data.defaultCurrency || 'INR');
       setDefaultTimezone(data.defaultTimezone || 'Asia/Kolkata');
       setMaintenanceMode(data.maintenanceMode || false);
+      setMaintenanceMessage(data.maintenanceMessage || '');
     } catch (err) {
       console.error('Failed to fetch settings', err);
     } finally {
@@ -51,6 +53,7 @@ export function AdminSettingsPage() {
         defaultCurrency,
         defaultTimezone,
         maintenanceMode,
+        maintenanceMessage,
       });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 4000);
@@ -140,22 +143,40 @@ export function AdminSettingsPage() {
             </div>
 
             {/* Maintenance Mode Toggle */}
-            <div className="pt-4 border-t border-border flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-text-primary">Maintenance Mode</p>
-                <p className="text-xs text-text-muted mt-0.5">
-                  When active, non-admin API requests will immediately return 503 Service Unavailable
-                </p>
+            <div className="pt-4 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">Maintenance Mode</p>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    When active, non-admin API requests immediately return 503 and users see a
+                    full-app maintenance screen.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={maintenanceMode}
+                    onChange={(e) => setMaintenanceMode(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-surface-raised peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent border border-border"></div>
+                </label>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={maintenanceMode}
-                  onChange={(e) => setMaintenanceMode(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-surface-raised peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent border border-border"></div>
-              </label>
+
+              {maintenanceMode && (
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold text-text-secondary mb-1">
+                    Maintenance message (shown to users)
+                  </label>
+                  <input
+                    type="text"
+                    value={maintenanceMessage}
+                    onChange={(e) => setMaintenanceMessage(e.target.value)}
+                    placeholder="We're currently performing maintenance. Please check back shortly."
+                    className="w-full px-3.5 py-2.5 bg-surface-raised border border-border rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-focus"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end pt-3">

@@ -34,6 +34,7 @@ import {
   Zap,
   BarChart3,
   Brain,
+  Lock,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
@@ -46,6 +47,8 @@ import { JournalAmbientScene } from '../components/focus/JournalAmbientScene';
 import { QuoteCard } from '../components/habits/QuoteCard';
 import { getDailyQuotes } from '../data/quotes';
 import { focusApi } from '../features/habits/api';
+import { useUserPlan } from '../features/billing/useUserPlan';
+import { UpgradeModal } from '../components/billing/UpgradeModal';
 import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
 import { useAmbientSound } from '../hooks/useAmbientSound';
 import { isSameDay } from '../lib/dateUtils';
@@ -1579,6 +1582,9 @@ function RecentSessionsCard({
 export function FocusPage() {
   const { containerVariants, itemVariants } = usePageVariants();
   const [searchParams] = useSearchParams();
+  const { isFeatureLocked } = useUserPlan();
+  const [focusUpgradeOpen, setFocusUpgradeOpen] = useState(false);
+  const focusAdvancedLocked = isFeatureLocked('focusAdvanced');
   const [mode, setMode] = useState<TimerMode>('focus');
   const [focusDurationMin, setFocusDurationMin] = useState(DURATIONS.focus);
   const [customOpen, setCustomOpen] = useState(false);
@@ -2066,6 +2072,26 @@ export function FocusPage() {
     setCustomInput('');
   };
 
+  // Linking a task/goal/project to the timer is a paid (Advanced Focus) feature.
+  // For locked plans, intercept the selection so it never starts a session and
+  // opens the pricing modal instead of surfacing a backend 403.
+  const handleLockedLink = () => {
+    if (!focusAdvancedLocked) return;
+    setFocusUpgradeOpen(true);
+  };
+
+  const handleSelectTask = (id: string | null) => {
+    if (focusAdvancedLocked) return handleLockedLink();
+    setSelectedTaskId(id);
+    if (id) setSelectedProjectId(null);
+  };
+
+  const handleSelectProject = (id: string | null) => {
+    if (focusAdvancedLocked) return handleLockedLink();
+    setSelectedProjectId(id);
+    if (id) setSelectedTaskId(null);
+  };
+
   const handleStartPause = () => {
     if (running) {
       // Pause: flush elapsed to server, stop ticking
@@ -2427,12 +2453,21 @@ export function FocusPage() {
                 <Card variant="default" className="p-4 w-full">
                   <div className="flex items-center justify-between mb-2.5">
                     <p className="text-xs font-bold text-text-primary">Quick Start</p>
-                    <button
-                      onClick={() => setCustomOpen((o) => !o)}
-                      className="text-[11px] font-bold text-accent hover:text-accent-hover"
-                    >
-                      Custom ✎
-                    </button>
+                    {focusAdvancedLocked ? (
+                      <button
+                        onClick={() => setFocusUpgradeOpen(true)}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:text-accent-hover cursor-pointer"
+                      >
+                        <Lock size={11} /> Custom (Upgrade)
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setCustomOpen((o) => !o)}
+                        className="text-[11px] font-bold text-accent hover:text-accent-hover"
+                      >
+                        Custom ✎
+                      </button>
+                    )}
                   </div>
                   <p className="text-[11px] text-text-muted font-semibold mb-3">Choose a duration and get started</p>
                   {customOpen && (
@@ -2460,22 +2495,28 @@ export function FocusPage() {
                       </button>
                     </div>
                   )}
-                  <div className="grid grid-cols-4 gap-2">
-                    {QUICK_DURATIONS.map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => handleQuickDuration(d)}
-                        className="py-2.5 rounded-xl text-xs font-bold border transition-colors"
-                        style={{
-                          background: focusDurationMin === d ? 'var(--gradient-accent)' : 'var(--color-surface-raised)',
-                          color: focusDurationMin === d ? '#fff' : 'var(--color-text-primary)',
-                          borderColor: focusDurationMin === d ? 'transparent' : 'var(--color-border)',
-                        }}
-                      >
-                        {d}
-                        <span className="block text-[9px] font-semibold opacity-80">min</span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {QUICK_DURATIONS.map((d) => {
+                      const isFreeMinute = d === 25;
+                      const locked = focusAdvancedLocked && !isFreeMinute;
+                      return (
+                        <button
+                          key={d}
+                          disabled={locked}
+                          onClick={() => locked ? setFocusUpgradeOpen(true) : handleQuickDuration(d)}
+                          className={`py-2.5 rounded-xl text-xs font-bold border transition-colors ${locked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          style={{
+                            background: focusDurationMin === d ? 'var(--gradient-accent)' : 'var(--color-surface-raised)',
+                            color: focusDurationMin === d ? '#fff' : 'var(--color-text-primary)',
+                            borderColor: focusDurationMin === d ? 'transparent' : 'var(--color-border)',
+                          }}
+                        >
+                          {locked && <Lock size={9} className="inline mr-1 mb-0.5 text-accent" />}
+                          {d}
+                          <span className="block text-[9px] font-semibold opacity-80">min</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </Card>
               )}
@@ -2511,11 +2552,11 @@ export function FocusPage() {
             {/* Right column */}
             <motion.div variants={itemVariants} className="order-3 flex flex-col gap-4">
               <Card variant="default" className="p-4 flex flex-col gap-3">
-                <TaskSelector tasks={activeTasks} selectedTaskId={selectedTaskId} onSelect={setSelectedTaskId} />
+                <TaskSelector tasks={activeTasks} selectedTaskId={selectedTaskId} onSelect={handleSelectTask} />
                 <ProjectSelector
                   projects={activeProjects}
                   selectedProjectId={selectedProjectId}
-                  onSelect={setSelectedProjectId}
+                  onSelect={handleSelectProject}
                 />
                 {selectedTask && (
                   <div
@@ -2609,6 +2650,8 @@ export function FocusPage() {
           </motion.p>
         </motion.div>
       </div>
+
+      <UpgradeModal isOpen={focusUpgradeOpen} onClose={() => setFocusUpgradeOpen(false)} highlightFeature="Advanced Focus" />
     </>
   );
 }

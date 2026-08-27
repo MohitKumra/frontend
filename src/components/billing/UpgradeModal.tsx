@@ -3,18 +3,18 @@
 // `onSelectPlan(plan)` and the parent opens <CheckoutModal /> to handle
 // coupon, bill summary, and Razorpay payment.
 
-import React from 'react';
-import { X, Check, Sparkles, Lock, ArrowRight } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
+import React, { useState } from 'react';
+import { X, Sparkles, ShieldCheck } from 'lucide-react';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
-import { formatINR } from '../../utils/formatCurrency';
+import { PlanCard } from './PlanCard';
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
   highlightFeature?: string;
   defaultPlanSlug?: string;
+  /** Optional plain-text reason (e.g. "You've reached your limit..."). Shown above the plan grid. */
+  message?: string;
   /**
    * Called when the user picks a plan to upgrade to. The parent should close
    * this modal and open <CheckoutModal /> with the chosen plan to handle the
@@ -27,9 +27,17 @@ export function UpgradeModal({
   isOpen,
   onClose,
   highlightFeature,
+  defaultPlanSlug,
+  message,
   onSelectPlan,
 }: UpgradeModalProps) {
   const { plans, effectivePlan } = useUserPlan();
+
+  // Monthly / Annual billing toggle. Plans are DB-backed rows; each paid tier
+  // has a MONTH and a YEAR row. The toggle only filters which rows are shown,
+  // and the chosen row (its priceCents + billingInterval) is the source of
+  // truth sent to checkout — no front-end price math.
+  const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
 
   if (!isOpen) return null;
 
@@ -64,7 +72,7 @@ export function UpgradeModal({
           id: 'basic_fallback',
           slug: 'basic',
           name: 'Basic',
-          description: 'Enhanced productivity with Notion integration and higher limits.',
+          description: 'For individuals seeking enhanced focus & analytics',
           priceCents: 49900,
           currency: 'INR',
           billingInterval: 'MONTH',
@@ -87,7 +95,7 @@ export function UpgradeModal({
           id: 'premium_fallback',
           slug: 'premium',
           name: 'Premium',
-          description: 'Power user workflows with AI coach, voice notes, and high limits.',
+          description: 'Complete power user productivity system',
           priceCents: 99900,
           currency: 'INR',
           billingInterval: 'MONTH',
@@ -110,7 +118,7 @@ export function UpgradeModal({
           id: 'ultimate_fallback',
           slug: 'ultimate',
           name: 'Ultimate',
-          description: 'Unlimited personal power with team collaboration & priority support.',
+          description: 'Unlimited AI capabilities, collaboration, and high-priority support',
           priceCents: 199900,
           currency: 'INR',
           billingInterval: 'MONTH',
@@ -131,30 +139,41 @@ export function UpgradeModal({
         },
       ];
 
+  // Base tier from a plan slug: strips the "_yearly" suffix so monthly and
+  // annual rows of the same tier group together (e.g. "premium" & "premium_yearly").
+  const baseTierOf = (slug: string) => (slug.endsWith('_yearly') ? slug.slice(0, -'_yearly'.length) : slug);
+
+  // Show only paid plans matching the selected billing cycle. The Free plan is
+  // the default tier shown when no plan has been purchased — it is surfaced as a
+  // status banner, never as a "choose a plan" card in this upgrade flow.
+  const visiblePlans = sortedPlans.filter(
+    (p) => p.priceCents > 0 && p.billingInterval === billingCycle
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-auto max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-[1060px] bg-white border border-slate-200 rounded-[32px] p-9 sm:p-10 shadow-2xl space-y-7 my-auto max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-text-muted hover:text-text-primary rounded-full hover:bg-surface-raised transition-colors"
+          className="absolute top-6 right-6 p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
           aria-label="Close upgrade modal"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-subtle border border-accent-border text-accent text-xs font-bold">
+        <div className="text-center max-w-2xl mx-auto space-y-2.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Unlock Your Productivity Superpowers</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+          <h2 className="text-[26px] font-extrabold text-slate-900 tracking-tight">
             Choose the Perfect Plan for You
           </h2>
-          <p className="text-sm text-text-muted">
+          <p className="text-sm text-slate-500">
             {highlightFeature ? (
-              <span className="text-accent font-medium">
+              <span className="text-indigo-600 font-medium">
                 {highlightFeature} requires an upgraded plan. Pick a plan to continue
                 to checkout.
               </span>
@@ -162,150 +181,70 @@ export function UpgradeModal({
               'Compare plans and scale your personal management workflow seamlessly. Cancel anytime.'
             )}
           </p>
+          {message && (
+            <div
+              className="mx-auto max-w-md rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700"
+              style={{ background: 'color-mix(in srgb, #6366F1 8%, white)', border: '1px solid #C7D2FE' }}
+            >
+              ⚠️ {message}
+            </div>
+          )}
         </div>
 
-        {/* Plans Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sortedPlans.map((p) => {
-            const isCurrent = p.slug.toLowerCase() === effectivePlan.planSlug.toLowerCase();
-            const isPopular = p.slug.toLowerCase() === 'premium';
-            const priceDisplay = p.priceCents === 0 ? 'Free' : formatINR(p.priceCents);
-            const intervalLabel = p.billingInterval === 'YEAR' ? '/year' : '/month';
+        {/* Current plan status: Free is the default tier, not a selectable plan */}
+        <div className="flex justify-center">
+          <div
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold ${
+              effectivePlan.planSlug === 'free'
+                ? 'bg-slate-50 border-slate-200 text-slate-600'
+                : 'bg-white border-indigo-200 text-indigo-600'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            {effectivePlan.planSlug === 'free'
+              ? 'You are on the Free plan — your default plan. Upgrade anytime to unlock more.'
+              : `Current plan: ${effectivePlan.planName}`}
+          </div>
+        </div>
 
-            return (
-              <div
-                key={p.id}
-                className={`relative flex flex-col justify-between p-5 rounded-2xl border transition-all duration-200 ${
-                  isCurrent
-                    ? 'border-accent bg-accent-subtle/30 ring-1 ring-accent'
-                    : isPopular
-                    ? 'border-accent-border bg-surface-raised shadow-lg ring-1 ring-accent-border/50'
-                    : 'border-border bg-surface hover:border-border-strong'
+        {/* Monthly / Annual toggle */}
+        <div className="flex justify-center">
+          <div className="inline-flex items-center rounded-full bg-slate-100 p-1">
+            {(['MONTH', 'YEAR'] as const).map((cycle) => (
+              <button
+                key={cycle}
+                type="button"
+                onClick={() => setBillingCycle(cycle)}
+                className={`px-5 py-2 rounded-full text-sm font-bold transition-colors ${
+                  billingCycle === cycle
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                {isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-accent text-text-onaccent text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-                    Most Popular
-                  </div>
+                {cycle === 'MONTH' ? 'Monthly' : 'Annual'}
+                {cycle === 'YEAR' && (
+                  <span
+                    className={`ml-1.5 text-[10px] font-extrabold uppercase ${
+                      billingCycle === cycle ? 'text-white/80' : 'text-emerald-500'
+                    }`}
+                  >
+                    Save
+                  </span>
                 )}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-text-primary">{p.name}</h3>
-                      {isCurrent && (
-                        <Badge variant="accent" size="sm">
-                          Current
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-text-muted mt-1 line-clamp-2 min-h-[32px]">
-                      {p.description || 'Elevate your daily habits and tasks.'}
-                    </p>
-                  </div>
+        {/* Plans Grid — 3 cards, ~314px each, matched to reference */}
+        <div className="grid grid-cols-3 gap-7">
+          {visiblePlans.map((p) => {
+            const tier = baseTierOf(p.slug);
+            const activeTier = baseTierOf(effectivePlan.planSlug);
+            const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
+            const isPopular = tier === 'premium';
 
-                  {/* Pricing Display */}
-                  <div className="pt-1">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl sm:text-3xl font-extrabold text-text-primary">
-                        {priceDisplay}
-                      </span>
-                      {p.priceCents > 0 && (
-                        <span className="text-xs text-text-muted">{intervalLabel}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Features List */}
-                  <ul className="space-y-2 text-xs border-t border-border/60 pt-4">
-                    <li className="flex items-center gap-2 text-text-secondary">
-                      <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                      <span>
-                        <strong>{p.features.aiRequestsPerMonth || 50}</strong> AI Requests/mo
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2 text-text-secondary">
-                      <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                      <span>
-                        <strong>{p.features.projects || 3}</strong> Active Projects
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2 text-text-secondary">
-                      <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                      <span>
-                        <strong>{p.features.habits || 5}</strong> Habit Trackers
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2 text-text-secondary">
-                      <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                      <span>
-                        <strong>{p.features.tasks || 100}</strong> Tasks
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      {p.features.notionSync ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                          <span className="text-text-secondary font-medium">Notion Workspace Sync</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                          <span className="text-text-muted">Notion Sync</span>
-                        </>
-                      )}
-                    </li>
-                    <li className="flex items-center gap-2">
-                      {p.features.voiceNotes ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                          <span className="text-text-secondary font-medium">Focus Voice & Audio</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                          <span className="text-text-muted">Focus Voice Notes</span>
-                        </>
-                      )}
-                    </li>
-                    <li className="flex items-center gap-2">
-                      {p.features.advancedAnalytics ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-accent shrink-0" />
-                          <span className="text-text-secondary font-medium">Advanced Analytics</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                          <span className="text-text-muted">Advanced Analytics</span>
-                        </>
-                      )}
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Action Button */}
-                <div className="pt-5 mt-4 border-t border-border/60">
-                  {isCurrent ? (
-                    <Button variant="secondary" size="md" className="w-full" disabled>
-                      Active Plan
-                    </Button>
-                  ) : (
-                    <Button
-                      variant={isPopular ? 'primary' : 'outline'}
-                      size="md"
-                      className="w-full"
-                      onClick={() => onSelectPlan?.(p)}
-                      rightIcon={<ArrowRight className="w-4 h-4" />}
-                    >
-                      {p.priceCents === 0
-                        ? `Continue with ${p.name}`
-                        : `Choose ${p.name}`}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
+            return <PlanCard key={p.id} plan={p} isCurrent={isCurrent} isPopular={isPopular} onSelect={onSelectPlan} />;
           })}
         </div>
       </div>

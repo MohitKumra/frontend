@@ -50,6 +50,8 @@ import type {
 } from '../types';
 import type { DeleteGoalOptions } from '../features/goals/api';
 import { AchievementsPanel } from '../components/habits/AchievementsPanel';
+import { useUserPlan } from '../features/billing/useUserPlan';
+import { LockedFeatureWrapper } from '../components/billing/LockedFeatureWrapper';
 
 type GoalFilter = 'ALL' | GoalStatus;
 type SortKey = 'latest' | 'oldest' | 'progress' | 'name';
@@ -280,6 +282,8 @@ export function GoalsPage() {
   const { containerVariants, itemVariants } = usePageVariants();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const { isFeatureLocked } = useUserPlan();
+  const goalsLocked = isFeatureLocked('goals');
 
   const { data: dashboard } = useEnhancedDashboard();
   const { data: goalsData, isLoading: goalsLoading } = useGoals();
@@ -531,6 +535,7 @@ export function GoalsPage() {
       className="relative min-h-full overflow-hidden"
       style={{ background: 'var(--color-bg)' }}
     >
+      <LockedFeatureWrapper isLocked={goalsLocked} featureName="Goals" minPlanName="Basic">
       <div className="relative z-10 flex flex-col gap-6 p-4 sm:p-6 lg:p-8 xl:p-10">
         {/* ── PREMIUM HERO ──────────────────────────────────────────── */}
         <GoalsHero
@@ -910,6 +915,7 @@ export function GoalsPage() {
           isDeleting={deleteGoal.isPending}
         />
       )}
+      </LockedFeatureWrapper>
     </motion.div>
   );
 }

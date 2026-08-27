@@ -30,6 +30,11 @@ import { GoalDetailPage } from './routes/GoalDetailPage';
 import { AIControlsPage } from './routes/AIControlsPage';
 import { SettingsPage } from './routes/SettingsPage';
 import { ProfilePage } from './routes/ProfilePage';
+import { PlanPage } from './routes/PlanPage';
+import { BlockedOverlay } from './components/BlockedOverlay';
+import { UpgradeModal } from './components/billing/UpgradeModal';
+import { useUpgradeModalStore } from './store/upgradeModalStore';
+import { useSystemMaintenance } from './hooks/useSystemMaintenance';
 import { TaskDetailPage } from './routes/TaskDetailPage';
 import { ProjectDetailPage } from './routes/ProjectDetailPage';
 import { NotFoundPage } from './routes/NotFoundPage';
@@ -88,10 +93,32 @@ function CoachRedirectPage() {
   return <Navigate to="/coach" replace state={location.state} />;
 }
 
+/** Renders the globally-triggered "upgrade required" modal. */
+function GlobalUpgradeModal() {
+  const isOpen = useUpgradeModalStore((s) => s.isOpen);
+  const featureName = useUpgradeModalStore((s) => s.featureName);
+  const message = useUpgradeModalStore((s) => s.message);
+  const closeUpgrade = useUpgradeModalStore((s) => s.closeUpgrade);
+  return (
+    <UpgradeModal
+      isOpen={isOpen}
+      onClose={closeUpgrade}
+      highlightFeature={featureName || undefined}
+      message={message || undefined}
+    />
+  );
+}
+
 export default function App() {
+  // Poll for maintenance mode so the full-app overlay (covering sidebar +
+  // modals) appears the moment the team turns maintenance on.
+  useSystemMaintenance();
+
   return (
     <>
       <OnboardingTrigger />
+      <BlockedOverlay />
+      <GlobalUpgradeModal />
 
       <Routes>
         {/* Public routes */}
@@ -179,6 +206,7 @@ export default function App() {
           <Route path="coach" element={<AIControlsPage />} />
           <Route path="ai" element={<CoachRedirectPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="plans" element={<PlanPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
