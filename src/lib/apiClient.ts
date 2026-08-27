@@ -95,7 +95,10 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch {
         useAuthStore.getState().logout();
-        window.location.href = '/login';
+        useAppBlockedStore.getState().clearBlocked();
+        if (window.location.pathname !== '/login') {
+          window.location.replace('/login');
+        }
       }
     }
     return Promise.reject(error);

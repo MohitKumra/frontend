@@ -6,8 +6,11 @@
 import axios from 'axios';
 import { useAdminStore } from '../store/adminStore';
 
+const configuredBackendUrl = (import.meta.env.VITE_BACKEND_URL || '/api').replace(/\/+$/, '');
+const backendApiUrl = configuredBackendUrl.endsWith('/api') ? configuredBackendUrl : `${configuredBackendUrl}/api`;
+
 export const adminApiClient = axios.create({
-  baseURL: '/api/admin',
+  baseURL: `${backendApiUrl}/admin`,
   withCredentials: true, // Send HttpOnly admin cookie for refresh
   headers: { 'Content-Type': 'application/json' },
 });

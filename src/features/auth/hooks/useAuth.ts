@@ -3,16 +3,19 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api';
 import { useAuthStore } from '../../../store/authStore';
+import { useAppBlockedStore } from '../../../store/appBlockedStore';
 import { queryClient } from '../../../lib/queryClient';
 import type { LoginRequest, SignupRequest } from '../../../types';
 
 export function useLogin() {
   const setAuth = useAuthStore((s) => s.setAuth);
+  const clearBlocked = useAppBlockedStore((s) => s.clearBlocked);
   const navigate = useNavigate();
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (data) => {
       setAuth(data.accessToken, data.user);
+      clearBlocked();
       navigate('/');
     },
   });
@@ -32,11 +35,13 @@ export function useSignup() {
 
 export function useLogout() {
   const logout = useAuthStore((s) => s.logout);
+  const clearBlocked = useAppBlockedStore((s) => s.clearBlocked);
   const navigate = useNavigate();
   return useMutation({
     mutationFn: () => authApi.logout(),
     onSuccess: () => {
       logout();
+      clearBlocked();
       queryClient.clear();
       navigate('/login');
     },

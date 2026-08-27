@@ -42,7 +42,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
   checkAuth: async () => {
     try {
       const res = await adminApiClient.get('/auth/me');
-      const admin = res.data.data.admin;
+      const admin = res.data.data;
       set({ admin, isAuthenticated: true, isInitializing: false });
       return true;
     } catch {
