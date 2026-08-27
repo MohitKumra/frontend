@@ -82,7 +82,7 @@ function formatBytes(bytes: number): string {
 /** Small duotone hill / telescope scene that anchors the bottom of the rail. */
 function SidebarIllustration() {
   return (
-    <div className="relative flex-1 min-h-[64px] overflow-hidden" aria-hidden="true">
+    <div className="relative shrink-0 h-28 overflow-hidden" aria-hidden="true">
       <svg
         viewBox="0 0 300 160"
         preserveAspectRatio="xMidYMax slice"
@@ -338,7 +338,7 @@ export function AppSidebar({
         </button>
       </div>
 
-      {/* Decorative bottom illustration — fills whatever room is left */}
+      {/* Decorative bottom illustration — fixed height so it never competes with nav for space */}
       {sidebarOpen && <SidebarIllustration />}
 
       <UpgradeModal
