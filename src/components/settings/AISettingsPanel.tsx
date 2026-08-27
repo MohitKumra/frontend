@@ -229,7 +229,7 @@ export function AISettingsPanel({
 
   if (!ai) return null;
 
-  const enabledCount = AI_FEATURES.filter((f) => Boolean(ai[f.key as keyof AIPreferenceDTO])).length;
+  const enabledCount = aiLocked ? 0 : AI_FEATURES.filter((f) => Boolean(ai[f.key as keyof AIPreferenceDTO])).length;
   const totalCount = AI_FEATURES.length;
 
   const update = (patch: Partial<AIPreferenceDTO>) => {
@@ -244,7 +244,9 @@ export function AISettingsPanel({
     onChange(merged);
   };
 
-  const currentRefreshLabel = REFRESH_OPTIONS.find((o) => o.value === ai.summaryRefreshMinutes)?.label ?? 'Custom';
+  const currentRefreshLabel = aiLocked
+    ? 'Disabled'
+    : REFRESH_OPTIONS.find((o) => o.value === ai.summaryRefreshMinutes)?.label ?? 'Custom';
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -269,13 +271,13 @@ export function AISettingsPanel({
             },
             {
               label: 'Max-cost on',
-              value: `${AI_FEATURES.filter((f) => f.tokenLevel === 'very-high' && Boolean(ai[f.key])).length}`,
+              value: `${aiLocked ? 0 : AI_FEATURES.filter((f) => f.tokenLevel === 'very-high' && Boolean(ai[f.key])).length}`,
               colorVar: '--color-danger',
               icon: <Zap size={12} />,
             },
             {
               label: 'Low-cost on',
-              value: `${AI_FEATURES.filter((f) => f.tokenLevel === 'low' && Boolean(ai[f.key])).length}`,
+              value: `${aiLocked ? 0 : AI_FEATURES.filter((f) => f.tokenLevel === 'low' && Boolean(ai[f.key])).length}`,
               colorVar: '--color-success',
               icon: <CheckCircle2 size={12} />,
             },
@@ -403,22 +405,27 @@ export function AISettingsPanel({
           </div>
         </div>
 
-        <select
-          className="w-full rounded-xl border px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-accent transition-all"
-          style={{
-            background: 'var(--color-surface)',
-            borderColor: 'var(--color-border)',
-            color: 'var(--color-text-primary)',
-          }}
-          value={ai.summaryRefreshMinutes}
-          onChange={(e) => update({ summaryRefreshMinutes: Number(e.target.value) })}
-        >
-          {REFRESH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <div onClick={aiLocked ? () => setUpgradeOpen(true) : undefined} className={aiLocked ? 'cursor-pointer' : ''}>
+          <select
+            disabled={aiLocked}
+            className={`w-full rounded-xl border px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-accent transition-all ${
+              aiLocked ? 'opacity-60 cursor-pointer pointer-events-none' : ''
+            }`}
+            style={{
+              background: 'var(--color-surface)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text-primary)',
+            }}
+            value={ai.summaryRefreshMinutes}
+            onChange={(e) => update({ summaryRefreshMinutes: Number(e.target.value) })}
+          >
+            {REFRESH_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </Card>
 
       {/* ── Feature toggles ── */}
@@ -440,23 +447,31 @@ export function AISettingsPanel({
         </div>
 
         {aiLocked && (
-          <div className="mt-3 flex items-start gap-2.5 rounded-xl border p-3"
-            style={{ borderColor: 'var(--color-accent-soft, rgba(99,102,241,.3))', background: 'var(--color-surface-raised)' }}>
+          <div
+            onClick={() => setUpgradeOpen(true)}
+            className="mt-3 mb-3 flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer hover:border-accent/40 transition-colors"
+            style={{ borderColor: 'var(--color-accent-soft, rgba(99,102,241,.3))', background: 'var(--color-surface-raised)' }}
+          >
             <Lock className="w-4 h-4 mt-0.5 text-accent shrink-0" />
             <div className="text-xs text-text-secondary leading-snug">
               <span className="font-bold text-text-primary">AI features are locked on your current plan.</span>{' '}
-              Upgrading unlocks AI Coach, insights, daily brief, journal analysis, task parser, and more.
+              Click to upgrade and unlock AI Coach, insights, daily brief, journal analysis, task parser, and more.
             </div>
           </div>
         )}
 
         <div className="space-y-2.5 sm:space-y-3">
           {AI_FEATURES.map((feature) => {
-            const isOn = Boolean(ai[feature.key]);
+            const isOn = !aiLocked && Boolean(ai[feature.key]);
             return (
               <div
                 key={feature.key}
-                className={`flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4 transition-colors ${aiLocked ? 'opacity-70' : ''}`}
+                onClick={aiLocked ? () => setUpgradeOpen(true) : undefined}
+                className={`flex items-start sm:items-center justify-between gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border p-3 sm:p-4 transition-all ${
+                  aiLocked
+                    ? 'opacity-65 hover:opacity-90 cursor-pointer hover:border-accent/30'
+                    : ''
+                }`}
                 style={{
                   borderColor: isOn
                     ? `color-mix(in srgb, var(--color-accent) 28%, var(--color-border))`
@@ -470,15 +485,26 @@ export function AISettingsPanel({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-text-primary">{feature.title}</span>
                     <TokenBadge level={feature.tokenLevel} />
-                    {aiLocked && <Lock className="w-3.5 h-3.5 text-accent shrink-0" aria-label="Locked" />}
+                    {aiLocked && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent px-2 py-0.5 rounded-full bg-accent/10">
+                        <Lock size={10} />
+                        Locked
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-text-muted mt-1 leading-snug">{feature.description}</p>
                 </div>
-                <div className="shrink-0">
+                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                   <Toggle
                     checked={isOn}
-                    disabled={aiLocked}
-                    onToggle={() => update({ [feature.key]: !ai[feature.key] } as Partial<AIPreferenceDTO>)}
+                    disabled={false}
+                    onToggle={() => {
+                      if (aiLocked) {
+                        setUpgradeOpen(true);
+                        return;
+                      }
+                      update({ [feature.key]: !ai[feature.key] } as Partial<AIPreferenceDTO>);
+                    }}
                   />
                 </div>
               </div>
