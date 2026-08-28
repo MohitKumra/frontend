@@ -111,9 +111,12 @@ function GlobalUpgradeModal() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
   // Poll for maintenance mode so the full-app overlay (covering sidebar +
-  // modals) appears the moment the team turns maintenance on.
-  useSystemMaintenance();
+  // modals) appears the moment the team turns maintenance on. The admin portal is
+  // an isolated console (its overlay is intentionally hidden) and must not trigger
+  // user-app API calls that could bounce it to /login — so the poll is disabled there.
+  useSystemMaintenance({ enabled: !pathname.startsWith('/admin') });
 
   return (
     <>

@@ -8,11 +8,12 @@ import apiClient from '../lib/apiClient';
 
 const POLL_MS = 30_000;
 
-export function useSystemMaintenance() {
+export function useSystemMaintenance({ enabled = true }: { enabled?: boolean } = {}) {
   const setBlocked = useAppBlockedStore((s) => s.setBlocked);
   const clearBlocked = useAppBlockedStore((s) => s.clearBlocked);
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
 
     async function check() {
@@ -39,5 +40,5 @@ export function useSystemMaintenance() {
       active = false;
       clearInterval(id);
     };
-  }, [setBlocked, clearBlocked]);
+  }, [enabled, setBlocked, clearBlocked]);
 }

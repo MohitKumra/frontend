@@ -30,6 +30,24 @@ apiClient.interceptors.request.use((config) => {
 // On 401, try once to refresh; on failure, logout + redirect
 // Skip the refresh attempt for auth endpoints (login, signup, etc.)
 // so a wrong-password 401 never triggers a page reload.
+
+/**
+ * Returns true only on a protected user-app route where a dead session should
+ * force a full reload to /login. Public, auth and isolated pages (including the
+ * admin portal) never get hard-redirected — they render fine logged out and rely
+ * on their own guards (RequireAuth / AdminGuard) for graceful navigation.
+ */
+function shouldBounceToLogin(): boolean {
+  const path = window.location.pathname;
+  if (path === '/login' || path === '/signup') return false;
+  if (path.startsWith('/admin')) return false;
+  if (path.startsWith('/forgot-password')) return false;
+  if (path.startsWith('/reset-password')) return false;
+  if (path.startsWith('/google')) return false;
+  if (path === '/privacy' || path === '/terms') return false;
+  return true;
+}
+
 apiClient.interceptors.response.use(
   (response) => {
     const url = response.config?.url || '';
@@ -83,7 +101,8 @@ apiClient.interceptors.response.use(
         originalRequest.url.includes('/auth/signup') ||
         originalRequest.url.includes('/auth/refresh') ||
         originalRequest.url.includes('/auth/forgot-password') ||
-        originalRequest.url.includes('/auth/reset-password'));
+        originalRequest.url.includes('/auth/reset-password') ||
+        originalRequest.url.includes('/auth/me'));
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
@@ -96,7 +115,11 @@ apiClient.interceptors.response.use(
       } catch {
         useAuthStore.getState().logout();
         useAppBlockedStore.getState().clearBlocked();
-        if (window.location.pathname !== '/login') {
+        // Only hard-redirect to /login on a protected user-app route. On public or
+        // isolated pages (auth screens, /admin/*, legal pages) a failed refresh
+        // should never yank the user out with a full page reload — those screens
+        // render fine logged-out and the guard already handles redirects.
+        if (shouldBounceToLogin()) {
           window.location.replace('/login');
         }
       }

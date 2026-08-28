@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarDays, CheckCircle2, Circle, Flame, Heart, Sparkles, Target, Trophy, Zap } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Circle, Flame, Heart, Shield, Sparkles, Target, Trophy, Zap } from 'lucide-react';
 
 type AuthMode = 'login' | 'signup';
 
