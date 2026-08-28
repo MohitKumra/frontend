@@ -9,6 +9,7 @@ export interface PlanDTO {
   description: string | null;
   currency: string;
   priceCents: number;
+  gstPercent: number;
   billingInterval: 'MONTH' | 'YEAR';
   features: Record<string, any>;
   sortOrder: number;
@@ -66,7 +67,10 @@ export function useUserPlan() {
       return res.data.data;
     },
     staleTime: 1000 * 15, // 15 seconds
-    refetchOnMount: 'always',
+    // NOTE: no `refetchOnMount: 'always'`. This hook is called from the app shell,
+    // the sidebar AND many pages. With `'always'`, every remount re-fetched the
+    // subscription and triggered a render wave on old devices. Default behaviour
+    // (refetch only when stale) is plenty — 15s staleness covers plan changes.
   });
 
   const plansQuery = useQuery<PlanDTO[]>({

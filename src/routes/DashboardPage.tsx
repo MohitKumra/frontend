@@ -1,9 +1,13 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { usePageVariants } from '../lib/motionVariants';
-import { AnalyticsPage } from './AnalyticsPage';
+// Analytics (with recharts) is deferred until the user toggles to it — it only
+// loads on demand instead of inflating the Dashboard's initial chunk.
+const AnalyticsPage = lazy(() =>
+  import('./AnalyticsPage').then((m) => ({ default: m.AnalyticsPage }))
+);
 import {
   CheckSquare,
   FolderKanban,
@@ -14,9 +18,6 @@ import {
   ChevronRight,
   Flame,
   FileText,
-  BarChart3,
-  Target,
-  Zap,
   ArrowUpRight,
 } from 'lucide-react';
 import { LoadingScreen } from '../components/ui/Spinner';
@@ -1012,7 +1013,9 @@ export function DashboardPage() {
               </aside>
             </>
           ) : (
-            <AnalyticsPage embedded={true} />
+            <Suspense fallback={null}>
+              <AnalyticsPage embedded={true} />
+            </Suspense>
           )}
         </motion.div>
       </AnimatePresence>

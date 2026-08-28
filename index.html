@@ -10,6 +10,35 @@
       content="FlowSpace — Your personal productivity workspace. Tasks, habits, notes, focus timer, and analytics in one app."
     />
     <title>Personal Productivity</title>
+
+    <!-- Inter font: loaded declaratively (with preconnect) instead of injected
+         via JS. This lets the browser start fetching earlier and avoids a
+         post-first-paint reflow / FOUT on the very first load. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    />
+
+    <!-- Apply the theme synchronously BEFORE the bundle runs so there is no
+         flash of the wrong theme and we don't block React's first render on an
+         async storage read. Mirrors platform/theme.ts (key 'theme-preference'). -->
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem('theme-preference');
+          var dark =
+            pref === 'dark' ||
+            ((!pref || pref === 'system') &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

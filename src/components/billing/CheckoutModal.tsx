@@ -62,7 +62,6 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
   // the coupon only discounts this first/initial payment; renewals charge at
   // the full plan price.
   const [paymentMode, setPaymentMode] = useState<'ONE_TIME' | 'SUBSCRIPTION_INITIAL'>('SUBSCRIPTION_INITIAL');
-
   // Reset local state every time the modal opens for a new plan so the user
   // never sees a stale coupon from a previous plan session.
   useEffect(() => {
@@ -78,7 +77,14 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
   const planPriceCents = plan?.priceCents ?? 0;
   const discountCents = appliedCoupon?.discountCents ?? 0;
   const taxableCents = Math.max(0, planPriceCents - discountCents);
-  const finalCents = taxableCents;
+  // GST is configured per-plan by an admin (Plan.gstPercent) and applied to the
+  // taxable (post-discount) value.
+  const gstPercent =
+    typeof plan?.gstPercent === 'number' && Number.isFinite(plan.gstPercent)
+      ? Math.max(0, Math.min(100, Math.round(plan.gstPercent)))
+      : 18;
+  const gstCents = Math.round((taxableCents * gstPercent) / 100);
+  const finalCents = taxableCents + gstCents;
 
   const hasFreeAccess =
     !!plan && plan.priceCents === 0 && effectivePlan.planSlug === 'free';
@@ -472,6 +478,14 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
                 <div className="flex items-baseline justify-between pt-1 border-t border-border/40">
                   <span className="text-text-muted">Subtotal</span>
                   <span className="font-semibold text-text-primary">{formatINR(taxableCents)}</span>
+                </div>
+              )}
+
+              {/* GST line */}
+              {planPriceCents > 0 && gstCents > 0 && (
+                <div className="flex items-baseline justify-between">
+                  <span className="text-text-muted">GST ({gstPercent}%)</span>
+                  <span className="font-semibold text-text-primary">+{formatINR(gstCents)}</span>
                 </div>
               )}
             </div>

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { MotionConfig } from 'framer-motion';
 
 import App from './App';
 import { queryClient } from './lib/queryClient';
@@ -10,17 +11,20 @@ import { initTheme } from './platform/theme';
 import { OnboardingRoot } from './features/onboarding/components/OnboardingProvider';
 import './index.css';
 
-// Import Inter font
-const link = document.createElement('link');
-link.rel = 'stylesheet';
-link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
-document.head.appendChild(link);
+// Theme is applied synchronously by the inline <script> in index.html before any
+// JS runs, so the correct theme is already on <html> for first paint. We still
+// call initTheme() (fire-and-forget) to keep the stored preference in sync, but
+// we no longer block React's first render on an async storage read.
+void initTheme();
 
-// Initialize theme before first paint to avoid flash of wrong theme
-initTheme().then(() => {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <BrowserRouter>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      {/* Global reduced-motion switch for framer-motion: when the OS/browser
+          prefers reduced motion, MotionConfig disables transform/layout
+          animations app-wide (opacity stays). This is a cheap, safe lever that
+          noticeably helps low-end / older devices without touching 50+ files. */}
+      <MotionConfig reducedMotion="user">
         <QueryClientProvider client={queryClient}>
           <OnboardingRoot>
             <App />
@@ -42,7 +46,7 @@ initTheme().then(() => {
             }}
           />
         </QueryClientProvider>
-      </BrowserRouter>
-    </React.StrictMode>
-  );
-});
+      </MotionConfig>
+    </BrowserRouter>
+  </React.StrictMode>
+);

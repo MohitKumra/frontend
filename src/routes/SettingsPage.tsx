@@ -386,38 +386,6 @@ function SettingsHero({
               Five modules, one console. Every change saves the moment you make it.
             </p>
           </div>
-
-          {/* Stat chips */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { label: 'Theme', value: stats.theme, colorVar: TAB_COLOR.appearance },
-              { label: 'Density', value: stats.density, colorVar: TAB_COLOR.appearance },
-              { label: 'Alerts', value: stats.alerts, colorVar: TAB_COLOR.notifications },
-              { label: 'Linked', value: stats.linked, colorVar: TAB_COLOR.integrations },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="flex items-center gap-2 rounded-xl border px-3 py-2"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full shrink-0"
-                  style={{ background: `var(${s.colorVar})`, boxShadow: `0 0 5px var(${s.colorVar})` }}
-                />
-                <div>
-                  <div
-                    className="text-[9px] font-mono uppercase tracking-wider leading-none"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
-                    {s.label}
-                  </div>
-                  <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
-                    {s.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Module preview cards */}

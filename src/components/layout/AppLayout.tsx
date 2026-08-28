@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
@@ -171,28 +171,41 @@ function warmRouteData(route: string): void {
   }
 }
 
+/**
+ * Memoized outlet. The shell (AppLayout) re-subscribes to background data
+ * (dashboard today, achievements, streak status, plan) and UI state. Without
+ * memoization, every one of those updates re-renders the ACTIVE page too. This
+ * wrapper renders the current route independently — navigation still updates it
+ * (via route context), but shell-only re-renders no longer cascade into pages.
+ */
+const PageOutlet = memo(function PageOutlet() {
+  return <Outlet />;
+});
+
 export function AppLayout() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const location = useLocation();
-  const {
-    sidebarOpen,
-    setSidebarOpen,
-    toggleSidebar,
-    theme,
-    toggleTheme,
-    layoutPreference,
-    setTheme,
-    setLayoutPreference,
-    setCalendarViewPreference,
-    setTaskViewPreference,
-    setNotesViewPreference,
-    pageTransitionsEnabled,
-    floatingAnimationsEnabled,
-    setPageTransitionsEnabled,
-    setFloatingAnimationsEnabled,
-  } = useUIStore();
+  // Subscribe to each UI-store slice individually instead of the whole store.
+  // With a single `useUIStore()` destructure, ANY ui-state change (focus mode,
+  // theme, modal toggles) re-renders this shell AND the active page. Individual
+  // selectors let React bail out of re-rendering unless THAT slice changed.
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const theme = useUIStore((s) => s.theme);
+  const toggleTheme = useUIStore((s) => s.toggleTheme);
+  const layoutPreference = useUIStore((s) => s.layoutPreference);
+  const setTheme = useUIStore((s) => s.setTheme);
+  const setLayoutPreference = useUIStore((s) => s.setLayoutPreference);
+  const setCalendarViewPreference = useUIStore((s) => s.setCalendarViewPreference);
+  const setTaskViewPreference = useUIStore((s) => s.setTaskViewPreference);
+  const setNotesViewPreference = useUIStore((s) => s.setNotesViewPreference);
+  const pageTransitionsEnabled = useUIStore((s) => s.pageTransitionsEnabled);
+  const floatingAnimationsEnabled = useUIStore((s) => s.floatingAnimationsEnabled);
+  const setPageTransitionsEnabled = useUIStore((s) => s.setPageTransitionsEnabled);
+  const setFloatingAnimationsEnabled = useUIStore((s) => s.setFloatingAnimationsEnabled);
   const logout = useLogout();
   const { isFeatureLocked } = useUserPlan();
   const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
@@ -240,28 +253,12 @@ export function AppLayout() {
     applyLayoutPreference(layoutPreference);
   }, [layoutPreference]);
 
-  useEffect(() => {
-    const routesToWarm = [
-      '/',
-      '/tasks',
-      '/projects',
-      '/goals',
-      '/calendar',
-      '/habits',
-      '/notes',
-      '/focus',
-      '/analytics',
-      '/coach',
-      '/ai',
-      '/profile',
-      '/settings',
-    ];
-    const timer = window.setTimeout(() => {
-      routesToWarm.forEach((route) => warmRouteData(route));
-    }, 500);
-
-    return () => window.clearTimeout(timer);
-  }, []);
+  // NOTE: No blanket "warm every route" preloader here. Firing ~13 prefetches a
+  // moment after mount spiked the API + caused a big render wave on low-end
+  // devices before the UI had settled. Data for the visited route is fetched by
+  // the page itself, and the nav links already warm the *next* destination on
+  // hover / focus / pointer-down — so the right data is cached right before the
+  // user clicks, without loading everything upfront.
 
   useEffect(() => {
     if (!achievements) return;
@@ -624,7 +621,7 @@ export function AppLayout() {
               PageTransition unmounts the old page and mounts the new one
               instantly — content can never get stuck or flicker. */}
           <PageTransition key={location.pathname} className={contentPaddingClass}>
-            <Outlet />
+            <PageOutlet />
           </PageTransition>
         </div>
       </main>

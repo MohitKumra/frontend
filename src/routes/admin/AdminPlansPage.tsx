@@ -27,6 +27,7 @@ interface Plan {
   description: string | null;
   currency: string;
   priceCents: number;
+  gstPercent: number;
   billingInterval: 'MONTH' | 'YEAR' | 'ONE_TIME';
   isActive: boolean;
   features: Record<string, any>;
@@ -79,6 +80,7 @@ const EMPTY_FORM = {
   name: '',
   description: '',
   pricePaise: '49900',
+  gstPercent: '18',
   billingInterval: 'MONTH' as 'MONTH' | 'YEAR' | 'ONE_TIME',
   features: { ...EMPTY_FEATURES },
   advancedJson: '',
@@ -131,6 +133,7 @@ export function AdminPlansPage() {
       name: p.name,
       description: p.description || '',
       pricePaise: p.priceCents.toString(),
+      gstPercent: String(p.gstPercent ?? 18),
       billingInterval: p.billingInterval,
       features,
       advancedJson: Object.keys(extra).length ? JSON.stringify(extra, null, 2) : '',
@@ -169,6 +172,7 @@ export function AdminPlansPage() {
         name: formData.name,
         description: formData.description,
         priceCents: parseInt(formData.pricePaise, 10),
+        gstPercent: Math.max(0, Math.min(100, parseInt(formData.gstPercent, 10) || 0)),
         currency: 'INR',
         billingInterval: formData.billingInterval,
         features: parsedFeatures,
@@ -258,6 +262,7 @@ export function AdminPlansPage() {
                 <th className="px-5 py-4">Plan Name</th>
                 <th className="px-5 py-4">Slug</th>
                 <th className="px-5 py-4">Price (INR)</th>
+                <th className="px-5 py-4">GST</th>
                 <th className="px-5 py-4">Interval</th>
                 <th className="px-5 py-4">Status</th>
                 <th className="px-5 py-4">Version</th>
@@ -267,14 +272,14 @@ export function AdminPlansPage() {
             <tbody className="divide-y divide-border/60">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-16 text-center text-text-muted">
+                  <td colSpan={8} className="px-5 py-16 text-center text-text-muted">
                     <Spinner size="md" className="mx-auto mb-2" />
                     Loading subscription plans...
                   </td>
                 </tr>
               ) : plans.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-16 text-center text-text-muted text-sm">
+                  <td colSpan={8} className="px-5 py-16 text-center text-text-muted text-sm">
                     No plans found. Create your first plan to get started.
                   </td>
                 </tr>
@@ -299,6 +304,13 @@ export function AdminPlansPage() {
                     {/* Price */}
                     <td className="px-5 py-4 font-bold text-accent">
                       {formatINR(p.priceCents)}
+                    </td>
+
+                    {/* GST */}
+                    <td className="px-5 py-4 text-text-secondary">
+                      <Badge variant="default" size="sm" className="font-mono">
+                        {p.gstPercent ?? 18}%
+                      </Badge>
                     </td>
 
                     {/* Interval */}
@@ -523,6 +535,25 @@ function PlanFormModal({
               />
               <p className="text-[11px] text-text-muted mt-1">
                 Preview: <span className="font-bold text-accent">{pricePreview}</span>
+              </p>
+            </div>
+
+            {/* GST (%) */}
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                GST (%)
+              </label>
+              <input
+                type="number"
+                placeholder="18"
+                value={formData.gstPercent}
+                onChange={(e) => setFormData({ ...formData, gstPercent: e.target.value })}
+                min={0}
+                max={100}
+                className="w-full px-3.5 py-2.5 bg-surface-raised border border-border rounded-xl text-sm text-text-primary font-mono focus:outline-none focus:ring-2 focus:ring-focus"
+              />
+              <p className="text-[11px] text-text-muted mt-1">
+                Applied to the taxable amount at checkout (default 18).
               </p>
             </div>
 

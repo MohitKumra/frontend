@@ -1,61 +1,71 @@
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { AppErrorBoundary } from './components/layout/AppErrorBoundary';
 import { PageTransition } from './components/layout/PageTransition';
+import { LoadingScreen } from './components/ui/Spinner';
 import { useAuthStore } from './store/authStore';
 import { useOnboarding } from './features/onboarding/hooks/useOnboarding';
 import { hasCompletedOnboarding } from './features/onboarding/utils/storage';
 
+// ─── Route-level code splitting ─────────────────────────────────────────────
+// Every page is lazily loaded so the initial bundle only ships the app shell.
+// Old / low-end devices no longer parse the whole SPA (admin, charts, notes
+// book) up front — each chunk loads on demand when its route is first visited.
+const lazyRoute = (loader: () => Promise<{ [key: string]: any }>, name: string) =>
+  lazy(() => loader().then((mod) => ({ default: mod[name] })));
+
 // Auth pages (public)
-import { AuthPage } from './routes/AuthPage';
-import { ForgotPasswordPage } from './routes/ForgotPasswordPage';
-import { ResetPasswordPage } from './routes/ResetPasswordPage';
-import { GoogleAuthCallbackPage } from './routes/GoogleAuthCallbackPage';
-import { AnimationTestPage } from './routes/AnimationTestPage';
-import { AchievementsTestPage } from './routes/AchievementsTestPage';
-import { PrivacyPolicyPage } from './routes/PrivacyPolicyPage';
-import { TermsConditionsPage } from './routes/TermsConditionsPage';
+const AuthPage = lazyRoute(() => import('./routes/AuthPage'), 'AuthPage');
+const ForgotPasswordPage = lazyRoute(() => import('./routes/ForgotPasswordPage'), 'ForgotPasswordPage');
+const ResetPasswordPage = lazyRoute(() => import('./routes/ResetPasswordPage'), 'ResetPasswordPage');
+const GoogleAuthCallbackPage = lazyRoute(() => import('./routes/GoogleAuthCallbackPage'), 'GoogleAuthCallbackPage');
+const AnimationTestPage = lazyRoute(() => import('./routes/AnimationTestPage'), 'AnimationTestPage');
+const AchievementsTestPage = lazyRoute(() => import('./routes/AchievementsTestPage'), 'AchievementsTestPage');
+const PrivacyPolicyPage = lazyRoute(() => import('./routes/PrivacyPolicyPage'), 'PrivacyPolicyPage');
+const TermsConditionsPage = lazyRoute(() => import('./routes/TermsConditionsPage'), 'TermsConditionsPage');
 
 // Protected pages
-import { DashboardPage } from './routes/DashboardPage';
-import { TasksPage } from './routes/TasksPage';
-import { CalendarPage } from './routes/CalendarPage';
-import { HabitsPage } from './routes/HabitsPage';
-import { NotesPage } from './routes/NotesPage';
-import { FocusPage } from './routes/FocusPage';
-import { ProjectsPage } from './routes/ProjectsPage';
-import { GoalsPage } from './routes/GoalsPage';
-import { GoalDetailPage } from './routes/GoalDetailPage';
-import { AIControlsPage } from './routes/AIControlsPage';
-import { SettingsPage } from './routes/SettingsPage';
-import { StoragePage } from './routes/StoragePage';
-import { ProfilePage } from './routes/ProfilePage';
-import { PlanPage } from './routes/PlanPage';
-import { BlockedOverlay } from './components/BlockedOverlay';
-import { UpgradeModal } from './components/billing/UpgradeModal';
-import { useUpgradeModalStore } from './store/upgradeModalStore';
-import { useSystemMaintenance } from './hooks/useSystemMaintenance';
-import { TaskDetailPage } from './routes/TaskDetailPage';
-import { ProjectDetailPage } from './routes/ProjectDetailPage';
-import { NotFoundPage } from './routes/NotFoundPage';
+const DashboardPage = lazyRoute(() => import('./routes/DashboardPage'), 'DashboardPage');
+const TasksPage = lazyRoute(() => import('./routes/TasksPage'), 'TasksPage');
+const CalendarPage = lazyRoute(() => import('./routes/CalendarPage'), 'CalendarPage');
+const HabitsPage = lazyRoute(() => import('./routes/HabitsPage'), 'HabitsPage');
+const NotesPage = lazyRoute(() => import('./routes/NotesPage'), 'NotesPage');
+const FocusPage = lazyRoute(() => import('./routes/FocusPage'), 'FocusPage');
+const ProjectsPage = lazyRoute(() => import('./routes/ProjectsPage'), 'ProjectsPage');
+const GoalsPage = lazyRoute(() => import('./routes/GoalsPage'), 'GoalsPage');
+const GoalDetailPage = lazyRoute(() => import('./routes/GoalDetailPage'), 'GoalDetailPage');
+const AIControlsPage = lazyRoute(() => import('./routes/AIControlsPage'), 'AIControlsPage');
+const SettingsPage = lazyRoute(() => import('./routes/SettingsPage'), 'SettingsPage');
+const StoragePage = lazyRoute(() => import('./routes/StoragePage'), 'StoragePage');
+const ProfilePage = lazyRoute(() => import('./routes/ProfilePage'), 'ProfilePage');
+const PlanPage = lazyRoute(() => import('./routes/PlanPage'), 'PlanPage');
+const TaskDetailPage = lazyRoute(() => import('./routes/TaskDetailPage'), 'TaskDetailPage');
+const ProjectDetailPage = lazyRoute(() => import('./routes/ProjectDetailPage'), 'ProjectDetailPage');
+const NotFoundPage = lazyRoute(() => import('./routes/NotFoundPage'), 'NotFoundPage');
 
 // Admin portal
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminGuard } from './components/admin/AdminGuard';
-import { AdminLoginPage } from './routes/admin/AdminLoginPage';
-import { AdminVerifyOtpPage } from './routes/admin/AdminVerifyOtpPage';
-import { AdminDashboardPage } from './routes/admin/AdminDashboardPage';
-import { AdminUsersPage } from './routes/admin/AdminUsersPage';
-import { AdminUserDetailPage } from './routes/admin/AdminUserDetailPage';
-import { AdminPlansPage } from './routes/admin/AdminPlansPage';
-import { AdminCouponsPage } from './routes/admin/AdminCouponsPage';
-import { AdminSubscriptionsPage } from './routes/admin/AdminSubscriptionsPage';
-import { AdminTransactionsPage } from './routes/admin/AdminTransactionsPage';
-import { AdminAnalyticsPage } from './routes/admin/AdminAnalyticsPage';
-import { AdminAuditLogPage } from './routes/admin/AdminAuditLogPage';
-import { AdminSystemPage } from './routes/admin/AdminSystemPage';
-import { AdminSettingsPage } from './routes/admin/AdminSettingsPage';
+const AdminLoginPage = lazyRoute(() => import('./routes/admin/AdminLoginPage'), 'AdminLoginPage');
+const AdminVerifyOtpPage = lazyRoute(() => import('./routes/admin/AdminVerifyOtpPage'), 'AdminVerifyOtpPage');
+const AdminDashboardPage = lazyRoute(() => import('./routes/admin/AdminDashboardPage'), 'AdminDashboardPage');
+const AdminUsersPage = lazyRoute(() => import('./routes/admin/AdminUsersPage'), 'AdminUsersPage');
+const AdminUserDetailPage = lazyRoute(() => import('./routes/admin/AdminUserDetailPage'), 'AdminUserDetailPage');
+const AdminPlansPage = lazyRoute(() => import('./routes/admin/AdminPlansPage'), 'AdminPlansPage');
+const AdminCouponsPage = lazyRoute(() => import('./routes/admin/AdminCouponsPage'), 'AdminCouponsPage');
+const AdminSubscriptionsPage = lazyRoute(() => import('./routes/admin/AdminSubscriptionsPage'), 'AdminSubscriptionsPage');
+const AdminTransactionsPage = lazyRoute(() => import('./routes/admin/AdminTransactionsPage'), 'AdminTransactionsPage');
+const AdminAnalyticsPage = lazyRoute(() => import('./routes/admin/AdminAnalyticsPage'), 'AdminAnalyticsPage');
+const AdminAuditLogPage = lazyRoute(() => import('./routes/admin/AdminAuditLogPage'), 'AdminAuditLogPage');
+const AdminSystemPage = lazyRoute(() => import('./routes/admin/AdminSystemPage'), 'AdminSystemPage');
+const AdminSettingsPage = lazyRoute(() => import('./routes/admin/AdminSettingsPage'), 'AdminSettingsPage');
+
+// Shared shell bits (kept eager — they are required for every protected page).
+import { BlockedOverlay } from './components/BlockedOverlay';
+import { UpgradeModal } from './components/billing/UpgradeModal';
+import { useUpgradeModalStore } from './store/upgradeModalStore';
+import { useSystemMaintenance } from './hooks/useSystemMaintenance';
 
 
 /** Redirects unauthenticated users to /login. */
@@ -124,8 +134,12 @@ export default function App() {
       <BlockedOverlay />
       <GlobalUpgradeModal />
 
-      <Routes>
-        {/* Public routes */}
+      {/* Lazy route chunks are fetched on demand. Suspense shows a lightweight
+          loading state while the first visit to each route downloads + parses
+          its code — keeping old devices responsive on navigation. */}
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          {/* Public routes */}
         <Route path="/login" element={<AuthPage />} />
         <Route path="/signup" element={<AuthPage />} />
         <Route
@@ -253,7 +267,8 @@ export default function App() {
             </PageTransition>
           }
         />
-      </Routes>
+        </Routes>
+      </Suspense>
     </>
   );
 }

@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, ShieldCheck } from 'lucide-react';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { PlanCard } from './PlanCard';
+import { CheckoutModal } from './CheckoutModal';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -21,6 +22,18 @@ interface UpgradeModalProps {
    * coupon + bill summary + Razorpay payment.
    */
   onSelectPlan?: (plan: PlanDTO) => void;
+}
+
+function useIsDarkMode() {
+  const [isDark, setIsDark] = React.useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  React.useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+  return isDark;
 }
 
 export function UpgradeModal({
@@ -38,8 +51,26 @@ export function UpgradeModal({
   // and the chosen row (its priceCents + billingInterval) is the source of
   // truth sent to checkout — no front-end price math.
   const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
+  const isDark = useIsDarkMode();
+  // When the calling context does NOT pass `onSelectPlan`, this modal owns the
+  // checkout flow itself so the plan cards remain fully clickable everywhere
+  // (global upgrade modal, AI settings, focus, locked-wrapper prompts, etc.).
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
+
+  // Reset any in-progress checkout when the modal is dismissed.
+  React.useEffect(() => {
+    if (!isOpen) setCheckoutPlan(null);
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleSelectPlan = (plan: PlanDTO) => {
+    if (onSelectPlan) {
+      onSelectPlan(plan);
+    } else {
+      setCheckoutPlan(plan);
+    }
+  };
 
   // Find target plans, or fallback list if database is loading.
   const sortedPlans: PlanDTO[] = plans.length > 0
@@ -52,6 +83,7 @@ export function UpgradeModal({
           description: 'Essential task & habit tracking for individuals.',
           priceCents: 0,
           currency: 'INR',
+          gstPercent: 18,
           billingInterval: 'MONTH',
           sortOrder: 0,
           isActive: true,
@@ -75,6 +107,7 @@ export function UpgradeModal({
           description: 'For individuals seeking enhanced focus & analytics',
           priceCents: 49900,
           currency: 'INR',
+          gstPercent: 18,
           billingInterval: 'MONTH',
           sortOrder: 1,
           isActive: true,
@@ -98,6 +131,7 @@ export function UpgradeModal({
           description: 'Complete power user productivity system',
           priceCents: 99900,
           currency: 'INR',
+          gstPercent: 18,
           billingInterval: 'MONTH',
           sortOrder: 2,
           isActive: true,
@@ -121,6 +155,7 @@ export function UpgradeModal({
           description: 'Unlimited AI capabilities, collaboration, and high-priority support',
           priceCents: 199900,
           currency: 'INR',
+          gstPercent: 18,
           billingInterval: 'MONTH',
           sortOrder: 3,
           isActive: true,
@@ -152,11 +187,11 @@ export function UpgradeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-4 overflow-y-auto">
-      <div className="relative w-full max-w-[1060px] bg-white border border-slate-200 rounded-3xl sm:rounded-[32px] p-5 sm:p-7 md:p-10 shadow-2xl space-y-5 sm:space-y-7 my-auto max-h-[92vh] overflow-y-auto">
+      <div className="relative w-full max-w-[1060px] bg-white dark:bg-[#1a2335] border border-slate-200 dark:border-[#2d3548] rounded-3xl sm:rounded-[32px] p-5 sm:p-7 md:p-10 shadow-2xl space-y-5 sm:space-y-7 my-auto max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 sm:top-6 sm:right-6 p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           aria-label="Close upgrade modal"
         >
           <X className="w-5 h-5" />
@@ -164,16 +199,16 @@ export function UpgradeModal({
 
         {/* Modal Header */}
         <div className="text-center max-w-2xl mx-auto space-y-2 sm:space-y-2.5 pt-2 sm:pt-0">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-[11px] sm:text-xs font-bold">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-100 dark:border-indigo-500/40 text-indigo-600 dark:text-indigo-300 text-[11px] sm:text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Unlock Your Productivity Superpowers</span>
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-[26px] font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl md:text-[26px] font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
             Choose the Perfect Plan for You
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             {highlightFeature ? (
-              <span className="text-indigo-600 font-medium">
+              <span className="text-indigo-600 dark:text-indigo-300 font-medium">
                 {highlightFeature} requires an upgraded plan. Pick a plan to continue
                 to checkout.
               </span>
@@ -183,8 +218,11 @@ export function UpgradeModal({
           </p>
           {message && (
             <div
-              className="mx-auto max-w-md rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700"
-              style={{ background: 'color-mix(in srgb, #6366F1 8%, white)', border: '1px solid #C7D2FE' }}
+              className="mx-auto max-w-md rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200"
+              style={{
+                background: isDark ? 'rgba(99, 102, 241, 0.14)' : 'color-mix(in srgb, #6366F1 8%, white)',
+                border: isDark ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid #C7D2FE',
+              }}
             >
               ⚠️ {message}
             </div>
@@ -196,8 +234,8 @@ export function UpgradeModal({
           <div
             className={`inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border text-[11px] sm:text-xs font-semibold text-center ${
               effectivePlan.planSlug === 'free'
-                ? 'bg-slate-50 border-slate-200 text-slate-600'
-                : 'bg-white border-indigo-200 text-indigo-600'
+                ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                : 'bg-white dark:bg-[#242d3f] border-indigo-200 dark:border-indigo-500/40 text-indigo-600 dark:text-indigo-300'
             }`}
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
@@ -211,7 +249,7 @@ export function UpgradeModal({
 
         {/* Monthly / Annual toggle */}
         <div className="flex justify-center">
-          <div className="inline-flex items-center rounded-full bg-slate-100 p-1">
+          <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 p-1">
             {(['MONTH', 'YEAR'] as const).map((cycle) => (
               <button
                 key={cycle}
@@ -220,7 +258,7 @@ export function UpgradeModal({
                 className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-colors ${
                   billingCycle === cycle
                     ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 {cycle === 'MONTH' ? 'Monthly' : 'Annual'}
@@ -246,10 +284,19 @@ export function UpgradeModal({
             const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
             const isPopular = tier === 'premium';
 
-            return <PlanCard key={p.id} plan={p} isCurrent={isCurrent} isPopular={isPopular} onSelect={onSelectPlan} />;
+            return <PlanCard key={p.id} plan={p} isCurrent={isCurrent} isPopular={isPopular} onSelect={handleSelectPlan} />;
           })}
         </div>
       </div>
+
+      {/* When no onSelectPlan is supplied by the caller, this modal drives the
+          checkout flow itself so the plan cards are clickable everywhere. */}
+      <CheckoutModal
+        isOpen={!!checkoutPlan}
+        onClose={() => setCheckoutPlan(null)}
+        plan={checkoutPlan}
+        highlightFeature={highlightFeature}
+      />
     </div>
   );
 }
