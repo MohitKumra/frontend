@@ -1,5 +1,6 @@
 // frontend/src/components/settings/BillingSettingsPanel.tsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CreditCard,
   CheckCircle2,
@@ -72,13 +73,13 @@ export function BillingSettingsPanel() {
   }
 
   async function openInvoicePdf(pdfUrl: string) {
-    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+    const previewWindow = window.open('', '_blank');
     const response = await apiClient.get(pdfUrl, { responseType: 'blob' });
     const blobUrl = URL.createObjectURL(response.data);
     if (previewWindow) {
       previewWindow.location.href = blobUrl;
     } else {
-      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      window.open(blobUrl, '_blank');
     }
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   }
@@ -156,6 +157,22 @@ export function BillingSettingsPanel() {
 
   return (
     <div className="space-y-6">
+      <Card variant="default" className="border-accent-border/60 bg-gradient-to-r from-accent/10 via-accent-subtle/15 to-transparent">
+        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-text-primary">Billing center is now a full page</p>
+            <p className="text-sm text-text-muted">
+              Open the new billing page to review plans, pay invoices, and download PDFs without the modal flow.
+            </p>
+          </div>
+          <Link to="/billing">
+            <Button variant="primary" leftIcon={<ArrowUpRight className="w-4 h-4" />}>
+              Open Billing Center
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
       {/* ─── Active Plan Banner ───────────────────────────────────── */}
       <Card variant="elevated" className="overflow-hidden border-accent-border/60">
         <div className="p-6 bg-gradient-to-r from-accent/15 via-accent-subtle/20 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-6">

@@ -31,6 +31,26 @@ export interface EffectivePlanDTO {
 export interface UserSubscriptionResponse {
   effectivePlan: EffectivePlanDTO;
   subscription: any | null;
+  billingProfile: {
+    companyName: string | null;
+    contactName: string | null;
+    email: string | null;
+    phone: string | null;
+    gstin: string | null;
+    cityState: string | null;
+    postalCode: string | null;
+    addressLines: string[];
+    country: string | null;
+  };
+  company: {
+    name: string;
+    gstin: string | null;
+    email: string | null;
+    phone: string | null;
+    website: string | null;
+    addressLines: string[];
+    placeOfSupply: string | null;
+  };
   usage: {
     projects: number;
     habits: number;
@@ -60,6 +80,10 @@ export interface UserSubscriptionResponse {
     subtotalCents: number;
     discountCents: number;
     taxCents: number;
+    cgstCents: number;
+    sgstCents: number;
+    igstCents: number;
+    sac?: string | null;
     totalCents: number;
     issuedAt: string;
     paidAt: string | null;
@@ -121,6 +145,26 @@ export function useUserPlan() {
     // Using an empty object means the real values apply once data loads.
     features: {},
     expiresAt: null,
+  };
+  const company = subscriptionQuery.data?.company || {
+    name: 'Finamite Solutions LLP',
+    gstin: null,
+    email: null,
+    phone: null,
+    website: null,
+    addressLines: [],
+    placeOfSupply: null,
+  };
+  const billingProfile = subscriptionQuery.data?.billingProfile || {
+    companyName: null,
+    contactName: null,
+    email: null,
+    phone: null,
+    gstin: null,
+    cityState: null,
+    postalCode: null,
+    addressLines: [],
+    country: null,
   };
 
   const usage = subscriptionQuery.data?.usage || {
@@ -217,11 +261,33 @@ export function useUserPlan() {
     },
   });
 
+  const updateBillingProfileMutation = useMutation({
+    mutationFn: async (payload: {
+      billingCompanyName?: string | null;
+      billingEmail?: string | null;
+      billingPhone?: string | null;
+      billingAddressLine1?: string | null;
+      billingAddressLine2?: string | null;
+      billingCityState?: string | null;
+      billingPostalCode?: string | null;
+      billingCountry?: string | null;
+      billingGstin?: string | null;
+    }) => {
+      const res = await apiClient.put('/billing/profile', payload);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY });
+    },
+  });
+
   return {
     subscriptionQuery,
     plansQuery,
     effectivePlan,
     subscription: subscriptionQuery.data?.subscription,
+    company,
+    billingProfile,
     usage,
     transactions: subscriptionQuery.data?.transactions || [],
     invoices: subscriptionQuery.data?.invoices || [],
@@ -238,6 +304,7 @@ export function useUserPlan() {
     verifyPayment: verifyPaymentMutation.mutateAsync,
     cancelSubscription: cancelSubscriptionMutation.mutateAsync,
     applyCoupon: applyCouponMutation.mutateAsync,
+    updateBillingProfile: updateBillingProfileMutation.mutateAsync,
     refetch: () => {
       subscriptionQuery.refetch();
       plansQuery.refetch();

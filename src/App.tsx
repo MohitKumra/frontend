@@ -40,6 +40,7 @@ const SettingsPage = lazyRoute(() => import('./routes/SettingsPage'), 'SettingsP
 const StoragePage = lazyRoute(() => import('./routes/StoragePage'), 'StoragePage');
 const ProfilePage = lazyRoute(() => import('./routes/ProfilePage'), 'ProfilePage');
 const PlanPage = lazyRoute(() => import('./routes/PlanPage'), 'PlanPage');
+const BillingPage = lazyRoute(() => import('./routes/BillingPage'), 'BillingPage');
 const TaskDetailPage = lazyRoute(() => import('./routes/TaskDetailPage'), 'TaskDetailPage');
 const ProjectDetailPage = lazyRoute(() => import('./routes/ProjectDetailPage'), 'ProjectDetailPage');
 const NotFoundPage = lazyRoute(() => import('./routes/NotFoundPage'), 'NotFoundPage');
@@ -60,6 +61,7 @@ const AdminAnalyticsPage = lazyRoute(() => import('./routes/admin/AdminAnalytics
 const AdminAuditLogPage = lazyRoute(() => import('./routes/admin/AdminAuditLogPage'), 'AdminAuditLogPage');
 const AdminSystemPage = lazyRoute(() => import('./routes/admin/AdminSystemPage'), 'AdminSystemPage');
 const AdminSettingsPage = lazyRoute(() => import('./routes/admin/AdminSettingsPage'), 'AdminSettingsPage');
+const AdminInvoiceSettingsPage = lazyRoute(() => import('./routes/admin/AdminInvoiceSettingsPage'), 'AdminInvoiceSettingsPage');
 
 // Shared shell bits (kept eager — they are required for every protected page).
 import { BlockedOverlay } from './components/BlockedOverlay';
@@ -225,6 +227,7 @@ export default function App() {
           <Route path="ai" element={<CoachRedirectPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="plans" element={<PlanPage />} />
+          <Route path="billing" element={<BillingPage />} />
           <Route path="storage" element={<StoragePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
@@ -256,6 +259,7 @@ export default function App() {
           <Route path="audit-log" element={<AdminAuditLogPage />} />
           <Route path="system" element={<AdminSystemPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="billing/invoice-settings" element={<AdminInvoiceSettingsPage />} />
         </Route>
 
         {/* Fallback */}
@@ -272,4 +276,3 @@ export default function App() {
     </>
   );
 }
-

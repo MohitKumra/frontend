@@ -31,6 +31,7 @@ const NAV_ITEMS = [
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/admin/audit-log', label: 'Audit Trail', icon: ShieldCheck },
   { to: '/admin/system', label: 'System & Health', icon: Activity },
+  { to: '/admin/billing/invoice-settings', label: 'Billing / Invoice Settings', icon: Receipt },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
