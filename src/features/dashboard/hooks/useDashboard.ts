@@ -23,8 +23,11 @@ export function useEnhancedDashboard() {
     queryKey: [...DASHBOARD_KEY, 'enhanced'],
     queryFn: dashboardApi.getEnhanced,
     staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
-    refetchOnWindowFocus: true,
+    // NOTE: no `refetchInterval`. A background timer here re-rendered the whole
+    // DashboardPage every 60s even while idle (every child, chart, gradient).
+    // The dashboard refetches on mount, when the window regains focus, and when
+    // mutations invalidate ['dashboard'] — so data stays fresh on every real
+    // interaction without constant idle re-renders.
   });
 }
 
@@ -33,8 +36,9 @@ export function useActivityFeed(page = 1, pageSize = 20) {
     queryKey: [...DASHBOARD_KEY, 'activity-feed', page, pageSize],
     queryFn: () => dashboardApi.getActivityFeed(page, pageSize),
     staleTime: 15 * 1000,
-    refetchInterval: 30 * 1000,
-    refetchOnWindowFocus: true,
+    // NOTE: no `refetchInterval`. Same rationale as above — no idle timer that
+    // re-renders the entire DashboardPage every 30s. Fresh on mount/focus and
+    // after mutations.
   });
 }
 

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CheckSquare, Timer, Target, FolderKanban, Calendar, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Card } from '../ui/Card';
 import type { InAppNotificationDTO } from '../../types';
@@ -69,7 +70,8 @@ function getRelativeTime(dateStr: string): string {
   });
 }
 
-export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityFeedProps) {
+/** Shallow-compare so this only re-renders when the feed's contents change. */
+export const ActivityFeed = memo(function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityFeedProps) {
   const displayActivities = activities.slice(0, maxItems);
 
   return (
@@ -171,4 +173,4 @@ export function ActivityFeed({ activities, maxItems = 10, isLoading }: ActivityF
       </div>
     </Card>
   );
-}
+});

@@ -232,7 +232,7 @@ export function AdminSystemPage(): React.JSX.Element {
   }
 
   const subs = health.subsystems || {};
-  const m = health.metrics || {};
+  const m = health.metrics || ({} as typeof health.metrics);
   const db = subs.database || {};
   const pay = subs.paymentProvider || {};
   const smtp = subs.smtp || {};

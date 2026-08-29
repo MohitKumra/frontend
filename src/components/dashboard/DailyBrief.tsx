@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Loader2, Sun, ListChecks, Target, Brain } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { useDailyBrief, useAIFeatureEnabled } from '../../features/ai/hooks/useAI';
 
-export function DailyBrief() {
+export const DailyBrief = memo(function DailyBrief() {
   const { data: brief, isLoading, isError } = useDailyBrief();
   const briefEnabled = useAIFeatureEnabled('dailyBriefEnabled');
 
@@ -165,4 +166,4 @@ export function DailyBrief() {
       </div>
     </Card>
   );
-}
+});

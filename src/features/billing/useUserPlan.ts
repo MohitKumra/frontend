@@ -52,6 +52,34 @@ export interface UserSubscriptionResponse {
     createdAt: string;
     plan?: { name: string };
   }>;
+  invoices: Array<{
+    id: string;
+    invoiceNumber: string;
+    status: string;
+    currency: string;
+    subtotalCents: number;
+    discountCents: number;
+    taxCents: number;
+    totalCents: number;
+    issuedAt: string;
+    paidAt: string | null;
+    dueAt: string | null;
+    pdfUrl: string;
+    subscription?: {
+      id: string;
+      status: string;
+      autoRenew: boolean;
+      billingInterval: 'MONTH' | 'YEAR';
+      currentPeriodEnd: string;
+      plan?: { name: string; slug: string };
+    } | null;
+    order?: { id: string; providerOrderId: string | null } | null;
+    transactions?: Array<{
+      id: string;
+      providerPaymentId: string | null;
+      status: string;
+    }>;
+  }>;
 }
 
 export const BILLING_QUERY_KEY = ['billing', 'subscription'];
@@ -146,7 +174,12 @@ export function useUserPlan() {
 
   // Mutations
   const createCheckoutMutation = useMutation({
-    mutationFn: async (payload: { planId: string; couponCode?: string; type?: 'ONE_TIME' | 'SUBSCRIPTION_INITIAL' }) => {
+    mutationFn: async (payload: {
+      planId: string;
+      couponCode?: string;
+      type?: 'ONE_TIME' | 'SUBSCRIPTION_INITIAL';
+      idempotencyKey?: string;
+    }) => {
       const res = await apiClient.post('/billing/checkout', payload);
       return res.data.data;
     },
@@ -191,6 +224,7 @@ export function useUserPlan() {
     subscription: subscriptionQuery.data?.subscription,
     usage,
     transactions: subscriptionQuery.data?.transactions || [],
+    invoices: subscriptionQuery.data?.invoices || [],
     plans: plansQuery.data || [],
     isLoading: subscriptionQuery.isLoading || plansQuery.isLoading,
     // True if either request failed. A failure should never leave the UI stuck

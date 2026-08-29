@@ -7,6 +7,7 @@ import {
   Zap,
   Lock,
   ArrowUpRight,
+  Download,
   Shield,
   Layers,
   Repeat,
@@ -19,12 +20,14 @@ import {
   FileText,
   BookOpen,
   HardDrive,
+  Receipt,
 
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Spinner } from '../ui/Spinner';
+import apiClient from '../../lib/apiClient';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { formatINR } from '../../utils/formatCurrency';
 import { UpgradeModal } from '../billing/UpgradeModal';
@@ -38,6 +41,7 @@ export function BillingSettingsPanel() {
     subscription,
     usage,
     transactions,
+    invoices,
     plans,
     isLoading,
     cancelSubscription,
@@ -65,6 +69,30 @@ export function BillingSettingsPanel() {
     } finally {
       setCancelling(false);
     }
+  }
+
+  async function openInvoicePdf(pdfUrl: string) {
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+    const response = await apiClient.get(pdfUrl, { responseType: 'blob' });
+    const blobUrl = URL.createObjectURL(response.data);
+    if (previewWindow) {
+      previewWindow.location.href = blobUrl;
+    } else {
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  }
+
+  async function downloadInvoicePdf(pdfUrl: string, invoiceNumber: string) {
+    const response = await apiClient.get(`${pdfUrl}?download=1`, { responseType: 'blob' });
+    const blobUrl = URL.createObjectURL(response.data);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = `invoice-${invoiceNumber}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   }
 
   if (isLoading) {
@@ -447,12 +475,94 @@ export function BillingSettingsPanel() {
         </CardContent>
       </Card>
 
-      {/* ─── Billing History & Invoices ───────────────────────────── */}
+      {/* ─── Invoices ─────────────────────────────────────────────── */}
+      <Card variant="default" className="overflow-hidden">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-accent" />
+            <CardTitle>Invoices & PDF Receipts</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {invoices.length === 0 ? (
+            <div className="text-sm text-text-muted py-6 text-center">
+              No invoices found yet. Paid receipts will appear here after checkout or renewal.
+            </div>
+          ) : (
+            invoices.map((invoice) => {
+              const planName = invoice.subscription?.plan?.name || 'Plan purchase';
+              const viewUrl = invoice.pdfUrl;
+              return (
+                <div
+                  key={invoice.id}
+                  className="p-4 rounded-2xl border border-border bg-surface-raised flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-extrabold text-text-primary">{invoice.invoiceNumber}</p>
+                      <Badge variant={invoice.status === 'PAID' ? 'success' : 'warning'} size="sm" dot>
+                        {invoice.status}
+                      </Badge>
+                      {invoice.subscription?.autoRenew && (
+                        <Badge variant="accent" size="sm">
+                          Auto-pay
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-text-secondary truncate">
+                      {planName} · Issued {new Date(invoice.issuedAt).toLocaleDateString()} · Total{' '}
+                      {formatINR(invoice.totalCents)}
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      Discount {formatINR(invoice.discountCents)} · Tax {formatINR(invoice.taxCents)}
+                      {invoice.subscription?.currentPeriodEnd
+                        ? ` · Period ends ${new Date(invoice.subscription.currentPeriodEnd).toLocaleDateString()}`
+                        : ' · One-time receipt'}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={async () => {
+                        try {
+                          await openInvoicePdf(viewUrl);
+                        } catch (err: any) {
+                          toast.error(err?.response?.data?.error?.message || 'Failed to open invoice PDF');
+                        }
+                      }}
+                    >
+                      View PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={async () => {
+                        try {
+                          await downloadInvoicePdf(viewUrl, invoice.invoiceNumber);
+                        } catch (err: any) {
+                          toast.error(err?.response?.data?.error?.message || 'Failed to download invoice PDF');
+                        }
+                      }}
+                      leftIcon={<Download className="w-4 h-4" />}
+                    >
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ─── Billing History & Transactions ───────────────────────── */}
       <Card variant="default" className="overflow-hidden">
         <CardHeader>
           <div className="flex items-center gap-2">
             <CreditCard className="w-4 h-4 text-accent" />
-            <CardTitle>Billing History & Receipts</CardTitle>
+            <CardTitle>Billing Transactions</CardTitle>
           </div>
         </CardHeader>
         <div className="overflow-x-auto">

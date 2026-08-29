@@ -3,7 +3,7 @@
 // coupon, displays a transparent bill summary (plan price → discount → final
 // amount), and only then opens Razorpay to collect payment.
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   X,
   Sparkles,
@@ -52,6 +52,7 @@ function describeCoupon(coupon: AppliedCoupon): string {
 
 export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature }: CheckoutModalProps) {
   const { applyCoupon, createCheckout, verifyPayment, refetch, effectivePlan } = useUserPlan();
+  const checkoutIdempotencyKeyRef = useRef<string | null>(null);
 
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
@@ -71,6 +72,7 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
     setCouponError(null);
     setIsProcessing(false);
     setPaymentMode('SUBSCRIPTION_INITIAL');
+    checkoutIdempotencyKeyRef.current = null;
   }, [isOpen, plan?.id]);
 
   // ── Bill math ─────────────────────────────────────────────────────────
@@ -107,6 +109,7 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
         discountValue: data.discountValue,
         discountCents: data.discountCents,
       });
+      checkoutIdempotencyKeyRef.current = null;
       toast.success(`Coupon "${code.toUpperCase()}" applied!`);
     } catch (err: any) {
       setAppliedCoupon(null);
@@ -119,6 +122,7 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
   function handleRemoveCoupon() {
     setAppliedCoupon(null);
     setCouponError(null);
+    checkoutIdempotencyKeyRef.current = null;
   }
 
   async function handleProceedToPayment() {
@@ -136,6 +140,12 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
         planId: plan.id,
         couponCode: appliedCoupon ? appliedCoupon.couponCode : undefined,
         type: paymentMode,
+        idempotencyKey:
+          checkoutIdempotencyKeyRef.current ||
+          (checkoutIdempotencyKeyRef.current =
+            typeof crypto !== 'undefined' && 'randomUUID' in crypto
+              ? crypto.randomUUID()
+              : `checkout_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`),
       });
 
       const { providerOrderId, keyId, amountCents, noPaymentRequired } = checkoutRes;
@@ -411,7 +421,10 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setPaymentMode('SUBSCRIPTION_INITIAL')}
+                    onClick={() => {
+                      checkoutIdempotencyKeyRef.current = null;
+                      setPaymentMode('SUBSCRIPTION_INITIAL');
+                    }}
                     className={`px-3 py-2.5 rounded-xl border text-left transition-colors ${
                       paymentMode === 'SUBSCRIPTION_INITIAL'
                         ? 'border-accent bg-accent-subtle/40'
@@ -425,7 +438,10 @@ export function CheckoutModal({ isOpen, onClose, plan, onBack, highlightFeature 
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMode('ONE_TIME')}
+                    onClick={() => {
+                      checkoutIdempotencyKeyRef.current = null;
+                      setPaymentMode('ONE_TIME');
+                    }}
                     className={`px-3 py-2.5 rounded-xl border text-left transition-colors ${
                       paymentMode === 'ONE_TIME'
                         ? 'border-accent bg-accent-subtle/40'

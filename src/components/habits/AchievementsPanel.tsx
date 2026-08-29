@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, ChevronUp } from 'lucide-react';
 import { Card } from '../ui/Card';
@@ -8,7 +8,7 @@ import { LevelBadge } from '../achievements/LevelBadge';
 import { AchievementBadge } from '../achievements/AchievementBadge';
 import { AchievementsGallery } from '../achievements/AchievementsGallery';
 
-export function AchievementsPanel() {
+export const AchievementsPanel = memo(function AchievementsPanel() {
   const { data: achievements, isLoading } = useAchievements();
   const { data: profile } = useGamificationProfile();
   const [showAll, setShowAll] = useState(false);
@@ -97,6 +97,6 @@ export function AchievementsPanel() {
       )}
     </Card>
   );
-}
+});
 
 export default AchievementsPanel;

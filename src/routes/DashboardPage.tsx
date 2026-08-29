@@ -131,15 +131,6 @@ export function DashboardPage() {
   // View toggle: dashboard widgets vs analytics
   const [view, setView] = useState<'dashboard' | 'analytics'>('dashboard');
   const reducedMotion = useReducedMotion();
-  const [currentHour, setCurrentHour] = useState(new Date().getHours());
-
-  // Update the hour every minute to keep the greeting current
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentHour(new Date().getHours());
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const habits = habitsData?.data ?? [];
@@ -273,7 +264,6 @@ export function DashboardPage() {
       <motion.div variants={itemVariants}>
         <DashboardHero
           displayName={displayName}
-          currentHour={currentHour}
           view={view}
           setView={setView}
           reducedMotion={!!reducedMotion}
@@ -1088,7 +1078,6 @@ export function DashboardPage() {
 
 function DashboardHero({
   displayName,
-  currentHour,
   view,
   setView,
   reducedMotion,
@@ -1101,7 +1090,6 @@ function DashboardHero({
   activeProjects,
 }: {
   displayName: string;
-  currentHour: number;
   view: 'dashboard' | 'analytics';
   setView: (v: 'dashboard' | 'analytics') => void;
   reducedMotion: boolean;
@@ -1113,6 +1101,16 @@ function DashboardHero({
   currentHabitStreak: number;
   activeProjects: number;
 }) {
+  // Greeting state is owned HERE (not the page) so the 60s tick that keeps the
+  // greeting current only re-renders this hero — never the whole dashboard.
+  const [currentHour, setCurrentHour] = useState(new Date().getHours());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHour(new Date().getHours());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const greeting = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
   const scorePositive = scorePctChange >= 0;
 
