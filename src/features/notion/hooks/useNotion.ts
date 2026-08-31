@@ -36,21 +36,30 @@ export function useNotionDisconnect() {
   });
 }
 
-export function useNotionDatabases() {
+export function useNotionDatabases(enabled = true) {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const { data: status } = useNotionStatus();
+  const isConnected = Boolean(status?.connected);
+
   return useQuery({
     queryKey: [...NOTION_KEY, 'databases'],
     queryFn: notionApi.listDatabases,
-    enabled: Boolean(accessToken),
+    enabled: Boolean(accessToken) && isConnected && enabled,
+    retry: false,
+    staleTime: 60_000,
   });
 }
 
-export function useNotionDatabaseProperties(collectionId: string | null, object: string | null) {
+export function useNotionDatabaseProperties(collectionId: string | null, object: string | null, enabled = true) {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const { data: status } = useNotionStatus();
+  const isConnected = Boolean(status?.connected);
+
   return useQuery({
     queryKey: [...NOTION_KEY, 'properties', collectionId, object],
     queryFn: () => notionApi.getDatabaseProperties(collectionId!, object!),
-    enabled: Boolean(accessToken) && Boolean(collectionId) && Boolean(object),
+    enabled: Boolean(accessToken) && isConnected && Boolean(collectionId) && Boolean(object) && enabled,
+    retry: false,
   });
 }
 

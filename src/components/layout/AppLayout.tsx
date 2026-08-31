@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { endOfMonth, format, startOfMonth } from 'date-fns';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -38,26 +37,10 @@ import { AppSidebar } from './AppSidebar';
 import { useDashboardToday, useAchievements } from '../../features/dashboard/hooks/useDashboard';
 import { useStreakStatus } from '../../features/habits/hooks/useHabits';
 import { applyLayoutPreference } from '../../platform/layout';
-import { queryClient } from '../../lib/queryClient';
-import { dashboardApi } from '../../features/dashboard/api';
-import { tasksApi } from '../../features/tasks/api';
-import { notesApi } from '../../features/notes/api';
-import { habitsApi } from '../../features/habits/api';
-import { calendarApi } from '../../features/calendar/api';
-import { settingsApi } from '../../features/settings/api';
-import { storageApi } from '../../features/storage/api';
-import apiClient from '../../lib/apiClient';
 import { AchievementCelebrationModal } from '../achievements/AchievementCelebrationModal';
 import { StreakBreakModal } from '../habits/StreakBreakModal';
 import type { AchievementWithStatusDTO } from '../../types';
 import { createPortal } from 'react-dom';
-type TaskListPage = Awaited<ReturnType<typeof tasksApi.list>>;
-
-function fetchTasksPage(pageParam?: string): Promise<TaskListPage> {
-  const params: Record<string, string> = { take: '20' };
-  if (pageParam) params.cursor = pageParam;
-  return tasksApi.list(params);
-}
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', onboarding: 'dashboard' },
@@ -73,103 +56,6 @@ const navItems = [
   { to: '/storage', icon: Database, label: 'Storage', onboarding: 'storage' },
   { to: '/settings', icon: Settings2, label: 'Settings', onboarding: 'settings' },
 ];
-
-function warmRouteData(route: string): void {
-  switch (route) {
-    case '/':
-      void queryClient.prefetchQuery({ queryKey: ['dashboard', 'enhanced'], queryFn: dashboardApi.getEnhanced });
-      void queryClient.prefetchQuery({ queryKey: ['dashboard', 'today'], queryFn: dashboardApi.getToday });
-      break;
-    case '/tasks':
-      void queryClient.prefetchInfiniteQuery({
-        queryKey: ['tasks', undefined],
-        queryFn: ({ pageParam }: { pageParam?: string }) => fetchTasksPage(pageParam),
-        initialPageParam: undefined as string | undefined,
-        getNextPageParam: (lastPage: TaskListPage) => lastPage.meta.nextCursor ?? undefined,
-      });
-      break;
-    case '/projects':
-      void queryClient.prefetchQuery({
-        queryKey: ['projects'],
-        queryFn: () => apiClient.get('/projects').then((r) => r.data),
-      });
-      break;
-    case '/goals':
-      void queryClient.prefetchQuery({
-        queryKey: ['goals'],
-        queryFn: () => apiClient.get('/goals').then((r) => r.data),
-      });
-      break;
-    case '/calendar': {
-      const now = new Date();
-      const from = format(startOfMonth(now), 'yyyy-MM-dd');
-      const to = format(endOfMonth(now), 'yyyy-MM-dd');
-      void queryClient.prefetchQuery({
-        queryKey: ['calendar', { from, to }],
-        queryFn: () => calendarApi.getOverview({ from, to }),
-      });
-      void queryClient.prefetchInfiniteQuery({
-        queryKey: ['tasks', undefined],
-        queryFn: ({ pageParam }: { pageParam?: string }) => fetchTasksPage(pageParam),
-        initialPageParam: undefined as string | undefined,
-        getNextPageParam: (lastPage: TaskListPage) => lastPage.meta.nextCursor ?? undefined,
-      });
-      break;
-    }
-    case '/habits':
-      void queryClient.prefetchQuery({ queryKey: ['habits'], queryFn: () => habitsApi.list() });
-      break;
-    case '/notes':
-      void queryClient.prefetchQuery({ queryKey: ['notes', undefined], queryFn: () => notesApi.list() });
-      break;
-    case '/focus':
-      void queryClient.prefetchQuery({
-        queryKey: ['focus'],
-        queryFn: () => apiClient.get('/focus').then((r) => r.data),
-      });
-      void queryClient.prefetchQuery({
-        queryKey: ['tasks', 'focus-active'],
-        queryFn: () => tasksApi.list(),
-      });
-      break;
-    case '/analytics':
-      void queryClient.prefetchQuery({
-        queryKey: ['analytics', 'summary'],
-        queryFn: () => apiClient.get('/analytics/summary').then((r) => r.data),
-      });
-      void queryClient.prefetchQuery({
-        queryKey: ['analytics', 'daily'],
-        queryFn: () => apiClient.get('/analytics/daily').then((r) => r.data),
-      });
-      void queryClient.prefetchQuery({
-        queryKey: ['analytics', 'projects'],
-        queryFn: () => apiClient.get('/analytics/projects').then((r) => r.data),
-      });
-      void queryClient.prefetchQuery({
-        queryKey: ['analytics', 'weekly'],
-        queryFn: () => apiClient.get('/analytics/weekly').then((r) => r.data),
-      });
-      break;
-    case '/storage':
-      void queryClient.prefetchQuery({ queryKey: ['storage', 'files'], queryFn: storageApi.list });
-      break;
-    case '/settings':
-      void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
-      break;
-    case '/coach':
-    case '/ai':
-      void queryClient.prefetchQuery({ queryKey: ['settings'], queryFn: settingsApi.getSettings });
-      break;
-    case '/profile':
-      void queryClient.prefetchQuery({
-        queryKey: ['auth', 'me'],
-        queryFn: () => apiClient.get('/auth/me').then((r) => r.data),
-      });
-      break;
-    default:
-      break;
-  }
-}
 
 /**
  * Memoized outlet. The shell (AppLayout) re-subscribes to background data
@@ -293,27 +179,45 @@ export function AppLayout() {
   useEffect(() => {
     if (!settings) return;
 
-    void setTheme(
+    const currentThemePref = useUIStore.getState().themePreference;
+    const targetThemePref =
       settings.appearance.themePreference === 'SYSTEM'
         ? 'system'
         : settings.appearance.themePreference === 'DARK'
           ? 'dark'
-          : 'light',
-      { animate: false }
-    );
-    setLayoutPreference(settings.appearance.layoutPreference);
+          : 'light';
+    if (currentThemePref !== targetThemePref) {
+      void setTheme(targetThemePref, { animate: false });
+    }
+
+    if (layoutPreference !== settings.appearance.layoutPreference) {
+      setLayoutPreference(settings.appearance.layoutPreference);
+    }
+
     const mappedView = settings.appearance.calendarView === 'agenda' ? 'week' : settings.appearance.calendarView;
-    setCalendarViewPreference(mappedView);
-    if (settings.appearance.taskView) {
+    if (useUIStore.getState().calendarViewPreference !== mappedView) {
+      setCalendarViewPreference(mappedView);
+    }
+
+    if (settings.appearance.taskView && useUIStore.getState().taskViewPreference !== settings.appearance.taskView) {
       setTaskViewPreference(settings.appearance.taskView);
     }
-    if (settings.appearance.notesView) {
+
+    if (settings.appearance.notesView && useUIStore.getState().notesViewPreference !== settings.appearance.notesView) {
       setNotesViewPreference(settings.appearance.notesView);
     }
-    if (typeof settings.appearance.pageTransitionsEnabled === 'boolean') {
+
+    if (
+      typeof settings.appearance.pageTransitionsEnabled === 'boolean' &&
+      pageTransitionsEnabled !== settings.appearance.pageTransitionsEnabled
+    ) {
       setPageTransitionsEnabled(settings.appearance.pageTransitionsEnabled);
     }
-    if (typeof settings.appearance.floatingAnimationsEnabled === 'boolean') {
+
+    if (
+      typeof settings.appearance.floatingAnimationsEnabled === 'boolean' &&
+      floatingAnimationsEnabled !== settings.appearance.floatingAnimationsEnabled
+    ) {
       setFloatingAnimationsEnabled(settings.appearance.floatingAnimationsEnabled);
     }
 
@@ -331,6 +235,9 @@ export function AppLayout() {
     setTheme,
     setUser,
     user,
+    layoutPreference,
+    pageTransitionsEnabled,
+    floatingAnimationsEnabled,
   ]);
 
   // When the user disables floating/ambient animations, flag it on <html>
@@ -450,7 +357,7 @@ export function AppLayout() {
     };
   }, [navigate, showShortcuts, searchOpen, mobileMoreOpen]);
 
-  const contentPaddingClass = 'pt-3 sm:pt-4 px-3 sm:px-4';
+  const contentPaddingClass = 'p-0 sm:pt-4 sm:px-4 md:px-6';
 
   const headerPaddingClass =
     layoutPreference === 'COMPACT'
@@ -516,7 +423,6 @@ export function AppLayout() {
         taskBadge={taskBadge}
         habitBadge={habitBadge}
         onRequestLogout={() => setLogoutConfirmOpen(true)}
-        warmRoute={warmRouteData}
       />
 
       {/* ── Main content area (unchanged) ──────────────────────────────── */}
@@ -660,9 +566,6 @@ export function AppLayout() {
                 key={to}
                 to={to}
                 end={to === '/'}
-                onPointerEnter={() => warmRouteData(to)}
-                onFocus={() => warmRouteData(to)}
-                onPointerDown={() => warmRouteData(to)}
                 onClick={handleNavClick}
                 {...mobileOnboardingAttr}
                 className={({ isActive }) =>
@@ -738,9 +641,6 @@ export function AppLayout() {
                 key={to}
                 to={to}
                 end={to === '/'}
-                onPointerEnter={() => warmRouteData(to)}
-                onFocus={() => warmRouteData(to)}
-                onPointerDown={() => warmRouteData(to)}
                 onClick={handleNavClick}
                 {...mobileOnboardingAttr}
                 className={({ isActive }) =>
@@ -858,9 +758,6 @@ export function AppLayout() {
                 <NavLink
                   key={to}
                   to={to}
-                  onPointerEnter={() => warmRouteData(to)}
-                  onFocus={() => warmRouteData(to)}
-                  onPointerDown={() => warmRouteData(to)}
                   onClick={handleItemClick}
                   className="relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-transform active:scale-95"
                   style={{

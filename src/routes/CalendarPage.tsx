@@ -319,7 +319,7 @@ export function CalendarPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full px-3.5 pt-3.5 pb-6 sm:px-0 sm:pt-0 sm:pb-8">
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col gap-4">
         {/* Header */}
         <motion.div variants={itemVariants}>
@@ -793,13 +793,15 @@ const LeftRail = memo(function LeftRail({
 
   return (
     <motion.div variants={itemVariants} className="order-2 lg:order-1 flex flex-col gap-4">
-      <MiniCalendar
-        miniRef={miniRef}
-        setMiniRef={setMiniRef}
-        reference={reference}
-        datesWithTasks={datesWithTasks}
-        onSelectDate={onSelectDate}
-      />
+      <div className="hidden lg:block">
+        <MiniCalendar
+          miniRef={miniRef}
+          setMiniRef={setMiniRef}
+          reference={reference}
+          datesWithTasks={datesWithTasks}
+          onSelectDate={onSelectDate}
+        />
+      </div>
       <Card variant="default" className="p-3">
         <h4 className="text-xs font-bold text-text-primary mb-2">Upcoming This Week</h4>
         {upcomingItems.length === 0 ? (
@@ -1157,15 +1159,15 @@ function CalendarMainSection({
         </div>
       )}
       {view === 'month' && (
-        <div className="overflow-x-auto no-scrollbar">
-          <div className="grid grid-cols-7 gap-1.5 mb-1.5 min-w-[620px]">
+        <div className="w-full overflow-hidden">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mb-1.5 w-full">
             {WEEKDAY_LABELS.map((label, i) => (
-              <div key={i} className="text-center text-[9px] font-bold uppercase tracking-wider text-text-muted py-1">
+              <div key={i} className="text-center text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-text-muted py-0.5 sm:py-1">
                 {label}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1.5 min-w-[620px]">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 w-full">
             {getMonthDays(reference).map((day) => {
               const dayKey = format(day, 'yyyy-MM-dd');
               const dayEvents = eventsByDay.get(dayKey) ?? [];
@@ -1179,7 +1181,7 @@ function CalendarMainSection({
                   key={dayKey}
                   type="button"
                   onClick={() => inMonth && setSelectedDate(day)}
-                  className="text-left rounded-xl border p-1.5 sm:p-2 min-h-[74px] sm:min-h-[92px] transition-all"
+                  className="text-left rounded-xl border p-1 sm:p-2 min-h-[46px] sm:min-h-[92px] transition-all flex flex-col justify-between overflow-hidden"
                   style={{
                     background: today
                       ? 'color-mix(in srgb, var(--color-accent) 6%, var(--color-surface))'
@@ -1191,9 +1193,9 @@ function CalendarMainSection({
                     cursor: inMonth ? 'pointer' : 'default',
                   }}
                 >
-                  <div className="flex items-center justify-between gap-1 mb-1">
+                  <div className="flex items-center justify-between gap-0.5">
                     <span
-                      className="w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center"
+                      className="w-4 h-4 sm:w-5 sm:h-5 rounded-full text-[9px] sm:text-[10px] font-black flex items-center justify-center"
                       style={{
                         background: today ? 'var(--gradient-accent)' : 'transparent',
                         color: today ? 'var(--color-text-onaccent)' : 'var(--color-text-primary)',
@@ -1202,12 +1204,31 @@ function CalendarMainSection({
                       {format(day, 'd')}
                     </span>
                     {totalCount > 0 && (
-                      <span className="text-[8px] font-bold text-text-muted">
+                      <span className="hidden sm:inline text-[8px] font-bold text-text-muted">
                         {doneCount}/{totalCount}
                       </span>
                     )}
                   </div>
-                  <div className="space-y-1">
+
+                  {/* Mobile compact indicator dots */}
+                  <div className="flex sm:hidden items-center gap-0.5 mt-auto flex-wrap">
+                    {dayEvents.slice(0, 3).map((event) => (
+                      <span
+                        key={event.id}
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: EVENT_META[event.type].accent }}
+                      />
+                    ))}
+                    {totalCount > 0 && (
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: 'var(--color-accent)' }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Desktop event chips */}
+                  <div className="hidden sm:block space-y-1 mt-1">
                     {dayEvents.slice(0, 2).map((event) => (
                       <EventChip key={event.id} event={event} compact />
                     ))}

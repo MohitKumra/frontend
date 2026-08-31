@@ -123,6 +123,8 @@ export function DashboardPage() {
   const { data: focusSessionsData } = useQuery({
     queryKey: ['focus', 'dashboard'],
     queryFn: () => apiClient.get<ListResponse<FocusSessionDTO>>('/focus').then((r) => r.data),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
   const user = useAuthStore((s) => s.user);
   const updateTask = useUpdateTask();
@@ -222,7 +224,7 @@ export function DashboardPage() {
         : 0;
   const scoreChangeStr = scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`;
 
-  if (isLoading) {
+  if (isLoading && !dashboard) {
     return <LoadingScreen />;
   }
 
@@ -247,7 +249,7 @@ export function DashboardPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative flex w-full flex-col gap-6 sm:gap-8 p-4 sm:p-6 lg:p-8 2xl:p-10"
+      className="relative flex w-full flex-col gap-5 sm:gap-8 p-3.5 pt-3.5 sm:p-6 lg:p-8 2xl:p-10"
     >
       <style>{DASHBOARD_RESPONSIVE_CSS}</style>
 

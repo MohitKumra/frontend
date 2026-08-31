@@ -360,28 +360,12 @@ export function GoalsPage() {
 
   const filteredGoals = filteredGoalsData?.data ?? localFilteredGoals;
 
-  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
-  // fire a request storm (these tabs now query the backend). The tab still
-  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
-  const [tabsDisabled, setTabsDisabled] = useState(false);
-  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleFilterChange = useCallback(
     (nextFilter: GoalFilter) => {
-      if (tabsDisabled) return;
       setFilter(nextFilter);
-      setTabsDisabled(true);
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
     },
-    [tabsDisabled, setFilter]
+    [setFilter]
   );
-
-  useEffect(() => {
-    return () => {
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-    };
-  }, []);
 
   const stats = useMemo(() => {
     const total = goals.length;
@@ -536,7 +520,7 @@ export function GoalsPage() {
       style={{ background: 'var(--color-bg)' }}
     >
       <LockedFeatureWrapper isLocked={goalsLocked} featureName="Goals" minPlanName="Basic">
-      <div className="relative z-10 flex flex-col gap-6 p-4 sm:p-6 lg:p-8 xl:p-10">
+      <div className="relative z-10 flex flex-col gap-6 p-3.5 pt-3.5 sm:p-6 lg:p-8 xl:p-10">
         {/* ── PREMIUM HERO ──────────────────────────────────────────── */}
         <GoalsHero
           displayName={displayName}
@@ -626,20 +610,17 @@ export function GoalsPage() {
                       key={status}
                       type="button"
                       onClick={() => handleFilterChange(status)}
-                      disabled={tabsDisabled}
                       className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-bold transition-all"
                       style={
                         isActive
                           ? {
                               background: 'linear-gradient(135deg, var(--color-accent), #818CF8)',
                               color: '#fff',
-                              cursor: tabsDisabled ? 'not-allowed' : 'pointer',
-                              opacity: tabsDisabled ? 0.6 : 1,
+                              cursor: 'pointer',
                             }
                           : {
                               color: 'var(--color-text-secondary)',
-                              cursor: tabsDisabled ? 'not-allowed' : 'pointer',
-                              opacity: tabsDisabled ? 0.6 : 1,
+                              cursor: 'pointer',
                             }
                       }
                     >

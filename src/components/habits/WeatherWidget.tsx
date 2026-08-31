@@ -14,6 +14,7 @@ import {
   Wind,
 } from 'lucide-react';
 import { useWeather } from '../../features/habits/hooks/useWeather';
+import { useUIStore } from '../../store/uiStore';
 
 interface WeatherWidgetProps {
   location?: string;
@@ -123,15 +124,8 @@ const THEME: Record<Condition, WeatherTheme> = {
 };
 
 function useIsDarkMode() {
-  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.getAttribute('data-theme') === 'dark');
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => observer.disconnect();
-  }, []);
-  return isDark;
+  const theme = useUIStore((s) => s.theme);
+  return theme === 'dark';
 }
 
 function normalizeCondition(condition: string): Condition {

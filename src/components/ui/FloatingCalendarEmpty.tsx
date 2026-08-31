@@ -43,7 +43,7 @@ export function FloatingCalendarEmpty() {
           />
 
           {/* Calendar base */}
-          <motion.rect
+          <rect
             x="20"
             y="25"
             width="80"
@@ -52,23 +52,16 @@ export function FloatingCalendarEmpty() {
             fill="var(--color-surface-raised)"
             stroke="var(--color-border)"
             strokeWidth="2"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
           />
 
           {/* Calendar header */}
-          <motion.rect
+          <rect
             x="20"
             y="25"
             width="80"
             height="18"
             rx="8"
             fill="var(--color-accent)"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            style={{ transformOrigin: 'left center' }}
           />
           <rect x="20" y="35" width="80" height="8" fill="var(--color-accent)" />
 

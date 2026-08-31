@@ -1606,7 +1606,8 @@ export function FocusPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
   const qc = useQueryClient();
-  const { focusMode, setFocusMode } = useUIStore();
+  const focusMode = useUIStore((s) => s.focusMode);
+  const setFocusMode = useUIStore((s) => s.setFocusMode);
   const [isRestored, setIsRestored] = useState(false);
   const restoredRef = useRef(false);
   const completionLoggedRef = useRef(false);
@@ -1744,22 +1745,25 @@ export function FocusPage() {
     return () => clearTimeout(timer);
   }, [isRestored, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Persist to localStorage ──────────────────────────────────────────
+  // ─── Persist to localStorage (debounced to avoid blocking main thread on every second) ─────
   useEffect(() => {
     if (!isRestored) return;
     if (startedAt) {
-      saveTimerState({
-        mode,
-        secondsLeft,
-        running,
-        startedAt,
-        elapsedSeconds,
-        selectedTaskId,
-        selectedProjectId,
-        sessionId,
-      });
+      const timer = setTimeout(() => {
+        saveTimerState({
+          mode,
+          secondsLeft,
+          running,
+          startedAt,
+          elapsedSeconds,
+          selectedTaskId,
+          selectedProjectId,
+          sessionId,
+        });
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId]);
+  }, [mode, secondsLeft, running, startedAt, elapsedSeconds, selectedTaskId, selectedProjectId, sessionId, isRestored]);
 
   const { data: sessions } = useQuery({
     queryKey: ['focus'],

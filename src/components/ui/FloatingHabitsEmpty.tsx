@@ -191,15 +191,13 @@ export function FloatingHabitsEmpty({
 
           {/* Progress bar */}
           <rect x="14" y="78" width="76" height="5" rx="2.5" fill="var(--color-border)" opacity="0.4" />
-          <motion.rect
+          <rect
             x="14"
             y="78"
             width="54"
             height="5"
             rx="2.5"
             fill="var(--color-accent)"
-            animate={floating ? { width: [30, 60, 30] } : undefined}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           />
         </motion.svg>
 

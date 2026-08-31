@@ -9,10 +9,12 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
+      staleTime: 2 * 60 * 1000, // 2 minutes cache validity
+      gcTime: 10 * 60 * 1000,   // 10 minutes garbage collection
       retry: 1,
       networkMode: 'always',
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false, // Do not spam requests on window switch/tab focus
+      refetchOnReconnect: 'always',
     },
     mutations: {
       networkMode: 'always',

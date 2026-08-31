@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFloatingEnabled } from '../../hooks/useAnimationPrefs';
 import {
   DndContext,
@@ -932,12 +932,51 @@ export function TaskBoardView({
     }
   };
 
+  const colStatuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
+  const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const switchMobileTab = (newTab: TaskStatus, dir?: 1 | -1) => {
+    const fromIdx = colStatuses.indexOf(mobileTab);
+    const toIdx = colStatuses.indexOf(newTab);
+    setSlideDirection(dir ?? (toIdx >= fromIdx ? 1 : -1));
+    setMobileTab(newTab);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now(),
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+    const elapsed = Date.now() - touchStartRef.current.time;
+    touchStartRef.current = null;
+
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3 && elapsed < 600) {
+      const currentIndex = colStatuses.indexOf(mobileTab);
+      if (deltaX < 0 && currentIndex < colStatuses.length - 1) {
+        switchMobileTab(colStatuses[currentIndex + 1], 1);
+      } else if (deltaX > 0 && currentIndex > 0) {
+        switchMobileTab(colStatuses[currentIndex - 1], -1);
+      }
+    }
+  };
+
   return (
     <div>
-      {/* ── Mobile: tab switcher + single paginated list (no horizontal scrolling, no giant stacked columns) ── */}
+      {/* ── Mobile: fixed tab switcher + 120fps swipable card viewport ── */}
       <div className="lg:hidden">
+        {/* Fixed Stationary Tab Header (Does NOT swipe) */}
         <div
-          className="flex gap-1.5 rounded-2xl border p-1.5"
+          className="flex gap-1.5 rounded-2xl border p-1.5 select-none relative"
           style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
         >
           {grouped.map((col) => {
@@ -947,86 +986,113 @@ export function TaskBoardView({
               <button
                 key={col.status}
                 type="button"
-                onClick={() => setMobileTab(col.status)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-black transition-all"
+                onClick={() => switchMobileTab(col.status)}
+                className="relative flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-black transition-colors"
                 style={{
-                  background: active ? col.accent : 'transparent',
                   color: active ? 'white' : 'var(--color-text-muted)',
                 }}
               >
-                <ColIcon size={13} />
-                <span className="hidden xs:inline sm:inline">{col.label}</span>
-                <span
-                  className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px]"
-                  style={{
-                    background: active
-                      ? 'rgba(255,255,255,0.25)'
-                      : `color-mix(in srgb, ${col.accent} 14%, transparent)`,
-                    color: active ? 'white' : col.accent,
-                  }}
-                >
-                  {col.tasks.length}
+                {active && (
+                  <motion.div
+                    layoutId="mobile-board-col-indicator"
+                    className="absolute inset-0 rounded-xl shadow-sm"
+                    style={{ background: col.accent }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
+                  />
+                )}
+                <span className="relative z-1 flex items-center gap-1.5">
+                  <ColIcon size={13} />
+                  <span className="text-[11px] font-extrabold truncate">{col.label}</span>
+                  <span
+                    className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px]"
+                    style={{
+                      background: active
+                        ? 'rgba(255,255,255,0.25)'
+                        : `color-mix(in srgb, ${col.accent} 14%, transparent)`,
+                      color: active ? 'white' : col.accent,
+                    }}
+                  >
+                    {col.tasks.length}
+                  </span>
                 </span>
               </button>
             );
           })}
         </div>
 
-        {grouped
-          .filter((col) => col.status === mobileTab)
-          .map((col) => {
-            const totalPages = Math.max(1, Math.ceil(col.tasks.length / PAGE_SIZE));
-            const page = Math.min(pages[col.status], totalPages);
-            const pageTasks = col.tasks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+        {/* Swipable Task Cards Viewport */}
+        <div
+          className="mt-3 flex flex-col gap-2.5 overflow-hidden touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {grouped
+              .filter((col) => col.status === mobileTab)
+              .map((col) => {
+                const totalPages = Math.max(1, Math.ceil(col.tasks.length / PAGE_SIZE));
+                const page = Math.min(pages[col.status], totalPages);
+                const pageTasks = col.tasks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-            return (
-              <div key={col.status} className="mt-3 flex flex-col gap-2.5">
-                {pageTasks.length === 0 && (
-                  <BoardColumnEmpty
-                    status={col.status}
-                    accent={col.accent}
-                    isDragTarget={false}
-                    onAddTask={onAddTask ? () => onAddTask(col.status) : undefined}
-                  />
-                )}
+                return (
+                  <motion.div
+                    key={col.status}
+                    initial={{ opacity: 0, x: slideDirection > 0 ? 25 : -25 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: slideDirection > 0 ? -25 : 25 }}
+                    transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex flex-col gap-2.5"
+                  >
+                    {pageTasks.length === 0 && (
+                      <BoardColumnEmpty
+                        status={col.status}
+                        accent={col.accent}
+                        isDragTarget={false}
+                        onAddTask={onAddTask ? () => onAddTask(col.status) : undefined}
+                      />
+                    )}
 
-                {pageTasks.map((task) => (
-                  <TaskBoardCard
-                    key={task.id}
-                    task={task}
-                    accent={col.accent}
-                    dragging={false}
-                    menuOpen={mobileMenuOpenId === task.id}
-                    onMenuToggle={setMobileMenuOpenId}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    onViewDetails={onViewDetails}
-                    onStatusChange={onStatusChange}
-                    formatDueDate={formatDueDate}
-                    isOverdue={isOverdue}
-                    getRecurrenceLabel={getRecurrenceLabel}
-                    isHighlighted={highlightedTaskId === task.id}
-                  />
-                ))}
+                    {pageTasks.map((task) => (
+                      <TaskBoardCard
+                        key={task.id}
+                        task={task}
+                        accent={col.accent}
+                        dragging={false}
+                        menuOpen={mobileMenuOpenId === task.id}
+                        onMenuToggle={setMobileMenuOpenId}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onViewDetails={onViewDetails}
+                        onStatusChange={onStatusChange}
+                        formatDueDate={formatDueDate}
+                        isOverdue={isOverdue}
+                        getRecurrenceLabel={getRecurrenceLabel}
+                        isHighlighted={highlightedTaskId === task.id}
+                      />
+                    ))}
 
-                <PageControls
-                  page={page}
-                  totalPages={totalPages}
-                  total={col.tasks.length}
-                  accent={col.accent}
-                  pageSize={PAGE_SIZE}
-                  onChange={(p) => setPage(col.status, p)}
-                />
+                    {totalPages > 1 && (
+                      <PageControls
+                        page={page}
+                        totalPages={totalPages}
+                        total={col.tasks.length}
+                        accent={col.accent}
+                        pageSize={PAGE_SIZE}
+                        onChange={(p) => setPage(col.status, p)}
+                      />
+                    )}
 
-                <MoveTasksHereBtn
-                  tasks={tasks.filter((t) => t.status !== col.status)}
-                  targetStatus={col.status}
-                  accent={col.accent}
-                  onMove={(task) => onStatusChange(task, col.status)}
-                />
-              </div>
-            );
-          })}
+                    <MoveTasksHereBtn
+                      tasks={tasks.filter((t) => t.status !== col.status)}
+                      targetStatus={col.status}
+                      accent={col.accent}
+                      onMove={(task) => onStatusChange(task, col.status)}
+                    />
+                  </motion.div>
+                );
+              })}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Desktop: 3-column drag & drop board, each column capped in height with its own pagination ── */}

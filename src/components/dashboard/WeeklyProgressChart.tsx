@@ -221,16 +221,10 @@ function WeeklyProgressEmpty() {
                 {/* Empty stub */}
                 <rect x={x} y={84} width={barWidth} height={4} rx="2" fill="var(--color-border)" opacity="0.3" />
                 {/* Shimmer bar */}
-                <motion.rect
-                  x={x}
-                  width={barWidth}
-                  rx="2"
-                  fill="var(--color-accent)"
-                  opacity="0"
+                <motion.g
+                  initial={{ opacity: 0 }}
                   animate={{
                     opacity: [0, 0.35, 0],
-                    height: [4, maxH, 4],
-                    y: [84, 88 - maxH, 84],
                   }}
                   transition={{
                     duration: 2.6,
@@ -238,7 +232,16 @@ function WeeklyProgressEmpty() {
                     delay: i * 0.18,
                     ease: 'easeInOut',
                   }}
-                />
+                >
+                  <rect
+                    x={x}
+                    y={88 - maxH}
+                    width={barWidth}
+                    height={maxH}
+                    rx="2"
+                    fill="var(--color-accent)"
+                  />
+                </motion.g>
               </g>
             );
           })}

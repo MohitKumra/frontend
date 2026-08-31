@@ -54,6 +54,8 @@ import { usePushNotifications } from '../features/notifications';
 import { NotionSettingsPanel } from '../components/notion/NotionSettingsPanel';
 import { AISettingsPanel } from '../components/settings/AISettingsPanel';
 import { BillingSettingsPanel } from '../components/settings/BillingSettingsPanel';
+import { LockedFeatureWrapper } from '../components/billing/LockedFeatureWrapper';
+import { useUserPlan } from '../features/billing/useUserPlan';
 import type { AIPreferenceDTO, LayoutPreference, ThemePreference, TaskViewPreference, NotesViewPreference } from '../types';
 import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 
@@ -565,6 +567,8 @@ export function SettingsPage() {
     setActiveTab(newTab);
   };
   const { data, isLoading } = useSettings();
+  const { isFeatureLocked } = useUserPlan();
+  const calendarLocked = isFeatureLocked('calendarSync');
   const appearanceMutation = useUpdateAppearance();
   const notificationsMutation = useUpdateNotifications();
   const aiMutation = useUpdateAIPreferences();
@@ -1514,65 +1518,72 @@ export function SettingsPage() {
                     />
 
                     <div className="mt-4 sm:mt-5 space-y-4 sm:space-y-5">
-                      <div
-                        className="rounded-xl sm:rounded-2xl border p-4"
-                        style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+                      <LockedFeatureWrapper
+                        isLocked={calendarLocked}
+                        featureName="Google Calendar Sync"
+                        minPlanName="Premium"
+                        variant="overlay"
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-text-primary">Google Calendar</p>
-                            <p className="text-xs text-text-muted mt-1 leading-snug break-words">
-                              {googleCalendar?.connected
-                                ? `Connected as ${googleCalendar.googleEmail ?? 'your Google account'}`
-                                : 'Connect to push planner due dates into Google Calendar.'}
+                        <div
+                          className="rounded-xl sm:rounded-2xl border p-4"
+                          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface-raised)' }}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-text-primary">Google Calendar</p>
+                              <p className="text-xs text-text-muted mt-1 leading-snug break-words">
+                                {googleCalendar?.connected
+                                  ? `Connected as ${googleCalendar.googleEmail ?? 'your Google account'}`
+                                  : 'Connect to push planner due dates into Google Calendar.'}
+                              </p>
+                            </div>
+                            <div className="shrink-0">
+                              <StatusPill
+                                label={googleCalendar?.connected ? 'Connected' : 'Not connected'}
+                                active={Boolean(googleCalendar?.connected)}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              leftIcon={<PlugZap size={14} />}
+                              loading={googleCalendarOAuth.isGoogleLoading}
+                              onClick={handleConnectGoogle}
+                            >
+                              {googleCalendar?.connected ? 'Reconnect' : 'Connect Google'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              leftIcon={<RefreshCw size={14} />}
+                              loading={syncGoogleCalendar.isPending}
+                              onClick={() => syncGoogleCalendar.mutate()}
+                              disabled={!googleCalendar?.connected}
+                            >
+                              Sync Now
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              leftIcon={<Unplug size={14} />}
+                              loading={disconnectGoogleCalendar.isPending}
+                              onClick={() => disconnectGoogleCalendar.mutate()}
+                              disabled={!googleCalendar?.connected}
+                            >
+                              Disconnect
+                            </Button>
+                          </div>
+
+                          {googleCalendar?.lastSyncedAt && (
+                            <p className="mt-3 text-[11px] text-text-muted flex items-center gap-1.5">
+                              <CalendarClock size={12} />
+                              Last synced {new Date(googleCalendar.lastSyncedAt).toLocaleString()}
                             </p>
-                          </div>
-                          <div className="shrink-0">
-                            <StatusPill
-                              label={googleCalendar?.connected ? 'Connected' : 'Not connected'}
-                              active={Boolean(googleCalendar?.connected)}
-                            />
-                          </div>
+                          )}
                         </div>
-
-                        <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            leftIcon={<PlugZap size={14} />}
-                            loading={googleCalendarOAuth.isGoogleLoading}
-                            onClick={handleConnectGoogle}
-                          >
-                            {googleCalendar?.connected ? 'Reconnect' : 'Connect Google'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            leftIcon={<RefreshCw size={14} />}
-                            loading={syncGoogleCalendar.isPending}
-                            onClick={() => syncGoogleCalendar.mutate()}
-                            disabled={!googleCalendar?.connected}
-                          >
-                            Sync Now
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            leftIcon={<Unplug size={14} />}
-                            loading={disconnectGoogleCalendar.isPending}
-                            onClick={() => disconnectGoogleCalendar.mutate()}
-                            disabled={!googleCalendar?.connected}
-                          >
-                            Disconnect
-                          </Button>
-                        </div>
-
-                        {googleCalendar?.lastSyncedAt && (
-                          <p className="mt-3 text-[11px] text-text-muted flex items-center gap-1.5">
-                            <CalendarClock size={12} />
-                            Last synced {new Date(googleCalendar.lastSyncedAt).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
+                      </LockedFeatureWrapper>
 
                       {/* Notion Integration Section */}
                       <NotionSettingsPanel />

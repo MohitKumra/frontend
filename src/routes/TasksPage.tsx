@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { usePageVariants } from '../lib/motionVariants';
 import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 import {
@@ -343,7 +343,6 @@ function TasksHero({
   customTo,
   setCustomTo,
   isFetching,
-  tabsDisabled,
 }: {
   user: { name?: string | null; email?: string } | null;
   greeting: string;
@@ -379,7 +378,6 @@ function TasksHero({
   customTo: string;
   setCustomTo: (v: string) => void;
   isFetching: boolean;
-  tabsDisabled: boolean;
 }) {
   const { itemVariants } = usePageVariants();
   const floating = useFloatingEnabled();
@@ -480,7 +478,7 @@ function TasksHero({
       />
 
       {/* ── Content ── */}
-      <div className="relative flex flex-col gap-5 px-4 pt-6 pb-0 sm:px-6 xl:px-8">
+      <div className="relative flex flex-col gap-4 px-3.5 pt-4 pb-0 sm:gap-5 sm:px-6 xl:px-8">
         {/* ── Row 1: Eyebrow + Headline + subtitle ── */}
         <div className="flex flex-col gap-1">
           {/* Eyebrow */}
@@ -702,19 +700,18 @@ function TasksHero({
         </div>
 
         {/* ── Row 3: Filter tabs + date filter + sort ── */}
-        <div className="flex items-center justify-between gap-3 pb-5">
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-            <div className="np-pill-segmented shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-5">
+          <div className="w-full md:w-auto overflow-x-auto no-scrollbar py-0.5">
+            <div className="np-pill-segmented shadow-sm flex-nowrap w-max">
               {(['pending', 'today', 'upcoming', 'completed', 'overdue', 'all'] as TaskFilter[]).map((f) => {
                 const isActive = filter === f;
                 return (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    disabled={tabsDisabled}
-                    style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
                     className={`np-pill ${isActive ? 'is-active' : ''}`}
-                  >                    {isActive && (
+                  >
+                    {isActive && (
                       <motion.div
                         layoutId="task-pill-indicator"
                         className="np-pill-indicator"
@@ -733,7 +730,7 @@ function TasksHero({
           </div>
 
           {/* Date filter + Sort */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full md:w-auto shrink-0">
             <DateFilterBar
               datePreset={datePreset}
               setDatePreset={setDatePreset}
@@ -883,29 +880,12 @@ export function TasksPage() {
     [startFilterTransition]
   );
 
-  // ── Tab cooldown — prevent spam-clicking tabs from firing a request storm.
-  // The tab switches instantly for visual feedback but further clicks are
-  // ignored for 500ms while the previous request is still being debounced/in-flight.
-  const [tabsDisabled, setTabsDisabled] = useState(false);
-  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleFilterChange = useCallback(
     (nextFilter: TaskFilter) => {
-      if (tabsDisabled) return;
       changeFilter(nextFilter);
-      setTabsDisabled(true);
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
     },
-    [tabsDisabled, changeFilter]
+    [changeFilter]
   );
-
-  // Clean up the cooldown timer on unmount
-  useEffect(() => {
-    return () => {
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     setView(savedTaskView);
@@ -987,12 +967,16 @@ export function TasksPage() {
     return () => window.clearTimeout(id);
   }, [backendFilters]);
 
-  const { data: tasksData, isLoading, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useTasks(committedFilters);
+  const { data: tasksData, isLoading, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useTasks(committedFilters, {
+    enabled: view === 'board',
+  });
   // isFetching is intentionally not used for blocking UI — placeholderData keeps
   // the previous tab's data visible while the new request is in-flight.
 
   // ── Card-view offset pagination ──────────────────────────────────────────
-  const { data: cardTasksData, isFetching: cardIsFetching } = useTasksOffset(committedFilters, cardPage);
+  const { data: cardTasksData, isFetching: cardIsFetching } = useTasksOffset(committedFilters, cardPage, {
+    enabled: view !== 'board',
+  });
 
   // Reset card page to 1 whenever filters change
   useEffect(() => {
@@ -1498,7 +1482,6 @@ export function TasksPage() {
             customTo={customTo}
             setCustomTo={setCustomTo}
             isFetching={isFetching && !isFetchingNextPage}
-            tabsDisabled={tabsDisabled}
           />
 
           {/* Overdue banner — right after filters */}
@@ -1578,9 +1561,7 @@ export function TasksPage() {
 
           {/* Main content area (tasks) */}
           <motion.div variants={itemVariants} className="relative flex-1 overflow-y-auto">
-            <div
-              className="flex w-full flex-col gap-5 p-5 sm:p-7 xl:p-9"
-            >
+            <div className="flex w-full flex-col gap-4 p-3.5 sm:p-7 xl:p-9">
               {/* Select all */}
               {view === 'list' && filteredTasks.length > 0 && (
                 <motion.div variants={itemVariants} className="flex items-center justify-end">
@@ -2132,7 +2113,7 @@ export function TasksPage() {
 
       {/* ── Modals ────────────────────────────────────────────────────── */}
       <CreateTaskModal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} />
-      <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="tasks" />
+      {notionImportOpen && <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="tasks" />}
       {editingTask && <EditTaskModal isOpen task={editingTask} onClose={() => setEditingTask(null)} />}
 
       {/* Delete confirmation modal */}

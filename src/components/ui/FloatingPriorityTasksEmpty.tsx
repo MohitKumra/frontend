@@ -199,15 +199,13 @@ export function FloatingPriorityTasksEmpty({
 
           {/* Priority indicator bar */}
           <rect x="14" y="62" width="62" height="4" rx="2" fill="var(--color-border)" opacity="0.4" />
-          <motion.rect
+          <rect
             x="14"
             y="62"
             width="18"
             height="4"
             rx="2"
             fill="var(--color-danger)"
-            animate={floating ? { width: [18, 48, 18] } : undefined}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           />
         </motion.svg>
 

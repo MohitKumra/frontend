@@ -183,28 +183,12 @@ export function NotesPage() {
   // `hasAttachment` param, so no client-side re-filter is needed here.
   const filteredNotes = allNotes;
 
-  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
-  // fire a request storm (these tabs now query the backend). The tab still
-  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
-  const [tabsDisabled, setTabsDisabled] = useState(false);
-  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleFilterChange = useCallback(
     (nextFilter: NoteFilter) => {
-      if (tabsDisabled) return;
       setFilter(nextFilter);
-      setTabsDisabled(true);
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
     },
-    [tabsDisabled, setFilter]
+    [setFilter]
   );
-
-  useEffect(() => {
-    return () => {
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-    };
-  }, []);
 
   // Separate pinned and unpinned for grid view
   const starredNotes = useMemo(() => filteredNotes.filter((n) => n.isPinned), [filteredNotes]);
@@ -551,7 +535,7 @@ export function NotesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
+    <div className="flex flex-col gap-6 sm:gap-8 px-3.5 pt-3.5 pb-6 sm:px-0 sm:pt-0 sm:pb-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -603,9 +587,9 @@ export function NotesPage() {
             </div>
 
             {/* Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 w-full lg:w-auto">
               {/* Segmented control for main filters */}
-              <div className="np-pill-segmented">
+              <div className="np-pill-segmented flex-nowrap shrink-0">
                 {(['all', 'notes', 'journal', 'archived'] as NoteFilter[]).map((f) => {
                   const isActive = filter === f;
                   const iconMap: Record<NoteFilter, React.ReactNode> = {
@@ -618,8 +602,6 @@ export function NotesPage() {
                     <button
                       key={f}
                       onClick={() => handleFilterChange(f)}
-                      disabled={tabsDisabled}
-                      style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
                       className={`np-pill ${isActive ? 'is-active' : ''}`}
                     >
                       {isActive && (
@@ -1246,7 +1228,7 @@ export function NotesPage() {
       </motion.div>
 
       {/* ── Modals ─────────────────────────────────── */}
-      <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="notes" />
+      {notionImportOpen && <NotionImportModal isOpen={notionImportOpen} onClose={() => setNotionImportOpen(false)} mode="notes" />}
       <EntryFormModal
         isOpen={createModalOpen}
         defaultIsJournal={createModalIsJournal}

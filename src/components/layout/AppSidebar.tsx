@@ -28,7 +28,6 @@ export interface AppSidebarProps {
   taskBadge: number | '';
   habitBadge: number | '';
   onRequestLogout: () => void;
-  warmRoute?: (to: string) => void;
   /** Shown as the small caption under the product name in the logo block. */
   workspaceName?: string;
 }
@@ -121,11 +120,12 @@ export function AppSidebar({
   taskBadge,
   habitBadge,
   onRequestLogout,
-  warmRoute,
   workspaceName = 'Workspace',
 }: AppSidebarProps) {
   const user = useAuthStore((s) => s.user);
-  const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUIStore();
+  const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const { isFeatureLocked, usage } = useUserPlan();
   const [lockedFeature, setLockedFeature] = useState<string | null>(null);
 
@@ -154,9 +154,6 @@ export function AppSidebar({
         to={to}
         end={to === '/'}
         data-onboarding={onboarding || undefined}
-        onPointerEnter={() => warmRoute?.(to)}
-        onFocus={() => warmRoute?.(to)}
-        onPointerDown={() => warmRoute?.(to)}
         onClick={handleLockedClick}
         className={({ isActive }) =>
           [sidebarLinkClass({ isActive }), !sidebarOpen && 'justify-center'].filter(Boolean).join(' ')

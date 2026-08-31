@@ -217,28 +217,12 @@ export function ProjectsPage() {
 
   const filteredProjects = filteredProjectsData?.data ?? localFilteredProjects;
 
-  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
-  // fire a request storm (these tabs now query the backend). The tab still
-  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
-  const [tabsDisabled, setTabsDisabled] = useState(false);
-  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleFilterChange = useCallback(
     (nextStatus: FilterStatus) => {
-      if (tabsDisabled) return;
       setFilterStatus(nextStatus);
-      setTabsDisabled(true);
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
     },
-    [tabsDisabled, setFilterStatus]
+    [setFilterStatus]
   );
-
-  useEffect(() => {
-    return () => {
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-    };
-  }, []);
 
   // Handle projectId from URL query parameter (for notification clicks).
   // AUTO-SELECT a filter that will show the project, HIGHLIGHT the card, SCROLL to it.
@@ -290,7 +274,7 @@ export function ProjectsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-6">
+    <div className="flex flex-col gap-5 sm:gap-6 px-3.5 pt-3.5 pb-6 sm:px-0 sm:pt-0 sm:pb-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -314,8 +298,8 @@ export function ProjectsPage() {
 
         {/* Status Filter Tabs + Search + Filters */}
         <motion.div variants={itemVariants} className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 lg:pb-0 lg:flex-1 lg:min-w-0">
-            <div className="np-pill-segmented">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 lg:pb-0 lg:flex-1 lg:min-w-0">
+            <div className="np-pill-segmented flex-nowrap shrink-0">
               {(['ALL', 'PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'] as FilterStatus[]).map((status) => {
                 const count = status === 'ALL' ? projects.length : projects.filter((p) => p.status === status).length;
                 const isActive = filterStatus === status;
@@ -323,8 +307,6 @@ export function ProjectsPage() {
                   <button
                     key={status}
                     onClick={() => handleFilterChange(status)}
-                    disabled={tabsDisabled}
-                    style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
                     className={`np-pill ${isActive ? 'is-active' : ''}`}
                   >
                     {isActive && (

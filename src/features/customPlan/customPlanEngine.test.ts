@@ -24,6 +24,8 @@ const FREE_FEATURES: Record<string, unknown> = {
   goals: false,
   focusAdvanced: false,
   notionSync: false,
+  voiceNotes: false,
+  calendarSync: false,
 };
 
 describe('computeSequence: first question is always direction', () => {
@@ -76,7 +78,7 @@ describe('computeSequence: features branch', () => {
       focusAdvanced: true,
       notionSync: true,
       voiceNotes: true,
-      audioRecurrence: true,
+      calendarSync: true,
     };
     const ids = computeSequence({ direction: 'features' }, allUnlocked).map((q) => q.id);
     expect(ids).not.toContain('featureSelection');
@@ -110,7 +112,7 @@ describe('computeSequence: unsure branch', () => {
 describe('computeSequence: Ultimate user', () => {
   it('focuses on what they need beyond the top plan', () => {
     const ultimate: Record<string, unknown> = {
-      aiRequestsPerMonth: 2500,
+      aiRequestsPerMonth: 25000,
       projects: 500,
       habits: 500,
       storageMb: 25000,
@@ -118,7 +120,7 @@ describe('computeSequence: Ultimate user', () => {
       goals: true,
       focusAdvanced: true,
       voiceNotes: true,
-      audioRecurrence: true,
+      calendarSync: true,
       notionSync: true,
     };
     const ids = computeSequence({ direction: 'features' }, ultimate).map((q) => q.id);

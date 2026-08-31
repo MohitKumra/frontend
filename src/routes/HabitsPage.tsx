@@ -136,28 +136,12 @@ export function HabitsPage() {
 
   const filteredHabits = filteredListData?.data ?? localFilteredHabits;
 
-  // ── Filter-tab cooldown — block spam-clicking the tabs for 500ms so we don't
-  // fire a request storm (these tabs now query the backend). The tab still
-  // switches instantly; further clicks show a "not-allowed" cursor and are ignored.
-  const [tabsDisabled, setTabsDisabled] = useState(false);
-  const tabCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleFilterChange = useCallback(
     (nextFilter: HabitFilter) => {
-      if (tabsDisabled) return;
       setFilter(nextFilter);
-      setTabsDisabled(true);
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-      tabCooldownRef.current = setTimeout(() => setTabsDisabled(false), 500);
     },
-    [tabsDisabled, setFilter]
+    [setFilter]
   );
-
-  useEffect(() => {
-    return () => {
-      if (tabCooldownRef.current) clearTimeout(tabCooldownRef.current);
-    };
-  }, []);
 
   const filterCounts = {
     all: habits.length,
@@ -343,8 +327,6 @@ export function HabitsPage() {
                 <button
                   key={f}
                   onClick={() => handleFilterChange(f)}
-                  disabled={tabsDisabled}
-                  style={{ cursor: tabsDisabled ? 'not-allowed' : 'pointer', opacity: tabsDisabled ? 0.6 : 1 }}
                   className={`np-pill ${isActive ? 'is-active' : ''}`}
                 >
                   {isActive && (
@@ -387,7 +369,7 @@ export function HabitsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="flex w-full min-w-0 flex-col pb-6 sm:pb-8"
+      className="flex w-full min-w-0 flex-col px-3.5 pt-3.5 pb-6 sm:px-0 sm:pt-0 sm:pb-8"
     >
       {/* ================================================================
           MOBILE LAYOUT (< sm)
@@ -408,8 +390,8 @@ export function HabitsPage() {
               <QuoteCard quotes={getDailyQuotes()} />
               <HabitHeatmapCombined habits={habits} compact />
             </div>
-            <HabitList habits={filteredHabits} viewMode="list" focusedHabitId={focusedHabitId} />
-              <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
+            {renderFiltersAndList()}
+            <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
             <ProductivityEngine {...engineProps} />
             <AchievementsPanel />
           </>

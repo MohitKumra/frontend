@@ -36,7 +36,7 @@ const NOTES_FIELD_LABELS: Record<string, string> = {
 };
 
 export function NotionImportModal({ isOpen, onClose, mode = 'tasks' }: NotionImportModalProps) {
-  const { data: databases, isLoading: dbsLoading } = useNotionDatabases();
+  const { data: databases, isLoading: dbsLoading } = useNotionDatabases(isOpen);
   const importTasks = useNotionImportTasks();
   const autoPreview = useNotionAutoPreview();
   const importNotes = useNotionImportNotes();

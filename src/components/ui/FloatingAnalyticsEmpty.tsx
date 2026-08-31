@@ -40,7 +40,7 @@ export function FloatingAnalyticsEmpty({
           style={{ color: 'var(--color-accent)' }}
         >
           {[18, 40, 62, 30, 72, 52, 80].map((h, i) => (
-            <motion.rect
+            <rect
               key={i}
               x={i * 22 + 4}
               y={80 - h}
@@ -48,12 +48,7 @@ export function FloatingAnalyticsEmpty({
               height={h}
               fill="currentColor"
               rx="3"
-              animate={
-                floating
-                  ? { height: [h * 0.5, h, h * 0.85, h], y: [80 - h * 0.5, 80 - h, 80 - h * 0.85, 80 - h] }
-                  : undefined
-              }
-              transition={{ duration: 3, delay: i * 0.15, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
+              opacity={0.7}
             />
           ))}
         </motion.svg>
@@ -198,7 +193,7 @@ export function FloatingAnalyticsEmpty({
         style={{ color: 'var(--color-accent)' }}
       >
         {[20, 45, 70, 35, 85, 60, 90].map((height, i) => (
-          <motion.rect
+          <rect
             key={i}
             x={i * 28 + 5}
             y={120 - height}
@@ -206,21 +201,7 @@ export function FloatingAnalyticsEmpty({
             height={height}
             fill="currentColor"
             rx="4"
-            initial={{ height: 0, y: 120 }}
-            animate={
-              floating
-                ? {
-                    height: [0, height, height * 0.9, height],
-                    y: [120, 120 - height, 120 - height * 0.9, 120 - height],
-                  }
-                : undefined
-            }
-            transition={{
-              duration: 2,
-              delay: i * 0.2,
-              repeat: Infinity,
-              repeatDelay: 3,
-            }}
+            opacity={0.8}
           />
         ))}
       </motion.svg>

@@ -261,20 +261,7 @@ const FIELD_LABELS: Record<string, string> = {
   provider: 'Provider',
 };
 
-const FEATURE_LABELS: Record<string, string> = {
-  aiRequestsPerMonth: 'AI requests / month',
-  projects: 'Active projects',
-  habits: 'Habit trackers',
-  tasks: 'Tasks',
-  storageMb: 'Storage',
-  notionSync: 'Notion sync',
-  voiceNotes: 'Voice notes',
-  aiCoach: 'AI Coach',
-  goals: 'Goals',
-  notes: 'Notes',
-  journals: 'Journals',
-  focusAdvanced: 'Advanced focus',
-};
+import { FEATURE_LABELS } from '../../features/plan/planCatalog';
 
 const ENTITY_LABELS: Record<string, string> = {
   Plan: 'Plan',

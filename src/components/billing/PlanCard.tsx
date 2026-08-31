@@ -12,6 +12,7 @@ import React from 'react';
 import { Check, Lock, ArrowRight, Star, Gem, Crown, Gift } from 'lucide-react';
 import type { PlanDTO } from '../../features/billing/useUserPlan';
 import { formatINR } from '../../utils/formatCurrency';
+import { NUMERIC_FEATURES, BOOLEAN_FEATURES } from '../../features/plan/planCatalog';
 
 interface PlanCardProps {
   plan: PlanDTO;
@@ -52,6 +53,34 @@ function baseTierOf(slug: string): string {
   return (slug.endsWith('_yearly') ? slug.slice(0, -'_yearly'.length) : slug).toLowerCase();
 }
 
+function formatFeatureRow(key: string, value: number | boolean, defaultLabel: string): { on: boolean; label: string } {
+  if (typeof value === 'boolean') {
+    return { on: value, label: defaultLabel };
+  }
+
+  const isUnlimited = value === -1;
+  const numStr = isUnlimited ? 'Unlimited' : `${value}`;
+
+  switch (key) {
+    case 'aiRequestsPerMonth':
+      return { on: value !== 0, label: `${numStr} AI requests / mo` };
+    case 'projects':
+      return { on: value !== 0, label: `${numStr} active projects` };
+    case 'habits':
+      return { on: value !== 0, label: `${numStr} habit trackers` };
+    case 'tasks':
+      return { on: value !== 0, label: `${numStr} tasks` };
+    case 'storageMb':
+      return { on: value !== 0, label: `${numStr} MB storage` };
+    case 'notes':
+      return { on: value !== 0, label: `${numStr} notes` };
+    case 'journals':
+      return { on: value !== 0, label: `${numStr} journals` };
+    default:
+      return { on: value !== 0, label: `${numStr} ${defaultLabel}` };
+  }
+}
+
 export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSelect }: PlanCardProps) {
   const isDark = useIsDarkMode();
   const tier = TIER_STYLES[baseTierOf(p.slug)] || TIER_STYLES.basic;
@@ -60,13 +89,14 @@ export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSele
   const intervalLabel = p.billingInterval === 'YEAR' ? '/ year' : '/ month';
 
   const rows: { on: boolean; label: string }[] = [
-    { on: true, label: `${p.features.aiRequestsPerMonth ?? 50} AI requests / mo` },
-    { on: true, label: `${p.features.projects ?? 3} active projects` },
-    { on: true, label: `${p.features.habits ?? 5} habit trackers` },
-    { on: true, label: `${p.features.tasks ?? 100} tasks` },
-    { on: !!p.features.notionSync, label: 'Notion workspace sync' },
-    { on: !!p.features.storageMb, label: `${p.features.storageMb}Mb of Storage`},
-    { on: !!p.features.focusAdvanced, label: 'Advanced focus (custom timer + task linking)' },
+    ...NUMERIC_FEATURES.map((meta) => {
+      const val = p.features[meta.key] ?? meta.default ?? 0;
+      return formatFeatureRow(meta.key, typeof val === 'number' ? val : 0, meta.label);
+    }),
+    ...BOOLEAN_FEATURES.map((meta) => {
+      const val = Boolean(p.features[meta.key]);
+      return formatFeatureRow(meta.key, val, meta.label);
+    }),
   ];
 
   return (

@@ -20,6 +20,8 @@ import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { formatINR } from '../../utils/formatCurrency';
 
+import { NUMERIC_FEATURES, BOOLEAN_FEATURES } from '../../features/plan/planCatalog';
+
 interface Plan {
   id: string;
   slug: string;
@@ -41,38 +43,14 @@ const EMPTY_FEATURES: Record<string, any> = {
   tasks: 500,
   storageMb: 1000,
   notionSync: false,
+  voiceNotes: false,
+  calendarSync: false,
   aiCoach: false,
   goals: false,
   focusAdvanced: false,
   notes: 10,
   journals: 5,
 };
-
-// Friendly, structured feature fields rendered as steppers / toggles so the
-// non-technical admin team can edit plans without writing JSON.
-interface FeatureFieldDef {
-  key: string;
-  label: string;
-  hint: string;
-  type: 'number' | 'boolean';
-}
-
-const NUMERIC_FEATURES: FeatureFieldDef[] = [
-  { key: 'aiRequestsPerMonth', label: 'AI requests / month', hint: 'How many AI assistant requests a user gets each month', type: 'number' },
-  { key: 'projects', label: 'Active projects', hint: 'Maximum projects a user can create', type: 'number' },
-  { key: 'habits', label: 'Habit trackers', hint: 'Maximum active habit trackers', type: 'number' },
-  { key: 'tasks', label: 'Tasks', hint: 'Maximum active tasks', type: 'number' },
-  { key: 'storageMb', label: 'Storage (MB)', hint: 'Storage allowance in megabytes', type: 'number' },
-  { key: 'notes', label: 'Notes', hint: 'Max notes; use -1 for unlimited', type: 'number' },
-  { key: 'journals', label: 'Journals', hint: 'Max journal entries; use -1 for unlimited', type: 'number' },
-];
-
-const BOOLEAN_FEATURES: FeatureFieldDef[] = [
-  { key: 'notionSync', label: 'Notion sync', hint: 'Sync tasks & notes with Notion', type: 'boolean' },
-  { key: 'aiCoach', label: 'AI Coach', hint: 'Personal AI productivity coach across the app', type: 'boolean' },
-  { key: 'goals', label: 'Goals', hint: 'Create and manage goals plus the AI goal planner', type: 'boolean' },
-  { key: 'focusAdvanced', label: 'Advanced Focus', hint: 'Custom timer durations + link tasks/goals/projects to the timer', type: 'boolean' },
-];
 
 const EMPTY_FORM = {
   slug: '',

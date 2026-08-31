@@ -582,11 +582,18 @@ export function ProductivityEngine({
           >
             <div className="space-y-2">
               {suggestions.map((suggestion) => (
-                <button
+                <div
                   key={suggestion.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => suggestion.onAction()}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04] group"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      suggestion.onAction();
+                    }
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04] group cursor-pointer select-none"
                 >
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
@@ -643,7 +650,7 @@ export function ProductivityEngine({
                       <path d="M1 1l6 6M7 1l-6 6" />
                     </svg>
                   </button>
-                </button>
+                </div>
               ))}
             </div>
           </motion.div>

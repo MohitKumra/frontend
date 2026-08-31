@@ -102,20 +102,31 @@ function OnboardingInner({ children }: { children: React.ReactNode }) {
       const el = document.querySelector(targetSelector);
       if (el) {
         const rect = el.getBoundingClientRect();
-        setTargetRect({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-          bottom: rect.bottom,
-          right: rect.right,
+        setTargetRect((prev) => {
+          if (
+            prev &&
+            prev.top === rect.top &&
+            prev.left === rect.left &&
+            prev.width === rect.width &&
+            prev.height === rect.height
+          ) {
+            return prev;
+          }
+          return {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            right: rect.right,
+          };
         });
       }
     };
 
     measure();
-    const interval = setInterval(measure, 100);
-    window.addEventListener('resize', measure);
+    const interval = setInterval(measure, 300);
+    window.addEventListener('resize', measure, { passive: true });
     return () => {
       clearInterval(interval);
       window.removeEventListener('resize', measure);

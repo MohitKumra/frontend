@@ -7,7 +7,7 @@ const TASKS_KEY = ['tasks'] as const;
 const PAGE_SIZE = 10;
 
 // ─── Cursor / infinite-scroll hook (used by board view per-column) ────────────
-export function useTasksCursor(filters?: Record<string, string>) {
+export function useTasksCursor(filters?: Record<string, string>, options?: { enabled?: boolean }) {
   const stableFilters = filters
     ? Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined))
     : undefined;
@@ -22,7 +22,8 @@ export function useTasksCursor(filters?: Record<string, string>) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
     placeholderData: (previousData) => previousData,
-    staleTime: 30_000,
+    staleTime: 60_000,
+    enabled: options?.enabled !== false,
     retry: (failureCount, error: unknown) => {
       if ((error as { name?: string })?.name === 'CanceledError') return false;
       if ((error as { name?: string })?.name === 'AbortError') return false;
@@ -32,7 +33,7 @@ export function useTasksCursor(filters?: Record<string, string>) {
 }
 
 // ─── Offset / page-based hook (used by card/list view) ────────────────────────
-export function useTasksOffset(filters: Record<string, string>, page: number) {
+export function useTasksOffset(filters: Record<string, string>, page: number, options?: { enabled?: boolean }) {
   const stableFilters = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined)
   );
@@ -48,7 +49,8 @@ export function useTasksOffset(filters: Record<string, string>, page: number) {
       return tasksApi.list(params, signal);
     },
     placeholderData: (previousData) => previousData,
-    staleTime: 30_000,
+    staleTime: 60_000,
+    enabled: options?.enabled !== false,
     retry: (failureCount, error: unknown) => {
       if ((error as { name?: string })?.name === 'CanceledError') return false;
       if ((error as { name?: string })?.name === 'AbortError') return false;
@@ -58,8 +60,8 @@ export function useTasksOffset(filters: Record<string, string>, page: number) {
 }
 
 // ─── Legacy infinite hook — kept for any callers outside TasksPage ────────────
-export function useTasks(filters?: Record<string, string>) {
-  return useTasksCursor(filters);
+export function useTasks(filters?: Record<string, string>, options?: { enabled?: boolean }) {
+  return useTasksCursor(filters, options);
 }
 
 export function useCreateTask() {

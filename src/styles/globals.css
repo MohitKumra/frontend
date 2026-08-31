@@ -89,15 +89,17 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Only animate color properties globally, not transforms */
-  *:not(.theme-transition-lock *) {
+  /* Theme transitions scoped strictly to theme-changing mode rather than every element constantly */
+  .theme-transitioning,
+  .theme-transitioning * {
     transition:
-      background-color 150ms ease,
-      border-color 150ms ease,
-      color 150ms ease,
-      box-shadow 150ms ease;
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      box-shadow 200ms ease !important;
   }
 
   html,
@@ -110,6 +112,7 @@
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   /* Slightly larger on bigger screens */
@@ -140,7 +143,8 @@
     overflow-y: auto;
     line-height: 1.5;
     letter-spacing: -0.01em;
-    /* Slightly tighter tracking for cleaner look */
+    /* Eliminate 300ms tap delay on mobile and optimize touch response */
+    touch-action: manipulation;
   }
 
   /* Tighter letter spacing on headings for better density */
@@ -164,11 +168,14 @@
   a {
     color: inherit;
     text-decoration: none;
+    touch-action: manipulation;
   }
 
   button {
     cursor: pointer;
     font-family: inherit;
+    touch-action: manipulation;
+    user-select: none;
   }
 
   input,
@@ -176,6 +183,7 @@
   select {
     font-family: inherit;
     font-size: inherit;
+    touch-action: manipulation;
   }
 
   /* Scrollbar styling */
