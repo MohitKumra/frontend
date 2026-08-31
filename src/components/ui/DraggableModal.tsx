@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion, type PanInfo, useDragControls } from "framer-motion";
+import { AnimatePresence, motion, type PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { X } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 
@@ -12,13 +12,16 @@ interface DraggableModalProps {
 }
 
 /**
- * Premium SaaS bottom sheet on mobile � GPU-composited spring physics, drag-to-dismiss,
- * elastic rubber-banding, blurred backdrop.  Centered dialog on desktop.
+ * Premium SaaS bottom sheet on mobile — GPU-composited 120fps spring physics, full-surface
+ * responsive drag-to-dismiss, dynamic reactive backdrop, and elastic rubber-banding.
  */
 export function DraggableModal({ isOpen, onClose, title, children }: DraggableModalProps) {
   const isMobile = useMediaQuery("(max-width: 640px)");
-  const dragControls = useDragControls();
   const contentRef = useRef<HTMLDivElement>(null);
+  const dragY = useMotionValue(0);
+
+  // Dynamic reactive backdrop opacity tied 1:1 to drag displacement
+  const backdropOpacity = useTransform(dragY, [0, 220], [1, 0.15]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -36,37 +39,43 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
 
   const handleDragEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      if (info.offset.y > 90 || info.velocity.y > 380) onClose();
+      // Highly responsive dismiss threshold (60px drag distance or 240px/s velocity)
+      if (info.offset.y > 60 || info.velocity.y > 240) {
+        onClose();
+      }
     },
     [onClose]
   );
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    dragControls.start(e);
-  };
-
   if (typeof document === "undefined") return null;
 
-  const sheetSpring = { type: "spring" as const, damping: 34, stiffness: 420, mass: 0.7, restDelta: 0.001 };
-  const backdropAnim = { type: "tween" as const, duration: 0.22, ease: "easeOut" as const };
+  // Ultra-fluid 120fps spring physics for snappy, organic bounce
+  const sheetSpring = {
+    type: "spring" as const,
+    damping: 32,
+    stiffness: 460,
+    mass: 0.55,
+    restDelta: 0.001,
+  };
 
   return createPortal(
     <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Dynamic Reactive Backdrop */}
           <motion.div
             className="fixed inset-0 z-[100]"
             style={{
-              background: "rgba(0, 0, 0, 0.48)",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
+              background: "rgba(0, 0, 0, 0.52)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              opacity: isMobile ? backdropOpacity : 1,
               willChange: "opacity",
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={backdropAnim}
+            transition={{ duration: 0.2, ease: "easeOut" as const }}
             onClick={onClose}
           />
 
@@ -74,36 +83,33 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
             <motion.div
               className="fixed bottom-0 left-0 right-0 z-[101] flex flex-col overflow-hidden"
               style={{
+                y: dragY,
                 background: "var(--color-surface)",
                 borderRadius: "32px 32px 0 0",
-                boxShadow: "0 -20px 50px -10px rgba(0, 0, 0, 0.35), 0 -1px 0 rgba(255, 255, 255, 0.1) inset",
+                boxShadow:
+                  "0 -24px 60px -10px rgba(0, 0, 0, 0.4), 0 -1px 0 rgba(255, 255, 255, 0.12) inset",
                 willChange: "transform",
                 transform: "translate3d(0,0,0)",
                 contain: "layout style paint",
-                maxHeight: "84vh",
+                maxHeight: "86vh",
+                touchAction: "pan-y",
               }}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={sheetSpring}
               drag="y"
-              dragControls={dragControls}
-              dragListener={false}
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0.02, bottom: 0.45 }}
+              dragElastic={{ top: 0.03, bottom: 0.7 }}
               onDragEnd={handleDragEnd}
             >
-              {/* Handle Bar Area */}
-              <div
-                className="flex justify-center items-center pt-3.5 pb-1 shrink-0 select-none cursor-grab active:cursor-grabbing"
-                onPointerDown={handlePointerDown}
-                style={{ touchAction: "none" }}
-              >
-                <div className="w-11 h-1.2 rounded-full bg-slate-300/80 dark:bg-white/20 transition-transform active:scale-95" />
+              {/* Grab Handle */}
+              <div className="flex justify-center items-center pt-3.5 pb-1 shrink-0 select-none cursor-grab active:cursor-grabbing">
+                <div className="w-12 h-1.5 rounded-full bg-slate-400/50 dark:bg-white/25 transition-transform active:scale-95" />
               </div>
 
               {title && (
-                <div className="flex items-center justify-between px-6 pt-2 pb-3 shrink-0 border-b border-border/40">
+                <div className="flex items-center justify-between px-6 pt-1 pb-3 shrink-0 border-b border-border/40 select-none">
                   <div>
                     <h3 className="text-[17px] font-bold text-text-primary tracking-tight">
                       {title}
@@ -128,7 +134,11 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
                   WebkitOverflowScrolling: "touch",
                   padding: "16px 20px 36px 20px",
                 }}
-                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => {
+                  if (contentRef.current && contentRef.current.scrollTop > 0) {
+                    e.stopPropagation();
+                  }
+                }}
               >
                 {children}
               </div>
@@ -140,7 +150,7 @@ export function DraggableModal({ isOpen, onClose, title, children }: DraggableMo
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={backdropAnim}
+              transition={{ duration: 0.2, ease: "easeOut" as const }}
               onClick={onClose}
             >
               <motion.div
