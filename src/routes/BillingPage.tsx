@@ -118,7 +118,6 @@ export function BillingPage() {
     billingEmail: '',
     billingPhone: '',
     billingAddressLine1: '',
-    billingAddressLine2: '',
     billingCityState: '',
     billingPostalCode: '',
     billingCountry: 'India',
@@ -194,7 +193,6 @@ export function BillingPage() {
       billingEmail: billingProfile.email || user?.email || '',
       billingPhone: billingProfile.phone || '',
       billingAddressLine1: billingProfile.addressLines[0] || '',
-      billingAddressLine2: billingProfile.addressLines[1] || '',
       billingCityState: billingProfile.cityState || '',
       billingPostalCode: billingProfile.postalCode || '',
       billingCountry: billingProfile.country || 'India',
@@ -237,7 +235,6 @@ export function BillingPage() {
         billingEmail: billingDraft.billingEmail.trim() || null,
         billingPhone: billingDraft.billingPhone.trim() || null,
         billingAddressLine1: billingDraft.billingAddressLine1.trim() || null,
-        billingAddressLine2: billingDraft.billingAddressLine2.trim() || null,
         billingCityState: billingDraft.billingCityState.trim() || null,
         billingPostalCode: billingDraft.billingPostalCode.trim() || null,
         billingCountry: billingDraft.billingCountry.trim() || null,
@@ -385,8 +382,7 @@ export function BillingPage() {
   const billToName = billingDraft.billingCompanyName || billingProfile.companyName || user?.name || user?.email?.split('@')[0] || 'Customer';
   const billToLines = [
     billingDraft.billingAddressLine1 || billingProfile.addressLines[0],
-    billingDraft.billingAddressLine2 || billingProfile.addressLines[1],
-    billingDraft.billingCityState || billingProfile.addressLines[2],
+    billingDraft.billingCityState || billingProfile.addressLines[1],
     [billingDraft.billingPostalCode, billingDraft.billingCountry]
       .filter(Boolean)
       .join(', '),
@@ -592,11 +588,6 @@ export function BillingPage() {
             value={billingDraft.billingAddressLine1}
             onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingAddressLine1: e.target.value }))}
             placeholder="Address line 1"
-          />
-          <Input
-            value={billingDraft.billingAddressLine2}
-            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingAddressLine2: e.target.value }))}
-            placeholder="Address line 2"
           />
           <Input
             value={billingDraft.billingCityState}
@@ -1100,7 +1091,7 @@ export function BillingPage() {
                       <button
                         onClick={() => {
                           setDesktopModalOpen(false);
-                          navigate('/dashboard');
+                          navigate('/');
                         }}
                         className="w-full h-11 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] border border-slate-200/60 dark:border-slate-700/60"
                       >

@@ -267,7 +267,6 @@ export function useUserPlan() {
       billingEmail?: string | null;
       billingPhone?: string | null;
       billingAddressLine1?: string | null;
-      billingAddressLine2?: string | null;
       billingCityState?: string | null;
       billingPostalCode?: string | null;
       billingCountry?: string | null;
