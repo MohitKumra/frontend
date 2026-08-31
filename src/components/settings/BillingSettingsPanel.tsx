@@ -1,6 +1,6 @@
 // frontend/src/components/settings/BillingSettingsPanel.tsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CreditCard,
   CheckCircle2,
@@ -32,8 +32,9 @@ import apiClient from '../../lib/apiClient';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { formatINR } from '../../utils/formatCurrency';
 import { UpgradeModal } from '../billing/UpgradeModal';
-import { CheckoutModal } from '../billing/CheckoutModal';
+import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { PlanCard } from '../billing/PlanCard';
+import { ConfirmModal } from '../ui/ConfirmModal';
 import toast from 'react-hot-toast';
 
 export function BillingSettingsPanel() {
@@ -52,14 +53,14 @@ export function BillingSettingsPanel() {
   } = useUserPlan();
 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
   const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
   const [cancelling, setCancelling] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const navigate = useNavigate();
+  const choosePlanForCheckout = useUpgradeModalStore((s) => s.choosePlanForCheckout);
 
   async function handleCancelSub() {
-    if (!confirm('Are you sure you want to cancel your recurring subscription? You will still retain access until the end of your current billing period.')) {
-      return;
-    }
+    setCancelConfirmOpen(false);
     setCancelling(true);
     try {
       await cancelSubscription({ reason: 'User requested cancellation in settings' });
@@ -157,22 +158,6 @@ export function BillingSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <Card variant="default" className="border-accent-border/60 bg-gradient-to-r from-accent/10 via-accent-subtle/15 to-transparent">
-        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-text-primary">Billing center is now a full page</p>
-            <p className="text-sm text-text-muted">
-              Open the new billing page to review plans, pay invoices, and download PDFs without the modal flow.
-            </p>
-          </div>
-          <Link to="/billing">
-            <Button variant="primary" leftIcon={<ArrowUpRight className="w-4 h-4" />}>
-              Open Billing Center
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-
       {/* ─── Active Plan Banner ───────────────────────────────────── */}
       <Card variant="elevated" className="overflow-hidden border-accent-border/60">
         <div className="p-6 bg-gradient-to-r from-accent/15 via-accent-subtle/20 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -235,7 +220,7 @@ export function BillingSettingsPanel() {
               <Button
                 variant="danger"
                 size="md"
-                onClick={handleCancelSub}
+                onClick={() => setCancelConfirmOpen(true)}
                 loading={cancelling}
               >
                 Cancel Subscription
@@ -638,19 +623,26 @@ export function BillingSettingsPanel() {
         onClose={() => setUpgradeModalOpen(false)}
         onSelectPlan={(plan) => {
           setUpgradeModalOpen(false);
-          setCheckoutPlan(plan);
+          choosePlanForCheckout(plan);
+          navigate('/billing', {
+            state: { preselectedPlanId: plan.id, source: 'upgrade_modal' },
+          });
         }}
       />
 
-      {/* ─── Checkout Modal (full review + Razorpay) ────────────── */}
-      <CheckoutModal
-        isOpen={!!checkoutPlan}
-        onClose={() => setCheckoutPlan(null)}
-        plan={checkoutPlan}
-        onBack={() => {
-          setCheckoutPlan(null);
-          setUpgradeModalOpen(true);
-        }}
+      <ConfirmModal
+        open={cancelConfirmOpen}
+        title="Cancel subscription?"
+        message={
+          <>
+            This will cancel your recurring subscription. You will keep access until the end of your current billing period.
+          </>
+        }
+        confirmText="Yes, cancel"
+        destructive
+        onClose={() => setCancelConfirmOpen(false)}
+        onConfirm={handleCancelSub}
+        isLoading={cancelling}
       />
     </div>
   );

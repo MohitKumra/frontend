@@ -259,7 +259,6 @@ const FIELD_LABELS: Record<string, string> = {
   autoRenew: 'Auto-renew',
   amountCents: 'Amount',
   provider: 'Provider',
-  teamMembers: 'Team members',
 };
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -270,9 +269,6 @@ const FEATURE_LABELS: Record<string, string> = {
   storageMb: 'Storage',
   notionSync: 'Notion sync',
   voiceNotes: 'Voice notes',
-  advancedAnalytics: 'Advanced analytics',
-  prioritySupport: 'Priority support',
-  teamMembers: 'Team members',
   aiCoach: 'AI Coach',
   goals: 'Goals',
   notes: 'Notes',

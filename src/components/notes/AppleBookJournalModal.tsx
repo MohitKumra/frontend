@@ -2108,7 +2108,7 @@ export function AppleBookJournalModal({
             {pendingOpen && (
               <div className="apple-book-opening-badge" role="status">
                 <Loader2 size={16} className="apple-book-opening-spinner" />
-                <span>Opening book\u2026</span>
+                <span>Opening book…</span>
               </div>
             )}
 

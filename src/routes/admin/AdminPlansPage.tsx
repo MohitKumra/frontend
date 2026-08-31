@@ -41,7 +41,6 @@ const EMPTY_FEATURES: Record<string, any> = {
   tasks: 500,
   storageMb: 1000,
   notionSync: false,
-  teamMembers: 0,
   aiCoach: false,
   goals: false,
   focusAdvanced: false,

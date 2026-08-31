@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   ArrowRight,
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
   Building2,
   MapPin,
   Mail,
+  Wand2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
@@ -24,11 +25,47 @@ import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { PlanCard } from '../components/billing/PlanCard';
 import { useUserPlan, type PlanDTO } from '../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
+import { useCustomPlanModalStore } from '../store/customPlanModalStore';
 import { InvoicePreview, type InvoicePreviewData } from '../features/billing/InvoicePreview';
+import { fetchMyCustomPlanRequests, type CustomPlanRequestDTO } from '../features/customPlan/customPlanApi';
 import { formatINR } from '../utils/formatCurrency';
 
 function baseTierOf(slug: string): string {
   return slug.endsWith('_yearly') ? slug.slice(0, -'_yearly'.length) : slug;
+}
+
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
+    PENDING: 'Pending',
+    REVIEWING: 'Under review',
+    QUOTED: 'Quote ready',
+    ACCEPTED: 'Accepted',
+    REJECTED: 'Rejected',
+    CANCELLED: 'Cancelled',
+  };
+  return map[status] || status;
+}
+
+function statusVariant(status: string): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'accent' {
+  const map: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'accent'> = {
+    PENDING: 'default',
+    REVIEWING: 'accent',
+    QUOTED: 'info',
+    ACCEPTED: 'success',
+    REJECTED: 'danger',
+    CANCELLED: 'default',
+  };
+  return map[status] || 'default';
+}
+
+function changeSummary(req: CustomPlanRequestDTO): string {
+  const limitCount = Object.keys(req.requestedLimits || {}).length;
+  const featureCount = Object.keys(req.requestedFeatures || {}).length;
+  const parts: string[] = [];
+  if (limitCount) parts.push(`${limitCount} limit${limitCount > 1 ? 's' : ''}`);
+  if (featureCount) parts.push(`${featureCount} feature${featureCount > 1 ? 's' : ''}`);
+  return parts.length ? parts.join(' + ') : 'Reach out to our team';
 }
 
 export function BillingPage() {
@@ -49,7 +86,9 @@ export function BillingPage() {
   } =
     useUserPlan();
 
-  const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
+  const location = useLocation();
+  const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR' | 'CUSTOM'>('MONTH');
+  const openCustomPlan = useCustomPlanModalStore((s) => s.openCustomPlan);
   const [selectedPlan, setSelectedPlan] = useState<PlanDTO | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
@@ -76,9 +115,28 @@ export function BillingPage() {
     billingCountry: 'India',
     billingGstin: '',
   });
+  const [customPlanRequests, setCustomPlanRequests] = useState<CustomPlanRequestDTO[]>([]);
+
+  // In-app tracking of custom plan requests (status + history) alongside billing.
+  useEffect(() => {
+    let cancelled = false;
+    fetchMyCustomPlanRequests()
+      .then((data) => {
+        if (!cancelled) setCustomPlanRequests(data);
+      })
+      .catch(() => {
+        /* non-fatal — the card simply shows empty */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const paidPlans = useMemo(
-    () => plans.filter((plan) => plan.priceCents > 0 && plan.billingInterval === billingCycle),
+    () =>
+      billingCycle === 'CUSTOM'
+        ? []
+        : plans.filter((plan) => plan.priceCents > 0 && plan.billingInterval === billingCycle),
     [plans, billingCycle]
   );
 
@@ -86,6 +144,30 @@ export function BillingPage() {
     () => invoices.find((invoice) => invoice.id === selectedInvoiceId) || invoices[0] || null,
     [invoices, selectedInvoiceId]
   );
+
+  // When the user picks a plan from an Upgrade modal, that plan is carried here
+  // (via useUpgradeModalStore.pendingPlan) so this page opens with it preselected.
+  const pendingPlan = useUpgradeModalStore((s) => s.pendingPlan);
+  const clearPendingPlan = useUpgradeModalStore((s) => s.clearPendingPlan);
+
+  const routeState = (location.state as { preselectedPlanId?: string; source?: string } | null) || null;
+
+  // Apply the pending (pre-selected) plan once the plans list is available, and
+  // set the monthly/annual toggle to match its billing interval. This supports
+  // both the global store handoff and the direct route-state handoff from the
+  // upgrade modal.
+  useEffect(() => {
+    const targetPlanId = pendingPlan?.id || routeState?.preselectedPlanId;
+    if (!targetPlanId) return;
+
+    const match = plans.find((p) => p.id === targetPlanId) || pendingPlan || null;
+    if (!match) return;
+
+    setBillingCycle(match.billingInterval === 'YEAR' ? 'YEAR' : 'MONTH');
+    setSelectedPlan(match);
+
+    if (pendingPlan) clearPendingPlan();
+  }, [pendingPlan, routeState, plans, clearPendingPlan]);
 
   useEffect(() => {
     if (!selectedPlan && paidPlans.length > 0) {
@@ -273,6 +355,24 @@ export function BillingPage() {
   }
 
   const selectedInvoicePlanName = selectedInvoice?.subscription?.plan?.name || selectedInvoice?.order?.id || 'Plan purchase';
+  const previewPlan = selectedPlan || plans.find((plan) => plan.id === pendingPlan?.id) || null;
+  const useSelectedPlanPreview = Boolean(previewPlan);
+  const previewInvoiceSubtotal = previewPlan ? previewPlan.priceCents : selectedInvoice?.subtotalCents || 0;
+  const previewDiscountCents = useSelectedPlanPreview ? (appliedCoupon?.discountCents || 0) : selectedInvoice?.discountCents || 0;
+  const previewTaxCents = previewPlan
+    ? Math.round(((previewInvoiceSubtotal - previewDiscountCents) * previewPlan.gstPercent) / 100)
+    : selectedInvoice?.taxCents || 0;
+  const previewCgstCents = previewPlan
+    ? Math.floor(previewTaxCents / 2)
+    : selectedInvoice?.cgstCents || 0;
+  const previewSgstCents = previewPlan
+    ? previewTaxCents - previewCgstCents
+    : selectedInvoice?.sgstCents || 0;
+  const previewIgstCents = previewPlan ? 0 : selectedInvoice?.igstCents || 0;
+  const previewTotalCents = previewPlan
+    ? previewInvoiceSubtotal - previewDiscountCents + previewTaxCents
+    : selectedInvoice?.totalCents || 0;
+
   const billToName = billingDraft.billingCompanyName || billingProfile.companyName || user?.name || user?.email?.split('@')[0] || 'Customer';
   const billToLines = [
     billingDraft.billingAddressLine1 || billingProfile.addressLines[0],
@@ -298,27 +398,53 @@ export function BillingPage() {
     customerName: billToName,
     customerLines,
     customerShipLines,
-    invoice: selectedInvoice
+    invoice: useSelectedPlanPreview
       ? {
-          invoiceNumber: selectedInvoice.invoiceNumber,
-          status: selectedInvoice.status,
-          currency: selectedInvoice.currency,
-          subtotalCents: selectedInvoice.subtotalCents,
-          discountCents: selectedInvoice.discountCents,
-          taxCents: selectedInvoice.taxCents,
-          cgstCents: selectedInvoice.cgstCents || 0,
-          sgstCents: selectedInvoice.sgstCents || 0,
-          igstCents: selectedInvoice.igstCents || 0,
-          sac: selectedInvoice.sac,
-          totalCents: selectedInvoice.totalCents,
+          invoiceNumber: 'DRAFT',
+          status: 'PENDING',
+          currency: previewPlan?.currency || 'INR',
+          subtotalCents: previewInvoiceSubtotal,
+          discountCents: previewDiscountCents,
+          taxCents: previewTaxCents,
+          cgstCents: previewCgstCents,
+          sgstCents: previewSgstCents,
+          igstCents: previewIgstCents,
+          sac: company.gstin ? '9983' : '9983',
+          totalCents: previewTotalCents,
         }
-      : null,
+      : selectedInvoice
+        ? {
+            invoiceNumber: selectedInvoice.invoiceNumber,
+            status: selectedInvoice.status,
+            currency: selectedInvoice.currency,
+            subtotalCents: selectedInvoice.subtotalCents,
+            discountCents: selectedInvoice.discountCents,
+            taxCents: selectedInvoice.taxCents,
+            cgstCents: selectedInvoice.cgstCents || 0,
+            sgstCents: selectedInvoice.sgstCents || 0,
+            igstCents: selectedInvoice.igstCents || 0,
+            sac: selectedInvoice.sac,
+            totalCents: selectedInvoice.totalCents,
+          }
+        : {
+            invoiceNumber: 'DRAFT',
+            status: 'PENDING',
+            currency: 'INR',
+            subtotalCents: 0,
+            discountCents: 0,
+            taxCents: 0,
+            cgstCents: 0,
+            sgstCents: 0,
+            igstCents: 0,
+            sac: '9983',
+            totalCents: 0,
+          },
     issuedAtLabel: selectedInvoice ? new Date(selectedInvoice.issuedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—',
     nextInvoiceLabel: previewNextDate ? new Date(previewNextDate).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : 'Not set',
-    planName: selectedInvoicePlanName,
-    paymentMode: (selectedInvoice?.subscription?.autoRenew ?? subscription?.autoRenew) ? 'Auto-pay' : 'No payment required',
-    subscriptionRef: selectedInvoice?.subscription?.id || subscription?.id || '-',
-    paymentRef: selectedInvoice?.transactions?.[0]?.providerPaymentId || 'NA',
+    planName: previewPlan?.name || selectedInvoicePlanName,
+    paymentMode: previewPlan ? (paymentMode === 'SUBSCRIPTION_INITIAL' ? 'Auto-pay' : 'One-time') : (selectedInvoice?.subscription?.autoRenew ?? subscription?.autoRenew) ? 'Auto-pay' : 'No payment required',
+    subscriptionRef: selectedInvoice?.subscription?.id || subscription?.id || 'draft-subscription',
+    paymentRef: selectedInvoice?.transactions?.[0]?.providerPaymentId || 'pay_preview',
   };
 
   return (
@@ -364,36 +490,66 @@ export function BillingPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="inline-flex items-center rounded-2xl bg-surface-raised border border-border p-1">
-                {(['MONTH', 'YEAR'] as const).map((cycle) => (
+                {(['MONTH', 'YEAR', 'CUSTOM'] as const).map((cycle) => (
                   <button
                     key={cycle}
                     type="button"
-                    onClick={() => setBillingCycle(cycle)}
+                    onClick={() => {
+                      setBillingCycle(cycle);
+                      if (cycle === 'CUSTOM') setSelectedPlan(null);
+                    }}
                     className={`px-5 py-2 rounded-xl text-sm font-bold transition-colors ${
                       billingCycle === cycle
                         ? 'bg-accent text-text-onaccent shadow-sm'
                         : 'text-text-muted hover:text-text-primary'
                     }`}
                   >
-                    {cycle === 'MONTH' ? 'Monthly' : 'Annual'}
+                    {cycle === 'MONTH' ? 'Monthly' : cycle === 'YEAR' ? 'Annual' : 'Custom'}
                   </button>
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {paidPlans.map((plan) => {
-                  const isCurrent = effectivePlan.planSlug !== 'free' && baseTierOf(effectivePlan.planSlug) === baseTierOf(plan.slug);
-                  return (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      isCurrent={isCurrent}
-                      isPopular={baseTierOf(plan.slug) === 'premium'}
-                      onSelect={(p) => setSelectedPlan(p)}
-                    />
-                  );
-                })}
-              </div>
+              {billingCycle === 'CUSTOM' ? (
+                <div className="w-full max-w-md mx-auto flex flex-col rounded-2xl bg-surface border border-dashed border-accent/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-1.5 w-full" style={{ background: 'var(--gradient-accent)' }} />
+                  <div className="flex flex-col items-center text-center p-8">
+                    <span className="inline-flex items-center justify-center w-12 h-12 rounded-full shrink-0 bg-accent-subtle text-accent border border-accent-border">
+                      <Wand2 className="w-5 h-5" />
+                    </span>
+                    <h3 className="text-lg font-extrabold text-text-primary mt-4 tracking-tight">Custom</h3>
+                    <p className="text-[13px] text-text-muted mt-1.5 leading-snug">
+                      Build a plan around exactly what you need.
+                    </p>
+                    <div className="h-px bg-border my-5 w-full" />
+                    <ul className="space-y-3 flex-1 w-full">
+                      {['Higher limits', 'Additional features', 'Guidance from our team'].map((label) => (
+                        <li key={label} className="flex items-center justify-center gap-2.5 text-[13.5px] text-text-primary font-medium">
+                          <Sparkles className="w-4 h-4 shrink-0 text-accent" strokeWidth={2.5} />
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button fullWidth className="mt-6 h-12" onClick={openCustomPlan} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                      Build your custom plan
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {paidPlans.map((plan) => {
+                    const isCurrent = effectivePlan.planSlug !== 'free' && baseTierOf(effectivePlan.planSlug) === baseTierOf(plan.slug);
+                    return (
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        isCurrent={isCurrent}
+                        isPopular={baseTierOf(plan.slug) === 'premium'}
+                        onSelect={(p) => setSelectedPlan(p)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -593,10 +749,8 @@ export function BillingPage() {
                 <div className="text-sm text-text-muted">No invoices yet.</div>
               ) : (
                 invoices.map((invoice) => (
-                  <button
+                  <div
                     key={invoice.id}
-                    type="button"
-                    onClick={() => setSelectedInvoiceId(invoice.id)}
                     className={`w-full rounded-2xl border p-3 text-left transition-colors ${selectedInvoice?.id === invoice.id ? 'border-accent bg-accent-subtle/30' : 'border-border bg-surface hover:border-border-strong'}`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -643,7 +797,7 @@ export function BillingPage() {
                         Download
                       </Button>
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
             </CardContent>
@@ -679,6 +833,49 @@ export function BillingPage() {
                     <div className="flex items-center justify-between text-xs text-text-muted">
                       <span>{new Date(transaction.createdAt).toLocaleDateString()}</span>
                       <span>{formatINR(transaction.netAmountCents)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card variant="default">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-accent" />
+                <CardTitle>Custom plan requests</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {customPlanRequests.length === 0 ? (
+                <div>
+                  <p className="text-sm text-text-muted">No custom plan requests yet.</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-3"
+                    onClick={openCustomPlan}
+                    leftIcon={<Wand2 className="w-4 h-4" />}
+                  >
+                    Build a custom plan
+                  </Button>
+                </div>
+              ) : (
+                customPlanRequests.map((req) => (
+                  <div key={req.id} className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-text-primary">Request #{req.id.slice(-6).toUpperCase()}</p>
+                        <p className="text-xs text-text-muted">{new Date(req.createdAt).toLocaleDateString('en-IN')}</p>
+                      </div>
+                      <Badge variant={statusVariant(req.status)} size="sm" dot>
+                        {statusLabel(req.status)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-text-muted">
+                      <span>{changeSummary(req)}</span>
+                      {req.quotedPriceCents != null && <span className="font-semibold text-text-primary">{formatINR(req.quotedPriceCents)}</span>}
                     </div>
                   </div>
                 ))

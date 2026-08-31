@@ -1,3 +1,4 @@
 /* Main CSS entry point - imports all styles */
 @import './styles/globals.css';
+@import './styles/pills.css';
 @import './styles/responsive-compact.css';

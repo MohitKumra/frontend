@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { formatINR } from '../../utils/formatCurrency';
 
 interface SubscriptionItem {
@@ -26,6 +27,7 @@ export function AdminSubscriptionsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ id: string; action: 'cancel' | 'pause' | 'resume' } | null>(null);
 
   async function fetchSubscriptions() {
     setLoading(true);
@@ -48,13 +50,19 @@ export function AdminSubscriptionsPage() {
   }, [statusFilter]);
 
   async function handleAction(id: string, action: 'cancel' | 'pause' | 'resume') {
-    if (!confirm(`Are you sure you want to ${action} this subscription?`)) return;
+    setConfirmAction({ id, action });
+  }
+
+  async function confirmSubscriptionAction() {
+    if (!confirmAction) return;
+    const { id, action } = confirmAction;
     setActionLoading(true);
+    setConfirmAction(null);
     try {
       await adminApiClient.patch(`/subscriptions/${id}/${action}`, {});
       fetchSubscriptions();
     } catch (err: any) {
-      alert(err.response?.data?.error?.message || `Failed to ${action} subscription`);
+      console.error(err.response?.data?.error?.message || `Failed to ${action} subscription`);
     } finally {
       setActionLoading(false);
     }
@@ -97,6 +105,21 @@ export function AdminSubscriptionsPage() {
           <option value="PAST_DUE">Past Due</option>
         </select>
       </div>
+
+      <ConfirmModal
+        open={!!confirmAction}
+        title={confirmAction ? `Confirm ${confirmAction.action}` : 'Confirm action'}
+        message={
+          <>
+            Are you sure you want to <strong>{confirmAction?.action || 'perform this action'}</strong> this subscription?
+          </>
+        }
+        confirmText={confirmAction ? `Yes, ${confirmAction.action}` : 'Confirm'}
+        destructive={confirmAction?.action === 'cancel'}
+        isLoading={actionLoading}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={confirmSubscriptionAction}
+      />
 
       {/* ─── Subscriptions Table Card ─────────────────────────────── */}
       <Card variant="default" className="overflow-hidden">

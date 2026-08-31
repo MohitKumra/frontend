@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { formatINR } from '../../utils/formatCurrency';
 
 export function AdminUserDetailPage() {
@@ -22,6 +23,8 @@ export function AdminUserDetailPage() {
   const [overrideReason, setOverrideReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [banReasonConfirmOpen, setBanReasonConfirmOpen] = useState(false);
+  const [revokeOverrideConfirm, setRevokeOverrideConfirm] = useState<string | null>(null);
 
   async function fetchUserDetail() {
     setLoading(true);
@@ -47,21 +50,36 @@ export function AdminUserDetailPage() {
   }, [id]);
 
   async function handleStatusChange(action: 'deactivate' | 'reactivate' | 'ban') {
-    if (action === 'ban' && !actionReason.trim()) {
-      alert('A reason is required when banning an account.');
-      return;
-    }
-    setActionLoading(true);
-    setMessage(null);
-    try {
-      await adminApiClient.patch(`/users/${id}/${action}`, { reason: actionReason });
-      setMessage({ type: 'success', text: `User ${action}d successfully` });
-      setActionReason('');
-      fetchUserDetail();
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.response?.data?.error?.message || `Failed to ${action} user` });
-    } finally {
-      setActionLoading(false);
+    if (action === 'ban') {
+      if (!actionReason.trim()) {
+        setBanReasonConfirmOpen(true);
+        return;
+      }
+      setActionLoading(true);
+      setMessage(null);
+      try {
+        await adminApiClient.patch(`/users/${id}/${action}`, { reason: actionReason });
+        setMessage({ type: 'success', text: `User ${action}d successfully` });
+        setActionReason('');
+        fetchUserDetail();
+      } catch (err: any) {
+        setMessage({ type: 'error', text: err.response?.data?.error?.message || `Failed to ${action} user` });
+      } finally {
+        setActionLoading(false);
+      }
+    } else {
+      setActionLoading(true);
+      setMessage(null);
+      try {
+        await adminApiClient.patch(`/users/${id}/${action}`, { reason: actionReason });
+        setMessage({ type: 'success', text: `User ${action}d successfully` });
+        setActionReason('');
+        fetchUserDetail();
+      } catch (err: any) {
+        setMessage({ type: 'error', text: err.response?.data?.error?.message || `Failed to ${action} user` });
+      } finally {
+        setActionLoading(false);
+      }
     }
   }
 
@@ -87,15 +105,21 @@ export function AdminUserDetailPage() {
   }
 
   async function handleRevokeOverride(overrideId: string) {
-    if (!confirm('Revoke this entitlement override?')) return;
+    setRevokeOverrideConfirm(overrideId);
+  }
+
+  async function confirmRevokeOverride() {
+    if (!revokeOverrideConfirm) return;
     try {
-      await adminApiClient.patch(`/users/${id}/revoke-entitlement/${overrideId}`, {
+      await adminApiClient.patch(`/users/${id}/revoke-entitlement/${revokeOverrideConfirm}`, {
         reason: 'Revoked by admin from dashboard',
       });
       setMessage({ type: 'success', text: 'Override revoked' });
       fetchUserDetail();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.error?.message || 'Failed to revoke override' });
+    } finally {
+      setRevokeOverrideConfirm(null);
     }
   }
 
@@ -346,6 +370,25 @@ export function AdminUserDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmModal
+        open={banReasonConfirmOpen}
+        title="Add a ban reason"
+        message="A reason is required before banning this account. Please add the audit reason in the field above and try again."
+        confirmText="Okay"
+        onClose={() => setBanReasonConfirmOpen(false)}
+        onConfirm={() => setBanReasonConfirmOpen(false)}
+      />
+
+      <ConfirmModal
+        open={!!revokeOverrideConfirm}
+        title="Revoke entitlement override?"
+        message="This will remove the active override for this user. Continue?"
+        confirmText="Revoke"
+        destructive
+        onClose={() => setRevokeOverrideConfirm(null)}
+        onConfirm={confirmRevokeOverride}
+      />
     </div>
   );
 }

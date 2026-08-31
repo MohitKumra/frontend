@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { adminApiClient } from "../../lib/adminApiClient";
 import { Spinner } from "../../components/ui/Spinner";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
 // ─── Types (match GET /admin/system) ─────────────────────────────────────
 type Status = "healthy" | "degraded" | "down";
@@ -161,6 +162,7 @@ export function AdminSystemPage(): React.JSX.Element {
   const [reconciling, setReconciling] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [reconcileConfirmOpen, setReconcileConfirmOpen] = useState(false);
 
   async function fetchHealth(): Promise<void> {
     setLoading(true);
@@ -185,15 +187,13 @@ export function AdminSystemPage(): React.JSX.Element {
     try {
       const res = await adminApiClient.post("/system/reconciliation", {});
       const result = res.data?.data;
-      window.alert(
-        `Reconciliation complete.\n\nFound ${
-          (result?.discrepanciesFound ?? result?.items?.length ?? 0)
-        } discrepancy(ies).`
-      );
+      setError(null);
+      console.info(`Reconciliation complete. Found ${(result?.discrepanciesFound ?? result?.items?.length ?? 0)} discrepancy(ies).`);
     } catch {
-      window.alert("Reconciliation check failed. Please try again.");
+      setError("Reconciliation check failed. Please try again.");
     } finally {
       setReconciling(false);
+      setReconcileConfirmOpen(false);
     }
   }
 
@@ -265,7 +265,7 @@ export function AdminSystemPage(): React.JSX.Element {
               Refresh Health
             </button>
             <button
-              onClick={() => void runReconciliation()}
+              onClick={() => setReconcileConfirmOpen(true)}
               disabled={reconciling}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-60"
             >
@@ -437,6 +437,18 @@ export function AdminSystemPage(): React.JSX.Element {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={reconcileConfirmOpen}
+        title="Run reconciliation?"
+        message="This checks the current backend state and can surface mismatches or failed processing. Continue?"
+        confirmText="Run now"
+        onClose={() => setReconcileConfirmOpen(false)}
+        onConfirm={() => {
+          void runReconciliation();
+        }}
+        isLoading={reconciling}
+      />
     </div>
   );
 }

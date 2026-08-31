@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Folder } from 'lucide-react';
 import { useCreateProject } from '../../features/projects/hooks/useProjects';
 import { useGoals } from '../../features/goals/hooks/useGoals';
@@ -6,8 +7,7 @@ import { DraggableModal } from '../ui/DraggableModal';
 import type { CreateProjectRequest, ProjectStatus } from '../../types';
 import { MediaAttachmentsField } from '../media/MediaAttachmentsField';
 import { UpgradeModal } from '../billing/UpgradeModal';
-import { CheckoutModal } from '../billing/CheckoutModal';
-import type { PlanDTO } from '../../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import toast from 'react-hot-toast';
 
 interface CreateProjectModalProps {
@@ -29,8 +29,9 @@ const PROJECT_COLORS = [
 export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
   const createProject = useCreateProject();
   const goalsQuery = useGoals();
+  const navigate = useNavigate();
+  const choosePlanForCheckout = useUpgradeModalStore((s) => s.choosePlanForCheckout);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
   const [formData, setFormData] = useState<CreateProjectRequest>({
     name: '',
     description: '',
@@ -238,18 +239,11 @@ export function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps)
       highlightFeature="Project Creation"
       onSelectPlan={(plan) => {
         setUpgradeModalOpen(false);
-        setCheckoutPlan(plan);
+        choosePlanForCheckout(plan);
+        navigate('/billing', {
+          state: { preselectedPlanId: plan.id, source: 'upgrade_modal' },
+        });
       }}
-    />
-    <CheckoutModal
-      isOpen={!!checkoutPlan}
-      onClose={() => setCheckoutPlan(null)}
-      plan={checkoutPlan}
-      onBack={() => {
-        setCheckoutPlan(null);
-        setUpgradeModalOpen(true);
-      }}
-      highlightFeature="Project Creation"
     />
   </>
   );

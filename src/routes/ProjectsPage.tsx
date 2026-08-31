@@ -34,6 +34,7 @@ import { FloatingProjectsEmpty } from '../components/ui/FloatingProjectsEmpty';
 import { useProjects, useDeleteProject, useFilteredProjects } from '../features/projects/hooks/useProjects';
 import { CreateProjectModal } from '../components/projects/CreateProjectModal';
 import { EditProjectModal } from '../components/projects/EditProjectModal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import type { ProjectDTO } from '../types';
 
 type ViewMode = 'grid' | 'list';
@@ -62,6 +63,8 @@ export function ProjectsPage() {
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [highlightedProjectId, setHighlightedProjectId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { data: projectsData, isLoading } = useProjects();
   const deleteProject = useDeleteProject();
@@ -96,10 +99,16 @@ export function ProjectsPage() {
   };
 
   const handleDeleteProject = (id: string) => {
-    if (confirm('Are you sure you want to delete this project?')) {
-      deleteProject.mutate(id);
-      setProjectMenuOpen(null);
-    }
+    setDeleteTargetId(id);
+    setDeleteConfirmOpen(true);
+    setProjectMenuOpen(null);
+  };
+
+  const confirmDeleteProject = () => {
+    if (!deleteTargetId) return;
+    deleteProject.mutate(deleteTargetId);
+    setDeleteConfirmOpen(false);
+    setDeleteTargetId(null);
   };
 
   const toggleFavorite = (id: string) => {

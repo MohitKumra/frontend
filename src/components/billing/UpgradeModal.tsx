@@ -1,13 +1,15 @@
 // frontend/src/components/billing/UpgradeModal.tsx
-// Plan selection modal. When a user picks a plan, this component invokes
-// `onSelectPlan(plan)` and the parent opens <CheckoutModal /> to handle
-// coupon, bill summary, and Razorpay payment.
+// Plan selection modal. When a user picks a plan, this component routes them to
+// the dedicated Billing page with the chosen plan prefilled (coupon, bill summary,
+// and Razorpay payment all happen on that page).
 
 import React, { useState } from 'react';
-import { X, Sparkles, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Sparkles, ShieldCheck, Wand2 } from 'lucide-react';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../../store/upgradeModalStore';
+import { useCustomPlanModalStore } from '../../store/customPlanModalStore';
 import { PlanCard } from './PlanCard';
-import { CheckoutModal } from './CheckoutModal';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -18,8 +20,8 @@ interface UpgradeModalProps {
   message?: string;
   /**
    * Called when the user picks a plan to upgrade to. The parent should close
-   * this modal and open <CheckoutModal /> with the chosen plan to handle the
-   * coupon + bill summary + Razorpay payment.
+   * this modal and route the user to the Billing page (handles coupon + bill
+   * summary + Razorpay) with the chosen plan prefilled.
    */
   onSelectPlan?: (plan: PlanDTO) => void;
 }
@@ -50,26 +52,32 @@ export function UpgradeModal({
   // has a MONTH and a YEAR row. The toggle only filters which rows are shown,
   // and the chosen row (its priceCents + billingInterval) is the source of
   // truth sent to checkout — no front-end price math.
-  const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
+  const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR' | 'CUSTOM'>('MONTH');
   const isDark = useIsDarkMode();
-  // When the calling context does NOT pass `onSelectPlan`, this modal owns the
-  // checkout flow itself so the plan cards remain fully clickable everywhere
-  // (global upgrade modal, AI settings, focus, locked-wrapper prompts, etc.).
-  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
-
-  // Reset any in-progress checkout when the modal is dismissed.
-  React.useEffect(() => {
-    if (!isOpen) setCheckoutPlan(null);
-  }, [isOpen]);
+  // Selecting a plan closes this modal and routes the user to the dedicated
+  // Billing page (which owns coupon + bill summary + Razorpay checkout), with the
+  // chosen plan prefilled via useUpgradeModalStore.pendingPlan.
+  const navigate = useNavigate();
+  const choosePlanForCheckout = useUpgradeModalStore((s) => s.choosePlanForCheckout);
+  const openCustomPlan = useCustomPlanModalStore((s) => s.openCustomPlan);
 
   if (!isOpen) return null;
 
   const handleSelectPlan = (plan: PlanDTO) => {
+    choosePlanForCheckout(plan);
+
+    // Always route to the dedicated billing page so the old floating checkout
+    // modal cannot remain active. If a page-level callback also handles routing,
+    // we let it take over; otherwise we navigate here with the selected plan in
+    // route state for a predictable prefill on the billing screen.
     if (onSelectPlan) {
       onSelectPlan(plan);
-    } else {
-      setCheckoutPlan(plan);
+      return;
     }
+
+    navigate('/billing', {
+      state: { preselectedPlanId: plan.id, source: 'upgrade_modal' },
+    });
   };
 
   // Find target plans, or fallback list if database is loading.
@@ -95,9 +103,6 @@ export function UpgradeModal({
             storageMb: 100,
             voiceNotes: false,
             notionSync: false,
-            advancedAnalytics: false,
-            prioritySupport: false,
-            teamMembers: 0,
           },
         },
         {
@@ -119,9 +124,6 @@ export function UpgradeModal({
             storageMb: 1000,
             voiceNotes: false,
             notionSync: true,
-            advancedAnalytics: true,
-            prioritySupport: false,
-            teamMembers: 0,
           },
         },
         {
@@ -143,16 +145,13 @@ export function UpgradeModal({
             storageMb: 5000,
             voiceNotes: true,
             notionSync: true,
-            advancedAnalytics: true,
-            prioritySupport: false,
-            teamMembers: 0,
           },
         },
         {
           id: 'ultimate_fallback',
           slug: 'ultimate',
           name: 'Ultimate',
-          description: 'Unlimited AI capabilities, collaboration, and high-priority support',
+          description: 'Unlimited AI capabilities and maximum limits',
           priceCents: 199900,
           currency: 'INR',
           gstPercent: 18,
@@ -167,9 +166,6 @@ export function UpgradeModal({
             storageMb: 25000,
             voiceNotes: true,
             notionSync: true,
-            advancedAnalytics: true,
-            prioritySupport: true,
-            teamMembers: 5,
           },
         },
       ];
@@ -182,7 +178,7 @@ export function UpgradeModal({
   // the default tier shown when no plan has been purchased — it is surfaced as a
   // status banner, never as a "choose a plan" card in this upgrade flow.
   const visiblePlans = sortedPlans.filter(
-    (p) => p.priceCents > 0 && p.billingInterval === billingCycle
+    (p) => billingCycle !== 'CUSTOM' && p.priceCents > 0 && p.billingInterval === billingCycle
   );
 
   return (
@@ -247,10 +243,10 @@ export function UpgradeModal({
           </div>
         </div>
 
-        {/* Monthly / Annual toggle */}
+        {/* Monthly / Annual / Custom toggle */}
         <div className="flex justify-center">
           <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 p-1">
-            {(['MONTH', 'YEAR'] as const).map((cycle) => (
+            {(['MONTH', 'YEAR', 'CUSTOM'] as const).map((cycle) => (
               <button
                 key={cycle}
                 type="button"
@@ -261,7 +257,7 @@ export function UpgradeModal({
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                {cycle === 'MONTH' ? 'Monthly' : 'Annual'}
+                {cycle === 'MONTH' ? 'Monthly' : cycle === 'YEAR' ? 'Annual' : 'Custom'}
                 {cycle === 'YEAR' && (
                   <span
                     className={`ml-1.5 text-[10px] font-extrabold uppercase ${
@@ -276,27 +272,50 @@ export function UpgradeModal({
           </div>
         </div>
 
-        {/* Plans Grid — responsive stacked on mobile, 3 columns on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
-          {visiblePlans.map((p) => {
-            const tier = baseTierOf(p.slug);
-            const activeTier = baseTierOf(effectivePlan.planSlug);
-            const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
-            const isPopular = tier === 'premium';
+        {billingCycle === 'CUSTOM' ? (
+          /* Custom panel — full card, centered, when the Custom tab is selected */
+          <div className="w-full max-w-md mx-auto flex flex-col rounded-2xl bg-white dark:bg-[#242d3f] overflow-hidden border border-dashed border-indigo-300 dark:border-indigo-500/40 shadow-sm hover:shadow-md transition-shadow">
+            <div className="h-1.5 w-full bg-transparent" />
+            <div className="flex flex-col items-center text-center p-8">
+              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full shrink-0 bg-indigo-50 dark:bg-indigo-500/16 text-indigo-500">
+                <Wand2 className="w-5 h-5" />
+              </span>
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 mt-4 tracking-tight">Custom</h3>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug">
+                Build a plan around exactly what you need.
+              </p>
+              <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-5 w-full" />
+              <ul className="space-y-3 flex-1 w-full">
+                {['Higher limits', 'Additional features', 'Guidance from our team'].map((label) => (
+                  <li key={label} className="flex items-center justify-center gap-2.5 text-[13.5px] text-slate-700 dark:text-slate-200 font-medium">
+                    <Sparkles className="w-4 h-4 shrink-0 text-indigo-500" strokeWidth={2.5} />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={openCustomPlan}
+                className="mt-6 w-full h-12 rounded-2xl text-sm font-bold text-white inline-flex items-center justify-center gap-2 transition-all hover:brightness-105"
+                style={{ backgroundColor: '#6366F1' }}
+              >
+                Build your custom plan
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Plans Grid — responsive stacked on mobile, 3 columns on desktop */
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-7">
+            {visiblePlans.map((p) => {
+              const tier = baseTierOf(p.slug);
+              const activeTier = baseTierOf(effectivePlan.planSlug);
+              const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
+              const isPopular = tier === 'premium';
 
-            return <PlanCard key={p.id} plan={p} isCurrent={isCurrent} isPopular={isPopular} onSelect={handleSelectPlan} />;
-          })}
-        </div>
+              return <PlanCard key={p.id} plan={p} isCurrent={isCurrent} isPopular={isPopular} onSelect={handleSelectPlan} />;
+            })}
+          </div>
+        )}
       </div>
-
-      {/* When no onSelectPlan is supplied by the caller, this modal drives the
-          checkout flow itself so the plan cards are clickable everywhere. */}
-      <CheckoutModal
-        isOpen={!!checkoutPlan}
-        onClose={() => setCheckoutPlan(null)}
-        plan={checkoutPlan}
-        highlightFeature={highlightFeature}
-      />
     </div>
   );
 }

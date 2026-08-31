@@ -1,7 +1,7 @@
 // frontend/src/components/admin/AdminLayout.tsx
 // Shell layout for the admin portal matching the website design theme.
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   ShieldAlert,
+  Wand2,
 } from 'lucide-react';
 import { useAdminStore } from '../../store/adminStore';
 import { adminApiClient } from '../../lib/adminApiClient';
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/plans', label: 'Plans & Pricing', icon: CreditCard },
+  { to: '/admin/custom-plans', label: 'Custom Plans', icon: Wand2 },
   { to: '/admin/coupons', label: 'Coupons', icon: Tag },
   { to: '/admin/subscriptions', label: 'Subscriptions', icon: RefreshCw },
   { to: '/admin/transactions', label: 'Transactions', icon: Receipt },
@@ -38,6 +40,23 @@ const NAV_ITEMS = [
 export function AdminLayout() {
   const { admin, clearSession } = useAdminStore();
   const navigate = useNavigate();
+  // Count of open (pending/reviewing/quoted) custom-plan requests awaiting action.
+  const [customPlanCount, setCustomPlanCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await adminApiClient.get('/custom-plans/count');
+        if (!cancelled) setCustomPlanCount(res.data?.data?.count ?? 0);
+      } catch {
+        /* non-fatal — badge stays hidden */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogout() {
     try {
@@ -76,6 +95,7 @@ export function AdminLayout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  end={item.to === '/admin/custom-plans'}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
                       isActive
@@ -85,7 +105,15 @@ export function AdminLayout() {
                   }
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.to === '/admin/custom-plans' && customPlanCount > 0 && (
+                    <span
+                      className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold leading-none"
+                      style={{ backgroundColor: 'var(--color-accent)', color: '#ffffff' }}
+                    >
+                      {customPlanCount}
+                    </span>
+                  )}
                 </NavLink>
               );
             })}

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Grid3x3, List, LayoutList, Zap, Clock, CheckCircle2 } from 'lucide-react';
 import { useHabits, useCreateHabit, useFilteredHabits } from '../features/habits/hooks/useHabits';
 import { useTasks } from '../features/tasks/hooks/useTasks';
@@ -24,7 +24,7 @@ import { AchievementsPanel } from '../components/habits/AchievementsPanel';
 import { AICoachWidget } from '../components/ai/AICoachWidget';
 import { CreateHabitWizard } from '../components/habits/CreateHabitWizard';
 import { UpgradeModal } from '../components/billing/UpgradeModal';
-import { CheckoutModal } from '../components/billing/CheckoutModal';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import { type PlanDTO } from '../features/billing/useUserPlan';
 import { useGamificationProfile } from '../features/dashboard/hooks/useDashboard';
 import type { HabitDTO } from '../types';
@@ -47,7 +47,8 @@ export function HabitsPage() {
   const [habitPrefill, setHabitPrefill] = useState<{ title: string; time: string }>({ title: '', time: '' });
   const [focusedHabitId, setFocusedHabitId] = useState<string | null>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState<PlanDTO | null>(null);
+  const navigate = useNavigate();
+  const choosePlanForCheckout = useUpgradeModalStore((s) => s.choosePlanForCheckout);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<HabitFilter>('all');
@@ -225,7 +226,10 @@ export function HabitsPage() {
 
   const handleSelectPlanForCheckout = (plan: PlanDTO) => {
     setUpgradeModalOpen(false);
-    setCheckoutPlan(plan);
+    choosePlanForCheckout(plan);
+    navigate('/billing', {
+      state: { preselectedPlanId: plan.id, source: 'upgrade_modal' },
+    });
   };
 
   const heroProps = {
@@ -551,19 +555,6 @@ export function HabitsPage() {
         highlightFeature="Habit Tracking"
         onSelectPlan={handleSelectPlanForCheckout}
       />
-
-      {/* Full checkout review with bill summary + Razorpay payment. */}
-      <CheckoutModal
-        isOpen={!!checkoutPlan}
-        onClose={() => setCheckoutPlan(null)}
-        plan={checkoutPlan}
-        onBack={() => {
-          setCheckoutPlan(null);
-          setUpgradeModalOpen(true);
-        }}
-        highlightFeature="Habit Tracking"
-      />
-
     </motion.div>
   );
 }

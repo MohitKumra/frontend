@@ -43,6 +43,7 @@ const PlanPage = lazyRoute(() => import('./routes/PlanPage'), 'PlanPage');
 const BillingPage = lazyRoute(() => import('./routes/BillingPage'), 'BillingPage');
 const TaskDetailPage = lazyRoute(() => import('./routes/TaskDetailPage'), 'TaskDetailPage');
 const ProjectDetailPage = lazyRoute(() => import('./routes/ProjectDetailPage'), 'ProjectDetailPage');
+const CustomPlanPayPage = lazyRoute(() => import('./routes/CustomPlanPayPage'), 'CustomPlanPayPage');
 const NotFoundPage = lazyRoute(() => import('./routes/NotFoundPage'), 'NotFoundPage');
 
 // Admin portal
@@ -62,11 +63,14 @@ const AdminAuditLogPage = lazyRoute(() => import('./routes/admin/AdminAuditLogPa
 const AdminSystemPage = lazyRoute(() => import('./routes/admin/AdminSystemPage'), 'AdminSystemPage');
 const AdminSettingsPage = lazyRoute(() => import('./routes/admin/AdminSettingsPage'), 'AdminSettingsPage');
 const AdminInvoiceSettingsPage = lazyRoute(() => import('./routes/admin/AdminInvoiceSettingsPage'), 'AdminInvoiceSettingsPage');
+const AdminCustomPlansPage = lazyRoute(() => import('./routes/admin/AdminCustomPlansPage'), 'AdminCustomPlansPage');
 
 // Shared shell bits (kept eager — they are required for every protected page).
 import { BlockedOverlay } from './components/BlockedOverlay';
 import { UpgradeModal } from './components/billing/UpgradeModal';
 import { useUpgradeModalStore } from './store/upgradeModalStore';
+import { CustomPlanModal } from './features/customPlan/CustomPlanModal';
+import { useCustomPlanModalStore } from './store/customPlanModalStore';
 import { useSystemMaintenance } from './hooks/useSystemMaintenance';
 
 
@@ -122,6 +126,13 @@ function GlobalUpgradeModal() {
   );
 }
 
+/** Renders the globally-triggered Custom Plan guided flow. */
+function GlobalCustomPlanModal() {
+  const isOpen = useCustomPlanModalStore((s) => s.isOpen);
+  if (!isOpen) return null;
+  return <CustomPlanModal />;
+}
+
 export default function App() {
   const { pathname } = useLocation();
   // Poll for maintenance mode so the full-app overlay (covering sidebar +
@@ -135,6 +146,7 @@ export default function App() {
       <OnboardingTrigger />
       <BlockedOverlay />
       <GlobalUpgradeModal />
+      <GlobalCustomPlanModal />
 
       {/* Lazy route chunks are fetched on demand. Suspense shows a lightweight
           loading state while the first visit to each route downloads + parses
@@ -230,6 +242,7 @@ export default function App() {
           <Route path="billing" element={<BillingPage />} />
           <Route path="storage" element={<StoragePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="custom-plan/:token" element={<CustomPlanPayPage />} />
         </Route>
 
         {/* ──────────────────────────────────────────────────────────
@@ -252,6 +265,7 @@ export default function App() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:id" element={<AdminUserDetailPage />} />
           <Route path="plans" element={<AdminPlansPage />} />
+          <Route path="custom-plans" element={<AdminCustomPlansPage />} />
           <Route path="coupons" element={<AdminCouponsPage />} />
           <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
           <Route path="transactions" element={<AdminTransactionsPage />} />
