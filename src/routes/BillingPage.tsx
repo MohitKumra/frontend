@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   CheckCircle2,
@@ -15,6 +17,8 @@ import {
   MapPin,
   Mail,
   Wand2,
+  Monitor,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
@@ -30,6 +34,7 @@ import { useCustomPlanModalStore } from '../store/customPlanModalStore';
 import { InvoicePreview, type InvoicePreviewData } from '../features/billing/InvoicePreview';
 import { fetchMyCustomPlanRequests, type CustomPlanRequestDTO } from '../features/customPlan/customPlanApi';
 import { formatINR } from '../utils/formatCurrency';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 function baseTierOf(slug: string): string {
   return slug.endsWith('_yearly') ? slug.slice(0, -'_yearly'.length) : slug;
@@ -87,7 +92,11 @@ export function BillingPage() {
     useUserPlan();
 
   const location = useLocation();
+  const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [desktopModalOpen, setDesktopModalOpen] = useState(isMobile);
   const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR' | 'CUSTOM'>('MONTH');
+  const [mobileTab, setMobileTab] = useState<'plans' | 'invoices'>('plans');
   const openCustomPlan = useCustomPlanModalStore((s) => s.openCustomPlan);
   const [selectedPlan, setSelectedPlan] = useState<PlanDTO | null>(null);
   const [couponCode, setCouponCode] = useState('');
@@ -447,25 +456,515 @@ export function BillingPage() {
     paymentRef: selectedInvoice?.transactions?.[0]?.providerPaymentId || 'pay_preview',
   };
 
+  // --- Section 1: Choose a plan ---
+  const renderPlansSection = () => (
+    <Card variant="default">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-accent" />
+            <CardTitle>Choose a plan</CardTitle>
+          </div>
+          {selectedPlan && (
+            <Badge variant="accent" size="sm">
+              Selected: {selectedPlan.name}
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="inline-flex items-center rounded-2xl bg-surface-raised border border-border p-1">
+          {(['MONTH', 'YEAR', 'CUSTOM'] as const).map((cycle) => (
+            <button
+              key={cycle}
+              type="button"
+              onClick={() => {
+                setBillingCycle(cycle);
+                if (cycle === 'CUSTOM') setSelectedPlan(null);
+              }}
+              className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-colors ${
+                billingCycle === cycle
+                  ? 'bg-accent text-text-onaccent shadow-sm'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {cycle === 'MONTH' ? 'Monthly' : cycle === 'YEAR' ? 'Annual' : 'Custom'}
+            </button>
+          ))}
+        </div>
+
+        {billingCycle === 'CUSTOM' ? (
+          <div className="w-full max-w-md mx-auto flex flex-col rounded-2xl bg-surface border border-dashed border-accent/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="h-1.5 w-full" style={{ background: 'var(--gradient-accent)' }} />
+            <div className="flex flex-col items-center text-center p-6 sm:p-8">
+              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full shrink-0 bg-accent-subtle text-accent border border-accent-border">
+                <Wand2 className="w-5 h-5" />
+              </span>
+              <h3 className="text-lg font-extrabold text-text-primary mt-4 tracking-tight">Custom</h3>
+              <p className="text-[13px] text-text-muted mt-1.5 leading-snug">
+                Build a plan around exactly what you need.
+              </p>
+              <div className="h-px bg-border my-5 w-full" />
+              <ul className="space-y-3 flex-1 w-full">
+                {['Higher limits', 'Additional features', 'Guidance from our team'].map((label) => (
+                  <li key={label} className="flex items-center justify-center gap-2.5 text-[13.5px] text-text-primary font-medium">
+                    <Sparkles className="w-4 h-4 shrink-0 text-accent" strokeWidth={2.5} />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+              <Button fullWidth className="mt-6 h-11 sm:h-12" onClick={openCustomPlan} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                Build your custom plan
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {paidPlans.map((plan) => {
+              const isCurrent = effectivePlan.planSlug !== 'free' && baseTierOf(effectivePlan.planSlug) === baseTierOf(plan.slug);
+              return (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  isCurrent={isCurrent}
+                  isPopular={baseTierOf(plan.slug) === 'premium'}
+                  onSelect={(p) => {
+                    setSelectedPlan(p);
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // --- Section 2: Invoice Preview ---
+  const renderPreviewSection = () => (
+    <Card variant="default">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-accent" />
+            <CardTitle>Invoice preview</CardTitle>
+          </div>
+          {previewPlan && (
+            <span className="text-xs font-semibold text-text-muted">
+              Previewing: {previewPlan.name}
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-2 sm:p-6">
+        <InvoicePreview data={previewData} />
+      </CardContent>
+    </Card>
+  );
+
+  // --- Section 3: Bill to details ---
+  const renderBillToSection = () => (
+    <Card variant="default">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-accent" />
+          <CardTitle>Bill to details</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-1 gap-3">
+          <Input
+            value={billingDraft.billingCompanyName}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingCompanyName: e.target.value }))}
+            placeholder="Company / billing name"
+          />
+          <Input
+            value={billingDraft.billingEmail}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingEmail: e.target.value }))}
+            placeholder="Billing email"
+          />
+          <Input
+            value={billingDraft.billingPhone}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingPhone: e.target.value }))}
+            placeholder="Phone number"
+          />
+          <Input
+            value={billingDraft.billingAddressLine1}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingAddressLine1: e.target.value }))}
+            placeholder="Address line 1"
+          />
+          <Input
+            value={billingDraft.billingAddressLine2}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingAddressLine2: e.target.value }))}
+            placeholder="Address line 2"
+          />
+          <Input
+            value={billingDraft.billingCityState}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingCityState: e.target.value }))}
+            placeholder="City, State"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              value={billingDraft.billingPostalCode}
+              onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingPostalCode: e.target.value }))}
+              placeholder="Postal code"
+            />
+            <Input
+              value={billingDraft.billingCountry}
+              onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingCountry: e.target.value }))}
+              placeholder="Country"
+            />
+          </div>
+          <Input
+            value={billingDraft.billingGstin}
+            onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingGstin: e.target.value }))}
+            placeholder="GSTIN"
+          />
+        </div>
+        <Button
+          variant="secondary"
+          fullWidth
+          loading={savingBillingProfile}
+          onClick={handleSaveBillingProfile}
+          leftIcon={<ShieldCheck className="w-4 h-4" />}
+        >
+          Save billing details
+        </Button>
+        <p className="text-[11px] text-text-muted">
+          These details are stored in the backend and reused for invoice PDFs and email receipts.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
+  // --- Section 4: Checkout Card ---
+  const renderCheckoutSection = () => (
+    <Card variant="default">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Tag className="w-4 h-4 text-accent" />
+          <CardTitle>Checkout</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-text-secondary">Plan</label>
+          <div className="rounded-2xl border border-border bg-surface-raised p-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-text-primary">{selectedPlan?.name || 'Select a plan'}</p>
+              <p className="text-xs text-text-muted">
+                {selectedPlan ? `${formatINR(selectedPlan.priceCents)} ${selectedPlan.billingInterval === 'YEAR' ? '/ year' : '/ month'}` : 'Pick a paid plan to get started'}
+              </p>
+            </div>
+            {!selectedPlan && (
+              <Button size="sm" variant="secondary" onClick={() => setMobileTab('plans')}>
+                View plans
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-text-secondary">Coupon</label>
+          <div className="flex gap-2">
+            <Input
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              placeholder="LAUNCH20"
+            />
+            <Button variant="secondary" loading={couponLoading} onClick={handleApplyCoupon}>
+              Apply
+            </Button>
+          </div>
+          {couponError && <p className="text-xs text-danger">{couponError}</p>}
+          {appliedCoupon && (
+            <div className="text-xs text-success flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {appliedCoupon.couponCode} applied
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setPaymentMode('SUBSCRIPTION_INITIAL')}
+            className={`rounded-2xl border p-3 text-left transition-all ${paymentMode === 'SUBSCRIPTION_INITIAL' ? 'border-accent bg-accent-subtle/40' : 'border-border bg-surface'}`}
+          >
+            <p className="text-xs font-semibold">Auto-pay</p>
+            <p className="text-[10px] text-text-muted">Renews at full price</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMode('ONE_TIME')}
+            className={`rounded-2xl border p-3 text-left transition-all ${paymentMode === 'ONE_TIME' ? 'border-accent bg-accent-subtle/40' : 'border-border bg-surface'}`}
+          >
+            <p className="text-xs font-semibold">One-time</p>
+            <p className="text-[10px] text-text-muted">No auto-renew</p>
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span>Plan total</span>
+            <span className="font-semibold">{selectedPlan ? formatINR(selectedPlan.priceCents) : formatINR(0)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span>Discount</span>
+            <span className="font-semibold text-success">-{formatINR(appliedCoupon?.discountCents || 0)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span>Tax</span>
+            <span className="font-semibold">
+              {selectedPlan
+                ? formatINR(Math.round(((selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) * selectedPlan.gstPercent) / 100))
+                : formatINR(0)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm pt-2 border-t border-border font-bold">
+            <span>Amount due</span>
+            <span className="text-accent">
+              {selectedPlan
+                ? formatINR(
+                    (selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) +
+                      Math.round(((selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) * selectedPlan.gstPercent) / 100)
+                  )
+                : formatINR(0)}
+            </span>
+          </div>
+        </div>
+
+        <Button fullWidth loading={isProcessing} onClick={handleCheckout} leftIcon={<ArrowRight className="w-4 h-4" />}>
+          Proceed to payment
+        </Button>
+
+        <p className="text-[11px] text-text-muted">
+          Payments are processed by Razorpay. We send invoice emails after payment and renewal events.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
+  // --- Section 5: Invoices & History ---
+  const renderInvoicesHistorySection = () => (
+    <div className="space-y-6">
+      <Card variant="default">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-accent" />
+            <CardTitle>Invoices</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {invoices.length === 0 ? (
+            <div className="text-sm text-text-muted py-2">No invoices yet.</div>
+          ) : (
+            invoices.map((invoice) => (
+              <div
+                key={invoice.id}
+                className={`w-full rounded-2xl border p-3 text-left transition-colors ${selectedInvoice?.id === invoice.id ? 'border-accent bg-accent-subtle/30' : 'border-border bg-surface hover:border-border-strong'}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-text-primary">{invoice.invoiceNumber}</p>
+                    <p className="text-xs text-text-muted">{invoice.subscription?.plan?.name || 'Plan purchase'}</p>
+                  </div>
+                  <Badge variant={invoice.status === 'PAID' ? 'success' : 'warning'} size="sm" dot>
+                    {invoice.status}
+                  </Badge>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs text-text-muted">
+                  <span>{new Date(invoice.issuedAt).toLocaleDateString()}</span>
+                  <span>{formatINR(invoice.totalCents)}</span>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await openInvoicePdf(invoice.pdfUrl);
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.error?.message || 'Failed to open invoice PDF');
+                      }
+                    }}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Download className="w-4 h-4" />}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await downloadInvoicePdf(invoice.pdfUrl, invoice.invoiceNumber);
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.error?.message || 'Failed to download invoice PDF');
+                      }
+                    }}
+                  >
+                    Download
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card variant="default">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-accent" />
+            <CardTitle>Transactions</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {transactions.length === 0 ? (
+            <div className="text-sm text-text-muted py-2">No transactions yet.</div>
+          ) : (
+            transactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-text-primary">
+                      {transaction.plan?.name || 'Plan payment'}
+                    </p>
+                    <p className="text-xs text-text-muted">{transaction.providerPaymentId}</p>
+                  </div>
+                  <Badge variant={transaction.status === 'CAPTURED' ? 'success' : 'warning'} size="sm" dot>
+                    {transaction.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-text-muted">
+                  <span>{new Date(transaction.createdAt).toLocaleDateString()}</span>
+                  <span>{formatINR(transaction.netAmountCents)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card variant="default">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Wand2 className="w-4 h-4 text-accent" />
+            <CardTitle>Custom plan requests</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {customPlanRequests.length === 0 ? (
+            <div>
+              <p className="text-sm text-text-muted">No custom plan requests yet.</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                onClick={openCustomPlan}
+                leftIcon={<Wand2 className="w-4 h-4" />}
+              >
+                Build a custom plan
+              </Button>
+            </div>
+          ) : (
+            customPlanRequests.map((req) => (
+              <div key={req.id} className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-text-primary">Request #{req.id.slice(-6).toUpperCase()}</p>
+                    <p className="text-xs text-text-muted">{new Date(req.createdAt).toLocaleDateString('en-IN')}</p>
+                  </div>
+                  <Badge variant={statusVariant(req.status)} size="sm" dot>
+                    {statusLabel(req.status)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-text-muted">
+                  <span>{changeSummary(req)}</span>
+                  {req.quotedPriceCents != null && <span className="font-semibold text-text-primary">{formatINR(req.quotedPriceCents)}</span>}
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card variant="default">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-accent" />
+            <CardTitle>Supplier details</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-text-secondary">
+          <p className="font-semibold text-text-primary">{company.name}</p>
+          {company.addressLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          {company.placeOfSupply && <p>Place of supply: {company.placeOfSupply}</p>}
+          {company.email && (
+            <p className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              {company.email}
+            </p>
+          )}
+          <div className="pt-2 flex items-center gap-2 text-xs text-text-muted">
+            <Clock3 className="w-4 h-4" />
+            Billing updates are stored in the backend and reflected across dev and production.
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // --- Section: Billing Support (Administrative / Help) ---
+  const renderSupportSection = () => (
+    <Card variant="default">
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-accent" />
+          <CardTitle>Billing & Subscription Support</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-text-muted leading-relaxed">
+          Your subscription is managed through your FlowSpace account. If you need assistance with your subscription, billing history, or invoice inquiries, our team is here to help.
+        </p>
+        <a
+          href="mailto:support@flowspace.app?subject=Billing%20Support%20Inquiry"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-raised hover:bg-surface-hover border border-border text-text-primary text-xs font-semibold transition-colors"
+        >
+          <Mail className="w-3.5 h-3.5 text-accent" />
+          <span>Contact Billing Support</span>
+        </a>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="max-w-8xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <div className="relative overflow-hidden rounded-[28px] border border-border bg-gradient-to-br from-surface via-surface to-accent-subtle/20 p-6 sm:p-8">
+    <div className="max-w-8xl mx-auto px-3.5 pt-3.5 pb-6 sm:px-6 sm:py-6 space-y-4 sm:space-y-6">
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] border border-border bg-gradient-to-br from-surface via-surface to-accent-subtle/20 p-4 sm:p-8">
         <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.16),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_32%)]" />
-        <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle border border-accent-border text-accent text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" />
+        <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 sm:gap-6">
+          <div className="space-y-2 sm:space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-accent-subtle border border-accent-border text-accent text-[11px] sm:text-xs font-bold">
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               Billing Center
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
               All billing details in one place
             </h1>
-            <p className="text-sm sm:text-base text-text-muted max-w-xl">
-              Review plans, apply a coupon, choose auto-pay or one-time payment, and download proper invoices without
-              hunting through modals.
+            <p className="text-xs sm:text-base text-text-muted max-w-xl">
+              Review plans, view your subscription status, and download invoices.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <Badge variant={effectivePlan.planSlug === 'free' ? 'accent' : 'success'} size="sm" dot>
               {effectivePlan.planName}
             </Badge>
@@ -479,435 +978,55 @@ export function BillingPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
+      {/* Mobile Section Tabs (< lg) */}
+      <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-2xl bg-surface-raised border border-border overflow-x-auto no-scrollbar">
+        {[
+          { id: 'plans', label: 'My Plan & Plans', icon: CreditCard },
+          { id: 'invoices', label: `Invoices (${invoices.length})`, icon: FileText },
+        ].map(({ id, label, icon: TabIcon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMobileTab(id as any)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              mobileTab === id
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <TabIcon className="w-3.5 h-3.5" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile Single-Section Content (< lg) */}
+      <div className="lg:hidden space-y-4">
+        {mobileTab === 'plans' && (
+          <div className="space-y-4">
+            {renderPlansSection()}
+            {renderSupportSection()}
+          </div>
+        )}
+        {mobileTab === 'invoices' && (
+          <div className="space-y-4">
+            {renderInvoicesHistorySection()}
+            {renderSupportSection()}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop 2-Column Grid (lg+) */}
+      <div className="hidden lg:grid grid-cols-[1.2fr_0.8fr] gap-6">
         <div className="space-y-6">
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-accent" />
-                <CardTitle>Choose a plan</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="inline-flex items-center rounded-2xl bg-surface-raised border border-border p-1">
-                {(['MONTH', 'YEAR', 'CUSTOM'] as const).map((cycle) => (
-                  <button
-                    key={cycle}
-                    type="button"
-                    onClick={() => {
-                      setBillingCycle(cycle);
-                      if (cycle === 'CUSTOM') setSelectedPlan(null);
-                    }}
-                    className={`px-5 py-2 rounded-xl text-sm font-bold transition-colors ${
-                      billingCycle === cycle
-                        ? 'bg-accent text-text-onaccent shadow-sm'
-                        : 'text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    {cycle === 'MONTH' ? 'Monthly' : cycle === 'YEAR' ? 'Annual' : 'Custom'}
-                  </button>
-                ))}
-              </div>
-
-              {billingCycle === 'CUSTOM' ? (
-                <div className="w-full max-w-md mx-auto flex flex-col rounded-2xl bg-surface border border-dashed border-accent/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="h-1.5 w-full" style={{ background: 'var(--gradient-accent)' }} />
-                  <div className="flex flex-col items-center text-center p-8">
-                    <span className="inline-flex items-center justify-center w-12 h-12 rounded-full shrink-0 bg-accent-subtle text-accent border border-accent-border">
-                      <Wand2 className="w-5 h-5" />
-                    </span>
-                    <h3 className="text-lg font-extrabold text-text-primary mt-4 tracking-tight">Custom</h3>
-                    <p className="text-[13px] text-text-muted mt-1.5 leading-snug">
-                      Build a plan around exactly what you need.
-                    </p>
-                    <div className="h-px bg-border my-5 w-full" />
-                    <ul className="space-y-3 flex-1 w-full">
-                      {['Higher limits', 'Additional features', 'Guidance from our team'].map((label) => (
-                        <li key={label} className="flex items-center justify-center gap-2.5 text-[13.5px] text-text-primary font-medium">
-                          <Sparkles className="w-4 h-4 shrink-0 text-accent" strokeWidth={2.5} />
-                          {label}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button fullWidth className="mt-6 h-12" onClick={openCustomPlan} rightIcon={<ArrowRight className="w-4 h-4" />}>
-                      Build your custom plan
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {paidPlans.map((plan) => {
-                    const isCurrent = effectivePlan.planSlug !== 'free' && baseTierOf(effectivePlan.planSlug) === baseTierOf(plan.slug);
-                    return (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        isCurrent={isCurrent}
-                        isPopular={baseTierOf(plan.slug) === 'premium'}
-                        onSelect={(p) => setSelectedPlan(p)}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-accent" />
-                <CardTitle>Invoice preview</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <InvoicePreview data={previewData} />
-            </CardContent>
-          </Card>
+          {renderPlansSection()}
+          {renderPreviewSection()}
         </div>
 
         <div className="space-y-6">
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-accent" />
-                <CardTitle>Bill to details</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 gap-3">
-                <Input
-                  value={billingDraft.billingCompanyName}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingCompanyName: e.target.value }))}
-                  placeholder="Company / billing name"
-                />
-                <Input
-                  value={billingDraft.billingEmail}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingEmail: e.target.value }))}
-                  placeholder="Billing email"
-                />
-                <Input
-                  value={billingDraft.billingPhone}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingPhone: e.target.value }))}
-                  placeholder="Phone number"
-                />
-                <Input
-                  value={billingDraft.billingAddressLine1}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingAddressLine1: e.target.value }))}
-                  placeholder="Address line 1"
-                />
-                <Input
-                  value={billingDraft.billingAddressLine2}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingAddressLine2: e.target.value }))}
-                  placeholder="Address line 2"
-                />
-                <Input
-                  value={billingDraft.billingCityState}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingCityState: e.target.value }))}
-                  placeholder="City, State"
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Input
-                    value={billingDraft.billingPostalCode}
-                    onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingPostalCode: e.target.value }))}
-                    placeholder="Postal code"
-                  />
-                  <Input
-                    value={billingDraft.billingCountry}
-                    onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingCountry: e.target.value }))}
-                    placeholder="Country"
-                  />
-                </div>
-                <Input
-                  value={billingDraft.billingGstin}
-                  onChange={(e) => setBillingDraft((prev) => ({ ...prev, billingGstin: e.target.value }))}
-                  placeholder="GSTIN"
-                />
-              </div>
-              <Button
-                variant="secondary"
-                fullWidth
-                loading={savingBillingProfile}
-                onClick={handleSaveBillingProfile}
-                leftIcon={<ShieldCheck className="w-4 h-4" />}
-              >
-                Save billing details
-              </Button>
-              <p className="text-[11px] text-text-muted">
-                These details are stored in the backend and reused for invoice PDFs and email receipts.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-accent" />
-                <CardTitle>Checkout</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-text-secondary">Plan</label>
-                <div className="rounded-2xl border border-border bg-surface-raised p-3">
-                  <p className="font-semibold text-text-primary">{selectedPlan?.name || 'Select a plan'}</p>
-                  <p className="text-xs text-text-muted">
-                    {selectedPlan ? `${formatINR(selectedPlan.priceCents)} ${selectedPlan.billingInterval === 'YEAR' ? '/ year' : '/ month'}` : 'Pick a paid plan from the left'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-text-secondary">Coupon</label>
-                <div className="flex gap-2">
-                  <Input
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="LAUNCH20"
-                  />
-                  <Button variant="secondary" loading={couponLoading} onClick={handleApplyCoupon}>
-                    Apply
-                  </Button>
-                </div>
-                {couponError && <p className="text-xs text-danger">{couponError}</p>}
-                {appliedCoupon && (
-                  <div className="text-xs text-success flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {appliedCoupon.couponCode} applied
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMode('SUBSCRIPTION_INITIAL')}
-                  className={`rounded-2xl border p-3 text-left ${paymentMode === 'SUBSCRIPTION_INITIAL' ? 'border-accent bg-accent-subtle/40' : 'border-border bg-surface'}`}
-                >
-                  <p className="text-xs font-semibold">Auto-pay</p>
-                  <p className="text-[10px] text-text-muted">Renews at full price</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMode('ONE_TIME')}
-                  className={`rounded-2xl border p-3 text-left ${paymentMode === 'ONE_TIME' ? 'border-accent bg-accent-subtle/40' : 'border-border bg-surface'}`}
-                >
-                  <p className="text-xs font-semibold">One-time</p>
-                  <p className="text-[10px] text-text-muted">No auto-renew</p>
-                </button>
-              </div>
-
-              <div className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Plan total</span>
-                  <span className="font-semibold">{selectedPlan ? formatINR(selectedPlan.priceCents) : formatINR(0)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Discount</span>
-                  <span className="font-semibold text-success">-{formatINR(appliedCoupon?.discountCents || 0)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Tax</span>
-                  <span className="font-semibold">
-                    {selectedPlan
-                      ? formatINR(Math.round(((selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) * selectedPlan.gstPercent) / 100))
-                      : formatINR(0)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-border font-bold">
-                  <span>Amount due</span>
-                  <span className="text-accent">
-                    {selectedPlan
-                      ? formatINR(
-                          (selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) +
-                            Math.round(((selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) * selectedPlan.gstPercent) / 100)
-                        )
-                      : formatINR(0)}
-                  </span>
-                </div>
-              </div>
-
-              <Button fullWidth loading={isProcessing} onClick={handleCheckout} leftIcon={<ArrowRight className="w-4 h-4" />}>
-                Proceed to payment
-              </Button>
-
-              <p className="text-[11px] text-text-muted">
-                Payments are processed by Razorpay. We send invoice emails after payment and renewal events.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-accent" />
-                <CardTitle>Invoices</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {invoices.length === 0 ? (
-                <div className="text-sm text-text-muted">No invoices yet.</div>
-              ) : (
-                invoices.map((invoice) => (
-                  <div
-                    key={invoice.id}
-                    className={`w-full rounded-2xl border p-3 text-left transition-colors ${selectedInvoice?.id === invoice.id ? 'border-accent bg-accent-subtle/30' : 'border-border bg-surface hover:border-border-strong'}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-text-primary">{invoice.invoiceNumber}</p>
-                        <p className="text-xs text-text-muted">{invoice.subscription?.plan?.name || 'Plan purchase'}</p>
-                      </div>
-                      <Badge variant={invoice.status === 'PAID' ? 'success' : 'warning'} size="sm" dot>
-                        {invoice.status}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-xs text-text-muted">
-                      <span>{new Date(invoice.issuedAt).toLocaleDateString()}</span>
-                      <span>{formatINR(invoice.totalCents)}</span>
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            await openInvoicePdf(invoice.pdfUrl);
-                          } catch (err: any) {
-                            toast.error(err?.response?.data?.error?.message || 'Failed to open invoice PDF');
-                          }
-                        }}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        leftIcon={<Download className="w-4 h-4" />}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            await downloadInvoicePdf(invoice.pdfUrl, invoice.invoiceNumber);
-                          } catch (err: any) {
-                            toast.error(err?.response?.data?.error?.message || 'Failed to download invoice PDF');
-                          }
-                        }}
-                      >
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-accent" />
-                <CardTitle>Transactions</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {transactions.length === 0 ? (
-                <div className="text-sm text-text-muted">No transactions yet.</div>
-              ) : (
-                transactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-text-primary">
-                          {transaction.plan?.name || 'Plan payment'}
-                        </p>
-                        <p className="text-xs text-text-muted">{transaction.providerPaymentId}</p>
-                      </div>
-                      <Badge variant={transaction.status === 'CAPTURED' ? 'success' : 'warning'} size="sm" dot>
-                        {transaction.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-text-muted">
-                      <span>{new Date(transaction.createdAt).toLocaleDateString()}</span>
-                      <span>{formatINR(transaction.netAmountCents)}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-accent" />
-                <CardTitle>Custom plan requests</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {customPlanRequests.length === 0 ? (
-                <div>
-                  <p className="text-sm text-text-muted">No custom plan requests yet.</p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-3"
-                    onClick={openCustomPlan}
-                    leftIcon={<Wand2 className="w-4 h-4" />}
-                  >
-                    Build a custom plan
-                  </Button>
-                </div>
-              ) : (
-                customPlanRequests.map((req) => (
-                  <div key={req.id} className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-text-primary">Request #{req.id.slice(-6).toUpperCase()}</p>
-                        <p className="text-xs text-text-muted">{new Date(req.createdAt).toLocaleDateString('en-IN')}</p>
-                      </div>
-                      <Badge variant={statusVariant(req.status)} size="sm" dot>
-                        {statusLabel(req.status)}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-text-muted">
-                      <span>{changeSummary(req)}</span>
-                      {req.quotedPriceCents != null && <span className="font-semibold text-text-primary">{formatINR(req.quotedPriceCents)}</span>}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card variant="default">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-accent" />
-                <CardTitle>Supplier details</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-text-secondary">
-              <p className="font-semibold text-text-primary">{company.name}</p>
-              {company.addressLines.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-              {company.placeOfSupply && <p>Place of supply: {company.placeOfSupply}</p>}
-              {company.email && (
-                <p className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  {company.email}
-                </p>
-              )}
-              <div className="pt-2 flex items-center gap-2 text-xs text-text-muted">
-                <Clock3 className="w-4 h-4" />
-                Billing updates are stored in the backend and reflected across dev and production.
-              </div>
-            </CardContent>
-          </Card>
+          {renderBillToSection()}
+          {renderCheckoutSection()}
+          {renderInvoicesHistorySection()}
 
           <div className="flex justify-end">
             <Link to="/settings?tab=billing">
@@ -916,6 +1035,85 @@ export function BillingPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Notice: Open in Desktop View Modal */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {isMobile && desktopModalOpen && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                {/* Backdrop */}
+                <motion.div
+                  className="fixed inset-0 bg-black/60 backdrop-blur-md"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setDesktopModalOpen(false)}
+                />
+
+                {/* Modal Content */}
+                <motion.div
+                  className="relative w-full max-w-sm rounded-[28px] bg-white dark:bg-[#12141f] border border-slate-200/80 dark:border-slate-800 p-6 shadow-2xl z-[111] overflow-hidden text-center"
+                  initial={{ scale: 0.9, opacity: 0, y: 16 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.92, opacity: 0, y: 10 }}
+                  transition={{ type: 'spring', damping: 28, stiffness: 420 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setDesktopModalOpen(false)}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+                    aria-label="Close"
+                  >
+                    <X size={15} strokeWidth={2.5} />
+                  </button>
+
+                  {/* Graphic */}
+                  <div className="flex flex-col items-center pt-2">
+                    <div className="relative mb-4">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 dark:from-indigo-500/30 dark:to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
+                        <Monitor size={30} strokeWidth={2} />
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-accent text-white flex items-center justify-center shadow-md">
+                        <Sparkles size={12} strokeWidth={2.5} />
+                      </span>
+                    </div>
+
+                    <h3 className="text-[19px] font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-2">
+                      Open in Desktop View
+                    </h3>
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed mb-6 px-1">
+                      For full billing management, checkout, and invoice customization, please open this app in desktop view or on your computer.
+                    </p>
+
+                    <div className="w-full flex flex-col gap-2.5">
+                      <button
+                        onClick={() => setDesktopModalOpen(false)}
+                        className="w-full h-11 rounded-xl bg-gradient-to-r from-accent to-accent-hover text-white text-[13.5px] font-bold flex items-center justify-center gap-2 shadow-md shadow-accent/25 transition-all hover:brightness-105 active:scale-[0.98]"
+                      >
+                        <span>Continue on Mobile</span>
+                        <ArrowRight size={15} strokeWidth={2.5} />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setDesktopModalOpen(false);
+                          navigate('/dashboard');
+                        }}
+                        className="w-full h-11 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] border border-slate-200/60 dark:border-slate-700/60"
+                      >
+                        Back to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
     </div>
   );
 }

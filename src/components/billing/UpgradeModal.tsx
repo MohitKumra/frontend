@@ -9,6 +9,7 @@ import { X, Sparkles, ShieldCheck, Wand2 } from 'lucide-react';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { useCustomPlanModalStore } from '../../store/customPlanModalStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { PlanCard } from './PlanCard';
 
 interface UpgradeModalProps {
@@ -60,8 +61,76 @@ export function UpgradeModal({
   const navigate = useNavigate();
   const choosePlanForCheckout = useUpgradeModalStore((s) => s.choosePlanForCheckout);
   const openCustomPlan = useCustomPlanModalStore((s) => s.openCustomPlan);
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   if (!isOpen) return null;
+
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+        <div className="relative w-full max-w-sm bg-white dark:bg-[#1a2335] border border-slate-200 dark:border-[#2d3548] rounded-3xl p-6 shadow-2xl space-y-4 text-center">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 mx-auto flex items-center justify-center">
+            <Sparkles className="w-6 h-6" />
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              {highlightFeature ? `${highlightFeature} is a Pro Feature` : 'Pro Feature'}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              This capability is included with upgraded FlowSpace plans.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 text-left border border-slate-100 dark:border-slate-700/60 space-y-2">
+            <p className="text-[11px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+              Pro includes
+            </p>
+            <ul className="space-y-1.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+              <li className="flex items-center gap-2">
+                <span className="text-indigo-500 font-bold">✓</span> Unlimited tasks & projects
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-indigo-500 font-bold">✓</span> Advanced AI Coach & insights
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-indigo-500 font-bold">✓</span> Habit streaks & analytics
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-indigo-500 font-bold">✓</span> 5GB+ cloud storage
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-1 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                navigate('/plans');
+              }}
+              className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors shadow-sm"
+            >
+              View Plan Details
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full h-9 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSelectPlan = (plan: PlanDTO) => {
     choosePlanForCheckout(plan);

@@ -19,6 +19,8 @@ import {
   Flame,
   FileText,
   ArrowUpRight,
+  LayoutDashboard,
+  CalendarDays,
 } from 'lucide-react';
 import { LoadingScreen } from '../components/ui/Spinner';
 import apiClient from '../lib/apiClient';
@@ -210,6 +212,10 @@ export function DashboardPage() {
   const focusDiff = todayFocusMinutes - yesterdayFocusMinutes;
   const focusDiffStr = focusDiff >= 0 ? `+${focusDiff}m` : `${focusDiff}m`;
   const focusDiffColor = focusDiff >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
+  const focusLabel =
+    todayFocusMinutes >= 60
+      ? `${Math.floor(todayFocusMinutes / 60)}h${todayFocusMinutes % 60 > 0 ? ` ${todayFocusMinutes % 60}m` : ''}`
+      : `${todayFocusMinutes}m`;
 
   // Compute real "+X% this week" for productivity score
   const thisWeekScore =
@@ -262,8 +268,8 @@ export function DashboardPage() {
         }}
       />
 
-      {/* ── Dashboard Header — flat, no card wrapping ────────────────── */}
-      <motion.div variants={itemVariants}>
+      {/* ── Desktop Dashboard Header ────────────────── */}
+      <motion.div variants={itemVariants} className="hidden md:block">
         <DashboardHero
           displayName={displayName}
           view={view}
@@ -277,6 +283,43 @@ export function DashboardPage() {
           currentHabitStreak={currentHabitStreak}
           activeProjects={projectStats.activeProjectsCount}
         />
+      </motion.div>
+
+      {/* ── Dedicated Mobile Hero Header & Filter Tabs ── */}
+      <motion.div variants={itemVariants} className="md:hidden flex flex-col gap-3">
+        <MobileHeroCard
+          productivityScore={dashboard.productivityScore}
+          scorePctChange={scorePctChange}
+          weeklyProgress={weeklyProgress}
+        />
+
+        {/* Filter Tabs Segmented Switcher */}
+        <div className="p-1 rounded-2xl bg-surface-raised border border-border flex items-center gap-1 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setView('dashboard')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-black transition-all ${
+              view === 'dashboard'
+                ? 'bg-surface text-accent shadow-sm border border-border/50'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <LayoutDashboard size={15} />
+            <span>Dashboard</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('analytics')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-black transition-all ${
+              view === 'analytics'
+                ? 'bg-surface text-accent shadow-sm border border-border/50'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <TrendingUp size={15} />
+            <span>Analytics</span>
+          </button>
+        </div>
       </motion.div>
 
       {/* Animated view switcher — crossfade between dashboard widgets and analytics */}
@@ -1253,6 +1296,165 @@ function DashboardHero({
               </span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile Hero Card ────────────────────────────────────────────────────────
+function MobileHeroCard({
+  productivityScore,
+  scorePctChange,
+  weeklyProgress,
+}: {
+  productivityScore: number;
+  scorePctChange: number;
+  weeklyProgress: Array<{ week?: string; date?: string; tasksCompleted: number; habitsCompleted: number; focusMinutes: number; score?: number }>;
+}) {
+  const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const todayIdx = (new Date().getDay() + 6) % 7; // 0=Mon..6=Sun
+
+  const weekData = useMemo(() => {
+    if (weeklyProgress && weeklyProgress.length >= 7) {
+      return weeklyProgress.slice(-7).map((d) => Math.min(100, Math.max(15, (d.score ?? 0) || (d.tasksCompleted * 18 + d.habitsCompleted * 12 + Math.min(d.focusMinutes, 30)))));
+    }
+    return [30, 48, 70, 45, 55, 80, 95];
+  }, [weeklyProgress]);
+
+  const points = weekData.map((val, i) => {
+    const x = 12 + i * 29.3;
+    const y = 65 - (val / 100) * 50;
+    return { x, y };
+  });
+
+  const pathD = useMemo(() => {
+    if (points.length === 0) return '';
+    let d = `M ${points[0].x},${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i];
+      const p1 = points[i + 1];
+      const cx = (p0.x + p1.x) / 2;
+      d += ` C ${cx},${p0.y} ${cx},${p1.y} ${p1.x},${p1.y}`;
+    }
+    return d;
+  }, [points]);
+
+  const fillD = useMemo(() => {
+    if (!pathD || points.length === 0) return '';
+    return `${pathD} L ${points[points.length - 1].x},75 L ${points[0].x},75 Z`;
+  }, [pathD, points]);
+
+  return (
+    <div
+      className="relative rounded-[26px] border p-5 overflow-hidden transition-all shadow-sm"
+      style={{
+        background: 'var(--color-surface)',
+        borderColor: 'var(--color-border)',
+      }}
+    >
+      {/* Top row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-accent">
+          <Sparkles className="w-3.5 h-3.5 text-accent" />
+          <span>Command Center</span>
+        </div>
+        <div className="flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface-raised text-xs font-bold text-text-primary">
+          <span>This Week</span>
+          <ChevronRight className="w-3.5 h-3.5 rotate-90 text-text-muted" />
+        </div>
+      </div>
+
+      {/* Titles */}
+      <div className="mt-2.5">
+        <h2 className="text-xl font-extrabold text-text-primary tracking-tight">Productivity snapshot</h2>
+        <p className="text-xs text-text-muted mt-0.5">Track. Focus. Achieve.</p>
+      </div>
+
+      {/* Main 2-Column Content */}
+      <div className="mt-4 grid grid-cols-[1fr_1.1fr] gap-3 items-center">
+        {/* Left: Gauge + Score text */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative w-18 h-18 shrink-0 flex items-center justify-center">
+            <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
+              <defs>
+                <linearGradient id="scoreGaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#6C63FF" />
+                  <stop offset="100%" stopColor="#A78BFA" />
+                </linearGradient>
+              </defs>
+              <circle cx="36" cy="36" r="30" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-slate-100 dark:text-slate-800" />
+              <circle
+                cx="36"
+                cy="36"
+                r="30"
+                fill="none"
+                stroke="url(#scoreGaugeGrad)"
+                strokeWidth="6.5"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 30}`}
+                strokeDashoffset={`${2 * Math.PI * 30 * (1 - Math.min(100, Math.max(5, productivityScore)) / 100)}`}
+                style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span className="text-lg font-black text-text-primary leading-none">{productivityScore}</span>
+              <span className="text-[9px] font-bold text-text-muted uppercase leading-tight mt-0.5">score</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-black text-accent">
+              {scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`}
+              <span className="text-[10px] font-normal text-text-muted ml-1">this week</span>
+            </span>
+            <p className="text-[10px] text-text-muted mt-0.5 leading-snug line-clamp-2">
+              Small steps today, big wins tomorrow.
+            </p>
+          </div>
+        </div>
+
+        {/* Right: Sparkline Chart */}
+        <div className="flex flex-col justify-end">
+          <div className="h-16 w-full relative">
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 200 80" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="mobSparkGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6C63FF" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#6C63FF" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path d={fillD} fill="url(#mobSparkGrad)" />
+              <path d={pathD} fill="none" stroke="#6C63FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              {points.map((pt, i) => (
+                <circle
+                  key={i}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={i === todayIdx ? 3.5 : 2}
+                  fill={i === todayIdx ? '#6C63FF' : '#8B83FF'}
+                  stroke="white"
+                  strokeWidth={i === todayIdx ? 1.5 : 1}
+                />
+              ))}
+            </svg>
+          </div>
+          {/* Day initials */}
+          <div className="flex items-center justify-between px-1 mt-1">
+            {dayNames.map((d, idx) => {
+              const isToday = idx === todayIdx;
+              return (
+                <span
+                  key={idx}
+                  className={`w-4.5 h-4.5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isToday ? 'bg-accent text-white shadow-sm' : 'text-text-muted'
+                  }`}
+                >
+                  {d}
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

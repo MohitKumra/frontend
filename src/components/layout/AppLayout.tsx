@@ -20,6 +20,10 @@ import {
   CreditCard,
   Database,
   Lock,
+  Flame,
+  LayoutGrid,
+  TrendingUp,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -31,6 +35,7 @@ import { NotificationCenter } from '../../features/notifications/components/Noti
 import { SearchModal } from '../../features/search/components/SearchModal';
 import { Avatar } from '../ui/Avatar';
 import { DraggableModal } from '../ui/DraggableModal';
+import { MobileIslandNav } from './MobileIslandNav';
 import { Badge } from '../ui/Badge';
 import { PageTransition } from './PageTransition';
 import { AppSidebar } from './AppSidebar';
@@ -43,10 +48,10 @@ import type { AchievementWithStatusDTO } from '../../types';
 import { createPortal } from 'react-dom';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', onboarding: 'dashboard' },
+  { to: '/', icon: LayoutGrid, label: 'Dashboard', onboarding: 'dashboard' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks', badgeKey: 'tasks', onboarding: 'tasks' },
   { to: '/calendar', icon: CalendarDays, label: 'Calendar', onboarding: 'calendar' },
-  { to: '/habits', icon: Target, label: 'Habits', badgeKey: 'habits', onboarding: 'habits' },
+  { to: '/habits', icon: Flame, label: 'Habits', badgeKey: 'habits', onboarding: 'habits' },
   { to: '/notes', icon: FileText, label: 'Notes & Journals', onboarding: 'notes' },
   { to: '/focus', icon: Timer, label: 'Focus', onboarding: 'focus' },
   { to: '/projects', icon: FolderKanban, label: 'Projects', onboarding: 'projects' },
@@ -61,7 +66,7 @@ const navItems = [
  * Memoized outlet. The shell (AppLayout) re-subscribes to background data
  * (dashboard today, achievements, streak status, plan) and UI state. Without
  * memoization, every one of those updates re-renders the ACTIVE page too. This
- * wrapper renders the current route independently — navigation still updates it
+ * wrapper renders the current route independently â€” navigation still updates it
  * (via route context), but shell-only re-renders no longer cascade into pages.
  */
 const PageOutlet = memo(function PageOutlet() {
@@ -143,7 +148,7 @@ export function AppLayout() {
   // moment after mount spiked the API + caused a big render wave on low-end
   // devices before the UI had settled. Data for the visited route is fetched by
   // the page itself, and the nav links already warm the *next* destination on
-  // hover / focus / pointer-down — so the right data is cached right before the
+  // hover / focus / pointer-down â€” so the right data is cached right before the
   // user clicks, without loading everything upfront.
 
   useEffect(() => {
@@ -259,25 +264,25 @@ export function AppLayout() {
     }
   }, [latestBrokenAt, streakPopupDismissedAt]);
 
-  // ── Global keyboard shortcuts ──────────────────────────────────────────────
+  // â”€â”€ Global keyboard shortcuts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   //
   // The AppLayout is always mounted, so we register shortcuts here that should
   // work *across* every page.  Task-level shortcuts (Q, E, Space, /, F) are
   // registered inside TasksPage so they have access to task-list state.
   //
   // Global keys:
-  //   ?               → Toggle shortcuts help modal
-  //   Escape           → Close modals (shortcuts, search, mobile-more)
-  //   G then D         → Navigate to Dashboard
-  //   G then T         → Navigate to Tasks
-  //   G then C         → Navigate to Calendar
-  //   G then H         → Navigate to Habits
-  //   G then N         → Navigate to Notes
-  //   G then F         → Navigate to Focus
-  //   G then P         → Navigate to Projects
-  //   G then O         → Navigate to Goals
-  //   G then A         → Navigate to AI Coach  
-  //   G then S         → Navigate to Settings
+  //   ?               â†’ Toggle shortcuts help modal
+  //   Escape           â†’ Close modals (shortcuts, search, mobile-more)
+  //   G then D         â†’ Navigate to Dashboard
+  //   G then T         â†’ Navigate to Tasks
+  //   G then C         â†’ Navigate to Calendar
+  //   G then H         â†’ Navigate to Habits
+  //   G then N         â†’ Navigate to Notes
+  //   G then F         â†’ Navigate to Focus
+  //   G then P         â†’ Navigate to Projects
+  //   G then O         â†’ Navigate to Goals
+  //   G then A         â†’ Navigate to AI Coach  
+  //   G then S         â†’ Navigate to Settings
   //
   useEffect(() => {
     let gPressed = false;
@@ -288,7 +293,7 @@ export function AppLayout() {
       const tag = target.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable) return;
 
-      // ? → toggle shortcuts modal
+      // ? â†’ toggle shortcuts modal
       if (e.key === '?' && !e.shiftKey === false) {
         // Shift+/ produces '?' key
         setShowShortcuts((prev) => !prev);
@@ -296,7 +301,7 @@ export function AppLayout() {
         return;
       }
 
-      // Escape → close open modals
+      // Escape â†’ close open modals
       if (e.key === 'Escape') {
         if (showShortcuts) {
           setShowShortcuts(false);
@@ -416,7 +421,7 @@ export function AppLayout() {
         }
       `}</style>
 
-      {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
+      {/* â”€â”€ Desktop Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AppSidebar
         headerPaddingClass={headerPaddingClass}
         navPaddingClass={navPaddingClass}
@@ -425,7 +430,7 @@ export function AppLayout() {
         onRequestLogout={() => setLogoutConfirmOpen(true)}
       />
 
-      {/* ── Main content area (unchanged) ──────────────────────────────── */}
+      {/* â”€â”€ Main content area (unchanged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         <header
           className={`flex items-center justify-between border-b shrink-0 gap-4 ${headerPaddingClass}`}
@@ -492,7 +497,7 @@ export function AppLayout() {
               </div>
               <div className="absolute right-3 flex items-center gap-1 text-[10px] text-text-muted font-bold">
                 <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>
-                  ⌘
+                  âŒ˜
                 </span>
                 <span className="px-1 py-0.5 rounded border" style={{ borderColor: 'var(--color-border)' }}>
                   K
@@ -520,280 +525,200 @@ export function AppLayout() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto pb-28 md:pb-0 relative min-w-0">
-          {/* Deliberately no AnimatePresence: exit animations can get
-              interrupted on mobile (rAF throttling during a fast tab switch),
-              leaving the content area blank until a refresh. A plain keyed
-              PageTransition unmounts the old page and mounts the new one
-              instantly — content can never get stuck or flicker. */}
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-0 relative min-w-0">
           <PageTransition key={location.pathname} className={contentPaddingClass}>
             <PageOutlet />
           </PageTransition>
         </div>
       </main>
 
-      {/* ── Mobile Bottom Navigation - Enhanced Design ─────────────────────────── */}
-      <nav
-        className="md:hidden fixed bottom-0 inset-x-0 border-t z-40 safe-area-pb overflow-visible"
-        style={{
-          background: 'var(--bottomnav-bg)',
-          borderColor: 'var(--bottomnav-border)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
+      {/* ── Mobile Dynamic Island Nav & Bottom Sheet Modal ── */}
+      <MobileIslandNav onOpenMore={() => setMobileMoreOpen(true)} />
+
+      <DraggableModal
+        isOpen={mobileMoreOpen}
+        onClose={() => setMobileMoreOpen(false)}
+        title="Quick Actions & Apps"
       >
-        <div className="px-2 pb-safe pt-1.5 flex items-end justify-around relative overflow-visible">
-          {/* Animated indicator line */}
-          <div
-            className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-300"
-            style={{ background: 'var(--color-accent)' }}
-          />
-
-          {/* Left 2 nav items */}
-          {mobileLeftItems.map(({ to, icon: Icon, label, onboarding }) => {
-            const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
-            const lockFeature = getLockFeature(to);
-            const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
-            const handleNavClick = (e: React.MouseEvent) => {
-              if (isLocked && lockFeature) {
-                e.preventDefault();
-                e.stopPropagation();
-                openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
-              }
-            };
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                onClick={handleNavClick}
-                {...mobileOnboardingAttr}
-                className={({ isActive }) =>
-                  [
-                    'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
-                    isActive ? 'text-accent' : 'text-text-muted',
-                  ].join(' ')
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div
-                      className={[
-                        'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
-                        isActive ? 'scale-110' : 'scale-100',
-                      ].join(' ')}
-                      style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
-                    >
-                      <Icon size={20} className="transition-all duration-200" />
-                      {isActive && (
-                        <div
-                          className="absolute inset-0 rounded-2xl opacity-30 blur-md"
-                          style={{ background: 'var(--color-accent)' }}
-                        />
-                      )}
-                      {isLocked && (
-                        <div
-                          className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white shadow-sm"
-                          style={{ background: 'var(--color-accent)' }}
-                        >
-                          <Lock size={8} />
-                        </div>
-                      )}
-                    </div>
-                    <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
-
-          {/* Center Plus / More button — floats above the bar */}
-          <div className="relative flex flex-col items-center flex-1 z-10" style={{ marginBottom: '-2px' }}>
-            <button
-              onClick={() => setMobileMoreOpen(true)}
-              aria-label="More options"
-              className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg active:scale-90 transition-transform duration-150 text-white"
-              style={{
-                background: 'linear-gradient(135deg, #6C63FF 0%, #8B83FF 100%)',
-                boxShadow: '0 4px 20px rgba(108,99,255,0.5), 0 2px 8px rgba(0,0,0,0.25)',
-                marginTop: '-22px',
-              }}
-            >
-              <Plus size={26} strokeWidth={2.5} />
-            </button>
-            <span className="text-[10px] font-bold text-text-muted mt-1 pb-2 leading-none">More</span>
+        <div className="flex flex-col gap-6 pt-1">
+          {/* ─── QUICK ACTIONS GRID ─── */}
+          <div>
+            <div className="flex items-center justify-between mb-3 px-0.5">
+              <span className="text-[11px] font-bold tracking-wider text-text-muted uppercase">
+                Quick Actions
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {[
+                {
+                  label: 'New Task',
+                  sub: 'Add to your list',
+                  icon: CheckSquare,
+                  to: '/tasks',
+                  gradient: 'from-violet-600 to-indigo-600',
+                  bgTint: 'bg-violet-500/5 dark:bg-violet-500/10 border-violet-500/20 hover:border-violet-500/40',
+                },
+                {
+                  label: 'Focus Session',
+                  sub: 'Start a timer',
+                  icon: Timer,
+                  to: '/focus',
+                  gradient: 'from-blue-600 to-cyan-600',
+                  bgTint: 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-500/20 hover:border-blue-500/40',
+                },
+                {
+                  label: 'Quick Note',
+                  sub: 'Capture an idea',
+                  icon: FileText,
+                  to: '/notes',
+                  gradient: 'from-emerald-600 to-teal-600',
+                  bgTint: 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40',
+                },
+                {
+                  label: 'New Habit',
+                  sub: 'Build a streak',
+                  icon: Flame,
+                  to: '/habits',
+                  gradient: 'from-amber-500 to-orange-600',
+                  bgTint: 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40',
+                },
+              ].map(({ label, sub, icon: Icon, to, gradient, bgTint }) => (
+                <motion.button
+                  key={to}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                  onClick={() => {
+                    setMobileMoreOpen(false);
+                    navigate(to);
+                  }}
+                  className={`flex items-center gap-3 p-3.5 rounded-2xl text-left border transition-all shadow-xs ${bgTint}`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-sm`}
+                  >
+                    <Icon size={19} strokeWidth={2.4} className="text-white" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-bold text-text-primary leading-tight">
+                      {label}
+                    </span>
+                    <span className="text-[10.5px] text-text-muted leading-tight mt-0.5 font-medium">
+                      {sub}
+                    </span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
           </div>
 
-          {/* Right 2 nav items */}
-          {mobileRightItems.map(({ to, icon: Icon, label, onboarding }) => {
-            const mobileOnboardingAttr = onboarding ? { 'data-onboarding-mobile': onboarding } : {};
-            const lockFeature = getLockFeature(to);
-            const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
-            const handleNavClick = (e: React.MouseEvent) => {
-              if (isLocked && lockFeature) {
-                e.preventDefault();
-                e.stopPropagation();
-                openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
-              }
-            };
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                onClick={handleNavClick}
-                {...mobileOnboardingAttr}
-                className={({ isActive }) =>
-                  [
-                    'flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] font-bold transition-all duration-200 select-none relative',
-                    isActive ? 'text-accent' : 'text-text-muted',
-                  ].join(' ')
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <div
-                      className={[
-                        'p-2 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
-                        isActive ? 'scale-110' : 'scale-100',
-                      ].join(' ')}
-                      style={{ background: isActive ? 'var(--bottomnav-indicator)' : 'transparent' }}
+          {/* ─── INSET GROUPED NAVIGATION ─── */}
+          <div>
+            <div className="flex items-center justify-between mb-2.5 px-0.5">
+              <span className="text-[11px] font-bold tracking-wider text-text-muted uppercase">
+                Explore Apps
+              </span>
+            </div>
+            <div className="rounded-2xl border border-border/70 bg-surface-raised/50 divide-y divide-border/40 overflow-hidden shadow-xs">
+              {[
+                { to: '/projects', icon: FolderKanban, label: 'Projects', sub: 'Kanban boards & tasks', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' },
+                { to: '/goals', icon: Flag, label: 'Goals', sub: 'OKRs & target tracking', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
+                { to: '/coach', icon: Sparkles, label: 'AI Coach', sub: 'Smart productivity insights', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.12)' },
+                { to: '/plans', icon: CreditCard, label: 'Plans & Billing', sub: 'Upgrade & invoices', color: '#059669', bg: 'rgba(5, 150, 105, 0.12)' },
+                { to: '/storage', icon: Database, label: 'Storage', sub: 'Media & attachments', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' },
+                { to: '/settings', icon: Settings2, label: 'Settings', sub: 'Preferences & themes', color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)' },
+              ].map(({ to, icon: Icon, label, sub, color, bg }) => {
+                const lockFeature = getLockFeature(to);
+                const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
+                const handleItemClick = (e: React.MouseEvent) => {
+                  if (isLocked && lockFeature) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setMobileMoreOpen(false);
+                    openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
+                    return;
+                  }
+                  setMobileMoreOpen(false);
+                };
+
+                return (
+                  <NavLink key={to} to={to} onClick={handleItemClick}>
+                    <motion.div
+                      whileTap={{ backgroundColor: 'var(--color-surface-hover, rgba(0,0,0,0.03))' }}
+                      className="flex items-center gap-3 px-3.5 py-3 hover:bg-surface-hover transition-colors"
                     >
-                      <Icon size={20} className="transition-all duration-200" />
-                      {isActive && (
-                        <div
-                          className="absolute inset-0 rounded-2xl opacity-30 blur-md"
-                          style={{ background: 'var(--color-accent)' }}
-                        />
-                      )}
-                      {isLocked && (
-                        <div
-                          className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white shadow-sm"
-                          style={{ background: 'var(--color-accent)' }}
-                        >
-                          <Lock size={8} />
+                      <div
+                        className="w-8.5 h-8.5 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                        style={{ background: bg, color }}
+                      >
+                        <Icon size={18} strokeWidth={2.2} />
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-[13.5px] font-semibold text-text-primary leading-tight">
+                          {label}
+                        </span>
+                        <span className="text-[11px] text-text-muted leading-tight mt-0.5">
+                          {sub}
+                        </span>
+                      </div>
+                      {isLocked ? (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center bg-accent/10 text-accent shrink-0">
+                          <Lock size={10} strokeWidth={2.5} />
                         </div>
+                      ) : (
+                        <ChevronRight size={16} className="text-text-muted/60 shrink-0" />
                       )}
-                    </div>
-                    <span className={isActive ? 'font-extrabold' : ''}>{label}</span>
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
-        </div>
-      </nav>
+                    </motion.div>
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
 
-      {/* ── Mobile Bottom Sheet More Menu - Enhanced Design ────────────────────── */}
-      <DraggableModal isOpen={mobileMoreOpen} onClose={() => setMobileMoreOpen(false)} title="Quick Access">
-        <div className="flex flex-col gap-5">
-          {/* User Profile Card - Hero Style */}
+          {/* ─── ACCOUNT FOOTER TILE ─── */}
           {user && (
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: 'var(--gradient-accent)' }}>
-              {/* Ambient glow effect */}
-              <div
-                className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-20 blur-3xl pointer-events-none"
-                style={{ background: 'radial-gradient(circle, white, transparent 70%)' }}
-              />
-
-              <div className="relative flex items-center gap-4">
-                <NavLink to="/profile" onClick={() => setMobileMoreOpen(false)}>
+            <div className="rounded-2xl p-3 bg-surface-raised/70 border border-border/70 flex items-center justify-between shadow-xs">
+              <NavLink
+                to="/profile"
+                onClick={() => setMobileMoreOpen(false)}
+                className="flex items-center gap-3 min-w-0 flex-1"
+              >
+                <div className="relative shrink-0">
                   <Avatar
                     src={user.avatarUrl}
                     name={user.name}
                     email={user.email}
-                    size="lg"
-                    className="shadow-lg border-2 border-white/20"
+                    size="md"
+                    className="border-2 border-surface shadow-xs"
                   />
-                </NavLink>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-extrabold text-white truncate">
-                    {user.name ?? user.email.split('@')[0]}
-                  </p>
-                  <p className="text-xs text-white/80 truncate mt-0.5">{user.email}</p>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-surface" />
                 </div>
-                <button
-                  onClick={() => setLogoutConfirmOpen(true)}
-                  aria-label="Sign out"
-                  className="p-2.5 rounded-xl bg-white/15 active:bg-white/25 transition-colors"
-                >
-                  <LogOut size={18} className="text-white" />
-                </button>
-              </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[13.5px] font-bold text-text-primary truncate leading-tight">
+                      {user.name ?? user.email.split('@')[0]}
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-accent/10 text-accent text-[9px] font-extrabold uppercase tracking-wide">
+                      Pro
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-text-muted truncate leading-tight mt-0.5">
+                    {user.email}
+                  </span>
+                </div>
+              </NavLink>
+              <button
+                onClick={() => {
+                  setMobileMoreOpen(false);
+                  setLogoutConfirmOpen(true);
+                }}
+                aria-label="Sign out"
+                className="ml-2 p-2 rounded-xl text-text-muted hover:text-red-500 hover:bg-red-500/10 active:scale-90 transition-all shrink-0"
+                title="Sign out"
+              >
+                <LogOut size={16} strokeWidth={2.2} />
+              </button>
             </div>
           )}
-
-          {/* Grid Layout for Navigation Items — includes Settings */}
-          <div className="grid grid-cols-3 gap-4">
-            {mobileOverflowItems.map(({ to, icon: Icon, label, badgeKey }) => {
-              const badgeValue = badgeKey === 'tasks' ? taskBadge : badgeKey === 'habits' ? habitBadge : undefined;
-              const lockFeature = getLockFeature(to);
-              const isLocked = lockFeature ? isFeatureLocked(lockFeature) : false;
-
-              const gradientMap: Record<string, string> = {
-                '/notes': 'var(--gradient-info)',
-                '/focus': 'var(--gradient-success)',
-                '/analytics': 'var(--gradient-danger)',
-                '/goals': 'var(--gradient-accent)',
-                '/projects': 'var(--gradient-accent)',
-                '/coach': 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                '/plans': 'linear-gradient(135deg, #059669, #10b981)',
-                '/storage': 'linear-gradient(135deg, #4f46e5, #6366f1)',
-                '/settings': 'linear-gradient(135deg, #6b7280, #4b5563)',
-              };
-              const gradient = gradientMap[to] ?? 'var(--gradient-accent)';
-
-              const handleItemClick = (e: React.MouseEvent) => {
-                if (isLocked && lockFeature) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setMobileMoreOpen(false);
-                  openUpgrade(lockFeature, `${lockFeature === 'aiCoach' ? 'AI Coach' : 'Goals'} is not available on your current plan.`);
-                  return;
-                }
-                setMobileMoreOpen(false);
-              };
-
-              return (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={handleItemClick}
-                  className="relative flex flex-col items-center gap-3 p-4 rounded-2xl transition-transform active:scale-95"
-                  style={{
-                    background: 'var(--color-surface-raised)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  <div className="relative">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-                      style={{ background: gradient }}
-                    >
-                      <Icon size={20} className="text-white" />
-                    </div>
-                    {isLocked ? (
-                      <div
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shadow-md"
-                        style={{ background: 'var(--color-accent)' }}
-                        title="Locked"
-                      >
-                        <Lock size={10} />
-                      </div>
-                    ) : badgeValue && badgeValue > 0 ? (
-                      <div
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shadow-md"
-                        style={{ background: 'var(--color-danger)' }}
-                      >
-                        {badgeValue > 9 ? '9+' : badgeValue}
-                      </div>
-                    ) : null}
-                  </div>
-                  <span className="text-[11px] font-bold text-text-primary text-center leading-tight">{label}</span>
-                </NavLink>
-              );
-            })}
-          </div>
         </div>
       </DraggableModal>
 

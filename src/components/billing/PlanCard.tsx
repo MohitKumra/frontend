@@ -83,6 +83,7 @@ function formatFeatureRow(key: string, value: number | boolean, defaultLabel: st
 
 export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSelect }: PlanCardProps) {
   const isDark = useIsDarkMode();
+  const [showAllFeatures, setShowAllFeatures] = React.useState(false);
   const tier = TIER_STYLES[baseTierOf(p.slug)] || TIER_STYLES.basic;
   const Icon = tier.icon;
   const priceDisplay = p.priceCents === 0 ? 'Free' : formatINR(p.priceCents);
@@ -99,6 +100,8 @@ export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSele
     }),
   ];
 
+  const visibleRows = showAllFeatures ? rows : rows.slice(0, 5);
+
   return (
     <div
       className={`w-full flex flex-col rounded-2xl bg-white dark:bg-[#242d3f] overflow-hidden border transition-shadow ${
@@ -112,14 +115,14 @@ export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSele
       {/* Top identity strip */}
       <div className="h-1.5 w-full" style={{ backgroundColor: isPopular ? '#0F172A' : tier.accent }} />
 
-      <div className="flex flex-col flex-1 p-6">
+      <div className="flex flex-col flex-1 p-4 sm:p-6">
         {/* Icon badge + status */}
         <div className="flex items-center justify-between">
           <span
-            className="inline-flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+            className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0"
             style={{ backgroundColor: isDark ? tier.softDark : tier.soft, color: tier.accent }}
           >
-            <Icon className="w-4.5 h-4.5" />
+            <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
           </span>
           {isCurrent && (
             <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-900 text-white dark:bg-slate-700 dark:text-slate-100 whitespace-nowrap">
@@ -129,30 +132,30 @@ export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSele
         </div>
 
         {/* Name + description */}
-        <h3 className="text-lg font-extrabold text-slate-900 dark:text-slate-100 mt-4 tracking-tight">{p.name}</h3>
-        <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug min-h-[36px]">
+        <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 mt-3 sm:mt-4 tracking-tight">{p.name}</h3>
+        <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-1 leading-snug min-h-[32px] sm:min-h-[36px]">
           {p.description || 'Elevate your daily habits and tasks.'}
         </p>
 
         {/* Price */}
-        <div className="flex items-baseline gap-1.5 mt-4">
-          <span className="text-[32px] leading-none font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
+        <div className="flex items-baseline gap-1.5 mt-3 sm:mt-4">
+          <span className="text-2xl sm:text-[32px] leading-none font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
             {priceDisplay}
           </span>
-          {p.priceCents > 0 && <span className="text-[13px] text-slate-400 dark:text-slate-500">{intervalLabel}</span>}
+          {p.priceCents > 0 && <span className="text-xs sm:text-[13px] text-slate-400 dark:text-slate-500">{intervalLabel}</span>}
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-slate-100 dark:bg-slate-700/60 mt-5 mb-4" />
+        <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-3 sm:mt-5 sm:mb-4" />
 
         {/* Feature checklist */}
-        <ul className="space-y-3 flex-1">
-          {rows.map((r) => (
-            <li key={r.label} className="flex items-center gap-2.5 text-[13.5px]">
+        <ul className="space-y-2.5 sm:space-y-3 flex-1">
+          {visibleRows.map((r) => (
+            <li key={r.label} className="flex items-center gap-2 sm:gap-2.5 text-xs sm:text-[13.5px]">
               {r.on ? (
-                <Check className="w-4 h-4 shrink-0" style={{ color: tier.accent }} strokeWidth={2.5} />
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" style={{ color: tier.accent }} strokeWidth={2.5} />
               ) : (
-                <Lock className="w-4 h-4 shrink-0 text-slate-300 dark:text-slate-600" />
+                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-slate-300 dark:text-slate-600" />
               )}
               <span className={r.on ? 'text-slate-700 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500'}>
                 {r.label}
@@ -161,12 +164,23 @@ export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSele
           ))}
         </ul>
 
+        {rows.length > 5 && (
+          <button
+            type="button"
+            onClick={() => setShowAllFeatures(!showAllFeatures)}
+            className="text-[11px] sm:text-xs font-bold text-accent hover:underline mt-2.5 inline-flex items-center gap-1 self-start"
+          >
+            {showAllFeatures ? 'Show fewer features ↑' : `+${rows.length - 5} more features ↓`}
+          </button>
+        )}
+
         {/* Action */}
         <button
+          type="button"
           onClick={() => onSelect?.(p)}
           disabled={isCurrent}
-          className={`mt-6 w-full h-12 rounded-2xl text-sm font-bold inline-flex items-center justify-center gap-2 transition-all ${
-            isCurrent ? 'bg-slate-100 dark:bg-slate-800 dark:text-slate-500 text-slate-400 cursor-default' : 'text-white hover:brightness-105'
+          className={`mt-4 sm:mt-6 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all ${
+            isCurrent ? 'bg-slate-100 dark:bg-slate-800 dark:text-slate-500 text-slate-400 cursor-default' : 'text-white hover:brightness-105 shadow-sm'
           }`}
           style={!isCurrent ? { backgroundColor: tier.accent } : undefined}
         >
