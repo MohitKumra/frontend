@@ -5272,6 +5272,23 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.35);
 }
 
+/* Inner wrapper — scales the fixed-width CoverPreview to fill the thumb */
+.bcp-thumb-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  overflow: hidden;
+}
+
+/* Force all children inside the thumb inner to fill width */
+.bcp-thumb-inner > * {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+}
+
 .bcp-thumb:hover {
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
@@ -6306,3 +6323,196 @@
 }
 
 /* end of theme-journal-notes.css */
+
+/* ============================================================
+   BOOK COVER PICKER — MOBILE RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 640px) {
+  /* Backdrop: tighter padding on mobile */
+  .bcp-backdrop {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  /* Panel: full-width, rounded top only, taller */
+  .bcp-panel {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 92vh;
+  }
+
+  /* Header: smaller padding */
+  .bcp-header {
+    padding: 14px 16px 10px;
+  }
+
+  .bcp-heading {
+    font-size: 15px;
+  }
+
+  /* Tabs: scroll if needed, smaller padding */
+  .bcp-tabs {
+    padding: 0 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .bcp-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bcp-tab {
+    padding: 7px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* Body: shorter fixed height, full overflow */
+  .bcp-body {
+    padding: 12px 14px;
+    height: auto;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  /* Side-tab layout: STACK VERTICALLY on mobile */
+  .bcp-text-style-tab,
+  .bcp-side-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: visible;
+  }
+
+  /* Preview aside: horizontal strip on mobile, not tall column */
+  .bcp-tst-aside {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    gap: 8px;
+    overflow: visible;
+    min-height: auto;
+    flex-shrink: 0;
+  }
+
+  /* Scale the preview book smaller on mobile */
+  .bcp-tst-aside .lbc-preview-container {
+    max-width: 120px;
+  }
+
+  .bcp-live-preview-label {
+    font-size: 9px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 1.5px;
+  }
+
+  /* Scroll wrapper: remove left border, add top border */
+  .bcp-side-scroll {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 10px 0 0 0;
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  /* Template grid: 2 columns on mobile for proper sizing */
+  .bcp-templates-grid,
+  .bcp-side-tab .bcp-templates-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+    padding: 0;
+  }
+
+  /* Thumbnails: shrink to fill */
+  .bcp-thumb {
+    aspect-ratio: 2 / 3;
+  }
+
+  /* My Covers inside side layout */
+  .bcp-side-tab .bcp-my-covers {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 10px 0 0 0;
+    overflow-y: visible;
+  }
+
+  /* Upload zone: tighter padding */
+  .bcp-upload-zone {
+    padding: 20px 12px;
+  }
+
+  .bcp-upload-title {
+    font-size: 13px;
+  }
+
+  .bcp-upload-sub {
+    font-size: 10px;
+  }
+
+  /* Current cover img: smaller */
+  .bcp-current-cover-img {
+    width: 50px;
+    height: 67px;
+  }
+
+  /* Text style editor: remove border, add top separator */
+  .bcp-tst-editor {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 10px 0 0 0;
+  }
+
+  /* Footer: wrap tip + actions */
+  .bcp-footer {
+    flex-wrap: wrap;
+    padding: 10px 14px 14px;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .bcp-footer-tip-inline {
+    font-size: 9.5px;
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bcp-footer-actions {
+    order: 1;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .bcp-btn-cancel,
+  .bcp-btn-save {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+/* Slightly wider phones / small tablets */
+@media (min-width: 641px) and (max-width: 768px) {
+  .bcp-panel {
+    max-width: 95%;
+  }
+
+  .bcp-body {
+    height: 380px;
+    max-height: 65vh;
+  }
+
+  .bcp-text-style-tab,
+  .bcp-side-tab {
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+
+  .bcp-templates-grid,
+  .bcp-side-tab .bcp-templates-grid {
+    grid-template-columns: repeat(auto-fill, 120px) !important;
+  }
+}

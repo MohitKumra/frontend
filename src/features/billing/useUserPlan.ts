@@ -281,6 +281,26 @@ export function useUserPlan() {
     },
   });
 
+  const downgradeSubscriptionMutation = useMutation({
+    mutationFn: async (payload: { targetPlanId: string }) => {
+      const res = await apiClient.post('/billing/downgrade', payload);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY });
+    },
+  });
+
+  const cancelScheduledDowngradeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/billing/cancel-downgrade');
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY });
+    },
+  });
+
   return {
     subscriptionQuery,
     plansQuery,
@@ -293,8 +313,6 @@ export function useUserPlan() {
     invoices: subscriptionQuery.data?.invoices || [],
     plans: plansQuery.data || [],
     isLoading: subscriptionQuery.isLoading || plansQuery.isLoading,
-    // True if either request failed. A failure should never leave the UI stuck
-    // on an infinite spinner — the settings panel surfaces this as an error state.
     isError: !!subscriptionQuery.isError || !!plansQuery.isError,
 
     isFeatureLocked,
@@ -303,6 +321,8 @@ export function useUserPlan() {
     createCheckout: createCheckoutMutation.mutateAsync,
     verifyPayment: verifyPaymentMutation.mutateAsync,
     cancelSubscription: cancelSubscriptionMutation.mutateAsync,
+    downgradeSubscription: downgradeSubscriptionMutation.mutateAsync,
+    cancelScheduledDowngrade: cancelScheduledDowngradeMutation.mutateAsync,
     applyCoupon: applyCouponMutation.mutateAsync,
     updateBillingProfile: updateBillingProfileMutation.mutateAsync,
     refetch: () => {
@@ -310,4 +330,51 @@ export function useUserPlan() {
       plansQuery.refetch();
     },
   };
+}
+
+export interface UpgradePreviewDTO {
+  isUpgrade: boolean;
+  currentPlan: {
+    id: string;
+    name: string;
+    slug: string;
+    priceCents: number;
+    billingInterval: 'MONTH' | 'YEAR';
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    daysRemaining: number;
+    rawCreditCents: number;
+  } | null;
+  targetPlan: {
+    id: string;
+    name: string;
+    slug: string;
+    priceCents: number;
+    billingInterval: 'MONTH' | 'YEAR';
+    currency: string;
+    gstPercent: number;
+  };
+  proratedCreditCents: number;
+  daysRemaining: number;
+  subtotalCents: number;
+  discountCents: number;
+  taxableAmountCents: number;
+  gstPercent: number;
+  taxCents: number;
+  totalCents: number;
+}
+
+export function useUpgradePreview(targetPlanId: string | null | undefined) {
+  return useQuery<UpgradePreviewDTO | null>({
+    queryKey: ['billing', 'upgrade-preview', targetPlanId],
+    queryFn: async () => {
+      if (!targetPlanId) return null;
+      const res = await apiClient.get<{ data: UpgradePreviewDTO }>(
+        `/billing/upgrade-preview?targetPlanId=${targetPlanId}`
+      );
+      return res.data.data;
+    },
+    enabled: !!targetPlanId,
+    staleTime: 1000 * 30, // 30 seconds
+  });
 }

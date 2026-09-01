@@ -206,7 +206,7 @@ function ProfileHero({
       />
 
       {/* ── Main hero content: 3-zone horizontal layout ── */}
-      <div className="relative flex flex-col lg:flex-row lg:items-stretch gap-0 p-5 sm:p-7 lg:p-0">
+      <div className="relative flex flex-col lg:flex-row lg:items-stretch gap-0 px-3 pt-3 sm:px-4 sm:pt-4 lg:p-0">
 
         {/* Zone 1 — Avatar + photo controls */}
         <div

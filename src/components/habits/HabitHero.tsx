@@ -108,7 +108,7 @@ export function HabitHero({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative overflow-hidden p-4 sm:p-6 md:p-8 rounded-3xl mb-6 sm:mb-8"
+      className="relative overflow-hidden p-4 sm:p-6 md:p-8 mb-6 sm:mb-8"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',

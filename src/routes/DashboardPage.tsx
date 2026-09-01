@@ -255,7 +255,7 @@ export function DashboardPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative flex w-full flex-col gap-5 sm:gap-8 p-3.5 pt-3.5 sm:p-6 lg:p-8 2xl:p-10"
+      className="relative flex w-full flex-col gap-5 sm:gap-6 px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5 lg:pt-4 2xl:px-6"
     >
       <style>{DASHBOARD_RESPONSIVE_CSS}</style>
 

@@ -32,6 +32,8 @@ import { CreateTaskModal } from '../components/tasks/CreateTaskModal';
 import { useProject, useUpdateProject } from '../features/projects/hooks/useProjects';
 import { useDeleteNote, useUpdateNote } from '../features/notes/hooks/useNotes';
 import { notesApi } from '../features/notes/api';
+import { useUserPlan } from '../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import apiClient from '../lib/apiClient';
 import type { ListResponse, MediaItemDTO, NoteDTO, ProjectStatus, TaskDTO } from '../types';
 
@@ -89,6 +91,8 @@ export function ProjectDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isFeatureLocked } = useUserPlan();
+  const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
   const [noteOpen, setNoteOpen] = useState<null | 'note' | 'journal'>(null);
   const [taskOpen, setTaskOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<NoteDTO | null>(null);
@@ -611,7 +615,16 @@ export function ProjectDetailPage() {
             <p className="text-sm font-bold">Project Focus View</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => navigate(`/focus?projectId=${id}`)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (isFeatureLocked('focusAdvanced')) {
+                  openUpgrade('focusAdvanced', 'Linking projects to Focus mode is an Advanced Focus feature available on Pro & Ultimate plans.');
+                  return;
+                }
+                navigate(`/focus?projectId=${id}`);
+              }}
+            >
               Open Focus
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setNoteOpen('note')}>

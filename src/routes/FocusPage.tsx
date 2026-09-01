@@ -48,6 +48,7 @@ import { QuoteCard } from '../components/habits/QuoteCard';
 import { getDailyQuotes } from '../data/quotes';
 import { focusApi } from '../features/habits/api';
 import { useUserPlan } from '../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import { UpgradeModal } from '../components/billing/UpgradeModal';
 import { saveTimerState, restoreTimerState, clearTimerState } from '../lib/timerPersistence';
 import { useAmbientSound } from '../hooks/useAmbientSound';
@@ -1346,15 +1347,25 @@ function StatCard({
 function TodaysPlanCard({
   items,
   onPick,
+  isLocked = false,
 }: {
   items: { id: string; title: string; time: string; color: string }[];
   onPick: (id: string) => void;
+  isLocked?: boolean;
 }) {
   return (
     <Card variant="default" className="p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <CalendarDays size={14} style={{ color: 'var(--color-accent)' }} />
-        <h4 className="text-xs font-bold text-text-primary">Today's Plan</h4>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <CalendarDays size={14} style={{ color: 'var(--color-accent)' }} />
+          <h4 className="text-xs font-bold text-text-primary">Today's Plan</h4>
+        </div>
+        {isLocked && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/10 text-accent">
+            <Lock size={10} strokeWidth={2.5} />
+            Pro
+          </span>
+        )}
       </div>
       {items.length === 0 ? (
         <p className="text-[11px] text-text-muted font-semibold py-2">Nothing due today.</p>
@@ -1368,10 +1379,14 @@ function TodaysPlanCard({
             >
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: item.color }} />
               <span className="text-xs font-semibold text-text-primary flex-1 text-left truncate">{item.title}</span>
-              <ChevronRight
-                size={13}
-                className="text-text-muted transition-opacity shrink-0"
-              />
+              {isLocked ? (
+                <Lock size={12} className="text-text-muted shrink-0 group-hover:text-accent transition-colors" />
+              ) : (
+                <ChevronRight
+                  size={13}
+                  className="text-text-muted transition-opacity shrink-0"
+                />
+              )}
             </button>
           ))}
         </div>
@@ -1581,8 +1596,9 @@ function RecentSessionsCard({
 
 export function FocusPage() {
   const { containerVariants, itemVariants } = usePageVariants();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isFeatureLocked } = useUserPlan();
+  const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
   const [focusUpgradeOpen, setFocusUpgradeOpen] = useState(false);
   const focusAdvancedLocked = isFeatureLocked('focusAdvanced');
   const [mode, setMode] = useState<TimerMode>('focus');
@@ -1722,13 +1738,19 @@ export function FocusPage() {
         elapsedRef.current = newElapsedSec;
         completionLoggedRef.current = false;
       } else if (searchParams.get('taskId')) {
-        // Linking a task to the timer is an Advanced Focus (paid) feature — block
-        // free-plan users from pre-selecting via URL instead of session 403.
-        if (focusAdvancedLocked) setFocusUpgradeOpen(true);
-        else setSelectedTaskId(searchParams.get('taskId'));
+        if (focusAdvancedLocked) {
+          openUpgrade('focusAdvanced', 'Linking tasks to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.');
+          setSelectedTaskId(null);
+        } else {
+          setSelectedTaskId(searchParams.get('taskId'));
+        }
       } else if (searchParams.get('projectId')) {
-        if (focusAdvancedLocked) setFocusUpgradeOpen(true);
-        else setSelectedProjectId(searchParams.get('projectId'));
+        if (focusAdvancedLocked) {
+          openUpgrade('focusAdvanced', 'Linking projects to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.');
+          setSelectedProjectId(null);
+        } else {
+          setSelectedProjectId(searchParams.get('projectId'));
+        }
       }
       setIsRestored(true);
     };
@@ -1815,12 +1837,30 @@ export function FocusPage() {
     if (projectIdParam && allProjects.length > 0 && !selectedProjectId) {
       const match = allProjects.find((p) => p.id === projectIdParam);
       if (match) {
-        // Linking a project to the timer is an Advanced Focus (paid) feature.
-        if (focusAdvancedLocked) setFocusUpgradeOpen(true);
-        else setSelectedProjectId(projectIdParam);
+        if (focusAdvancedLocked) {
+          openUpgrade('focusAdvanced', 'Linking projects to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.');
+          setSelectedProjectId(null);
+        } else {
+          setSelectedProjectId(projectIdParam);
+        }
       }
     }
-  }, [allProjects, searchParams, selectedProjectId, focusAdvancedLocked]);
+  }, [allProjects, searchParams, selectedProjectId, focusAdvancedLocked, openUpgrade]);
+
+  useEffect(() => {
+    const taskIdParam = searchParams.get('taskId');
+    if (taskIdParam && allTasks.length > 0 && !selectedTaskId) {
+      const match = allTasks.find((t) => t.id === taskIdParam);
+      if (match) {
+        if (focusAdvancedLocked) {
+          openUpgrade('focusAdvanced', 'Linking tasks to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.');
+          setSelectedTaskId(null);
+        } else {
+          setSelectedTaskId(taskIdParam);
+        }
+      }
+    }
+  }, [allTasks, searchParams, selectedTaskId, focusAdvancedLocked, openUpgrade]);
 
   useEffect(() => {
     if (allTasks.length > 0 && selectedTaskId) {
@@ -2092,7 +2132,10 @@ export function FocusPage() {
   // opens the pricing modal instead of surfacing a backend 403.
   const handleLockedLink = () => {
     if (!focusAdvancedLocked) return;
-    setFocusUpgradeOpen(true);
+    openUpgrade(
+      'focusAdvanced',
+      'Linking tasks and projects to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.'
+    );
   };
 
   const handleSelectTask = (id: string | null) => {
@@ -2366,7 +2409,11 @@ export function FocusPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[260px_1fr_290px] gap-4 items-start">
             {/* Left column */}
             <motion.div variants={itemVariants} className="order-2 lg:order-1 flex flex-col gap-4">
-              <TodaysPlanCard items={todaysPlanItems} onPick={handleSelectTask} />
+              <TodaysPlanCard
+                items={todaysPlanItems}
+                onPick={handleSelectTask}
+                isLocked={focusAdvancedLocked}
+              />
               <AmbientSoundCard
                 sound={ambientSound}
                 setSound={setAmbientSound}

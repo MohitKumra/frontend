@@ -16,6 +16,6 @@ export function getEntityRoute(entityType: string, entityId: string): string {
     case 'focus':
       return `/focus`;
     default:
-      return '/dashboard';
+      return '/';
   }
 }

@@ -520,7 +520,7 @@ export function GoalsPage() {
       style={{ background: 'var(--color-bg)' }}
     >
       <LockedFeatureWrapper isLocked={goalsLocked} featureName="Goals" minPlanName="Basic">
-      <div className="relative z-10 flex flex-col gap-6 p-3.5 pt-3.5 sm:p-6 lg:p-8 xl:p-10">
+      <div className="relative z-10 flex flex-col gap-6 px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5 lg:pt-4">
         {/* ── PREMIUM HERO ──────────────────────────────────────────── */}
         <GoalsHero
           displayName={displayName}
@@ -1568,7 +1568,7 @@ function MetricBox({ label, value, sub }: { label: string; value: string; sub: s
 
 function GoalsSkeleton() {
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 lg:p-8 xl:p-10">
+    <div className="flex flex-col gap-5 px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5 lg:pt-4">
       <div className="h-72 rounded-[32px] animate-pulse" style={{ background: 'var(--color-surface-raised)' }} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (

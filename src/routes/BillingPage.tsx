@@ -32,7 +32,8 @@ import { Badge } from '../components/ui/Badge';
 import { APP_NAME, SUPPORT_EMAIL } from '../config/brand';
 import { Input } from '../components/ui/Input';
 import { PlanCard } from '../components/billing/PlanCard';
-import { useUserPlan, type PlanDTO } from '../features/billing/useUserPlan';
+import { DowngradeConfirmModal } from '../components/billing/DowngradeConfirmModal';
+import { useUserPlan, useUpgradePreview, type PlanDTO } from '../features/billing/useUserPlan';
 import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import { useCustomPlanModalStore } from '../store/customPlanModalStore';
 import { InvoicePreview, type InvoicePreviewData } from '../features/billing/InvoicePreview';
@@ -92,6 +93,7 @@ export function BillingPage() {
     createCheckout,
     verifyPayment,
     updateBillingProfile,
+    downgradeSubscription,
     refetch,
   } =
     useUserPlan();
@@ -104,6 +106,8 @@ export function BillingPage() {
   const [mobileTab, setMobileTab] = useState<'plans' | 'invoices'>('plans');
   const openCustomPlan = useCustomPlanModalStore((s) => s.openCustomPlan);
   const [selectedPlan, setSelectedPlan] = useState<PlanDTO | null>(null);
+  const [downgradeTargetPlan, setDowngradeTargetPlan] = useState<PlanDTO | null>(null);
+  const { data: upgradePreview } = useUpgradePreview(selectedPlan?.id);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -589,16 +593,45 @@ export function BillingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {paidPlans.map((plan) => {
               const isCurrent = effectivePlan.planSlug !== 'free' && baseTierOf(effectivePlan.planSlug) === baseTierOf(plan.slug);
+              
+              const activePrice = subscription?.plan?.priceCents || 0;
+              const startMs = subscription?.currentPeriodStart ? new Date(subscription.currentPeriodStart).getTime() : 0;
+              const endMs = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).getTime() : 0;
+              const totalDurationMs = Math.max(1, endMs - startMs);
+              const remainingMs = Math.max(0, endMs - Date.now());
+              const unusedRatio = Math.min(1, Math.max(0, remainingMs / totalDurationMs));
+              const rawCredit = Math.round(activePrice * unusedRatio);
+              const isUpgrade = Boolean(subscription?.status === 'ACTIVE' && activePrice > 0 && plan.priceCents > activePrice);
+              const isDowngrade = Boolean(subscription?.status === 'ACTIVE' && activePrice > 0 && plan.priceCents < activePrice && !isCurrent);
+              const creditApplied = isUpgrade ? Math.min(plan.priceCents, rawCredit) : 0;
+              const taxable = Math.max(0, plan.priceCents - creditApplied);
+              const totalWithGst = taxable + Math.round((taxable * (plan.gstPercent ?? 18)) / 100);
+
               return (
                 <PlanCard
                   key={plan.id}
                   plan={plan}
                   isCurrent={isCurrent}
                   isPopular={baseTierOf(plan.slug) === 'premium'}
+                  isDowngrade={isDowngrade}
                   disabled={subscription?.status === 'PAUSED'}
                   disabledLabel="Billing Paused"
+                  upgradeProration={
+                    isUpgrade && creditApplied > 0
+                      ? {
+                          isUpgrade: true,
+                          proratedCreditCents: creditApplied,
+                          taxableCents: taxable,
+                          totalCents: totalWithGst,
+                          currentPlanName: subscription?.plan?.name,
+                        }
+                      : null
+                  }
                   onSelect={(p) => {
                     setSelectedPlan(p);
+                  }}
+                  onDowngrade={(p) => {
+                    setDowngradeTargetPlan(p);
                   }}
                 />
               );
@@ -768,35 +801,60 @@ export function BillingPage() {
           </button>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span>Plan total</span>
-            <span className="font-semibold">{selectedPlan ? formatINR(selectedPlan.priceCents) : formatINR(0)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span>Discount</span>
-            <span className="font-semibold text-success">-{formatINR(appliedCoupon?.discountCents || 0)}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span>Tax</span>
-            <span className="font-semibold">
-              {selectedPlan
-                ? formatINR(Math.round(((selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) * selectedPlan.gstPercent) / 100))
-                : formatINR(0)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm pt-2 border-t border-border font-bold">
-            <span>Amount due</span>
-            <span className="text-accent">
-              {selectedPlan
-                ? formatINR(
-                    (selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) +
-                      Math.round(((selectedPlan.priceCents - (appliedCoupon?.discountCents || 0)) * selectedPlan.gstPercent) / 100)
-                  )
-                : formatINR(0)}
-            </span>
-          </div>
-        </div>
+        {(() => {
+          const isUpgrade = Boolean(
+            upgradePreview?.isUpgrade &&
+              upgradePreview?.proratedCreditCents &&
+              upgradePreview.proratedCreditCents > 0
+          );
+          const prorationCredit = isUpgrade ? (upgradePreview?.proratedCreditCents || 0) : 0;
+          const couponDiscount = appliedCoupon?.discountCents || 0;
+          const totalDiscount = prorationCredit + couponDiscount;
+          const taxableAmount = selectedPlan
+            ? Math.max(0, selectedPlan.priceCents - totalDiscount)
+            : 0;
+          const gstPercent = selectedPlan?.gstPercent ?? 18;
+          const taxAmount = Math.round((taxableAmount * gstPercent) / 100);
+          const amountDue = taxableAmount + taxAmount;
+
+          return (
+            <div className="rounded-2xl border border-border bg-surface-raised p-4 space-y-2.5 text-xs sm:text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Plan Subtotal</span>
+                <span className="font-semibold text-text-primary">
+                  {selectedPlan ? formatINR(selectedPlan.priceCents) : formatINR(0)}
+                </span>
+              </div>
+
+              {isUpgrade && (
+                <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                    Unused {upgradePreview?.currentPlan?.name || 'Current'} Plan Credit ({upgradePreview?.daysRemaining}d left)
+                  </span>
+                  <span className="font-bold">-{formatINR(prorationCredit)}</span>
+                </div>
+              )}
+
+              {couponDiscount > 0 && (
+                <div className="flex items-center justify-between text-success">
+                  <span>Coupon Discount ({appliedCoupon?.couponCode})</span>
+                  <span className="font-bold">-{formatINR(couponDiscount)}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-text-secondary">
+                <span>GST ({gstPercent}%)</span>
+                <span className="font-semibold text-text-primary">{formatINR(taxAmount)}</span>
+              </div>
+
+              <div className="flex items-center justify-between pt-2.5 border-t border-border font-bold text-sm sm:text-base">
+                <span className="text-text-primary">Amount due today</span>
+                <span className="text-accent text-base sm:text-lg font-extrabold">{formatINR(amountDue)}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {subscription?.status === 'PAUSED' ? (
           <div className="rounded-2xl p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs space-y-2">
@@ -1060,7 +1118,7 @@ export function BillingPage() {
   );
 
   return (
-    <div className="max-w-8xl mx-auto px-3.5 pt-3.5 pb-6 sm:px-6 sm:py-6 space-y-4 sm:space-y-6">
+    <div className="max-w-8xl mx-auto px-3 pt-3 pb-4 sm:px-4 sm:pt-4 sm:pb-6 space-y-4 sm:space-y-5">
       {/* Hero Banner */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] border border-border bg-gradient-to-br from-surface via-surface to-accent-subtle/20 p-4 sm:p-8">
         <div className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.16),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_32%)]" />
@@ -1135,7 +1193,7 @@ export function BillingPage() {
                   Your Previous Plan Was Cancelled
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-extrabold uppercase tracking-wider">
-                  Cancelled Once
+                  Cancelled
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
@@ -1303,9 +1361,28 @@ export function BillingPage() {
         onClose={() => setVerificationModal((prev) => ({ ...prev, isOpen: false }))}
         onContinue={() => {
           setVerificationModal((prev) => ({ ...prev, isOpen: false }));
-          navigate('/dashboard');
+          navigate('/');
         }}
       />
+
+      {downgradeTargetPlan && (
+        <DowngradeConfirmModal
+          isOpen={Boolean(downgradeTargetPlan)}
+          onClose={() => setDowngradeTargetPlan(null)}
+          currentPlanName={effectivePlan.planName}
+          targetPlan={downgradeTargetPlan}
+          periodEndDate={effectivePlan.expiresAt}
+          onConfirm={async () => {
+            try {
+              await downgradeSubscription({ targetPlanId: downgradeTargetPlan.id });
+              toast.success(`Downgrade to ${downgradeTargetPlan.name} scheduled for end of billing cycle.`);
+              refetch();
+            } catch (err: any) {
+              toast.error(err?.response?.data?.error?.message || 'Failed to schedule downgrade');
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -363,7 +363,10 @@ export function AppLayout() {
     };
   }, [navigate, showShortcuts, searchOpen, mobileMoreOpen]);
 
-  const contentPaddingClass = 'p-0 sm:pt-4 sm:px-4 md:px-6';
+  const isClassicPaddedRoute = ['/tasks', '/projects', '/focus'].some(
+    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
+  );
+  const contentPaddingClass = isClassicPaddedRoute ? 'p-0 sm:pt-4 sm:px-4 md:px-6' : 'p-0';
 
   const headerPaddingClass =
     layoutPreference === 'COMPACT'

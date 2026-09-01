@@ -33,6 +33,8 @@ import { formatDuration, getRecurrenceLabel, isOverdue } from '../components/tas
 import { useTasks, useUpdateTask } from '../features/tasks/hooks/useTasks';
 import { tasksApi } from '../features/tasks/api';
 import { notesApi } from '../features/notes/api';
+import { useUserPlan } from '../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import apiClient from '../lib/apiClient';
 import type { MediaItemDTO, NoteDTO, TaskDTO, TaskDetailDTO } from '../types';
 
@@ -88,6 +90,8 @@ export function TaskDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isFeatureLocked } = useUserPlan();
+  const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
   const [noteOpen, setNoteOpen] = useState<null | 'note' | 'journal'>(null);
   const [timeMinutes, setTimeMinutes] = useState('');
   const [timeNote, setTimeNote] = useState('');
@@ -337,7 +341,16 @@ export function TaskDetailPage() {
           <Button variant="secondary" size="sm" onClick={() => setNoteOpen('journal')}>
             Add Journal
           </Button>
-          <Button size="sm" onClick={() => navigate(`/focus?taskId=${task.id}`)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (isFeatureLocked('focusAdvanced')) {
+                openUpgrade('focusAdvanced', 'Linking tasks to Focus mode is an Advanced Focus feature available on Pro plans.');
+                return;
+              }
+              navigate(`/focus?taskId=${task.id}`);
+            }}
+          >
             Focus
           </Button>
         </div>

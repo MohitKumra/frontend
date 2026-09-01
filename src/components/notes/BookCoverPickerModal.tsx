@@ -1,4 +1,4 @@
-﻿/**
+/**
  * BookCoverPickerModal
  *
  * Rich SVG-textured cover templates with side-preview layout.
@@ -896,14 +896,16 @@ function TemplateThumbnail({
       aria-pressed={isSelected}
       type="button"
     >
-      <CoverPreview
-        title={title || 'My Journal'}
-        dateLabel={dateLabel}
-        coverUrl={null}
-        templateId={template.id}
-        coverStyle={thumbnailStyle}
-        width={150}
-      />
+      <div className="bcp-thumb-inner">
+        <CoverPreview
+          title={title || 'My Journal'}
+          dateLabel={dateLabel}
+          coverUrl={null}
+          templateId={template.id}
+          coverStyle={thumbnailStyle}
+          width={150}
+        />
+      </div>
       <span className="bcp-thumb-label">{template.label}</span>
       {isSelected && (
         <span className="bcp-thumb-check" aria-hidden="true">

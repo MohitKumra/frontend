@@ -32,6 +32,7 @@ import apiClient from '../../lib/apiClient';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { formatINR } from '../../utils/formatCurrency';
 import { UpgradeModal } from '../billing/UpgradeModal';
+import { DowngradeConfirmModal } from '../billing/DowngradeConfirmModal';
 import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { PlanCard } from '../billing/PlanCard';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -47,6 +48,8 @@ export function BillingSettingsPanel() {
     plans,
     isLoading,
     cancelSubscription,
+    downgradeSubscription,
+    cancelScheduledDowngrade,
     refetch,
     isError,
 
@@ -56,6 +59,8 @@ export function BillingSettingsPanel() {
   const [billingCycle, setBillingCycle] = useState<'MONTH' | 'YEAR'>('MONTH');
   const [cancelling, setCancelling] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [cancellingDowngrade, setCancellingDowngrade] = useState(false);
+  const [downgradeTargetPlan, setDowngradeTargetPlan] = useState<PlanDTO | null>(null);
   const navigate = useNavigate();
   const choosePlanForCheckout = useUpgradeModalStore((s) => s.choosePlanForCheckout);
 
@@ -70,6 +75,30 @@ export function BillingSettingsPanel() {
       toast.error(err.response?.data?.error?.message || 'Failed to cancel subscription');
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function handleConfirmDowngrade() {
+    if (!downgradeTargetPlan) return;
+    try {
+      await downgradeSubscription({ targetPlanId: downgradeTargetPlan.id });
+      toast.success(`Downgrade to ${downgradeTargetPlan.name} scheduled for end of billing cycle.`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to schedule downgrade');
+    }
+  }
+
+  async function handleCancelDowngrade() {
+    setCancellingDowngrade(true);
+    try {
+      await cancelScheduledDowngrade();
+      toast.success('Scheduled downgrade cancelled. Auto-renewal for your current plan restored.');
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to cancel scheduled downgrade');
+    } finally {
+      setCancellingDowngrade(false);
     }
   }
 
@@ -156,6 +185,19 @@ export function BillingSettingsPanel() {
   const taskPct = Math.min(100, Math.round((usage.tasks / maxTasks) * 100));
   const aiPct = Math.min(100, Math.round((usage.aiRequests / maxAI) * 100));
 
+  const isCancelled =
+    subscription?.status === 'CANCELLED' ||
+    subscription?.cancelAtPeriodEnd === true;
+  const isPaused = subscription?.status === 'PAUSED';
+  const isDowngradeScheduled = Boolean(subscription?.scheduledDowngradePlan);
+  const isOneTime = Boolean(
+    isPaid &&
+    subscription?.status === 'ACTIVE' &&
+    subscription?.autoRenew === false &&
+    !isCancelled &&
+    !isDowngradeScheduled
+  );
+
   return (
     <div className="space-y-6">
       {/* ─── Active Plan Banner ───────────────────────────────────── */}
@@ -169,11 +211,17 @@ export function BillingSettingsPanel() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-extrabold text-text-primary tracking-tight">
-                    {effectivePlan.planName} Plan
+                    {effectivePlan.planName == "Custom Plan" ? "Custom" : effectivePlan.planName} Plan
                   </h3>
                   <Badge
                     variant={
-                      effectivePlan.status === 'ACTIVE'
+                      isPaused
+                        ? 'warning'
+                        : isDowngradeScheduled
+                        ? 'warning'
+                        : isCancelled
+                        ? 'danger'
+                        : effectivePlan.status === 'ACTIVE'
                         ? 'success'
                         : effectivePlan.status === 'FREE'
                         ? 'accent'
@@ -182,14 +230,34 @@ export function BillingSettingsPanel() {
                     size="sm"
                     dot
                   >
-                    {effectivePlan.status}
+                    {isPaused
+                      ? 'PAUSED'
+                      : isDowngradeScheduled
+                      ? 'DOWNGRADE SCHEDULED'
+                      : isCancelled
+                      ? subscription?.cancelAtPeriodEnd
+                        ? 'CANCELLING'
+                        : 'CANCELLED'
+                      : isOneTime
+                      ? 'ACTIVE'
+                      : effectivePlan.status}
                   </Badge>
                 </div>
                 <p className="text-xs text-text-muted mt-0.5">
                   {effectivePlan.source === 'ADMIN_OVERRIDE'
                     ? 'Active VIP administrative access override'
+                    : isPaused
+                    ? 'Subscription billing has been paused by the administrator. Contact support to reactivate.'
+                    : isDowngradeScheduled
+                    ? `Downgrade to ${subscription?.scheduledDowngradePlan?.name} is scheduled for ${effectivePlan.expiresAt ? new Date(effectivePlan.expiresAt).toLocaleDateString('en-GB') : 'period end'}. You maintain all ${effectivePlan.planName} features until then.`
+                    : isCancelled
+                    ? subscription?.cancelAtPeriodEnd
+                      ? 'Subscription cancellation is scheduled. Auto-renewal is stopped, and you maintain access until the end of your billing cycle.'
+                      : 'Subscription was cancelled. Access ends when the current period expires.'
+                    : isOneTime
+                    ? `Active ${subscription?.billingInterval ? subscription.billingInterval.toLowerCase() + 'ly' : 'monthly'} pass (One-time payment).`
                     : isPaid
-                    ? 'Active monthly subscription with auto-renewal'
+                    ? `Active ${subscription?.billingInterval ? subscription.billingInterval.toLowerCase() + 'ly' : 'monthly'} subscription with auto-renewal`
                     : 'The productivity engine (tasks, habits, projects) is free. The Free plan is your default starting point — upgrade anytime for AI, goals, and more.'}
                 </p>
               </div>
@@ -199,8 +267,8 @@ export function BillingSettingsPanel() {
               <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                 <Clock className="w-3.5 h-3.5 text-text-muted" />
                 <span>
-                  Current period active until{' '}
-                  <strong>{new Date(effectivePlan.expiresAt).toLocaleDateString('es')}</strong>
+                  {isCancelled ? 'Access remains active until ' : 'Current period active until '}
+                  <strong>{new Date(effectivePlan.expiresAt).toLocaleDateString('en-GB')}</strong>
                 </span>
               </div>
             )}
@@ -212,11 +280,29 @@ export function BillingSettingsPanel() {
               size="md"
               onClick={() => setUpgradeModalOpen(true)}
               leftIcon={<Zap className="w-4 h-4" />}
+              disabled={isPaused}
             >
-              {isPaid ? 'Change Plan' : 'Upgrade Plan'}
+              {isPaused
+                ? 'Billing Paused'
+                : isCancelled
+                ? 'Upgrade'
+                : isPaid
+                ? 'Change Plan'
+                : 'Upgrade Plan'}
             </Button>
 
-            {isPaid && subscription && (
+            {isDowngradeScheduled && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleCancelDowngrade}
+                loading={cancellingDowngrade}
+              >
+                Cancel Scheduled Downgrade
+              </Button>
+            )}
+
+            {isPaid && subscription && !isCancelled && !isPaused && subscription.status === 'ACTIVE' && (
               <Button
                 variant="danger"
                 size="md"
@@ -464,12 +550,41 @@ export function BillingSettingsPanel() {
               const tier = baseTierOf(p.slug);
               const activeTier = baseTierOf(effectivePlan.planSlug);
               const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
+
+              const activePrice = subscription?.plan?.priceCents || 0;
+              const startMs = subscription?.currentPeriodStart ? new Date(subscription.currentPeriodStart).getTime() : 0;
+              const endMs = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).getTime() : 0;
+              const totalDurationMs = Math.max(1, endMs - startMs);
+              const remainingMs = Math.max(0, endMs - Date.now());
+              const unusedRatio = Math.min(1, Math.max(0, remainingMs / totalDurationMs));
+              const rawCredit = Math.round(activePrice * unusedRatio);
+              const isUpgrade = Boolean(subscription?.status === 'ACTIVE' && activePrice > 0 && p.priceCents > activePrice);
+              const isDowngrade = Boolean(subscription?.status === 'ACTIVE' && activePrice > 0 && p.priceCents < activePrice && !isCurrent);
+              const creditApplied = isUpgrade ? Math.min(p.priceCents, rawCredit) : 0;
+              const taxable = Math.max(0, p.priceCents - creditApplied);
+              const totalWithGst = taxable + Math.round((taxable * (p.gstPercent ?? 18)) / 100);
+
               return (
                 <PlanCard
                   key={p.id}
                   plan={p}
                   isCurrent={isCurrent}
+                  isDowngrade={isDowngrade}
+                  disabled={subscription?.status === 'PAUSED'}
+                  disabledLabel="Billing Paused"
+                  upgradeProration={
+                    isUpgrade && creditApplied > 0
+                      ? {
+                          isUpgrade: true,
+                          proratedCreditCents: creditApplied,
+                          taxableCents: taxable,
+                          totalCents: totalWithGst,
+                          currentPlanName: subscription?.plan?.name,
+                        }
+                      : null
+                  }
                   onSelect={() => setUpgradeModalOpen(true)}
+                  onDowngrade={(plan) => setDowngradeTargetPlan(plan)}
                 />
               );
             })}
@@ -644,6 +759,17 @@ export function BillingSettingsPanel() {
         onConfirm={handleCancelSub}
         isLoading={cancelling}
       />
+
+      {downgradeTargetPlan && (
+        <DowngradeConfirmModal
+          isOpen={Boolean(downgradeTargetPlan)}
+          onClose={() => setDowngradeTargetPlan(null)}
+          currentPlanName={effectivePlan.planName}
+          targetPlan={downgradeTargetPlan}
+          periodEndDate={effectivePlan.expiresAt}
+          onConfirm={handleConfirmDowngrade}
+        />
+      )}
     </div>
   );
 }

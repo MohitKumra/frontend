@@ -9,7 +9,8 @@
 // circle backgrounds) at 16px with 12px row gaps, 48px full-width button.
 
 import React from 'react';
-import { Check, Lock, ArrowRight, Star, Gem, Crown, Gift } from 'lucide-react';
+import { Check, Lock, ArrowRight, Star, Gem, Crown, Gift, ChevronRight, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { PlanDTO } from '../../features/billing/useUserPlan';
 import { formatINR } from '../../utils/formatCurrency';
 import { NUMERIC_FEATURES, BOOLEAN_FEATURES } from '../../features/plan/planCatalog';
@@ -20,7 +21,16 @@ interface PlanCardProps {
   isPopular?: boolean;
   disabled?: boolean;
   disabledLabel?: string;
+  isDowngrade?: boolean;
+  upgradeProration?: {
+    isUpgrade: boolean;
+    proratedCreditCents: number;
+    taxableCents?: number;
+    totalCents?: number;
+    currentPlanName?: string;
+  } | null;
   onSelect?: (plan: PlanDTO) => void;
+  onDowngrade?: (plan: PlanDTO) => void;
 }
 
 const TIER_STYLES: Record<
@@ -89,10 +99,14 @@ export function PlanCard({
   isPopular = false,
   disabled = false,
   disabledLabel,
+  isDowngrade = false,
+  upgradeProration,
   onSelect,
+  onDowngrade,
 }: PlanCardProps) {
   const isDark = useIsDarkMode();
-  const [showAllFeatures, setShowAllFeatures] = React.useState(false);
+  const [featurePage, setFeaturePage] = React.useState(0);
+  const [direction, setDirection] = React.useState(1);
   const tier = TIER_STYLES[baseTierOf(p.slug)] || TIER_STYLES.basic;
   const Icon = tier.icon;
   const priceDisplay = p.priceCents === 0 ? 'Free' : formatINR(p.priceCents);
@@ -109,7 +123,19 @@ export function PlanCard({
     }),
   ];
 
-  const visibleRows = showAllFeatures ? rows : rows.slice(0, 5);
+  const PAGE_SIZE = 5;
+  const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+  const currentRows = rows.slice(featurePage * PAGE_SIZE, (featurePage + 1) * PAGE_SIZE);
+
+  const paginate = (newDirection: number) => {
+    setDirection(newDirection);
+    setFeaturePage((prev) => {
+      const next = prev + newDirection;
+      if (next < 0) return totalPages - 1;
+      if (next >= totalPages) return 0;
+      return next;
+    });
+  };
 
   return (
     <div
@@ -138,6 +164,11 @@ export function PlanCard({
               Current Plan
             </span>
           )}
+          {!isCurrent && upgradeProration?.isUpgrade && upgradeProration.proratedCreditCents > 0 && (
+            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 whitespace-nowrap shadow-xs">
+              Upgrade with Credit
+            </span>
+          )}
         </div>
 
         {/* Name + description */}
@@ -147,58 +178,154 @@ export function PlanCard({
         </p>
 
         {/* Price */}
-        <div className="flex items-baseline gap-1.5 mt-3 sm:mt-4">
-          <span className="text-2xl sm:text-[32px] leading-none font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
-            {priceDisplay}
-          </span>
-          {p.priceCents > 0 && <span className="text-xs sm:text-[13px] text-slate-400 dark:text-slate-500">{intervalLabel}</span>}
+        <div className="flex flex-col mt-3 sm:mt-4">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl sm:text-[32px] leading-none font-extrabold text-slate-900 dark:text-slate-100 tabular-nums">
+              {priceDisplay}
+            </span>
+            {p.priceCents > 0 && <span className="text-xs sm:text-[13px] text-slate-400 dark:text-slate-500">{intervalLabel}</span>}
+          </div>
+          {upgradeProration?.isUpgrade && upgradeProration.proratedCreditCents > 0 && (
+            <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+              Pay only {formatINR(upgradeProration.taxableCents ?? Math.max(0, p.priceCents - upgradeProration.proratedCreditCents))} today ({formatINR(upgradeProration.proratedCreditCents)} credit)
+            </p>
+          )}
         </div>
 
         {/* Divider */}
         <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-3 sm:mt-5 sm:mb-4" />
 
-        {/* Feature checklist */}
-        <ul className="space-y-2.5 sm:space-y-3 flex-1">
-          {visibleRows.map((r) => (
-            <li key={r.label} className="flex items-center gap-2 sm:gap-2.5 text-xs sm:text-[13.5px]">
-              {r.on ? (
-                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" style={{ color: tier.accent }} strokeWidth={2.5} />
-              ) : (
-                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-slate-300 dark:text-slate-600" />
-              )}
-              <span className={r.on ? 'text-slate-700 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500'}>
-                {r.label}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {/* Feature checklist with slide animation */}
+        <div className="relative min-h-[160px] sm:min-h-[175px] overflow-hidden flex flex-col justify-start flex-1">
+          <AnimatePresence initial={false} custom={direction} mode="wait">
+            <motion.ul
+              key={featurePage}
+              custom={direction}
+              variants={{
+                enter: (dir: number) => ({
+                  x: dir > 0 ? 36 : -36,
+                  opacity: 0,
+                }),
+                center: {
+                  x: 0,
+                  opacity: 1,
+                },
+                exit: (dir: number) => ({
+                  x: dir < 0 ? 36 : -36,
+                  opacity: 0,
+                }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="space-y-2.5 sm:space-y-3 w-full"
+            >
+              {currentRows.map((r) => (
+                <li key={r.label} className="flex items-center gap-2 sm:gap-2.5 text-xs sm:text-[13.5px]">
+                  {r.on ? (
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" style={{ color: tier.accent }} strokeWidth={2.5} />
+                  ) : (
+                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-slate-300 dark:text-slate-600" />
+                  )}
+                  <span className={r.on ? 'text-slate-700 dark:text-slate-200 font-medium truncate' : 'text-slate-400 dark:text-slate-500 truncate'}>
+                    {r.label}
+                  </span>
+                </li>
+              ))}
+            </motion.ul>
+          </AnimatePresence>
+        </div>
 
-        {rows.length > 5 && (
-          <button
-            type="button"
-            onClick={() => setShowAllFeatures(!showAllFeatures)}
-            className="text-[11px] sm:text-xs font-bold text-accent hover:underline mt-2.5 inline-flex items-center gap-1 self-start"
-          >
-            {showAllFeatures ? 'Show fewer features ↑' : `+${rows.length - 5} more features ↓`}
-          </button>
+        {/* Feature pagination footer */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2.5 mt-auto border-t border-slate-100 dark:border-slate-800/80">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }).map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setDirection(idx > featurePage ? 1 : -1);
+                    setFeaturePage(idx);
+                  }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    idx === featurePage
+                      ? 'w-4 bg-accent'
+                      : 'w-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
+                  }`}
+                  aria-label={`Go to features page ${idx + 1}`}
+                />
+              ))}
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 ml-1.5">
+                {featurePage + 1}/{totalPages}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {featurePage === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => paginate(1)}
+                  className="text-[11px] sm:text-xs font-bold text-accent hover:underline inline-flex items-center gap-0.5"
+                >
+                  <span>+{rows.length - PAGE_SIZE} more features</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => paginate(-1)}
+                    className="px-1.5 py-0.5 rounded-md text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-[11px] font-semibold inline-flex items-center gap-0.5"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Prev</span>
+                  </button>
+                  {featurePage < totalPages - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => paginate(1)}
+                      className="px-1.5 py-0.5 rounded-md text-accent hover:underline text-[11px] font-bold inline-flex items-center gap-0.5"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Action */}
         <button
           type="button"
-          onClick={() => onSelect?.(p)}
+          onClick={() => {
+            if (isDowngrade && onDowngrade) {
+              onDowngrade(p);
+            } else {
+              onSelect?.(p);
+            }
+          }}
           disabled={isCurrent || disabled}
           className={`mt-4 sm:mt-6 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all ${
             isCurrent || disabled
               ? 'bg-slate-100 dark:bg-slate-800 dark:text-slate-500 text-slate-400 cursor-default'
+              : isDowngrade
+              ? 'bg-transparent border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm'
               : 'text-white hover:brightness-105 shadow-sm'
           }`}
-          style={!isCurrent && !disabled ? { backgroundColor: tier.accent } : undefined}
+          style={!isCurrent && !disabled && !isDowngrade ? { backgroundColor: tier.accent } : undefined}
         >
           {isCurrent
             ? 'Active plan'
             : disabled
             ? disabledLabel || 'Billing Paused'
+            : isDowngrade
+            ? `Downgrade to ${p.name}`
+            : upgradeProration?.isUpgrade && upgradeProration.proratedCreditCents > 0
+            ? `Upgrade to ${p.name}`
             : p.priceCents === 0
             ? `Continue with ${p.name}`
             : `Choose ${p.name}`}

@@ -48,6 +48,8 @@ import { TasksEmptyState } from '../components/tasks/TasksEmptyState';
 import { ProductivityEngine } from '../components/habits/ProductivityEngine';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
+import { useUserPlan } from '../features/billing/useUserPlan';
+import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import type { DailyAnalyticsDTO, TaskCountsDTO, TaskDTO, TaskStatus } from '../types';
 import {
   dateKeyInTimeZone,
@@ -434,23 +436,7 @@ function TasksHero({
         borderBottom: '1px solid var(--color-border)',
       }}
     >
-      {/* Ambient blobs */}
-      <motion.div
-        style={{ x: blob1X, y: blob1Y }}
-        className="pointer-events-none absolute -top-20 -left-20 h-[380px] w-[380px] rounded-full"
-        aria-hidden="true"
-        animate={floating ? { scale: [1, 1.07, 1] } : undefined}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        <div
-          className="h-full w-full rounded-full"
-          style={{
-            background:
-              'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 11%, transparent), transparent 70%)',
-            filter: 'blur(36px)',
-          }}
-        />
-      </motion.div>
+
       <motion.div
         style={{ x: blob2X, y: blob2Y }}
         className="pointer-events-none absolute -bottom-12 right-0 h-[300px] w-[300px] rounded-full"
@@ -858,6 +844,8 @@ export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore((s) => s.user);
+  const { isFeatureLocked } = useUserPlan();
+  const openUpgrade = useUpgradeModalStore((s) => s.openUpgrade);
   const [isFilterPending, startFilterTransition] = useTransition();
   const accountTimeZone = user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
 
@@ -1400,8 +1388,15 @@ export function TasksPage() {
     },
     onFocusSearch: () => searchRef.current?.focus(),
     onFocusMode: () => {
-      if (firstSelected) navigate(`/focus?taskId=${firstSelected.id}&autostart=1`);
-      else navigate('/focus?autostart=1');
+      if (firstSelected) {
+        if (isFeatureLocked('focusAdvanced')) {
+          openUpgrade('focusAdvanced', 'Linking tasks to Focus mode is an Advanced Focus feature available on Pro plans.');
+          return;
+        }
+        navigate(`/focus?taskId=${firstSelected.id}&autostart=1`);
+      } else {
+        navigate('/focus?autostart=1');
+      }
     },
     isBlocked: () => createModalOpen || editingTask !== null,
   });
@@ -1723,7 +1718,13 @@ export function TasksPage() {
                             updateSubTaskMutation.mutate({ taskId, subTaskId, data: { completed } })
                           }
                           onDeleteSubtask={(taskId, subTaskId) => deleteSubTaskMutation.mutate({ taskId, subTaskId })}
-                          onFocus={(taskId) => navigate(`/focus?taskId=${taskId}`)}
+                          onFocus={(taskId) => {
+                            if (isFeatureLocked('focusAdvanced')) {
+                              openUpgrade('focusAdvanced', 'Linking tasks to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.');
+                              return;
+                            }
+                            navigate(`/focus?taskId=${taskId}`);
+                          }}
                           onOpen={(taskId) => navigate(`/tasks/${taskId}`)}
                         />
                       ))}

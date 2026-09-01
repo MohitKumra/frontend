@@ -254,7 +254,7 @@ export function CustomPlanPayPage() {
 
   if (activated) {
     return (
-      <div className="min-h-dvh flex items-center justify-center p-6 bg-[#EEF0FA]">
+      <div className="flex items-center justify-center p-6 bg-[#EEF0FA]">
         <div className="max-w-sm w-full rounded-3xl border border-[#ECECF5] bg-white p-8 shadow-xl text-center">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
             <Check className="w-7 h-7 text-emerald-500" />
@@ -284,8 +284,8 @@ export function CustomPlanPayPage() {
   const booleanShown = BOOLEAN_FEATURES.filter((f) => info.features[f.key] === true);
 
   return (
-    <div className="min-h-dvh bg-[#EEF0FA] px-4 py-8 sm:py-10">
-      <div className="max-w-8xl mx-auto bg-white rounded-[28px] shadow-sm overflow-hidden">
+    <div className="">
+      <div className="bg-white  shadow-sm overflow-hidden">
         {/* Header */}
         <header className="flex items-center justify-between px-8 sm:px-10 py-6 border-b border-[#F0F0F7]">
           <div className="flex items-center gap-2">

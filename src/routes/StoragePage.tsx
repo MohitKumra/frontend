@@ -165,7 +165,7 @@ export function StoragePage() {
   }, [files, selectedType, selectedFolder, searchQuery, sortBy]);
 
   return (
-    <div className="min-h-screen w-full p-6 sm:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen w-full px-3 pt-3 pb-6 sm:px-4 sm:pt-4 sm:pb-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

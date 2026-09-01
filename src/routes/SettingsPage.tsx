@@ -334,7 +334,7 @@ function SettingsHero({
       />
 
       {/* Content */}
-      <div className="relative flex flex-col gap-6 p-5 sm:p-7 lg:p-8">
+      <div className="relative flex flex-col gap-6 px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5 lg:pt-4">
         {/* Top row: eyebrow + save status */}
         <div className="flex items-center justify-between gap-3">
           <div

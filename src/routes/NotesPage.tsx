@@ -1440,7 +1440,7 @@ function NotesHero({
       ref={heroRef}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      className="relative overflow-hidden rounded-[28px]"
+      className="relative overflow-hidden"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
@@ -1491,7 +1491,7 @@ function NotesHero({
         }}
       />
 
-      <div className="relative flex flex-col gap-5 p-5 sm:p-7 lg:p-5">
+      <div className="relative flex flex-col gap-5 px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5 lg:pt-4">
         {/* Row 1: eyebrow + CTAs */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Eyebrow */}

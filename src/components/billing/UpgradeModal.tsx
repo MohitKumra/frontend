@@ -1,16 +1,13 @@
-// frontend/src/components/billing/UpgradeModal.tsx
-// Plan selection modal. When a user picks a plan, this component routes them to
-// the dedicated Billing page with the chosen plan prefilled (coupon, bill summary,
-// and Razorpay payment all happen on that page).
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Sparkles, ShieldCheck, Wand2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useUserPlan, type PlanDTO } from '../../features/billing/useUserPlan';
 import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { useCustomPlanModalStore } from '../../store/customPlanModalStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { PlanCard } from './PlanCard';
+import { DowngradeConfirmModal } from './DowngradeConfirmModal';
 import { APP_NAME, DEFAULT_CURRENCY, GST_PERCENT } from '../../config/brand';
 
 interface UpgradeModalProps {
@@ -48,7 +45,8 @@ export function UpgradeModal({
   message,
   onSelectPlan,
 }: UpgradeModalProps) {
-  const { plans, effectivePlan, subscription } = useUserPlan();
+  const { plans, effectivePlan, subscription, downgradeSubscription, refetch } = useUserPlan();
+  const [downgradeTargetPlan, setDowngradeTargetPlan] = useState<PlanDTO | null>(null);
 
   // Monthly / Annual billing toggle. Plans are DB-backed rows; each paid tier
   // has a MONTH and a YEAR row. The toggle only filters which rows are shown,
@@ -405,19 +403,66 @@ export function UpgradeModal({
               const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
               const isPopular = tier === 'premium';
 
+              const activePrice = subscription?.plan?.priceCents || 0;
+              const startMs = subscription?.currentPeriodStart ? new Date(subscription.currentPeriodStart).getTime() : 0;
+              const endMs = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).getTime() : 0;
+              const totalDurationMs = Math.max(1, endMs - startMs);
+              const remainingMs = Math.max(0, endMs - Date.now());
+              const unusedRatio = Math.min(1, Math.max(0, remainingMs / totalDurationMs));
+              const rawCredit = Math.round(activePrice * unusedRatio);
+              const isUpgrade = Boolean(subscription?.status === 'ACTIVE' && activePrice > 0 && p.priceCents > activePrice);
+              const creditApplied = isUpgrade ? Math.min(p.priceCents, rawCredit) : 0;
+              const taxable = Math.max(0, p.priceCents - creditApplied);
+              const totalWithGst = taxable + Math.round((taxable * (p.gstPercent ?? 18)) / 100);
+
+              const isDowngrade = Boolean(subscription?.status === 'ACTIVE' && activePrice > 0 && p.priceCents < activePrice && !isCurrent);
+
               return (
                 <PlanCard
                   key={p.id}
                   plan={p}
                   isCurrent={isCurrent}
                   isPopular={isPopular}
+                  isDowngrade={isDowngrade}
                   disabled={subscription?.status === 'PAUSED'}
                   disabledLabel="Billing Paused"
+                  upgradeProration={
+                    isUpgrade && creditApplied > 0
+                      ? {
+                          isUpgrade: true,
+                          proratedCreditCents: creditApplied,
+                          taxableCents: taxable,
+                          totalCents: totalWithGst,
+                          currentPlanName: subscription?.plan?.name,
+                        }
+                      : null
+                  }
                   onSelect={handleSelectPlan}
+                  onDowngrade={(plan) => setDowngradeTargetPlan(plan)}
                 />
               );
             })}
           </div>
+        )}
+
+        {downgradeTargetPlan && (
+          <DowngradeConfirmModal
+            isOpen={Boolean(downgradeTargetPlan)}
+            onClose={() => setDowngradeTargetPlan(null)}
+            currentPlanName={effectivePlan.planName}
+            targetPlan={downgradeTargetPlan}
+            periodEndDate={effectivePlan.expiresAt}
+            onConfirm={async () => {
+              try {
+                await downgradeSubscription({ targetPlanId: downgradeTargetPlan.id });
+                toast.success(`Downgrade to ${downgradeTargetPlan.name} scheduled for end of billing cycle.`);
+                refetch();
+                onClose();
+              } catch (err: any) {
+                toast.error(err?.response?.data?.error?.message || 'Failed to schedule downgrade');
+              }
+            }}
+          />
         )}
       </div>
     </div>
