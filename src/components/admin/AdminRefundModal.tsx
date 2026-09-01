@@ -10,7 +10,7 @@ export interface RefundableTransaction {
   id: string;
   grossAmountCents: number;
   discountCents: number;
-  taxCents: number;
+  taxCents?: number;
   netAmountCents: number;
   currency: string;
   status: string;
@@ -18,7 +18,7 @@ export interface RefundableTransaction {
   refunds?: Array<{
     id: string;
     amountCents: number;
-    reason: string | null;
+    reason?: string | null;
     status: string;
     createdAt: string;
   }>;

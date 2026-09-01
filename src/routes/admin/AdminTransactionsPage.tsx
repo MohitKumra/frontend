@@ -15,6 +15,7 @@ interface Transaction {
   plan: { id: string; name: string } | null;
   grossAmountCents: number;
   discountCents: number;
+  taxCents?: number;
   netAmountCents: number;
   currency: string;
   status: 'CAPTURED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'FAILED';
