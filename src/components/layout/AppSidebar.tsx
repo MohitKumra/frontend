@@ -80,27 +80,137 @@ function formatBytes(bytes: number): string {
   return `${i === 0 ? Math.round(value) : value.toFixed(value < 10 ? 1 : 0)} ${units[i]}`;
 }
 
-/** Small duotone hill / telescope scene that anchors the bottom of the rail. */
+/**
+ * Finamite Focus & Momentum Art
+ * Crisp, vibrant, theme-adaptive artwork anchoring the sidebar footer.
+ */
 function SidebarIllustration() {
   return (
-    <div className="relative shrink-0 h-28 overflow-hidden" aria-hidden="true">
+    <div className="relative shrink-0 h-24 overflow-hidden select-none pointer-events-none" aria-hidden="true">
       <svg
-        viewBox="0 0 300 160"
+        viewBox="0 0 260 96"
         preserveAspectRatio="xMidYMax slice"
-        className="absolute inset-0 w-full h-full"
+        className="w-full h-full"
       >
-        <circle cx="248" cy="26" r="1.6" fill="var(--color-accent)" opacity="0.5" />
-        <circle cx="220" cy="46" r="1.2" fill="var(--color-accent)" opacity="0.35" />
-        <circle cx="268" cy="58" r="1.4" fill="var(--color-accent)" opacity="0.4" />
-        <path d="M0 150 C 60 90, 110 90, 150 118 C 190 90, 240 90, 300 150 L300 160 L0 160 Z" fill="var(--color-accent)" opacity="0.16" />
-        <path d="M0 160 C 70 105, 140 100, 210 140 C 250 120, 280 128, 300 150 L300 160 L0 160 Z" fill="var(--color-accent)" opacity="0.3" />
-        <path d="M60 140 L74 112 L88 140 Z" fill="var(--color-accent)" opacity="0.4" />
-        <path d="M42 145 L54 122 L66 145 Z" fill="var(--color-accent)" opacity="0.4" />
-        <g transform="translate(150 96)">
-          <circle cx="0" cy="0" r="7" fill="var(--color-accent)" opacity="0.55" />
-          <path d="M-5 8 L5 8 L7 34 L-7 34 Z" fill="var(--color-accent)" opacity="0.55" />
-          <rect x="-1.5" y="-3" width="22" height="5" rx="2.5" transform="rotate(-28)" fill="var(--color-accent)" opacity="0.55" />
+        <defs>
+          {/* Main radiant glow */}
+          <radialGradient id="sidebarRadialGlow" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.3" />
+            <stop offset="60%" stopColor="var(--color-accent)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+          </radialGradient>
+
+          {/* Deep foreground wave */}
+          <linearGradient id="sidebarWaveFront" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.32" />
+            <stop offset="50%" stopColor="var(--color-accent)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.25" />
+          </linearGradient>
+
+          {/* Soft background wave */}
+          <linearGradient id="sidebarWaveBack" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.15" />
+            <stop offset="50%" stopColor="var(--color-accent)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.12" />
+          </linearGradient>
+
+          {/* Sparkle core glow */}
+          <radialGradient id="sparkCoreGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+            <stop offset="40%" stopColor="var(--color-accent)" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Ambient background glow */}
+        <rect x="0" y="0" width="260" height="96" fill="url(#sidebarRadialGlow)" />
+
+        {/* Perspective grid lines */}
+        <g opacity="0.25" stroke="var(--color-accent)" strokeWidth="0.75" strokeDasharray="3 3">
+          <line x1="130" y1="36" x2="20" y2="96" />
+          <line x1="130" y1="36" x2="70" y2="96" />
+          <line x1="130" y1="36" x2="130" y2="96" />
+          <line x1="130" y1="36" x2="190" y2="96" />
+          <line x1="130" y1="36" x2="240" y2="96" />
         </g>
+
+        {/* Layered Flow Waves */}
+        {/* Back wave */}
+        <path
+          d="M-10 96 L-10 68 C 45 48, 85 74, 130 54 C 175 34, 215 62, 270 48 L270 96 Z"
+          fill="url(#sidebarWaveBack)"
+        />
+
+        {/* Front wave */}
+        <path
+          d="M-10 96 L-10 76 C 50 62, 90 82, 135 66 C 180 50, 220 72, 270 58 L270 96 Z"
+          fill="url(#sidebarWaveFront)"
+        />
+
+        {/* Glowing wave crest strokes */}
+        <path
+          d="M-10 68 C 45 48, 85 74, 130 54 C 175 34, 215 62, 270 48"
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth="1.2"
+          strokeOpacity="0.4"
+        />
+        <path
+          d="M-10 76 C 50 62, 90 82, 135 66 C 180 50, 220 72, 270 58"
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth="1.5"
+          strokeOpacity="0.6"
+        />
+
+        {/* Floating Productivity Spark Star (Central) */}
+        <g transform="translate(130 32)">
+          {/* Halo */}
+          <circle cx="0" cy="0" r="14" fill="url(#sparkCoreGlow)" />
+          {/* Diamond Sparkle 4-point */}
+          <path
+            d="M0 -10 Q0 0 10 0 Q0 0 0 10 Q0 0 -10 0 Q0 0 0 -10 Z"
+            fill="var(--color-accent)"
+          />
+          {/* Inner core */}
+          <path
+            d="M0 -5 Q0 0 5 0 Q0 0 0 5 Q0 0 -5 0 Q0 0 0 -5 Z"
+            fill="#ffffff"
+          />
+        </g>
+
+        {/* Satellite Sparkle Left */}
+        <g transform="translate(62 46)">
+          <path
+            d="M0 -5 Q0 0 5 0 Q0 0 0 5 Q0 0 -5 0 Q0 0 0 -5 Z"
+            fill="var(--color-accent)"
+            opacity="0.75"
+          />
+          <circle cx="0" cy="0" r="1" fill="#ffffff" />
+        </g>
+
+        {/* Satellite Sparkle Right */}
+        <g transform="translate(202 38)">
+          <path
+            d="M0 -6 Q0 0 6 0 Q0 0 0 6 Q0 0 -6 0 Q0 0 0 -6 Z"
+            fill="var(--color-accent)"
+            opacity="0.8"
+          />
+          <circle cx="0" cy="0" r="1.2" fill="#ffffff" />
+        </g>
+
+        {/* Constellation nodes & orbit arcs */}
+        <circle cx="95" cy="24" r="1.5" fill="var(--color-accent)" opacity="0.6" />
+        <circle cx="168" cy="20" r="1.8" fill="var(--color-accent)" opacity="0.7" />
+        <circle cx="168" cy="20" r="0.8" fill="#ffffff" />
+        <circle cx="230" cy="44" r="1.4" fill="var(--color-accent)" opacity="0.5" />
+        <circle cx="32" cy="52" r="1.2" fill="var(--color-accent)" opacity="0.5" />
+
+        {/* Fine connector lines */}
+        <line x1="62" y1="46" x2="95" y2="24" stroke="var(--color-accent)" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.35" />
+        <line x1="95" y1="24" x2="130" y2="32" stroke="var(--color-accent)" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.45" />
+        <line x1="130" y1="32" x2="168" y2="20" stroke="var(--color-accent)" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.45" />
+        <line x1="168" y1="20" x2="202" y2="38" stroke="var(--color-accent)" strokeWidth="0.8" strokeDasharray="2 3" opacity="0.4" />
       </svg>
     </div>
   );

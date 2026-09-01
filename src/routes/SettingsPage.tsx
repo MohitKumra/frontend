@@ -213,10 +213,12 @@ function SettingsHero({
   isSaving,
   stats,
   activeTab,
+  onTabChange,
 }: {
   isSaving: boolean;
   stats: { theme: string; density: string; alerts: string; linked: string };
   activeTab: SettingsTab;
+  onTabChange: (tab: SettingsTab) => void;
 }) {
   const heroRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0.5);
@@ -274,6 +276,13 @@ function SettingsHero({
       colorVar: TAB_COLOR.ai,
       desc: 'Features · Budget',
     },
+    {
+      id: 'billing',
+      label: 'Billing & Plans',
+      icon: <CreditCard size={16} />,
+      colorVar: TAB_COLOR.billing,
+      desc: 'Subscription · Invoices',
+    },
   ];
 
   return (
@@ -281,7 +290,7 @@ function SettingsHero({
       ref={heroRef}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      className="relative overflow-hidden rounded-2xl sm:rounded-3xl border"
+      className="relative overflow-hidden border"
       style={{
         borderColor: 'var(--color-border)',
         background: 'var(--color-surface)',
@@ -334,7 +343,7 @@ function SettingsHero({
       />
 
       {/* Content */}
-      <div className="relative flex flex-col gap-6 px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5 lg:pt-4">
+      <div className="relative flex flex-col gap-5 p-4 sm:p-6 lg:p-7">
         {/* Top row: eyebrow + save status */}
         <div className="flex items-center justify-between gap-3">
           <div
@@ -375,58 +384,124 @@ function SettingsHero({
           </div>
         </div>
 
-        {/* Headline + sub + stat chips */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1
-              className="font-black tracking-tight"
-              style={{ fontSize: 'clamp(1.9rem, 3.5vw, 3rem)', lineHeight: 1.06, color: 'var(--color-text-primary)' }}
-            >
-              Settings
-            </h1>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Five modules, one console. Every change saves the moment you make it.
-            </p>
-          </div>
+        {/* Headline + sub */}
+        <div className="flex flex-col gap-1">
+          <h1
+            className="font-black tracking-tight"
+            style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', lineHeight: 1.1, color: 'var(--color-text-primary)' }}
+          >
+            Settings
+          </h1>
+          <p className="max-w-xl text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            Configure your workspace preferences, appearance, notifications, and connected accounts.
+          </p>
         </div>
 
-        {/* Module preview cards */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {/* Desktop: Smooth sliding horizontal tab ribbon */}
+        <div className="hidden lg:flex items-center gap-1.5 p-1.5 rounded-2xl border bg-surface/80 backdrop-blur-sm border-border/80 w-fit">
+          {modules.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const colorVar = tab.colorVar;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onTabChange(tab.id)}
+                className={[
+                  'relative px-4 py-2.5 rounded-xl text-xs font-bold transition-colors duration-200 flex items-center gap-2 select-none cursor-pointer',
+                  isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover/50',
+                ].join(' ')}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="settings-tab-pill"
+                    className="absolute inset-0 rounded-xl shadow-xs"
+                    style={{
+                      background: `color-mix(in srgb, var(${colorVar}) 12%, var(--color-surface-raised))`,
+                      border: `1px solid color-mix(in srgb, var(${colorVar}) 30%, transparent)`,
+                    }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span
+                  className="relative z-10 w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300"
+                  style={{
+                    background: isActive ? `var(${colorVar})` : 'var(--color-border)',
+                    boxShadow: isActive ? `0 0 6px var(${colorVar})` : 'none',
+                  }}
+                />
+                <span
+                  className="relative z-10 shrink-0 transition-colors"
+                  style={{ color: isActive ? `var(${colorVar})` : undefined }}
+                >
+                  {tab.icon}
+                </span>
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mobile: 2x3 Module Navigation Cards */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:hidden pt-1">
           {modules.map((mod) => {
             const isActive = activeTab === mod.id;
             return (
-              <div
+              <button
                 key={mod.id}
-                className="flex flex-col gap-2 rounded-2xl border p-3 transition-all"
+                type="button"
+                onClick={() => onTabChange(mod.id)}
+                className="relative flex flex-col items-start gap-2 rounded-xl sm:rounded-2xl border p-3 text-left transition-all duration-200 cursor-pointer group hover:scale-[1.01] active:scale-[0.99]"
                 style={{
                   borderColor: isActive
-                    ? `color-mix(in srgb, var(${mod.colorVar}) 40%, transparent)`
+                    ? `color-mix(in srgb, var(${mod.colorVar}) 45%, transparent)`
                     : 'var(--color-border)',
                   background: isActive
-                    ? `color-mix(in srgb, var(${mod.colorVar}) 6%, var(--color-surface-raised))`
+                    ? `color-mix(in srgb, var(${mod.colorVar}) 8%, var(--color-surface-raised))`
                     : 'var(--color-surface-raised)',
-                  boxShadow: isActive ? `0 0 0 1px color-mix(in srgb, var(${mod.colorVar}) 20%, transparent)` : 'none',
+                  boxShadow: isActive
+                    ? `0 0 0 1.5px color-mix(in srgb, var(${mod.colorVar}) 30%, transparent), 0 8px 18px -6px color-mix(in srgb, var(${mod.colorVar}) 18%, transparent)`
+                    : 'none',
                 }}
               >
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{
-                    background: `linear-gradient(135deg, var(${mod.colorVar}), color-mix(in srgb, var(${mod.colorVar}) 60%, white))`,
-                    boxShadow: `0 4px 10px color-mix(in srgb, var(${mod.colorVar}) 30%, transparent)`,
-                    color: 'white',
-                  }}
-                >
-                  {mod.icon}
+                <div className="flex items-center justify-between w-full">
+                  <div
+                    className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                    style={{
+                      background: isActive
+                        ? `linear-gradient(135deg, var(${mod.colorVar}), color-mix(in srgb, var(${mod.colorVar}) 60%, white))`
+                        : 'color-mix(in srgb, var(--color-text-muted) 15%, var(--color-surface))',
+                      boxShadow: isActive ? `0 4px 12px color-mix(in srgb, var(${mod.colorVar}) 35%, transparent)` : 'none',
+                      color: isActive ? 'white' : 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {mod.icon}
+                  </div>
+                  {isActive && (
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{
+                        background: `var(${mod.colorVar})`,
+                        boxShadow: `0 0 8px var(${mod.colorVar})`,
+                      }}
+                    />
+                  )}
                 </div>
-                <div>
-                  <p className="text-[11px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                <div className="min-w-0 w-full">
+                  <p
+                    className="text-[12px] font-black leading-tight tracking-tight truncate"
+                    style={{ color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}
+                  >
                     {mod.label}
                   </p>
-                  <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  <p
+                    className="text-[10px] font-medium leading-tight mt-0.5 truncate hidden sm:block"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
                     {mod.desc}
                   </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -770,67 +845,12 @@ export function SettingsPage() {
         className="flex flex-col gap-4 sm:gap-5 lg:gap-6"
       >
         <motion.div variants={itemVariants}>
-          <SettingsHero isSaving={isSaving} stats={heroStats} activeTab={activeTab} />
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <div
-            className="overflow-x-auto -mx-4 sm:mx-0"
-            style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch',
-            }}
-          >
-            <style>{`
-          .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
-            <div className="px-4 sm:px-0 hide-scrollbar">
-              <div
-                className="rounded-2xl sm:rounded-3xl border p-1.5 sm:p-2 w-fit min-w-full sm:min-w-0"
-                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-              >
-                <div className="flex items-center gap-1">
-                  {SETTINGS_TABS.map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    const colorVar = TAB_COLOR[tab.id];
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => handleTabChange(tab.id)}
-                        className={[
-                          'relative px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center gap-1.5 sm:gap-2 tap-target whitespace-nowrap',
-                          isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
-                        ].join(' ')}
-                      >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300"
-                          style={{
-                            background: isActive ? `var(${colorVar})` : 'var(--color-border)',
-                            boxShadow: isActive ? `0 0 6px var(${colorVar})` : 'none',
-                          }}
-                        />
-                        <span className="shrink-0" style={{ color: isActive ? `var(${colorVar})` : undefined }}>
-                          {tab.icon}
-                        </span>
-                        <span>{tab.label}</span>
-                        {isActive && (
-                          <motion.div
-                            layoutId="settings-tab-indicator"
-                            className="absolute -bottom-0.5 left-3 right-3 h-0.5 rounded-full"
-                            style={{ background: `var(${colorVar})` }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 1 }}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
+          <SettingsHero
+            isSaving={isSaving}
+            stats={heroStats}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
         </motion.div>
 
         <motion.div variants={itemVariants}>
@@ -1025,11 +1045,11 @@ export function SettingsPage() {
 
                 <Card className="p-4 sm:p-5 lg:p-6" variant="default" style={{ overflow: 'visible' }}>
                   <SectionHeader
-                    icon={<Cloud size={20} />}
+                    icon={<Monitor size={20} />}
                     title="Workspace preview"
                     subtitle="See how your theme and density choices come to life."
                     code="LIVE PREVIEW"
-                    colorVar={TAB_COLOR.integrations}
+                    colorVar={TAB_COLOR.appearance}
                   />
 
                   <div
