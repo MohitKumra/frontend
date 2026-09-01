@@ -6,12 +6,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Spinner } from '../../components/ui/Spinner';
+import { APP_NAME_FULL, SUPPORT_EMAIL, DEFAULT_CURRENCY, DEFAULT_TIMEZONE } from '../../config/brand';
 
 export function AdminSettingsPage() {
   const [appName, setAppName] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
-  const [defaultCurrency, setDefaultCurrency] = useState('INR');
-  const [defaultTimezone, setDefaultTimezone] = useState('Asia/Kolkata');
+  const [defaultCurrency, setDefaultCurrency] = useState(DEFAULT_CURRENCY);
+  const [defaultTimezone, setDefaultTimezone] = useState(DEFAULT_TIMEZONE);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -24,10 +25,10 @@ export function AdminSettingsPage() {
     try {
       const res = await adminApiClient.get('/settings');
       const data = res.data.data;
-      setAppName(data.appName || 'Finamite PMS');
-      setSupportEmail(data.supportEmail || 'support@finamite.com');
-      setDefaultCurrency(data.defaultCurrency || 'INR');
-      setDefaultTimezone(data.defaultTimezone || 'Asia/Kolkata');
+      setAppName(data.appName || APP_NAME_FULL);
+      setSupportEmail(data.supportEmail || SUPPORT_EMAIL);
+      setDefaultCurrency(data.defaultCurrency || DEFAULT_CURRENCY);
+      setDefaultTimezone(data.defaultTimezone || DEFAULT_TIMEZONE);
       setMaintenanceMode(data.maintenanceMode || false);
       setMaintenanceMessage(data.maintenanceMessage || '');
     } catch (err) {

@@ -19,6 +19,9 @@ import {
   Wand2,
   Monitor,
   X,
+  PauseCircle,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
@@ -26,6 +29,7 @@ import apiClient from '../lib/apiClient';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { APP_NAME, SUPPORT_EMAIL } from '../config/brand';
 import { Input } from '../components/ui/Input';
 import { PlanCard } from '../components/billing/PlanCard';
 import { useUserPlan, type PlanDTO } from '../features/billing/useUserPlan';
@@ -33,6 +37,7 @@ import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import { useCustomPlanModalStore } from '../store/customPlanModalStore';
 import { InvoicePreview, type InvoicePreviewData } from '../features/billing/InvoicePreview';
 import { fetchMyCustomPlanRequests, type CustomPlanRequestDTO } from '../features/customPlan/customPlanApi';
+import { PaymentVerifyingModal } from '../components/billing/PaymentVerifyingModal';
 import { formatINR } from '../utils/formatCurrency';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
@@ -113,6 +118,15 @@ export function BillingPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [checkoutIdempotencyKey, setCheckoutIdempotencyKey] = useState<string | null>(null);
   const [savingBillingProfile, setSavingBillingProfile] = useState(false);
+  const [verificationModal, setVerificationModal] = useState<{
+    isOpen: boolean;
+    status: 'verifying' | 'success' | 'error';
+    planName?: string;
+    errorMessage?: string;
+  }>({
+    isOpen: false,
+    status: 'verifying',
+  });
   const [billingDraft, setBillingDraft] = useState({
     billingCompanyName: '',
     billingEmail: '',
@@ -250,9 +264,6 @@ export function BillingPage() {
   }
 
   async function openInvoicePdf(pdfUrl: string) {
-    // Open the tab synchronously (during the click gesture) so it isn't blocked
-    // as a popup; filling it with the blob URL after the fetch keeps auth intact
-    // (the token is attached by apiClient). Avoid `noopener` (it nulls the reference).
     const previewWindow = window.open('', '_blank');
     const response = await apiClient.get(pdfUrl, { responseType: 'blob' });
     const blobUrl = URL.createObjectURL(response.data);
@@ -296,14 +307,34 @@ export function BillingPage() {
 
       const { providerOrderId, keyId, amountCents, noPaymentRequired } = checkoutRes;
       if (noPaymentRequired || Number(amountCents) === 0) {
-        await verifyPayment({
-          razorpayOrderId: providerOrderId,
-          razorpayPaymentId: `pay_free_${Date.now()}`,
-          razorpaySignature: 'sig_mock_verified',
+        setVerificationModal({
+          isOpen: true,
+          status: 'verifying',
+          planName: selectedPlan.name,
         });
-        toast.success(`Paid bill of ₹0 activated for ${selectedPlan.name}`);
-        refetch();
-        return;
+        try {
+          await verifyPayment({
+            razorpayOrderId: providerOrderId,
+            razorpayPaymentId: `pay_free_${Date.now()}`,
+            razorpaySignature: 'sig_mock_verified',
+          });
+          setVerificationModal({
+            isOpen: true,
+            status: 'success',
+            planName: selectedPlan.name,
+          });
+          toast.success(`Plan activated: ${selectedPlan.name}`);
+          refetch();
+          return;
+        } catch (err: any) {
+          setVerificationModal({
+            isOpen: true,
+            status: 'error',
+            planName: selectedPlan.name,
+            errorMessage: err?.response?.data?.error?.message || 'Failed to activate plan',
+          });
+          return;
+        }
       }
 
       if (!(window as any).Razorpay) {
@@ -324,13 +355,34 @@ export function BillingPage() {
         description: `${selectedPlan.name} plan`,
         order_id: providerOrderId,
         handler: async (response: any) => {
-          await verifyPayment({
-            razorpayOrderId: response.razorpay_order_id || providerOrderId,
-            razorpayPaymentId: response.razorpay_payment_id || `pay_mock_${Date.now()}`,
-            razorpaySignature: response.razorpay_signature || 'sig_mock_verified',
+          setVerificationModal({
+            isOpen: true,
+            status: 'verifying',
+            planName: selectedPlan.name,
           });
-          toast.success(`Payment successful for ${selectedPlan.name}`);
-          refetch();
+          try {
+            await verifyPayment({
+              razorpayOrderId: response.razorpay_order_id || providerOrderId,
+              razorpayPaymentId: response.razorpay_payment_id || `pay_mock_${Date.now()}`,
+              razorpaySignature: response.razorpay_signature || 'sig_mock_verified',
+            });
+            setVerificationModal({
+              isOpen: true,
+              status: 'success',
+              planName: selectedPlan.name,
+            });
+            toast.success(`Plan activated: ${selectedPlan.name}`);
+            refetch();
+          } catch (err: any) {
+            setVerificationModal({
+              isOpen: true,
+              status: 'error',
+              planName: selectedPlan.name,
+              errorMessage:
+                err?.response?.data?.error?.message ||
+                'Payment received, but verification took longer than expected. Your subscription will sync shortly.',
+            });
+          }
         },
         modal: {
           ondismiss: () => setIsProcessing(false),
@@ -345,13 +397,32 @@ export function BillingPage() {
         });
         rzp.open();
       } else {
-        await verifyPayment({
-          razorpayOrderId: providerOrderId,
-          razorpayPaymentId: `pay_mock_${Date.now()}`,
-          razorpaySignature: 'sig_mock_verified',
+        setVerificationModal({
+          isOpen: true,
+          status: 'verifying',
+          planName: selectedPlan.name,
         });
-        toast.success(`Payment successful for ${selectedPlan.name}`);
-        refetch();
+        try {
+          await verifyPayment({
+            razorpayOrderId: providerOrderId,
+            razorpayPaymentId: `pay_mock_${Date.now()}`,
+            razorpaySignature: 'sig_mock_verified',
+          });
+          setVerificationModal({
+            isOpen: true,
+            status: 'success',
+            planName: selectedPlan.name,
+          });
+          toast.success(`Payment successful for ${selectedPlan.name}`);
+          refetch();
+        } catch (err: any) {
+          setVerificationModal({
+            isOpen: true,
+            status: 'error',
+            planName: selectedPlan.name,
+            errorMessage: err?.response?.data?.error?.message || 'Verification failed',
+          });
+        }
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.error?.message || err?.message || 'Failed to initialize checkout');
@@ -524,6 +595,8 @@ export function BillingPage() {
                   plan={plan}
                   isCurrent={isCurrent}
                   isPopular={baseTierOf(plan.slug) === 'premium'}
+                  disabled={subscription?.status === 'PAUSED'}
+                  disabledLabel="Billing Paused"
                   onSelect={(p) => {
                     setSelectedPlan(p);
                   }}
@@ -725,12 +798,61 @@ export function BillingPage() {
           </div>
         </div>
 
-        <Button fullWidth loading={isProcessing} onClick={handleCheckout} leftIcon={<ArrowRight className="w-4 h-4" />}>
-          Proceed to payment
+        {subscription?.status === 'PAUSED' ? (
+          <div className="rounded-2xl p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-sm">
+              <PauseCircle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Billing Paused by Admin</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
+              New plan purchases and recurring payments are currently disabled while your account billing is paused. Please reach out to our team to resume your subscription.
+            </p>
+            <a
+              href={`mailto:${SUPPORT_EMAIL}?subject=Billing%20Paused%20Inquiry%20-${user?.email || ''}`}
+              className="inline-flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300 hover:underline text-xs"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>Contact {SUPPORT_EMAIL}</span>
+            </a>
+          </div>
+        ) : null}
+
+        {subscription?.status === 'CANCELLED' ? (
+          <div className="rounded-2xl p-3.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-xs">
+              <Info className="w-4 h-4 text-accent shrink-0" />
+              <span>Previous Plan Was Cancelled</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+              Your previous subscription was cancelled. You can purchase and reactivate your Pro workspace with any plan below.
+            </p>
+          </div>
+        ) : null}
+
+        <Button
+          fullWidth
+          disabled={subscription?.status === 'PAUSED'}
+          loading={isProcessing}
+          onClick={handleCheckout}
+          leftIcon={
+            subscription?.status === 'PAUSED' ? (
+              <PauseCircle className="w-4 h-4" />
+            ) : (
+              <ArrowRight className="w-4 h-4" />
+            )
+          }
+        >
+          {subscription?.status === 'PAUSED'
+            ? 'Billing Paused by Admin'
+            : subscription?.status === 'CANCELLED'
+            ? `Reactivate with ${selectedPlan?.name || 'Selected Plan'}`
+            : 'Proceed to payment'}
         </Button>
 
         <p className="text-[11px] text-text-muted">
-          Payments are processed by Razorpay. We send invoice emails after payment and renewal events.
+          {subscription?.status === 'PAUSED'
+            ? 'Plan purchases are locked until an administrator resumes your billing.'
+            : 'Payments are processed by Razorpay. We send invoice emails after payment and renewal events.'}
         </p>
       </CardContent>
     </Card>
@@ -924,10 +1046,10 @@ export function BillingPage() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-text-muted leading-relaxed">
-          Your subscription is managed through your FlowSpace account. If you need assistance with your subscription, billing history, or invoice inquiries, our team is here to help.
+          Your subscription is managed through your {APP_NAME} account. If you need assistance with your subscription, billing history, or invoice inquiries, our team is here to help.
         </p>
         <a
-          href="mailto:support@flowspace.app?subject=Billing%20Support%20Inquiry"
+          href={`mailto:${SUPPORT_EMAIL}?subject=Billing%20Support%20Inquiry`}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-raised hover:bg-surface-hover border border-border text-text-primary text-xs font-semibold transition-colors"
         >
           <Mail className="w-3.5 h-3.5 text-accent" />
@@ -968,6 +1090,72 @@ export function BillingPage() {
           </div>
         </div>
       </div>
+
+      {/* PAUSED Status Banner */}
+      {subscription?.status === 'PAUSED' && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+              <PauseCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Your Account Billing is Paused by Admin
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  Paused
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-3xl leading-relaxed">
+                Your subscription and checkout capabilities are currently paused by an administrator. You cannot purchase new plans or process payments at this time. Please reach out to our support team to reactivate your billing.
+              </p>
+            </div>
+          </div>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}?subject=Billing%20Paused%20Inquiry%20-${user?.email || ''}`}
+            className="shrink-0 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all inline-flex items-center gap-2 shadow-sm active:scale-95"
+          >
+            <Mail className="w-4 h-4" />
+            <span>Contact Support</span>
+          </a>
+        </div>
+      )}
+
+      {/* CANCELLED Status Banner */}
+      {subscription?.status === 'CANCELLED' && (
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 mt-0.5">
+              <Info className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Your Previous Plan Was Cancelled
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  Cancelled Once
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                Your previous subscription was cancelled. You can select any plan below to renew your subscription and reactivate your full workspace features whenever you are ready.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (paidPlans.length > 0) setSelectedPlan(paidPlans[0]);
+              window.scrollTo({ top: 300, behavior: 'smooth' });
+            }}
+            className="shrink-0"
+          >
+            Select Plan to Reactivate
+          </Button>
+        </div>
+      )}
 
       {/* Mobile Section Tabs (< lg) */}
       <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-2xl bg-surface-raised border border-border overflow-x-auto no-scrollbar">
@@ -1105,6 +1293,19 @@ export function BillingPage() {
           </AnimatePresence>,
           document.body
         )}
+
+      {/* Payment Verification & Plan Activation Modal */}
+      <PaymentVerifyingModal
+        isOpen={verificationModal.isOpen}
+        status={verificationModal.status}
+        planName={verificationModal.planName || selectedPlan?.name}
+        errorMessage={verificationModal.errorMessage}
+        onClose={() => setVerificationModal((prev) => ({ ...prev, isOpen: false }))}
+        onContinue={() => {
+          setVerificationModal((prev) => ({ ...prev, isOpen: false }));
+          navigate('/dashboard');
+        }}
+      />
     </div>
   );
 }

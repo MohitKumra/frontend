@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
+import { APP_NAME } from '../../config/brand';
 import { formatINR } from '../../utils/formatCurrency';
 
 interface Coupon {
@@ -136,7 +137,7 @@ export function AdminCouponsPage() {
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. FINAMITE50"
+                  placeholder={`e.g. ${APP_NAME.toUpperCase()}50`}
                   required
                   className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-xl text-sm text-text-primary font-mono uppercase"
                 />

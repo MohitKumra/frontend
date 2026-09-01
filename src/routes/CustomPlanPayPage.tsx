@@ -43,7 +43,7 @@ import {
   formatLimit,
 } from '../features/customPlan/customPlanFeature';
 
-const COMPANY_NAME = 'Finamite';
+import { COMPANY_NAME } from '../config/brand';
 
 // Picks a representative icon for a limit row from its label text, since
 // custom plans can include any combination of limits and we don't have a

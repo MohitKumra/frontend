@@ -10,13 +10,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Spinner } from '../../components/ui/Spinner';
+import { BILLING_EMAIL, DEFAULT_CURRENCY, INVOICE_NOTES, COMPANY_LEGAL_NAME } from '../../config/brand';
 
 export function AdminInvoiceSettingsPage() {
   const [sac, setSac] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [placeOfSupply, setPlaceOfSupply] = useState('');
-  const [currency, setCurrency] = useState('INR');
+  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
   const [invoicePrefix, setInvoicePrefix] = useState('INV');
   const [companyName, setCompanyName] = useState('');
   const [gstin, setGstin] = useState('');
@@ -38,7 +39,7 @@ export function AdminInvoiceSettingsPage() {
       setSupportEmail(data.supportEmail || '');
       setNotes(data.notes || '');
       setPlaceOfSupply(data.placeOfSupply || '');
-      setCurrency(data.currency || 'INR');
+      setCurrency(data.currency || DEFAULT_CURRENCY);
       setInvoicePrefix(data.invoicePrefix || 'INV');
       setCompanyName(data.companyName || '');
       setGstin(data.gstin || '');
@@ -145,7 +146,7 @@ export function AdminInvoiceSettingsPage() {
                 type="email"
                 value={supportEmail}
                 onChange={(e) => setSupportEmail(e.target.value)}
-                placeholder="billing@finamite.in"
+                placeholder={BILLING_EMAIL}
               />
               <Input
                 label="Place of Supply"
@@ -159,7 +160,7 @@ export function AdminInvoiceSettingsPage() {
                 type="text"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                placeholder="INR"
+                placeholder={DEFAULT_CURRENCY}
               />
               <Input
                 label="Invoice Number Prefix"
@@ -183,7 +184,7 @@ export function AdminInvoiceSettingsPage() {
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="FINAMITE SOLUTIONS LLP"
+                  placeholder={COMPANY_LEGAL_NAME}
                 />
                 <Input
                   label="GSTIN"
@@ -231,7 +232,7 @@ export function AdminInvoiceSettingsPage() {
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="All monthly and usage payments are non-refundable."
+                placeholder={INVOICE_NOTES}
                 className="w-full px-3.5 py-2.5 bg-surface-raised border border-border rounded-xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-focus"
               />
             </div>

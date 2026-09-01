@@ -1722,9 +1722,13 @@ export function FocusPage() {
         elapsedRef.current = newElapsedSec;
         completionLoggedRef.current = false;
       } else if (searchParams.get('taskId')) {
-        setSelectedTaskId(searchParams.get('taskId'));
+        // Linking a task to the timer is an Advanced Focus (paid) feature — block
+        // free-plan users from pre-selecting via URL instead of session 403.
+        if (focusAdvancedLocked) setFocusUpgradeOpen(true);
+        else setSelectedTaskId(searchParams.get('taskId'));
       } else if (searchParams.get('projectId')) {
-        setSelectedProjectId(searchParams.get('projectId'));
+        if (focusAdvancedLocked) setFocusUpgradeOpen(true);
+        else setSelectedProjectId(searchParams.get('projectId'));
       }
       setIsRestored(true);
     };
@@ -1737,13 +1741,16 @@ export function FocusPage() {
     if (!isRestored || autostartTriggeredRef.current) return;
     const autoStart = searchParams.get('autostart');
     if (autoStart !== '1') return;
+    // If a task/project link was requested but Advanced Focus is locked, don't
+    // auto-start behind the upgrade modal — show the modal instead.
+    if (focusAdvancedLocked && (searchParams.get('taskId') || searchParams.get('projectId'))) return;
     autostartTriggeredRef.current = true;
     // Small delay to let the component fully settle after restoration
     const timer = setTimeout(() => {
       handleStartPause();
     }, 400);
     return () => clearTimeout(timer);
-  }, [isRestored, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isRestored, searchParams, focusAdvancedLocked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Persist to localStorage (debounced to avoid blocking main thread on every second) ─────
   useEffect(() => {
@@ -1807,9 +1814,13 @@ export function FocusPage() {
     const projectIdParam = searchParams.get('projectId');
     if (projectIdParam && allProjects.length > 0 && !selectedProjectId) {
       const match = allProjects.find((p) => p.id === projectIdParam);
-      if (match) setSelectedProjectId(projectIdParam);
+      if (match) {
+        // Linking a project to the timer is an Advanced Focus (paid) feature.
+        if (focusAdvancedLocked) setFocusUpgradeOpen(true);
+        else setSelectedProjectId(projectIdParam);
+      }
     }
-  }, [allProjects, searchParams, selectedProjectId]);
+  }, [allProjects, searchParams, selectedProjectId, focusAdvancedLocked]);
 
   useEffect(() => {
     if (allTasks.length > 0 && selectedTaskId) {
@@ -2355,7 +2366,7 @@ export function FocusPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[260px_1fr_290px] gap-4 items-start">
             {/* Left column */}
             <motion.div variants={itemVariants} className="order-2 lg:order-1 flex flex-col gap-4">
-              <TodaysPlanCard items={todaysPlanItems} onPick={setSelectedTaskId} />
+              <TodaysPlanCard items={todaysPlanItems} onPick={handleSelectTask} />
               <AmbientSoundCard
                 sound={ambientSound}
                 setSound={setAmbientSound}

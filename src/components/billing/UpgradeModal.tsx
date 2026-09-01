@@ -11,6 +11,7 @@ import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { useCustomPlanModalStore } from '../../store/customPlanModalStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { PlanCard } from './PlanCard';
+import { APP_NAME, DEFAULT_CURRENCY, GST_PERCENT } from '../../config/brand';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -47,7 +48,7 @@ export function UpgradeModal({
   message,
   onSelectPlan,
 }: UpgradeModalProps) {
-  const { plans, effectivePlan } = useUserPlan();
+  const { plans, effectivePlan, subscription } = useUserPlan();
 
   // Monthly / Annual billing toggle. Plans are DB-backed rows; each paid tier
   // has a MONTH and a YEAR row. The toggle only filters which rows are shown,
@@ -86,7 +87,7 @@ export function UpgradeModal({
               {highlightFeature ? `${highlightFeature} is a Pro Feature` : 'Pro Feature'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              This capability is included with upgraded FlowSpace plans.
+              This capability is included with upgraded {APP_NAME} plans.
             </p>
           </div>
 
@@ -159,8 +160,8 @@ export function UpgradeModal({
           name: 'Free',
           description: 'Essential task & habit tracking for individuals.',
           priceCents: 0,
-          currency: 'INR',
-          gstPercent: 18,
+          currency: DEFAULT_CURRENCY,
+          gstPercent: GST_PERCENT,
           billingInterval: 'MONTH',
           sortOrder: 0,
           isActive: true,
@@ -186,8 +187,8 @@ export function UpgradeModal({
           name: 'Basic',
           description: 'For individuals seeking enhanced focus & analytics',
           priceCents: 49900,
-          currency: 'INR',
-          gstPercent: 18,
+          currency: DEFAULT_CURRENCY,
+          gstPercent: GST_PERCENT,
           billingInterval: 'MONTH',
           sortOrder: 1,
           isActive: true,
@@ -213,8 +214,8 @@ export function UpgradeModal({
           name: 'Premium',
           description: 'Complete power user productivity system',
           priceCents: 99900,
-          currency: 'INR',
-          gstPercent: 18,
+          currency: DEFAULT_CURRENCY,
+          gstPercent: GST_PERCENT,
           billingInterval: 'MONTH',
           sortOrder: 2,
           isActive: true,
@@ -240,8 +241,8 @@ export function UpgradeModal({
           name: 'Ultimate',
           description: 'Unlimited AI capabilities and maximum limits',
           priceCents: 199900,
-          currency: 'INR',
-          gstPercent: 18,
+          currency: DEFAULT_CURRENCY,
+          gstPercent: GST_PERCENT,
           billingInterval: 'MONTH',
           sortOrder: 3,
           isActive: true,
@@ -404,7 +405,17 @@ export function UpgradeModal({
               const isCurrent = effectivePlan.planSlug !== 'free' && tier === activeTier;
               const isPopular = tier === 'premium';
 
-              return <PlanCard key={p.id} plan={p} isCurrent={isCurrent} isPopular={isPopular} onSelect={handleSelectPlan} />;
+              return (
+                <PlanCard
+                  key={p.id}
+                  plan={p}
+                  isCurrent={isCurrent}
+                  isPopular={isPopular}
+                  disabled={subscription?.status === 'PAUSED'}
+                  disabledLabel="Billing Paused"
+                  onSelect={handleSelectPlan}
+                />
+              );
             })}
           </div>
         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { APP_NAME } from '../../config/brand';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -448,11 +449,11 @@ export function AppLayout() {
               >
                 <Sparkles size={16} className="text-white" />
               </div>
-              <span className="font-extrabold text-base text-text-primary tracking-tight truncate">FlowSpace</span>
+              <span className="font-extrabold text-base text-text-primary tracking-tight truncate">{APP_NAME}</span>
             </div>
 
             <div className="hidden md:block">
-              <span className="text-sm font-bold text-text-muted uppercase tracking-wider">Finamite</span>
+              <span className="text-sm font-bold text-text-muted uppercase tracking-wider">{APP_NAME}</span>
             </div>
           </div>
 

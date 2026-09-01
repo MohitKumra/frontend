@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { WEATHER_CACHE_KEY } from '../../../config/brand';
 
 interface Coords {
   lat: number;
@@ -39,7 +40,7 @@ interface CachedWeather {
   timestamp: number;
 }
 
-const CACHE_KEY = 'finamite-weather-cache';
+const CACHE_KEY = WEATHER_CACHE_KEY;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function getWeatherCondition(code: number): WeatherData['condition'] {

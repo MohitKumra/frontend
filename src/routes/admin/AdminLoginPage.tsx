@@ -7,6 +7,7 @@ import { useAdminStore } from '../../store/adminStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { ADMIN_EMAIL } from '../../config/brand';
 
 export function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -61,7 +62,7 @@ export function AdminLoginPage() {
             <Input
               label="Admin Email"
               type="email"
-              placeholder="admin@finamite.com"
+              placeholder={ADMIN_EMAIL}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail className="w-4 h-4" />}

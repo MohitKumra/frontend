@@ -1,6 +1,7 @@
 // frontend/src/features/billing/useUserPlan.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../lib/apiClient';
+import { COMPANY_LEGAL_NAME } from '../../config/brand';
 
 export interface PlanDTO {
   id: string;
@@ -147,7 +148,7 @@ export function useUserPlan() {
     expiresAt: null,
   };
   const company = subscriptionQuery.data?.company || {
-    name: 'Finamite Solutions LLP',
+    name: COMPANY_LEGAL_NAME,
     gstin: null,
     email: null,
     phone: null,

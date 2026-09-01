@@ -15,15 +15,16 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
+import { APP_NAME, COMPANY_NAME, LEGAL_HEADER_LABEL, LEGAL_EMAIL } from '../config/brand';
 
 const sections = [
   {
     id: 'acceptance',
     title: '1. Agreeing to These Terms',
     icon: FileCheck,
-    content: `Welcome to Finamite — a personal management app for your tasks, habits, focus sessions, notes, and Google Calendar sync. These Terms are the agreement between you and Finamite ("we," "our," or "us") for using the app.
+    content: `Welcome to ${APP_NAME} — a personal management app for your tasks, habits, focus sessions, notes, and Google Calendar sync. These Terms are the agreement between you and ${APP_NAME} ("we," "our," or "us") for using the app.
 
-By creating an account or using Finamite, you're agreeing to these Terms. If you don't agree with them, please don't use the app.
+By creating an account or using ${APP_NAME}, you're agreeing to these Terms. If you don't agree with them, please don't use the app.
 
 If you connect a third-party service like Google Calendar, you're also agreeing to that provider's own terms.`,
   },
@@ -31,7 +32,7 @@ If you connect a third-party service like Google Calendar, you're also agreeing 
     id: 'eligibility',
     title: '2. Your Account',
     icon: User,
-    content: `To use Finamite, you need to:
+    content: `To use ${APP_NAME}, you need to:
 
 - Give us accurate account information.
 - Keep your login details safe, and let us know right away if you think someone else has accessed your account.
@@ -42,16 +43,16 @@ If you sign in with Google, you're confirming you're allowed to grant the permis
   },
   {
     id: 'user-conduct',
-    title: '3. Using Finamite Responsibly',
+    title: `3. Using ${APP_NAME} Responsibly`,
     icon: Gavel,
     content: `Please don't:
 
-- Use Finamite for anything illegal.
+- Use ${APP_NAME} for anything illegal.
 - Post or store content that's harmful, threatening, harassing, or otherwise offensive.
 - Infringe on someone else's rights — copyright, privacy, or otherwise.
-- Try to break into the app, other people's accounts, or the systems behind Finamite.
+- Try to break into the app, other people's accounts, or the systems behind ${APP_NAME}.
 - Disrupt the app for other users, or introduce viruses or malicious code.
-- Copy, resell, or repackage Finamite for your own commercial product without asking us first.
+- Copy, resell, or repackage ${APP_NAME} for your own commercial product without asking us first.
 - Reverse-engineer the app to figure out how it works internally.
 
 If we find someone doing this, we'll take it seriously and may act on it, including closing the account involved.`,
@@ -60,9 +61,9 @@ If we find someone doing this, we'll take it seriously and may act on it, includ
     id: 'user-content',
     title: '4. Your Content',
     icon: Briefcase,
-    content: `Everything you create in Finamite — your tasks, habits, notes, journal entries, and project details — is called "User Content," and it's yours. These Terms don't give us ownership of it.
+    content: `Everything you create in ${APP_NAME} — your tasks, habits, notes, journal entries, and project details — is called "User Content," and it's yours. These Terms don't give us ownership of it.
 
-What we're allowed to do with it: We need permission to store, sync, and display your content in order to run the app for you. So by using Finamite, you're giving us the go-ahead to host and process your content solely to:
+What we're allowed to do with it: We need permission to store, sync, and display your content in order to run the app for you. So by using ${APP_NAME}, you're giving us the go-ahead to host and process your content solely to:
 - Show it to you and keep it working across your devices
 - Sync it with integrations you turn on, like Google Calendar
 - Back it up so you don't lose it
@@ -74,7 +75,7 @@ What belongs to us: The app itself — its design, code, logo, and features — 
     id: 'integrations',
     title: '5. Connecting Google Calendar',
     icon: RefreshCw,
-    content: `Finamite can connect to Google Calendar to sync your tasks and focus sessions automatically.
+    content: `${APP_NAME} can connect to Google Calendar to sync your tasks and focus sessions automatically.
 
 When you turn this on:
 - You're allowing us to create, update, and remove calendar events on your behalf, exactly as described in our Privacy Policy and the Google consent screen you approved.
@@ -85,13 +86,13 @@ When you turn this on:
     id: 'subscription',
     title: '6. Pricing',
     icon: Briefcase,
-    content: `Finamite is currently free to use. If we introduce paid plans or premium features down the line, we'll be upfront about pricing before you're charged anything, and we'll let you know about any future price changes in advance.`,
+    content: `${APP_NAME} is currently free to use. If we introduce paid plans or premium features down the line, we'll be upfront about pricing before you're charged anything, and we'll let you know about any future price changes in advance.`,
   },
   {
     id: 'availability',
     title: '7. Keeping the App Running',
     icon: ShieldCheck,
-    content: `We aim to keep Finamite available and reliable, but we can't promise it'll never go down — occasionally we'll need to pause the app for maintenance or fixes.
+    content: `We aim to keep ${APP_NAME} available and reliable, but we can't promise it'll never go down — occasionally we'll need to pause the app for maintenance or fixes.
 
 We may also add, change, or remove features over time, including integrations, as we improve the product. We'll try to give you a heads-up for anything major.`,
   },
@@ -99,15 +100,15 @@ We may also add, change, or remove features over time, including integrations, a
     id: 'disclaimers',
     title: '8. No Guarantees',
     icon: AlertTriangle,
-    content: `Finamite is provided "as is." We work hard to make it reliable and useful, but we can't legally promise it'll be perfect, uninterrupted, or error-free, and we can't guarantee it'll meet every specific need you have.
+    content: `${APP_NAME} is provided "as is." We work hard to make it reliable and useful, but we can't legally promise it'll be perfect, uninterrupted, or error-free, and we can't guarantee it'll meet every specific need you have.
 
-Finamite is a productivity tool, not professional advice. If you need financial, legal, medical, or psychological guidance, please talk to a qualified professional — don't rely on the app for that.`,
+${APP_NAME} is a productivity tool, not professional advice. If you need financial, legal, medical, or psychological guidance, please talk to a qualified professional — don't rely on the app for that.`,
   },
   {
     id: 'liability',
     title: '9. Limits on Our Liability',
     icon: Scale,
-    content: `To the extent allowed by law, Finamite isn't liable for indirect or unforeseeable damages — like lost profits or lost data — that might result from using the app.
+    content: `To the extent allowed by law, ${APP_NAME} isn't liable for indirect or unforeseeable damages — like lost profits or lost data — that might result from using the app.
 
 If something does go wrong and we are found liable, our total responsibility is capped at whatever you've paid us in the past 12 months. This limit doesn't apply where local law says it can't.`,
   },
@@ -115,7 +116,7 @@ If something does go wrong and we are found liable, our total responsibility is 
     id: 'indemnification',
     title: '10. If Something Goes Wrong Because of Your Use',
     icon: Heart,
-    content: `If your use of Finamite — or content you post — causes a claim against us (for example, because it infringed someone else's rights or broke these Terms), you agree to cover the reasonable costs that result, including legal fees, and to work with us to resolve it.`,
+    content: `If your use of ${APP_NAME} — or content you post — causes a claim against us (for example, because it infringed someone else's rights or broke these Terms), you agree to cover the reasonable costs that result, including legal fees, and to work with us to resolve it.`,
   },
   {
     id: 'termination',
@@ -124,7 +125,7 @@ If something does go wrong and we are found liable, our total responsibility is 
     content: `You can close your account any time from Settings. We may also suspend or close an account that seriously breaks these Terms or puts other users at risk.
 
 When an account closes:
-- Access to Finamite stops right away.
+- Access to ${APP_NAME} stops right away.
 - Your content is deleted within 30 days, unless we're legally required to keep something longer.
 - If you'd like a copy of your data first, you can export it before closing your account.`,
   },
@@ -132,11 +133,11 @@ When an account closes:
     id: 'general',
     title: '12. The Fine Print',
     icon: Scale,
-    content: `Governing law: These Terms are governed by the laws of the jurisdiction where Finamite is registered, and any dispute would be handled in that jurisdiction's courts.
+    content: `Governing law: These Terms are governed by the laws of the jurisdiction where ${APP_NAME} is registered, and any dispute would be handled in that jurisdiction's courts.
 
-Updates: We may update these Terms as Finamite evolves. We'll post the change here with a new "Last updated" date, and let you know in the app or by email for anything significant. Continuing to use Finamite after an update means you accept it.
+Updates: We may update these Terms as ${APP_NAME} evolves. We'll post the change here with a new "Last updated" date, and let you know in the app or by email for anything significant. Continuing to use ${APP_NAME} after an update means you accept it.
 
-If one part of these Terms turns out to be unenforceable, the rest still stands. Not enforcing a term once doesn't mean we're waiving it for later. We may transfer our rights under these Terms if Finamite changes ownership; you may not transfer yours without asking us first. Together with our Privacy Policy, these Terms are the whole agreement between you and us about using Finamite.`,
+If one part of these Terms turns out to be unenforceable, the rest still stands. Not enforcing a term once doesn't mean we're waiving it for later. We may transfer our rights under these Terms if ${APP_NAME} changes ownership; you may not transfer yours without asking us first. Together with our Privacy Policy, these Terms are the whole agreement between you and us about using ${APP_NAME}.`,
   },
   {
     id: 'contact',
@@ -144,7 +145,7 @@ If one part of these Terms turns out to be unenforceable, the rest still stands.
     icon: Mail,
     content: `Questions about these Terms? We're glad to help.
 
-Email: info@finamite.in
+Email: ${LEGAL_EMAIL}
 
 We aim to respond within 14 business days.
 
@@ -180,7 +181,7 @@ export function TermsConditionsPage() {
               <Zap size={22} className="text-white" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-text-muted">Finamite · Legal</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{LEGAL_HEADER_LABEL}</p>
               <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">Terms of Service</h1>
             </div>
           </div>
@@ -188,7 +189,7 @@ export function TermsConditionsPage() {
           <Card variant="glass" className="p-5 sm:p-6 border-accent/10">
             <p className="text-sm text-text-secondary leading-relaxed">
               Effective date: <strong className="text-text-primary">July 25, 2026</strong>. A plain-language guide to
-              using Finamite, alongside our{' '}
+              using {APP_NAME}, alongside our{' '}
               <Link to="/privacy" className="text-accent hover:underline font-semibold">
                 Privacy Policy
               </Link>
@@ -252,7 +253,7 @@ export function TermsConditionsPage() {
 
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-border text-center">
-          <p className="text-xs text-text-muted">ⓒ {new Date().getFullYear()} Finamite. All rights reserved.</p>
+          <p className="text-xs text-text-muted">ⓒ {new Date().getFullYear()} {COMPANY_NAME}. All rights reserved.</p>
           <div className="mt-3 flex items-center justify-center gap-4 text-xs">
             <Link to="/privacy" className="text-text-muted hover:text-accent font-medium">
               Privacy Policy

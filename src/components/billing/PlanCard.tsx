@@ -18,6 +18,8 @@ interface PlanCardProps {
   plan: PlanDTO;
   isCurrent?: boolean;
   isPopular?: boolean;
+  disabled?: boolean;
+  disabledLabel?: string;
   onSelect?: (plan: PlanDTO) => void;
 }
 
@@ -81,7 +83,14 @@ function formatFeatureRow(key: string, value: number | boolean, defaultLabel: st
   }
 }
 
-export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSelect }: PlanCardProps) {
+export function PlanCard({
+  plan: p,
+  isCurrent = false,
+  isPopular = false,
+  disabled = false,
+  disabledLabel,
+  onSelect,
+}: PlanCardProps) {
   const isDark = useIsDarkMode();
   const [showAllFeatures, setShowAllFeatures] = React.useState(false);
   const tier = TIER_STYLES[baseTierOf(p.slug)] || TIER_STYLES.basic;
@@ -178,14 +187,22 @@ export function PlanCard({ plan: p, isCurrent = false, isPopular = false, onSele
         <button
           type="button"
           onClick={() => onSelect?.(p)}
-          disabled={isCurrent}
+          disabled={isCurrent || disabled}
           className={`mt-4 sm:mt-6 w-full h-11 sm:h-12 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all ${
-            isCurrent ? 'bg-slate-100 dark:bg-slate-800 dark:text-slate-500 text-slate-400 cursor-default' : 'text-white hover:brightness-105 shadow-sm'
+            isCurrent || disabled
+              ? 'bg-slate-100 dark:bg-slate-800 dark:text-slate-500 text-slate-400 cursor-default'
+              : 'text-white hover:brightness-105 shadow-sm'
           }`}
-          style={!isCurrent ? { backgroundColor: tier.accent } : undefined}
+          style={!isCurrent && !disabled ? { backgroundColor: tier.accent } : undefined}
         >
-          {isCurrent ? 'Active plan' : p.priceCents === 0 ? `Continue with ${p.name}` : `Choose ${p.name}`}
-          {!isCurrent && <ArrowRight className="w-4 h-4" />}
+          {isCurrent
+            ? 'Active plan'
+            : disabled
+            ? disabledLabel || 'Billing Paused'
+            : p.priceCents === 0
+            ? `Continue with ${p.name}`
+            : `Choose ${p.name}`}
+          {!isCurrent && !disabled && <ArrowRight className="w-4 h-4" />}
         </button>
       </div>
     </div>

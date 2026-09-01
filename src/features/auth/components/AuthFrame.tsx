@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarDays, CheckCircle2, Circle, Flame, Heart, Shield, Sparkles, Target, Trophy, Zap } from 'lucide-react';
+import { APP_NAME, APP_TAGLINE, COMPANY_NAME } from '../../../config/brand';
 
 type AuthMode = 'login' | 'signup';
 
@@ -99,8 +100,8 @@ function MobileBrandHeader() {
           <Zap size={18} className="text-white" fill="none" />
         </div>
         <div>
-          <p className="auth-mobile-logo-name">Finamite</p>
-          <p className="auth-mobile-logo-tagline">Personal Management System</p>
+          <p className="auth-mobile-logo-name">{APP_NAME}</p>
+          <p className="auth-mobile-logo-tagline">{APP_TAGLINE}</p>
         </div>
       </div>
 
@@ -147,13 +148,13 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
             </div>
             <div>
               <p className="text-[16px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
-                Finamite
+                {APP_NAME}
               </p>
               <p
                 className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: 'color-mix(in srgb, var(--color-text-primary) 50%, transparent)' }}
               >
-                Personal Management System
+                {APP_TAGLINE}
               </p>
             </div>
           </div>
@@ -234,7 +235,7 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
             style={{ color: 'color-mix(in srgb, var(--color-text-primary) 50%, transparent)' }}
           >
             <Heart size={11} style={{ color: 'var(--color-accent)' }} />
-            <span>2026 Finamite. No credit card required.</span>
+            <span>{new Date().getFullYear()} {COMPANY_NAME}. No credit card required.</span>
           </p>
         </div>
 

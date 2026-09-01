@@ -1,12 +1,13 @@
 // frontend/src/routes/admin/AdminSubscriptionsPage.tsx
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, Search, Filter } from 'lucide-react';
+import { RefreshCw, Search, Filter, AlertCircle, CheckCircle } from 'lucide-react';
 import { adminApiClient } from '../../lib/adminApiClient';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
+import { AdminRefundModal, type RefundableTransaction, remainingRefundable } from '../../components/admin/AdminRefundModal';
 import { formatINR } from '../../utils/formatCurrency';
 
 interface SubscriptionItem {
@@ -16,9 +17,12 @@ interface SubscriptionItem {
   status: 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'PAST_DUE' | 'EXPIRED';
   billingInterval: 'MONTH' | 'YEAR';
   currentPeriodEnd: string;
+  cancelAtPeriodEnd?: boolean;
+  autoRenew?: boolean;
   provider: string;
   providerSubscriptionId: string;
   createdAt: string;
+  transactions?: RefundableTransaction[];
 }
 
 export function AdminSubscriptionsPage() {
@@ -28,6 +32,8 @@ export function AdminSubscriptionsPage() {
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ id: string; action: 'cancel' | 'pause' | 'resume' } | null>(null);
+  const [refundTx, setRefundTx] = useState<RefundableTransaction | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   async function fetchSubscriptions() {
     setLoading(true);
@@ -58,11 +64,21 @@ export function AdminSubscriptionsPage() {
     const { id, action } = confirmAction;
     setActionLoading(true);
     setConfirmAction(null);
+    setMessage(null);
     try {
-      await adminApiClient.patch(`/subscriptions/${id}/${action}`, {});
-      fetchSubscriptions();
+      await adminApiClient.patch(`/subscriptions/${id}/${action}`, {
+        cancelAtPeriodEnd: false, // Immediate cancellation when triggered by admin
+      });
+      setMessage({
+        type: 'success',
+        text: `Subscription ${action === 'cancel' ? 'cancelled' : action === 'pause' ? 'paused' : 'resumed'} successfully.`,
+      });
+      await fetchSubscriptions();
     } catch (err: any) {
-      console.error(err.response?.data?.error?.message || `Failed to ${action} subscription`);
+      setMessage({
+        type: 'error',
+        text: err.response?.data?.error?.message || `Failed to ${action} subscription.`,
+      });
     } finally {
       setActionLoading(false);
     }
@@ -79,6 +95,24 @@ export function AdminSubscriptionsPage() {
           </p>
         </div>
       </div>
+
+      {/* ─── Feedback Message Alert ─────────────────────────────── */}
+      {message && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center gap-2.5 text-xs animate-in fade-in ${
+            message.type === 'success'
+              ? 'bg-success/10 border-success/20 text-success'
+              : 'bg-danger/10 border-danger/20 text-danger'
+          }`}
+        >
+          {message.type === 'success' ? (
+            <CheckCircle className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span className="font-semibold">{message.text}</span>
+        </div>
+      )}
 
       {/* ─── Search & Filters ─────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -121,6 +155,13 @@ export function AdminSubscriptionsPage() {
         onConfirm={confirmSubscriptionAction}
       />
 
+      {/* ─── Shared Refund Modal ─────────────────────────────────── */}
+      <AdminRefundModal
+        transaction={refundTx}
+        onClose={() => setRefundTx(null)}
+        onSuccess={fetchSubscriptions}
+      />
+
       {/* ─── Subscriptions Table Card ─────────────────────────────── */}
       <Card variant="default" className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -150,69 +191,90 @@ export function AdminSubscriptionsPage() {
                   </td>
                 </tr>
               ) : (
-                subscriptions.map((s) => (
-                  <tr key={s.id} className="hover:bg-surface-raised/50 transition-colors">
-                    <td className="px-5 py-4">
-                      <p className="font-semibold text-text-primary">{s.user?.email}</p>
-                      {s.user?.name && <p className="text-xs text-text-muted">{s.user.name}</p>}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="font-bold text-accent">{s.plan?.name}</span>
-                      <span className="text-xs text-text-muted block">
-                        {formatINR(s.plan?.priceCents)} / {s.billingInterval.toLowerCase()}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <Badge
-                        variant={
-                          s.status === 'ACTIVE' ? 'success' : s.status === 'PAUSED' ? 'warning' : 'danger'
-                        }
-                        size="sm"
-                        dot
-                      >
-                        {s.status}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-4 text-text-secondary text-xs">
-                      {new Date(s.currentPeriodEnd).toLocaleDateString()}
-                    </td>
-                    <td className="px-5 py-4 font-mono text-xs text-text-muted truncate max-w-[140px]">
-                      {s.providerSubscriptionId}
-                    </td>
-                    <td className="px-5 py-4 text-right space-x-2">
-                      {s.status === 'ACTIVE' && (
-                        <>
+                subscriptions.map((s) => {
+                  const tx = s.transactions?.[0];
+                  const canRefund = tx && remainingRefundable(tx) > 0;
+
+                  return (
+                    <tr key={s.id} className="hover:bg-surface-raised/50 transition-colors">
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-text-primary">{s.user?.email}</p>
+                        {s.user?.name && <p className="text-xs text-text-muted">{s.user.name}</p>}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-bold text-accent">{s.plan?.name}</span>
+                        <span className="text-xs text-text-muted block">
+                          {formatINR(s.plan?.priceCents)} / {s.billingInterval.toLowerCase()}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        {s.status === 'ACTIVE' && s.cancelAtPeriodEnd ? (
+                          <Badge variant="warning" size="sm" dot>
+                            Cancelling at period end
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant={
+                              s.status === 'ACTIVE' ? 'success' : s.status === 'PAUSED' ? 'warning' : 'danger'
+                            }
+                            size="sm"
+                            dot
+                          >
+                            {s.status}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-text-secondary text-xs">
+                        {new Date(s.currentPeriodEnd).toLocaleDateString()}
+                      </td>
+                      <td className="px-5 py-4 font-mono text-xs text-text-muted truncate max-w-[140px]">
+                        {s.providerSubscriptionId}
+                      </td>
+                      <td className="px-5 py-4 text-right space-x-2 whitespace-nowrap">
+                        {canRefund && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={actionLoading}
+                            onClick={() => setRefundTx(tx)}
+                          >
+                            Refund
+                          </Button>
+                        )}
+                        {s.status === 'ACTIVE' && (
+                          <>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={actionLoading}
+                              onClick={() => handleAction(s.id, 'pause')}
+                            >
+                              Pause
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              disabled={actionLoading}
+                              onClick={() => handleAction(s.id, 'cancel')}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                        {s.status === 'PAUSED' && (
                           <Button
                             variant="secondary"
                             size="sm"
                             disabled={actionLoading}
-                            onClick={() => handleAction(s.id, 'pause')}
+                            onClick={() => handleAction(s.id, 'resume')}
                           >
-                            Pause
+                            Resume
                           </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            disabled={actionLoading}
-                            onClick={() => handleAction(s.id, 'cancel')}
-                          >
-                            Cancel
-                          </Button>
-                        </>
-                      )}
-                      {s.status === 'PAUSED' && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={actionLoading}
-                          onClick={() => handleAction(s.id, 'resume')}
-                        >
-                          Resume
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

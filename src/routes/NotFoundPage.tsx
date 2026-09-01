@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, CheckSquare, Target, ArrowLeft, Sparkles, MapPin } from 'lucide-react';
 import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
+import { APP_NAME_FULL } from '../config/brand';
 
 const quickLinks = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/' },
@@ -184,7 +185,7 @@ export function NotFoundPage() {
           className="mt-12 text-[11px] font-bold"
           style={{ color: 'var(--color-text-muted)' }}
         >
-          FlowSpace PMS · Workspace not found
+          {APP_NAME_FULL} · Workspace not found
         </motion.p>
       </motion.div>
     </div>

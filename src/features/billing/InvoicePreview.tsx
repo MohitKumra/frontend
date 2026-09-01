@@ -4,6 +4,7 @@
 // so the on-screen "Invoice preview" matches the downloaded PDF byte-for-byte.
 import React from 'react';
 import { formatINR } from '../../utils/formatCurrency';
+import { BILLING_EMAIL, INVOICE_NOTES } from '../../config/brand';
 
 export interface InvoicePreviewCompany {
   name: string;
@@ -336,7 +337,7 @@ export function InvoicePreview({ data }: { data: InvoicePreviewData }) {
           <div style={{ padding: '16px 40px 10px 40px', fontSize: '12px', color: '#475569', lineHeight: 1.6 }}>
             <div><b>Payment ref:</b> {paymentRef}</div>
             <div style={{ marginTop: '4px' }}>
-              <b>Notes:</b> {company.notes || 'All monthly and usage payments are non-refundable.'} For any query, contact {company.email || 'billing@finamite.in'}.
+              <b>Notes:</b> {company.notes || INVOICE_NOTES} For any query, contact {company.email || BILLING_EMAIL}.
             </div>
           </div>
 
