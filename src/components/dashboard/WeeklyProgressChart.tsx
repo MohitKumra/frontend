@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart2, CheckSquare, Timer, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '../ui/Card';
@@ -25,16 +25,28 @@ interface WeeklyProgressChartProps {
   }>;
 }
 
-export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
+export const WeeklyProgressChart = React.memo(function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
   // Format week labels (e.g., "2024-W01" -> "W01")
-  const chartData = data.map((item) => ({
-    ...item,
-    weekLabel: item.week.split('-W')[1] ? `W${item.week.split('-W')[1]}` : item.week,
-  }));
+  const chartData = useMemo(
+    () =>
+      data.map((item) => ({
+        ...item,
+        weekLabel: item.week.split('-W')[1] ? `W${item.week.split('-W')[1]}` : item.week,
+      })),
+    [data]
+  );
 
   // Check if there's any real activity across all weeks
-  const hasData = data.some(
-    (item) => item.tasksCompleted > 0 || item.focusMinutes > 0 || item.habitsCompleted > 0 || item.projectsCompleted > 0
+  const hasData = useMemo(
+    () =>
+      data.some(
+        (item) =>
+          item.tasksCompleted > 0 ||
+          item.focusMinutes > 0 ||
+          item.habitsCompleted > 0 ||
+          item.projectsCompleted > 0
+      ),
+    [data]
   );
 
   return (
@@ -159,7 +171,7 @@ export function WeeklyProgressChart({ data }: WeeklyProgressChartProps) {
       </div>
     </Card>
   );
-}
+});
 
 // Animated empty state shown when there's no weekly activity yet
 function WeeklyProgressEmpty() {

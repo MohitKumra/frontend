@@ -46,44 +46,12 @@ const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
  * Layout: weeks as rows (top to bottom), days as columns (left to right).
  * The grid is padded with empty (non-interactive) cells before day 1 and
  * after the last day of the month so every row lines up Mon–Sun.
- *
- * Sizing: cells scale to *fill* the available container width (up to
- * CELL_MAX), and shrink down to CELL_MIN only when space is tight — so the
- * grid reads clearly whether it sits in a narrow sidebar or a wide card.
  */
 export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', restDays }: HabitHeatmapProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [cellSize, setCellSize] = useState(CELL_DEFAULT);
-
-  // Responsive cell sizing: fill available width, growing or shrinking cells
-  // (within CELL_MIN–CELL_MAX) so the grid never looks lost in empty space.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const computeSize = () => {
-      const containerWidth = el.clientWidth;
-      if (containerWidth <= 0) return;
-
-      const usableWidth = containerWidth - 4;
-      // 7 cells + 6 gaps, where gap = cellSize * GAP_RATIO
-      const rawSize = usableWidth / (7 + 6 * GAP_RATIO);
-      const clamped = Math.min(CELL_MAX, Math.max(CELL_MIN, Math.floor(rawSize)));
-      setCellSize(clamped);
-    };
-
-    computeSize();
-    const observer = new ResizeObserver(computeSize);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const gap = Math.max(3, Math.round(cellSize * GAP_RATIO));
-
   // 0 = current month, 1 = one month back, etc.
   const [page, setPage] = useState(0);
 
-  const { cells, weekRows, monthIndex, monthYear } = useMemo(() => {
+  const { cells, monthIndex, monthYear } = useMemo(() => {
     const now = new Date();
     const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
@@ -101,7 +69,6 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
     const trailingPad = (7 - lastDow) % 7;
 
     const totalCells = leadingPad + daysInMonth + trailingPad;
-    const numWeeks = totalCells / 7;
 
     const gridStart = new Date(targetMonthFirst);
     gridStart.setUTCDate(gridStart.getUTCDate() - leadingPad);
@@ -110,18 +77,15 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
       const d = new Date(gridStart);
       d.setUTCDate(d.getUTCDate() + i);
       const dateStr = d.toISOString().split('T')[0];
-      const inMonth = d.getUTCMonth() === mIndex && d.getUTCFullYear() === mYear;
-      const isFuture = d.getTime() > today.getTime();
-      const isToday = dateStr === today.toISOString().split('T')[0];
-      const ratio = dayFrequency.get(dateStr);
-      const done = inMonth && !isFuture && ratio !== undefined && ratio > 0;
-      const intensity = inMonth && !isFuture && ratio !== undefined ? ratio : 0;
-      const weekIdx = Math.floor(i / 7);
-      const dayIdx = i % 7;
-      return { dateStr, inMonth, done, isFuture, isToday, intensity, weekIdx, dayIdx };
+      const inMonth = d.getUTCMonth() === mIndex;
+      const intensity = dayFrequency.get(dateStr) ?? 0;
+      const done = intensity > 0;
+      const isFuture = d > today;
+      const isToday = d.getTime() === today.getTime();
+      return { dateStr, inMonth, done, isFuture, isToday, intensity };
     });
 
-    return { cells, weekRows: numWeeks, monthIndex: mIndex, monthYear: mYear };
+    return { cells, monthIndex: mIndex, monthYear: mYear };
   }, [dayFrequency, page]);
 
   const label = `${MONTH_LABELS[monthIndex]} ${monthYear}`;
@@ -173,27 +137,20 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
         </button>
       </div>
 
-      {/* Grid panel — sits in its own soft-shaded surface so it reads as a
-          distinct, grounded element rather than floating loose in the card */}
+      {/* Grid panel */}
       <div
         className="w-full rounded-2xl px-3 py-3.5 flex flex-col items-center gap-2"
         style={{ background: 'color-mix(in srgb, var(--color-accent) 4%, var(--color-surface))' }}
       >
-        {/* Weekday labels — locked to the same 7-column grid as the cells below */}
+        {/* Weekday labels */}
         <div
-          className="grid mx-auto w-full"
-          style={{
-            gridTemplateColumns: `repeat(7, ${cellSize}px)`,
-            gap: `${gap}px`,
-            justifyContent: 'center',
-          }}
+          className="grid grid-cols-7 gap-1.5 sm:gap-2 w-full max-w-[240px] mx-auto justify-items-center"
           aria-hidden="true"
         >
           {WEEKDAY_LABELS.map((d, i) => (
             <span
               key={i}
               className="text-center text-[9px] font-bold uppercase text-text-muted/60 select-none leading-none tracking-wider"
-              style={{ gridColumn: i + 1 }}
             >
               {d}
             </span>
@@ -202,14 +159,7 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
 
         <div
           key={`${monthIndex}-${monthYear}`}
-          ref={containerRef}
-          className="grid mx-auto w-full"
-          style={{
-            gridTemplateColumns: `repeat(7, ${cellSize}px)`,
-            gridTemplateRows: `repeat(${weekRows}, ${cellSize}px)`,
-            gap: `${gap}px`,
-            justifyContent: 'center',
-          }}
+          className="grid grid-cols-7 gap-1.5 sm:gap-2 w-full max-w-[240px] mx-auto justify-items-center"
           role="img"
           aria-label={`Completion history for ${label}`}
         >
@@ -221,10 +171,7 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
               return (
                 <div
                   key={cell.dateStr}
-                  style={{
-                    gridColumn: cell.dayIdx + 1,
-                    gridRow: cell.weekIdx + 1,
-                  }}
+                  className="aspect-square w-full max-w-[22px]"
                 />
               );
             }
@@ -233,10 +180,8 @@ export function HabitHeatmap({ dayFrequency, color = 'var(--color-accent)', rest
               <div
                 key={cell.dateStr}
                 title={isRestDay ? `${cell.dateStr} — Rest day` : cellTooltip(cell.dateStr, cell.intensity)}
-                className="rounded-[5px] transition-all duration-150 hover:scale-[1.15] hover:z-10 relative flex items-center justify-center"
+                className="aspect-square w-full max-w-[22px] rounded-[5px] transition-all duration-150 hover:scale-[1.15] hover:z-10 relative flex items-center justify-center"
                 style={{
-                  gridColumn: cell.dayIdx + 1,
-                  gridRow: cell.weekIdx + 1,
                   background: isRestDay
                     ? 'color-mix(in srgb, #8B5CF6 30%, transparent)'
                     : cell.done
