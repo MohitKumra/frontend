@@ -70,26 +70,26 @@ const DEFAULT_REAL_FILES: StorageFileDTO[] = [
 function GridViewIcon({ active }: { active?: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="1" width="6" height="6" rx="1.5" fill={active ? '#4F46E5' : '#74788D'} />
-      <rect x="9" y="1" width="6" height="6" rx="1.5" fill={active ? '#4F46E5' : '#74788D'} />
-      <rect x="1" y="9" width="6" height="6" rx="1.5" fill={active ? '#4F46E5' : '#74788D'} />
-      <rect x="9" y="9" width="6" height="6" rx="1.5" fill={active ? '#4F46E5' : '#74788D'} />
+      <rect x="1" y="1" width="6" height="6" rx="1.5" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
+      <rect x="9" y="1" width="6" height="6" rx="1.5" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
+      <rect x="1" y="9" width="6" height="6" rx="1.5" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
     </svg>
   );
 }
 function ListViewIcon({ active }: { active?: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="2.5" width="14" height="2" rx="1" fill={active ? '#4F46E5' : '#74788D'} />
-      <rect x="1" y="7" width="14" height="2" rx="1" fill={active ? '#4F46E5' : '#74788D'} />
-      <rect x="1" y="11.5" width="14" height="2" rx="1" fill={active ? '#4F46E5' : '#74788D'} />
+      <rect x="1" y="2.5" width="14" height="2" rx="1" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
+      <rect x="1" y="7" width="14" height="2" rx="1" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
+      <rect x="1" y="11.5" width="14" height="2" rx="1" fill={active ? 'var(--color-accent)' : 'var(--color-text-muted)'} />
     </svg>
   );
 }
 function SortSVG() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <path d="M2 4h11M4 7.5h7M6.5 11h2" stroke="#74788D" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M2 4h11M4 7.5h7M6.5 11h2" stroke="var(--color-text-muted)" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -97,16 +97,16 @@ function FolderSVG() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
       <path d="M1 3.5C1 2.67 1.67 2 2.5 2H6l1.5 1.5H12.5C13.33 3.5 14 4.17 14 5V11c0 .83-.67 1.5-1.5 1.5h-10C1.67 12.5 1 11.83 1 11V3.5z"
-        fill="#74788D" opacity="0.2" />
+        fill="var(--color-text-muted)" opacity="0.2" />
       <path d="M1 3.5C1 2.67 1.67 2 2.5 2H6l1.5 1.5H12.5C13.33 3.5 14 4.17 14 5V11c0 .83-.67 1.5-1.5 1.5h-10C1.67 12.5 1 11.83 1 11V3.5z"
-        stroke="#74788D" strokeWidth="1.2" fill="none" />
+        stroke="var(--color-text-muted)" strokeWidth="1.2" fill="none" />
     </svg>
   );
 }
 function CheckboxChecked() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <rect x="1" y="1" width="13" height="13" rx="3.5" fill="#4F46E5" />
+      <rect x="1" y="1" width="13" height="13" rx="3.5" fill="var(--color-accent)" />
       <path d="M4 7.5l2.5 2.5L11 5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -114,7 +114,7 @@ function CheckboxChecked() {
 function CheckboxEmpty() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-      <rect x="1" y="1" width="13" height="13" rx="3.5" stroke="#CBD5E0" strokeWidth="1.4" fill="none" />
+      <rect x="1" y="1" width="13" height="13" rx="3.5" stroke="var(--color-border-strong)" strokeWidth="1.4" fill="none" />
     </svg>
   );
 }
@@ -161,16 +161,30 @@ export function StoragePage() {
     });
   };
 
+  // Server returns only the filtered + sorted + paginated page. "Starred" can't
+  // live on the server (favorites are stored in localStorage), so for that tab we
+  // ask for a large batch and filter/paginate the starred subset client-side.
+  const isStarredTab = quickTab === 'starred';
+  const query = {
+    tab: quickTab,
+    type: selectedType,
+    folder: selectedFolder,
+    search: searchQuery,
+    sortBy,
+    page: isStarredTab ? 1 : currentPage,
+    pageSize: isStarredTab ? 1000 : PAGE_SIZE,
+  };
+
   const { data, isLoading, isRefetching, refetch } = useQuery({
-    queryKey: ['storage', 'files'],
-    queryFn: storageApi.list,
+    queryKey: ['storage', 'files', query],
+    queryFn: () => storageApi.list(query),
     staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: true,
   });
   useEffect(() => { void queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY }); }, [queryClient]);
 
-  const files = (data?.files && data.files.length > 0) ? data.files : DEFAULT_REAL_FILES;
+  const serverFiles = data?.files ?? DEFAULT_REAL_FILES;
   const summary = useMemo(() => {
-    if (data?.summary && data.files && data.files.length > 0) return data.summary;
+    if (data?.summary) return data.summary;
     const byType: Record<StorageFileType, { count: number; bytes: number }> = {
       image: { count: 0, bytes: 0 },
       video: { count: 0, bytes: 0 },
@@ -179,9 +193,11 @@ export function StoragePage() {
       other: { count: 0, bytes: 0 },
     };
     const byFolder: Record<string, { count: number; bytes: number }> = {};
+    const fileIds: string[] = [];
     let total = 0;
-    for (const f of files) {
+    for (const f of DEFAULT_REAL_FILES) {
       total += f.sizeBytes;
+      fileIds.push(f.id);
       if (byType[f.fileType]) {
         byType[f.fileType].count += 1;
         byType[f.fileType].bytes += f.sizeBytes;
@@ -195,16 +211,19 @@ export function StoragePage() {
       storageLimitBytes: 1048576,
       byType,
       byFolder,
+      largeFileCount: 0,
+      fileIds,
     };
-  }, [data, files]);
+  }, [data]);
 
   const totalUsedBytes     = summary?.totalBytes ?? usage.storageUsedBytes ?? 0;
   const storageLimitBytes  = summary?.storageLimitBytes ?? usage.storageLimitBytes ?? null;
   const isUnlimited        = storageLimitBytes === null || storageLimitBytes <= 0;
 
+  const totalMatched = data?.pagination?.total ?? serverFiles.length;
   const distinctFolders = useMemo(() => {
-    const s = new Set<string>(); files.forEach((f) => { if (f.folder) s.add(f.folder); }); return Array.from(s);
-  }, [files]);
+    return summary ? Object.keys(summary.byFolder ?? {}) : [];
+  }, [summary]);
 
   const handleQuickTabChange = (tab: StorageQuickTab) => {
     setQuickTab(tab); setCurrentPage(1);
@@ -214,34 +233,23 @@ export function StoragePage() {
     else { setSelectedType('all'); setSelectedFolder('all'); }
   };
 
-  const filteredFiles = useMemo(() =>
-    files.filter((f) => {
-      if (quickTab === 'starred' && !favorites.has(f.id)) return false;
-      if (quickTab === 'large' && f.sizeBytes < 1048576) return false;
-      if (quickTab === 'media' && f.fileType !== 'image' && f.fileType !== 'video') return false;
-      if (selectedType !== 'all' && f.fileType !== selectedType) return false;
-      if (selectedFolder !== 'all' && f.folder !== selectedFolder) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        if (!f.name.toLowerCase().includes(q) &&
-            !(FOLDER_LABELS[f.folder] ?? f.folder).toLowerCase().includes(q) &&
-            !f.fileType.toLowerCase().includes(q)) return false;
-      }
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      if (sortBy === 'size-desc') return b.sizeBytes - a.sizeBytes;
-      if (sortBy === 'size-asc') return a.sizeBytes - b.sizeBytes;
-      if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
-      if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
-      if (sortBy === 'type') return a.fileType.localeCompare(b.fileType);
-      return 0;
-    }),
-  [files, quickTab, selectedType, selectedFolder, searchQuery, sortBy, favorites]);
+  // Paginated rows to render. Non-starred pages come straight from the server;
+  // starred is filtered locally over the fetched batch (localStorage favorites).
+  const displayFiles = useMemo(() => {
+    if (isStarredTab) return serverFiles.filter((f) => favorites.has(f.id));
+    return serverFiles;
+  }, [isStarredTab, serverFiles, favorites]);
 
-  const totalPages      = Math.max(1, Math.ceil(filteredFiles.length / PAGE_SIZE));
-  const paginatedFiles  = filteredFiles.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginatedFiles = useMemo(() => {
+    if (isStarredTab) {
+      const size = PAGE_SIZE;
+      return displayFiles.slice((currentPage - 1) * size, currentPage * size);
+    }
+    return displayFiles;
+  }, [isStarredTab, displayFiles, currentPage]);
+
+  const totalItems = isStarredTab ? displayFiles.length : totalMatched;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   useEffect(() => setCurrentPage(1), [quickTab, selectedType, selectedFolder, searchQuery, sortBy]);
 
   const handleSelectToggle = (id: string, e?: React.MouseEvent) => {
@@ -249,7 +257,7 @@ export function StoragePage() {
     setSelectedIds((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
   const handleSelectAll = () =>
-    setSelectedIds(selectedIds.size === filteredFiles.length ? new Set() : new Set(filteredFiles.map((f) => f.id)));
+    setSelectedIds(selectedIds.size === paginatedFiles.length ? new Set() : new Set(paginatedFiles.map((f) => f.id)));
 
   const copyLink = (file: StorageFileDTO, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -259,7 +267,7 @@ export function StoragePage() {
   };
 
   const handleBatchDownload = () => {
-    const sel = files.filter((f) => selectedIds.has(f.id)); if (!sel.length) return;
+    const sel = paginatedFiles.filter((f) => selectedIds.has(f.id)); if (!sel.length) return;
     toast.success(`Downloading ${sel.length} files...`);
     sel.forEach((f, i) => setTimeout(() => {
       const a = document.createElement('a'); a.href = f.url; a.download = f.name; a.target = '_blank';
@@ -267,7 +275,7 @@ export function StoragePage() {
     }, i * 200));
   };
   const handleBatchCopyLinks = () => {
-    const sel = files.filter((f) => selectedIds.has(f.id)); if (!sel.length) return;
+    const sel = paginatedFiles.filter((f) => selectedIds.has(f.id)); if (!sel.length) return;
     navigator.clipboard.writeText(sel.map((f) => f.url).join('\n')); toast.success(`${sel.length} links copied!`);
   };
 
@@ -315,9 +323,12 @@ export function StoragePage() {
     if (e.dataTransfer.files?.length) Array.from(e.dataTransfer.files).forEach((f) => handleUploadFile(f));
   };
 
-  const totalCount      = files.length;
-  const starredCount    = useMemo(() => files.filter((f) => favorites.has(f.id)).length, [files, favorites]);
-  const largeFilesCount = useMemo(() => files.filter((f) => f.sizeBytes >= 1048576).length, [files]);
+  const totalCount      = summary?.fileIds?.length ?? serverFiles.length;
+  const starredCount    = useMemo(() =>
+    (summary?.fileIds ?? []).filter((id) => favorites.has(id)).length,
+    [summary, favorites]
+  );
+  const largeFilesCount = summary?.largeFileCount ?? serverFiles.filter((f) => f.sizeBytes >= 1048576).length;
   const hasActiveFilter = selectedFolder !== 'all' || selectedType !== 'all' || quickTab !== 'all' || !!searchQuery.trim();
   const handleResetFilters = () => { setQuickTab('all'); setSelectedType('all'); setSelectedFolder('all'); setSearchQuery(''); };
 
@@ -342,14 +353,14 @@ export function StoragePage() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-            style={{ backgroundColor: 'rgba(79,70,229,0.08)', border: '3px dashed #4F46E5', margin: 24, borderRadius: 24, backdropFilter: 'blur(4px)' }}
+            style={{ backgroundColor: 'var(--color-accent-subtle)', border: '3px dashed var(--color-accent)', margin: 24, borderRadius: 24, backdropFilter: 'blur(4px)' }}
           >
-            <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-white shadow-xl text-center border border-[#E2E8F0]">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#EEF2FF' }}>
-                <UploadCloud size={32} style={{ color: '#4F46E5' }} className="animate-bounce" />
+            <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-surface-raised shadow-xl text-center border border-border">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-accent/10 text-accent">
+                <UploadCloud size={32} className="animate-bounce" />
               </div>
-              <p className="text-[15px] font-bold" style={{ color: '#1E1B4B' }}>Drop files to upload</p>
-              <p className="text-[12px]" style={{ color: '#74788D' }}>They'll be added to your storage</p>
+              <p className="text-[15px] font-bold text-text-primary">Drop files to upload</p>
+              <p className="text-[12px] text-text-muted">They'll be added to your storage</p>
             </div>
           </motion.div>
         )}
@@ -395,10 +406,10 @@ export function StoragePage() {
             {/* ── MOBILE QUICK ACCESS SECTION (< lg) ── */}
             <div className="flex lg:hidden flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[14px] font-bold text-[#1E1B4B]">Quick Access</span>
+                <span className="text-[14px] font-bold text-text-primary">Quick Access</span>
                 <button
                   onClick={() => handleQuickTabChange('all')}
-                  className="text-[12.5px] font-semibold text-[#4F46E5] flex items-center gap-0.5 hover:underline"
+                  className="text-[12.5px] font-semibold text-accent flex items-center gap-0.5 hover:underline"
                 >
                   View All &rsaquo;
                 </button>
@@ -409,17 +420,17 @@ export function StoragePage() {
                   onClick={() => handleQuickTabChange('all')}
                   className={`flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border transition-all ${
                     quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all'
-                      ? 'border-[#C7D2FE] bg-[#FAF8FF] shadow-xs'
-                      : 'border-[#E2E8F0] bg-white'
+                      ? 'border-accent/40 bg-accent/10 shadow-xs'
+                      : 'border-border bg-surface'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[#4F46E5] bg-[#EEF2FF]">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-accent bg-accent/10">
                     <FolderOpen size={16} />
                   </div>
-                  <span className={`text-[11.5px] font-bold ${quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all' ? 'text-[#4F46E5]' : 'text-[#495057]'}`}>
+                  <span className={`text-[11.5px] font-bold ${quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all' ? 'text-accent' : 'text-text-secondary'}`}>
                     All Files
                   </span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all' ? 'bg-[#4F46E5] text-white' : 'bg-[#F1F5F9] text-[#74788D]'}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all' ? 'bg-accent text-white' : 'bg-surface-raised text-text-muted'}`}>
                     {totalCount}
                   </span>
                 </button>
@@ -429,20 +440,20 @@ export function StoragePage() {
                   onClick={() => handleQuickTabChange('starred')}
                   className={`flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border transition-all ${
                     quickTab === 'starred'
-                      ? 'border-[#FDE68A] bg-[#FFFBEB] shadow-xs'
-                      : 'border-[#E2E8F0] bg-white'
+                      ? 'border-amber-500/40 bg-amber-500/10 shadow-xs'
+                      : 'border-border bg-surface'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[#F59E0B] bg-[#FEF3C7]">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-amber-500 bg-amber-500/15">
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                       <path d="M8 2l1.6 3.3 3.6.52-2.6 2.53.61 3.57L8 10.1l-3.21 1.82.61-3.57L2.8 5.82l3.6-.52L8 2z"
                         fill="none" stroke="#F59E0B" strokeWidth="1.4" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <span className={`text-[11.5px] font-bold ${quickTab === 'starred' ? 'text-[#F59E0B]' : 'text-[#495057]'}`}>
+                  <span className={`text-[11.5px] font-bold ${quickTab === 'starred' ? 'text-amber-500' : 'text-text-secondary'}`}>
                     Starred
                   </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#F1F5F9] text-[#74788D]">
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-surface-raised text-text-muted">
                     {starredCount}
                   </span>
                 </button>
@@ -452,39 +463,20 @@ export function StoragePage() {
                   onClick={() => handleQuickTabChange('large')}
                   className={`flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border transition-all ${
                     quickTab === 'large'
-                      ? 'border-[#DDD6FE] bg-[#F5F3FF] shadow-xs'
-                      : 'border-[#E2E8F0] bg-white'
+                      ? 'border-purple-500/40 bg-purple-500/10 shadow-xs'
+                      : 'border-border bg-surface'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[#8B5CF6] bg-[#F5F0FF]">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-purple-500 bg-purple-500/15">
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                       <path d="M9 2L3 9h5l-1 5 7-7H9l1-5z" stroke="#8B5CF6" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <span className={`text-[10.5px] font-bold text-center leading-tight truncate w-full ${quickTab === 'large' ? 'text-[#8B5CF6]' : 'text-[#495057]'}`}>
-                    Large Files<br /><span className="text-[9px] font-normal text-[#74788D]">{'>1mb'}</span>
+                  <span className={`text-[10.5px] font-bold text-center leading-tight truncate w-full ${quickTab === 'large' ? 'text-purple-500' : 'text-text-secondary'}`}>
+                    Large Files<br /><span className="text-[9px] font-normal text-text-muted">{'>1mb'}</span>
                   </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#F1F5F9] text-[#74788D]">
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-surface-raised text-text-muted">
                     {largeFilesCount}
-                  </span>
-                </button>
-
-                {/* Recent */}
-                <button
-                  onClick={() => handleQuickTabChange('all')}
-                  className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border border-[#E2E8F0] bg-white transition-all"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[#4F46E5] bg-[#EEF2FF]">
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="6" stroke="#4F46E5" strokeWidth="1.3" fill="none" />
-                      <path d="M8 5v3.5l2.5 1.5" stroke="#4F46E5" strokeWidth="1.3" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <span className="text-[11.5px] font-bold text-[#495057]">
-                    Recent
-                  </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#F1F5F9] text-[#74788D]">
-                    {totalCount}
                   </span>
                 </button>
               </div>
@@ -500,22 +492,19 @@ export function StoragePage() {
                     <button
                       key={tab.id}
                       onClick={() => handleQuickTabChange(tab.id)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all shrink-0 hover:brightness-95"
-                      style={{
-                        backgroundColor: active ? '#4F46E5' : '#F1F5F9',
-                        border: `1px solid ${active ? '#4F46E5' : '#E2E8F0'}`,
-                        color: active ? '#fff' : '#495057',
-                        fontWeight: active ? 600 : 500,
-                        boxShadow: active ? '0 1px 2px rgba(79,70,229,0.35)' : 'none',
-                      }}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all shrink-0 hover:brightness-95 border ${
+                        active
+                          ? 'bg-accent text-white border-accent shadow-sm'
+                          : 'bg-surface border-border text-text-secondary hover:bg-surface-raised'
+                      }`}
                     >
                       {tab.label}
                       <span
-                        className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums"
-                        style={{
-                          backgroundColor: active ? 'rgba(255,255,255,0.28)' : '#FFFFFF',
-                          color: active ? '#fff' : '#74788D',
-                        }}
+                        className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
+                          active
+                            ? 'bg-white/25 text-white'
+                            : 'bg-surface-raised text-text-muted'
+                        }`}
                       >
                         {tab.count}
                       </span>
@@ -527,7 +516,7 @@ export function StoragePage() {
               {/* Mobile Filter Options button (< lg) */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="flex lg:hidden w-9 h-9 rounded-xl border border-[#E2E8F0] bg-white items-center justify-center text-[#74788D] shrink-0 active:scale-95 transition-transform"
+                className="flex lg:hidden w-9 h-9 rounded-xl border border-border bg-surface items-center justify-center text-text-muted hover:text-text-primary shrink-0 active:scale-95 transition-transform"
                 title="Filter Options"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -544,22 +533,17 @@ export function StoragePage() {
               </button>
 
               {/* Desktop Grid / List toggle (lg+) */}
-              <div
-                className="hidden lg:flex items-center gap-0.5 p-1 rounded-lg border bg-white shrink-0"
-                style={{ borderColor: '#E2E8F0' }}
-              >
+              <div className="hidden lg:flex items-center gap-0.5 p-1 rounded-lg border border-border bg-surface shrink-0">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className="p-1.5 rounded-md transition-colors"
-                  style={{ backgroundColor: viewMode === 'grid' ? '#EEF2FF' : 'transparent' }}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-accent/10' : 'hover:bg-surface-raised'}`}
                   title="Grid view"
                 >
                   <GridViewIcon active={viewMode === 'grid'} />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className="p-1.5 rounded-md transition-colors"
-                  style={{ backgroundColor: viewMode === 'list' ? '#EEF2FF' : 'transparent' }}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-accent/10' : 'hover:bg-surface-raised'}`}
                   title="List view"
                 >
                   <ListViewIcon active={viewMode === 'list'} />
@@ -570,19 +554,18 @@ export function StoragePage() {
             {/* ── MOBILE SEARCH & VIEW TOGGLE (< lg) ── */}
             <div className="flex lg:hidden items-center gap-2">
               <div className="relative flex-1">
-                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#A0AEC0]" />
+                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search files by name, type, or folder..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-[#E2E8F0] bg-white text-[13px] focus:outline-none focus:border-[#4F46E5] transition-colors"
-                  style={{ color: '#1E1B4B' }}
+                  className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-border bg-surface text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted"
                   >
                     <X size={13} />
                   </button>
@@ -590,7 +573,7 @@ export function StoragePage() {
               </div>
               <button
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className="w-11 h-11 rounded-2xl border border-[#E2E8F0] bg-white flex items-center justify-center text-[#4F46E5] shrink-0 active:scale-95 transition-transform"
+                className="w-11 h-11 rounded-2xl border border-border bg-surface flex items-center justify-center text-accent shrink-0 active:scale-95 transition-transform"
                 title="Toggle View Mode"
               >
                 {viewMode === 'grid' ? <GridViewIcon active /> : <ListViewIcon active />}
@@ -600,58 +583,53 @@ export function StoragePage() {
             {/* ── MOBILE 2-COLUMN DROPDOWNS (< lg) ── */}
             <div className="grid lg:hidden grid-cols-2 gap-2">
               {/* Sort */}
-              <div className="flex items-center justify-between px-3 py-2.5 rounded-2xl border border-[#E2E8F0] bg-white">
+              <div className="flex items-center justify-between px-3 py-2.5 rounded-2xl border border-border bg-surface">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as StorageSortField)}
-                  className="w-full text-[12.5px] font-semibold text-[#495057] bg-transparent border-none focus:outline-none cursor-pointer"
+                  className="w-full text-[12.5px] font-semibold text-text-secondary bg-transparent border-none focus:outline-none cursor-pointer"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="size-desc">Largest First</option>
-                  <option value="size-asc">Smallest First</option>
-                  <option value="name-asc">Name (A-Z)</option>
-                  <option value="name-desc">Name (Z-A)</option>
-                  <option value="type">File Type</option>
+                  <option value="newest" className="bg-surface text-text-primary">Newest First</option>
+                  <option value="oldest" className="bg-surface text-text-primary">Oldest First</option>
+                  <option value="size-desc" className="bg-surface text-text-primary">Largest First</option>
+                  <option value="size-asc" className="bg-surface text-text-primary">Smallest First</option>
+                  <option value="name-asc" className="bg-surface text-text-primary">Name (A-Z)</option>
+                  <option value="name-desc" className="bg-surface text-text-primary">Name (Z-A)</option>
+                  <option value="type" className="bg-surface text-text-primary">File Type</option>
                 </select>
               </div>
 
               {/* Folders */}
-              <div className="flex items-center justify-between px-3 py-2.5 rounded-2xl border border-[#E2E8F0] bg-white">
+              <div className="flex items-center justify-between px-3 py-2.5 rounded-2xl border border-border bg-surface">
                 <select
                   value={selectedFolder}
                   onChange={(e) => setSelectedFolder(e.target.value)}
-                  className="w-full text-[12.5px] font-semibold text-[#495057] bg-transparent border-none focus:outline-none cursor-pointer"
+                  className="w-full text-[12.5px] font-semibold text-text-secondary bg-transparent border-none focus:outline-none cursor-pointer"
                 >
-                  <option value="all">📁 All Folders</option>
+                  <option value="all" className="bg-surface text-text-primary">📁 All Folders</option>
                   {distinctFolders.map((f) => (
-                    <option key={f} value={f}>📁 {FOLDER_LABELS[f] ?? f}</option>
+                    <option key={f} value={f} className="bg-surface text-text-primary">📁 {FOLDER_LABELS[f] ?? f}</option>
                   ))}
                 </select>
               </div>
             </div>
 
             {/* ── DESKTOP COMBINED SEARCH BAR (lg+) ── */}
-            <div
-              className="hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-2xl border bg-white"
-              style={{ borderColor: '#E2E8F0' }}
-            >
+            <div className="hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-border bg-surface">
               {/* Search — flexible width */}
               <div className="relative flex-1">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#A0AEC0' }} />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search files by name, type, or folder..."
-                  className="w-full pl-9 pr-8 py-1.5 rounded-lg text-[13px] focus:outline-none border border-transparent focus:border-[#C7D2FE] transition-colors"
-                  style={{ color: '#1E1B4B', backgroundColor: 'transparent' }}
+                  className="w-full pl-9 pr-8 py-1.5 rounded-lg text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none border border-transparent focus:border-accent/50 bg-transparent transition-colors"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                    style={{ color: '#A0AEC0' }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
                   >
                     <X size={13} />
                   </button>
@@ -659,7 +637,7 @@ export function StoragePage() {
               </div>
 
               {/* Divider */}
-              <div className="h-5 w-px shrink-0" style={{ backgroundColor: '#E2E8F0' }} />
+              <div className="h-5 w-px shrink-0 bg-border" />
 
               {/* Sort */}
               <div className="flex items-center gap-1.5 shrink-0">
@@ -667,21 +645,20 @@ export function StoragePage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as StorageSortField)}
-                  className="text-[12.5px] font-medium focus:outline-none cursor-pointer bg-transparent border-none pr-1 appearance-none"
-                  style={{ color: '#495057' }}
+                  className="text-[12.5px] font-medium text-text-secondary focus:outline-none cursor-pointer bg-transparent border-none pr-1 appearance-none"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="size-desc">Largest First</option>
-                  <option value="size-asc">Smallest First</option>
-                  <option value="name-asc">Name (A-Z)</option>
-                  <option value="name-desc">Name (Z-A)</option>
-                  <option value="type">File Type</option>
+                  <option value="newest" className="bg-surface text-text-primary">Newest First</option>
+                  <option value="oldest" className="bg-surface text-text-primary">Oldest First</option>
+                  <option value="size-desc" className="bg-surface text-text-primary">Largest First</option>
+                  <option value="size-asc" className="bg-surface text-text-primary">Smallest First</option>
+                  <option value="name-asc" className="bg-surface text-text-primary">Name (A-Z)</option>
+                  <option value="name-desc" className="bg-surface text-text-primary">Name (Z-A)</option>
+                  <option value="type" className="bg-surface text-text-primary">File Type</option>
                 </select>
               </div>
 
               {/* Divider */}
-              <div className="h-5 w-px shrink-0" style={{ backgroundColor: '#E2E8F0' }} />
+              <div className="h-5 w-px shrink-0 bg-border" />
 
               {/* Folder */}
               <div className="flex items-center gap-1.5 shrink-0">
@@ -689,27 +666,26 @@ export function StoragePage() {
                 <select
                   value={selectedFolder}
                   onChange={(e) => setSelectedFolder(e.target.value)}
-                  className="text-[12.5px] font-medium focus:outline-none cursor-pointer bg-transparent border-none pr-1 appearance-none max-w-[110px]"
-                  style={{ color: '#495057' }}
+                  className="text-[12.5px] font-medium text-text-secondary focus:outline-none cursor-pointer bg-transparent border-none pr-1 appearance-none max-w-[110px]"
                 >
-                  <option value="all">All Folders</option>
+                  <option value="all" className="bg-surface text-text-primary">All Folders</option>
                   {distinctFolders.map((f) => (
-                    <option key={f} value={f}>{FOLDER_LABELS[f] ?? f}</option>
+                    <option key={f} value={f} className="bg-surface text-text-primary">{FOLDER_LABELS[f] ?? f}</option>
                   ))}
                 </select>
               </div>
             </div>
 
             {/* ── Select all / count row ── */}
-            <div className="flex items-center justify-end gap-2.5 text-[12.5px]" style={{ color: '#74788D' }}>
+            <div className="flex items-center justify-end gap-2.5 text-[12.5px] text-text-muted">
               <button
                 onClick={handleSelectAll}
-                className="flex items-center gap-1.5 font-medium hover:text-[#4F46E5] transition-colors"
+                className="flex items-center gap-1.5 font-medium hover:text-accent transition-colors"
               >
-                {selectedIds.size === filteredFiles.length && filteredFiles.length > 0 ? <CheckboxChecked /> : <CheckboxEmpty />}
+                {selectedIds.size === paginatedFiles.length && paginatedFiles.length > 0 ? <CheckboxChecked /> : <CheckboxEmpty />}
                 <span>Select all</span>
               </button>
-              <span className="tabular-nums font-medium">{filteredFiles.length} files</span>
+              <span className="tabular-nums font-medium">{totalItems} files</span>
             </div>
 
             {/* ── Batch action bar ── */}
@@ -717,28 +693,26 @@ export function StoragePage() {
               {selectedIds.size > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  className="flex items-center justify-between gap-3 flex-wrap px-4 py-2.5 rounded-xl border"
-                  style={{ backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }}
+                  className="flex items-center justify-between gap-3 flex-wrap px-4 py-2.5 rounded-xl border border-accent/30 bg-accent/10"
                 >
-                  <div className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: '#4F46E5' }}>
+                  <div className="flex items-center gap-2 text-[13px] font-semibold text-accent">
                     <CheckboxChecked />
                     <span>{selectedIds.size} {selectedIds.size === 1 ? 'file' : 'files'} selected</span>
                     <button
                       onClick={() => setSelectedIds(new Set())}
-                      className="text-[11px] font-medium ml-1 hover:underline"
-                      style={{ color: '#74788D' }}
+                      className="text-[11px] font-medium ml-1 text-text-muted hover:underline"
                     >
                       Deselect all
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={handleBatchDownload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border bg-white hover:bg-[#F8F9FA] transition-colors" style={{ borderColor: '#E2E8F0', color: '#495057' }}>
+                    <button onClick={handleBatchDownload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-border bg-surface hover:bg-surface-raised text-text-secondary transition-colors">
                       <Download size={12} /> Download
                     </button>
-                    <button onClick={handleBatchCopyLinks} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border bg-white hover:bg-[#F8F9FA] transition-colors" style={{ borderColor: '#E2E8F0', color: '#495057' }}>
+                    <button onClick={handleBatchCopyLinks} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-border bg-surface hover:bg-surface-raised text-text-secondary transition-colors">
                       <Copy size={12} /> Copy Links
                     </button>
-                    <button onClick={() => setBatchDeleteOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border hover:bg-red-50 transition-colors" style={{ backgroundColor: 'rgba(239,68,68,0.07)', borderColor: 'rgba(239,68,68,0.2)', color: '#EF4444' }}>
+                    <button onClick={() => setBatchDeleteOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors">
                       <Trash2 size={12} /> Delete
                     </button>
                   </div>
@@ -748,34 +722,35 @@ export function StoragePage() {
 
             {/* ── File area ── */}
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: '#74788D' }}>
-                <RefreshCw size={24} className="animate-spin" style={{ color: '#4F46E5' }} />
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-text-muted">
+                <RefreshCw size={24} className="animate-spin text-accent" />
                 <p className="text-[12px] font-semibold">Loading files...</p>
               </div>
-            ) : filteredFiles.length === 0 ? (
-              <div
-                className="flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border border-dashed"
-                style={{ borderColor: '#E2E8F0', backgroundColor: '#fff' }}
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#EEF2FF' }}>
+            ) : paginatedFiles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border border-dashed border-border bg-surface">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-accent/10 text-accent">
                   <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-                    <rect x="3" y="3" width="20" height="20" rx="4" stroke="#4F46E5" strokeWidth="1.5" />
-                    <path d="M13 9v8M9 13h8" stroke="#4F46E5" strokeWidth="1.5" strokeLinecap="round" />
+                    <rect x="3" y="3" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M13 9v8M9 13h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </div>
                 <div className="text-center max-w-xs">
-                  <p className="text-[15px] font-bold" style={{ color: '#1E1B4B' }}>No files here</p>
-                  <p className="text-[12px] mt-1" style={{ color: '#74788D' }}>
+                  <p className="text-[15px] font-bold text-text-primary">No files here</p>
+                  <p className="text-[12px] mt-1 text-text-muted">
                     {hasActiveFilter ? 'Try clearing your search or choosing another category.' : 'Upload images, documents, or audio files to get started.'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   {hasActiveFilter && (
-                    <button onClick={handleResetFilters} className="px-4 py-1.5 rounded-lg border text-[12px] font-semibold hover:bg-[#F8F9FA] transition-colors" style={{ borderColor: '#E2E8F0', color: '#495057', backgroundColor: '#fff' }}>
+                    <button onClick={handleResetFilters} className="px-4 py-1.5 rounded-lg border border-border bg-surface hover:bg-surface-raised text-[12px] font-semibold text-text-secondary transition-colors">
                       Reset filters
                     </button>
                   )}
-                  <button onClick={() => setUploadModalOpen(true)} className="px-4 py-1.5 rounded-lg text-[12px] font-semibold text-white hover:opacity-90 transition-opacity" style={{ backgroundColor: '#4F46E5' }}>
+                  <button
+                    onClick={() => setUploadModalOpen(true)}
+                    className="px-4 py-1.5 rounded-lg text-[12px] font-semibold text-white hover:opacity-90 transition-opacity"
+                    style={{ background: 'var(--gradient-accent)' }}
+                  >
                     Upload File
                   </button>
                 </div>
@@ -795,14 +770,11 @@ export function StoragePage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border overflow-hidden bg-white" style={{ borderColor: '#E2E8F0' }}>
-                <div
-                  className="grid grid-cols-12 px-4 py-2.5 text-[10.5px] font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: '#F8F9FA', color: '#74788D', borderBottom: '1px solid #E2E8F0' }}
-                >
+              <div className="rounded-2xl border border-border overflow-hidden bg-surface">
+                <div className="grid grid-cols-12 px-4 py-2.5 text-[10.5px] font-bold uppercase tracking-wider bg-surface-raised text-text-muted border-b border-border">
                   <div className="col-span-5 flex items-center gap-3">
                     <button onClick={handleSelectAll}>
-                      {selectedIds.size === filteredFiles.length && filteredFiles.length > 0 ? <CheckboxChecked /> : <CheckboxEmpty />}
+                      {selectedIds.size === paginatedFiles.length && paginatedFiles.length > 0 ? <CheckboxChecked /> : <CheckboxEmpty />}
                     </button>
                     File Name
                   </div>
@@ -812,7 +784,7 @@ export function StoragePage() {
                   <span className="col-span-1">Date</span>
                   <span className="col-span-1 text-right">Actions</span>
                 </div>
-                <div className="divide-y" style={{ borderColor: '#F1F5F9' }}>
+                <div className="divide-y divide-border">
                   {paginatedFiles.map((file) => (
                     <StorageFileListRow
                       key={file.id} file={file}
@@ -829,9 +801,9 @@ export function StoragePage() {
             )}
 
             {/* ── MOBILE BOTTOM STORAGE QUOTA CARD (< lg) ── */}
-            <div className="flex lg:hidden items-center justify-between p-3.5 rounded-2xl border border-[#E2E8F0] bg-white shadow-xs">
+            <div className="flex lg:hidden items-center justify-between p-3.5 rounded-2xl border border-border bg-surface shadow-xs">
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#4F46E5] bg-[#EEF2FF] shrink-0">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-accent bg-accent/10 shrink-0">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <ellipse cx="12" cy="5" rx="9" ry="3" />
                     <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
@@ -840,25 +812,25 @@ export function StoragePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[13px] font-bold text-[#1E1B4B]">Storage Quota</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EEF2FF] text-[#4F46E5]">
+                    <span className="text-[13px] font-bold text-text-primary">Storage Quota</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
                       Free Plan
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11.5px] font-bold text-[#1E1B4B] tabular-nums shrink-0">
+                    <span className="text-[11.5px] font-bold text-text-primary tabular-nums shrink-0">
                       {formatBytes(totalUsedBytes)} used
                     </span>
-                    <div className="h-1.5 flex-1 rounded-full bg-[#EEF2FF] overflow-hidden">
+                    <div className="h-1.5 flex-1 rounded-full bg-border overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{
                           width: `${!isUnlimited && storageLimitBytes ? Math.min(100, (totalUsedBytes / storageLimitBytes) * 100) : 100}%`,
-                          background: 'linear-gradient(90deg, #4F46E5 0%, #818CF8 100%)',
+                          background: 'var(--gradient-accent)',
                         }}
                       />
                     </div>
-                    <span className="text-[11px] text-[#74788D] tabular-nums shrink-0">
+                    <span className="text-[11px] text-text-muted tabular-nums shrink-0">
                       {isUnlimited ? '∞' : formatBytes(storageLimitBytes ?? 0)}
                     </span>
                   </div>
@@ -867,17 +839,16 @@ export function StoragePage() {
             </div>
 
             {/* ── Pagination ── */}
-            {filteredFiles.length > 0 && (
-              <div className="flex items-center justify-between pt-1 text-[12px]" style={{ color: '#74788D' }}>
+            {totalItems > 0 && (
+              <div className="flex items-center justify-between pt-1 text-[12px] text-text-muted">
                 <span className="font-medium">
-                  Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filteredFiles.length)} to{' '}
-                  {Math.min(currentPage * PAGE_SIZE, filteredFiles.length)} of {filteredFiles.length} files
+                  Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, totalItems)} to{' '}
+                  {Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems} files
                 </span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}
-                    className="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors hover:border-[#4F46E5] hover:text-[#4F46E5] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ borderColor: '#E2E8F0', backgroundColor: '#fff' }}
+                    className="w-8 h-8 rounded-lg border border-border bg-surface flex items-center justify-center transition-colors text-text-secondary hover:border-accent hover:text-accent disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft size={14} />
                   </button>
@@ -894,12 +865,11 @@ export function StoragePage() {
                       ) : (
                         <button
                           key={item} onClick={() => setCurrentPage(item as number)}
-                          className="w-8 h-8 rounded-lg border text-[12.5px] font-bold transition-colors"
-                          style={{
-                            backgroundColor: currentPage === item ? '#4F46E5' : '#fff',
-                            color: currentPage === item ? '#fff' : '#495057',
-                            borderColor: currentPage === item ? '#4F46E5' : '#E2E8F0',
-                          }}
+                          className={`w-8 h-8 rounded-lg border text-[12.5px] font-bold transition-colors ${
+                            currentPage === item
+                              ? 'bg-accent border-accent text-white'
+                              : 'bg-surface border-border text-text-secondary hover:border-accent/50'
+                          }`}
                         >
                           {item}
                         </button>
@@ -908,8 +878,7 @@ export function StoragePage() {
 
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                    className="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors hover:border-[#4F46E5] hover:text-[#4F46E5] disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ borderColor: '#E2E8F0', backgroundColor: '#fff' }}
+                    className="w-8 h-8 rounded-lg border border-border bg-surface flex items-center justify-center transition-colors text-text-secondary hover:border-accent hover:text-accent disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ChevronRight size={14} />
                   </button>
@@ -947,13 +916,13 @@ export function StoragePage() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 max-w-[85%] bg-white border-r border-[#E2E8F0] shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#E2E8F0]">
+          <div className="absolute left-0 top-0 h-full w-72 max-w-[85%] bg-surface border-r border-border shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-border">
               <div className="flex items-center gap-2">
-                <FolderOpen size={16} style={{ color: '#4F46E5' }} />
-                <span className="text-[14px] font-bold" style={{ color: '#1E1B4B' }}>File Explorer</span>
+                <FolderOpen size={16} className="text-accent" />
+                <span className="text-[14px] font-bold text-text-primary">File Explorer</span>
               </div>
-              <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-[#F8F9FA] transition-colors" style={{ color: '#74788D' }}>
+              <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-surface-raised transition-colors text-text-muted hover:text-text-primary">
                 <X size={18} />
               </button>
             </div>

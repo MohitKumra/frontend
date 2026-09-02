@@ -17,10 +17,8 @@ export function AIControlsPage() {
   const coachLocked = isFeatureLocked('aiCoach');
 
   return (
-    // Negative margin to undo the page-level padding from AppLayout so the
-    // chat can fill the full viewport height below the topbar.
-    <div className="-mt-3 -mx-3 sm:-mt-4 sm:-mx-4 h-[calc(100vh-var(--topbar-height))]">
-      <LockedFeatureWrapper isLocked={coachLocked} featureName="AI Coach" minPlanName="Basic" className="h-full">
+    <div className="h-[calc(100dvh-var(--topbar-height))] w-full overflow-hidden flex flex-col">
+      <LockedFeatureWrapper isLocked={coachLocked} featureName="AI Coach" minPlanName="Basic" className="h-full w-full">
         <CoachStudioPanelV3 initialPrompt={initialPrompt} autoSend={autoSend} />
       </LockedFeatureWrapper>
     </div>

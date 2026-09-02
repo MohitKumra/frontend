@@ -178,10 +178,10 @@ function DonutChart({ pct }: { pct: number }) {
   return (
     <div className="relative shrink-0" style={{ width: 72, height: 72 }}>
       <svg width="72" height="72" viewBox="0 0 72 72">
-        <circle cx="36" cy="36" r={r} fill="none" stroke="#EEF2FF" strokeWidth="7" />
+        <circle cx="36" cy="36" r={r} fill="none" stroke="var(--color-border)" strokeWidth="7" />
         <circle
           cx="36" cy="36" r={r} fill="none"
-          stroke="#4F46E5" strokeWidth="7"
+          stroke="var(--color-accent)" strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={offset}
@@ -190,8 +190,8 @@ function DonutChart({ pct }: { pct: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-[14px] font-black" style={{ color: '#1E1B4B' }}>{pct}%</span>
-        <span className="text-[10px] font-medium mt-0.5" style={{ color: '#74788D' }}>Used</span>
+        <span className="text-[14px] font-black text-text-primary">{pct}%</span>
+        <span className="text-[10px] font-medium mt-0.5 text-text-muted">Used</span>
       </div>
     </div>
   );
@@ -226,10 +226,10 @@ export function StorageHero({
             <StorageBoxSVG />
           </div>
           <div>
-            <h1 className="text-[22px] ml-4 font-bold leading-tight" style={{ color: '#1E1B4B' }}>
+            <h1 className="text-[22px] ml-4 font-bold leading-tight text-text-primary">
               Storage &amp; Assets
             </h1>
-            <p className="text-[13px] ml-4 mt-0.5" style={{ color: '#74788D' }}>
+            <p className="text-[13px] ml-4 mt-0.5 text-text-muted">
               Manage, organize and access all your files in one place.
             </p>
           </div>
@@ -237,8 +237,8 @@ export function StorageHero({
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={onUploadClick}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: '#4F46E5' }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
+            style={{ background: 'var(--gradient-accent)' }}
           >
             <UploadSVG />
             Upload File
@@ -246,8 +246,7 @@ export function StorageHero({
           <button
             onClick={onRefresh}
             disabled={isLoading || isRefetching}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-[13px] font-medium transition-colors hover:bg-[#F8F9FA]"
-            style={{ borderColor: '#E2E8F0', color: '#495057', backgroundColor: '#fff' }}
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-border bg-surface hover:bg-surface-raised text-[13px] font-medium text-text-secondary transition-colors"
           >
             <RefreshCw size={14} className={isLoading || isRefetching ? 'animate-spin' : ''} />
             <span>Refresh</span>
@@ -259,7 +258,7 @@ export function StorageHero({
       <div className="flex lg:hidden items-center justify-between gap-3 pt-1">
         <button
           onClick={() => window.history.back()}
-          className="w-10 h-10 rounded-full border border-[#E2E8F0] bg-white flex items-center justify-center text-[#1E1B4B] shadow-xs active:scale-95 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center text-text-primary shadow-xs active:scale-95 transition-transform shrink-0"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -267,10 +266,10 @@ export function StorageHero({
         </button>
 
         <div className="text-center min-w-0 flex-1">
-          <h1 className="text-[19px] font-extrabold leading-tight truncate" style={{ color: '#1E1B4B' }}>
+          <h1 className="text-[19px] font-extrabold leading-tight truncate text-text-primary">
             Storage &amp; Assets
           </h1>
-          <p className="text-[12px] font-medium mt-0.5 truncate" style={{ color: '#74788D' }}>
+          <p className="text-[12px] font-medium mt-0.5 truncate text-text-muted">
             Manage, organize and access your files
           </p>
         </div>
@@ -279,7 +278,7 @@ export function StorageHero({
           <button
             onClick={onUploadClick}
             className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm active:scale-95 transition-transform"
-            style={{ backgroundColor: '#4F46E5' }}
+            style={{ background: 'var(--gradient-accent)' }}
             title="Upload File"
           >
             <UploadSVG />
@@ -287,7 +286,7 @@ export function StorageHero({
           <button
             onClick={onRefresh}
             disabled={isLoading || isRefetching}
-            className="w-10 h-10 rounded-full border border-[#E2E8F0] bg-white flex items-center justify-center text-[#495057] shadow-xs active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full border border-border bg-surface flex items-center justify-center text-text-secondary shadow-xs active:scale-95 transition-transform"
             title="Refresh"
           >
             <RefreshCw size={16} className={isLoading || isRefetching ? 'animate-spin' : ''} />
@@ -297,23 +296,25 @@ export function StorageHero({
 
       {/* ── MOBILE LARGE STORAGE HERO CARD (< lg) ── */}
       <div
-        className="flex lg:hidden items-center justify-between p-5 rounded-3xl border border-[#E2E8F0] relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #FAF8FF 0%, #F5F3FF 50%, #EEF2FF 100%)' }}
+        className="flex lg:hidden items-center justify-between p-5 rounded-3xl border border-border relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, var(--color-surface-raised) 0%, color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-raised)) 100%)',
+        }}
       >
         <div className="flex flex-col z-10 min-w-0">
-          <span className="text-[13px] font-semibold" style={{ color: '#74788D' }}>
+          <span className="text-[13px] font-semibold text-text-muted">
             Storage Used
           </span>
-          <span className="text-[34px] font-black leading-tight my-1" style={{ color: '#4F46E5' }}>
+          <span className="text-[34px] font-black leading-tight my-1 text-accent">
             {pct}%
           </span>
-          <span className="text-[12px] font-medium mb-3" style={{ color: '#74788D' }}>
+          <span className="text-[12px] font-medium mb-3 text-text-muted">
             {formatBytes(totalUsedBytes)} of {formatBytes(limitBytes)}
           </span>
-          <div className="h-2 w-44 max-w-[190px] rounded-full overflow-hidden" style={{ backgroundColor: '#E0E7FF' }}>
+          <div className="h-2 w-44 max-w-[190px] rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
             <div
               className="h-full rounded-full"
-              style={{ width: `${barW}%`, background: 'linear-gradient(90deg, #4F46E5, #818CF8)' }}
+              style={{ width: `${barW}%`, background: 'var(--gradient-accent)' }}
             />
           </div>
         </div>
@@ -325,26 +326,23 @@ export function StorageHero({
       {/* ── STATS CARDS ROW (5-col desktop / 2x2 grid mobile) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Card 1 — Total Storage Used (Desktop only) */}
-        <div
-          className="hidden lg:flex flex-col justify-center px-5 py-5 rounded-2xl border"
-          style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#74788D' }}>
+        <div className="hidden lg:flex flex-col justify-center px-5 py-5 rounded-2xl border border-border bg-surface">
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3 text-text-muted">
             Total Storage Used
           </p>
           <div className="flex items-center gap-4">
             <DonutChart pct={pct} />
             <div className="min-w-0">
-              <p className="text-[22px] font-bold leading-none tabular-nums" style={{ color: '#1E1B4B' }}>
+              <p className="text-[22px] font-bold leading-none tabular-nums text-text-primary">
                 {formatBytes(totalUsedBytes)}
               </p>
-              <p className="text-[12px] mt-1.5" style={{ color: '#74788D' }}>
+              <p className="text-[12px] mt-1.5 text-text-muted">
                 of {formatBytes(limitBytes)}
               </p>
-              <div className="mt-2 h-[5px] w-28 rounded-full overflow-hidden" style={{ backgroundColor: '#EEF2FF' }}>
+              <div className="mt-2 h-[5px] w-28 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${barW}%`, background: 'linear-gradient(90deg, #4F46E5, #818CF8)' }}
+                  style={{ width: `${barW}%`, background: 'var(--gradient-accent)' }}
                 />
               </div>
             </div>
@@ -352,60 +350,53 @@ export function StorageHero({
         </div>
 
         {/* Card 2 — Images & Media */}
-        <div
-          className="flex items-start gap-3 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl border"
-          style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}
-        >
+        <div className="flex items-start gap-3 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl border border-border bg-surface">
           <div className="shrink-0 mt-0.5"><ImageCardSVG /></div>
           <div>
-            <p className="text-[13px] font-semibold" style={{ color: '#495057' }}>Images &amp; Media</p>
-            <p className="text-[20px] lg:text-[22px] font-bold leading-snug mt-1 tabular-nums" style={{ color: '#1E1B4B' }}>
-              {imgCount}&thinsp;<span className="text-[12px] lg:text-[13px] font-normal" style={{ color: '#74788D' }}>files</span>
+            <p className="text-[13px] font-semibold text-text-secondary">Images &amp; Media</p>
+            <p className="text-[20px] lg:text-[22px] font-bold leading-snug mt-1 tabular-nums text-text-primary">
+              {imgCount}&thinsp;<span className="text-[12px] lg:text-[13px] font-normal text-text-muted">files</span>
             </p>
-            <p className="text-[11.5px] lg:text-[12px] mt-0.5" style={{ color: '#74788D' }}>{formatBytes(imgBytes)}</p>
+            <p className="text-[11.5px] lg:text-[12px] mt-0.5 text-text-muted">{formatBytes(imgBytes)}</p>
           </div>
         </div>
 
         {/* Card 3 — Documents */}
-        <div
-          className="flex items-start gap-3 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl border"
-          style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}
-        >
+        <div className="flex items-start gap-3 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl border border-border bg-surface">
           <div className="shrink-0 mt-0.5"><DocCardSVG /></div>
           <div>
-            <p className="text-[13px] font-semibold" style={{ color: '#495057' }}>Documents</p>
-            <p className="text-[20px] lg:text-[22px] font-bold leading-snug mt-1 tabular-nums" style={{ color: '#1E1B4B' }}>
-              {docCount}&thinsp;<span className="text-[12px] lg:text-[13px] font-normal" style={{ color: '#74788D' }}>docs</span>
+            <p className="text-[13px] font-semibold text-text-secondary">Documents</p>
+            <p className="text-[20px] lg:text-[22px] font-bold leading-snug mt-1 tabular-nums text-text-primary">
+              {docCount}&thinsp;<span className="text-[12px] lg:text-[13px] font-normal text-text-muted">docs</span>
             </p>
-            <p className="text-[11.5px] lg:text-[12px] mt-0.5" style={{ color: '#74788D' }}>{formatBytes(docBytes)}</p>
+            <p className="text-[11.5px] lg:text-[12px] mt-0.5 text-text-muted">{formatBytes(docBytes)}</p>
           </div>
         </div>
 
         {/* Card 4 — Audio & Voice */}
-        <div
-          className="flex items-start gap-3 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl border"
-          style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}
-        >
+        <div className="flex items-start gap-3 px-4 py-4 lg:px-5 lg:py-5 rounded-2xl border border-border bg-surface">
           <div className="shrink-0 mt-0.5"><AudioCardSVG /></div>
           <div>
-            <p className="text-[13px] font-semibold" style={{ color: '#495057' }}>Audio &amp; Voice</p>
-            <p className="text-[20px] lg:text-[22px] font-bold leading-snug mt-1 tabular-nums" style={{ color: '#1E1B4B' }}>
-              {audioCount}&thinsp;<span className="text-[12px] lg:text-[13px] font-normal" style={{ color: '#74788D' }}>tracks</span>
+            <p className="text-[13px] font-semibold text-text-secondary">Audio &amp; Voice</p>
+            <p className="text-[20px] lg:text-[22px] font-bold leading-snug mt-1 tabular-nums text-text-primary">
+              {audioCount}&thinsp;<span className="text-[12px] lg:text-[13px] font-normal text-text-muted">tracks</span>
             </p>
-            <p className="text-[11.5px] lg:text-[12px] mt-0.5" style={{ color: '#74788D' }}>{formatBytes(audioBytes)}</p>
+            <p className="text-[11.5px] lg:text-[12px] mt-0.5 text-text-muted">{formatBytes(audioBytes)}</p>
           </div>
         </div>
 
         {/* Card 5 — Promo Card */}
         <div
-          className="relative flex items-end justify-between overflow-hidden rounded-2xl border min-h-[95px] lg:min-h-[130px]"
-          style={{ background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)', borderColor: '#E2E8F0' }}
+          className="relative flex items-end justify-between overflow-hidden rounded-2xl border border-border min-h-[95px] lg:min-h-[130px]"
+          style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-raised)) 0%, color-mix(in srgb, var(--color-accent) 6%, var(--color-surface)) 100%)',
+          }}
         >
           <div className="relative z-10 px-3.5 py-7 lg:px-5 lg:pt-5 lg:pb-4 shrink-0 max-w-[65%] lg:max-w-[55%]">
-            <p className="text-[10px] lg:text-[14px] font-bold leading-snug" style={{ color: '#1E1B4B' }}>
+            <p className="text-[10px] lg:text-[14px] font-bold leading-snug text-text-primary">
               Keep your files<br />organized &amp; safe
             </p>
-            <p className="text-[9px] lg:text-[12px] mt-1 leading-snug" style={{ color: '#4F46E5' }}>
+            <p className="text-[9px] lg:text-[12px] mt-1 leading-snug text-accent font-medium">
               All your assets in one<br />secure place.
             </p>
           </div>

@@ -165,8 +165,8 @@ export function StorageSidebar({
       onClick={onClick}
       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors"
       style={{
-        backgroundColor: active ? '#EEF2FF' : 'transparent',
-        color: active ? '#4F46E5' : '#495057',
+        backgroundColor: active ? 'var(--color-accent-subtle)' : 'transparent',
+        color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
         fontWeight: active ? 600 : 500,
       }}
     >
@@ -175,8 +175,8 @@ export function StorageSidebar({
       <span
         className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0"
         style={{
-          backgroundColor: active ? '#4F46E5' : '#F1F5F9',
-          color: active ? '#fff' : '#74788D',
+          backgroundColor: active ? 'var(--color-accent)' : 'var(--color-bg)',
+          color: active ? '#fff' : 'var(--color-text-muted)',
         }}
       >
         {count}
@@ -188,21 +188,20 @@ export function StorageSidebar({
     <div className="flex flex-col gap-3">
 
       {/* ── Quick Access card ── */}
-      <div className="rounded-2xl border p-3" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
-        <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#74788D' }}>
+      <div className="rounded-2xl border border-border bg-surface p-3">
+        <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2 text-text-muted">
           Quick Access
         </p>
         <div className="flex flex-col gap-0.5">
           <NavItem label="All Files"          count={totalCount}     active={allActive}  icon={<AllFilesIcon active={allActive} />}  onClick={() => onQuickTabChange('all')} />
           <NavItem label="Starred"            count={starredCount}   active={starActive}  icon={<StarIcon active={starActive} />}       onClick={() => onQuickTabChange('starred')} />
           <NavItem label="Large Files (>1MB)" count={largeFilesCount} active={largeActive} icon={<ZapIcon active={largeActive} />}      onClick={() => onQuickTabChange('large')} />
-          <NavItem label="Recent"             count={totalCount}     active={false}       icon={<ClockIcon />}                          onClick={() => onQuickTabChange('all')} />
         </div>
       </div>
 
       {/* ── Categories card ── */}
-      <div className="rounded-2xl border p-3" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
-        <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#74788D' }}>
+      <div className="rounded-2xl border border-border bg-surface p-3">
+        <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2 text-text-muted">
           Categories
         </p>
         <div className="flex flex-col gap-0.5">
@@ -216,8 +215,8 @@ export function StorageSidebar({
                 onClick={() => onTypeSelect(key)}
                 className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12.5px] transition-colors"
                 style={{
-                  backgroundColor: isActive ? '#EEF2FF' : 'transparent',
-                  color: isActive ? '#4F46E5' : '#495057',
+                  backgroundColor: isActive ? 'var(--color-accent-subtle)' : 'transparent',
+                  color: isActive ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                   fontWeight: isActive ? 600 : 500,
                 }}
               >
@@ -228,14 +227,14 @@ export function StorageSidebar({
                   <TypeIcon t={key} />
                 </span>
                 <span className="flex-1 text-left truncate">{cfg.label}</span>
-                <span className="text-[11px] tabular-nums mr-1 shrink-0" style={{ color: '#74788D' }}>
+                <span className="text-[11px] tabular-nums mr-1 shrink-0 text-text-muted">
                   {formatBytes(ts.bytes)}
                 </span>
                 <span
                   className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0"
                   style={{
-                    backgroundColor: isActive ? '#4F46E5' : '#F1F5F9',
-                    color: isActive ? '#fff' : '#74788D',
+                    backgroundColor: isActive ? 'var(--color-accent)' : 'var(--color-bg)',
+                    color: isActive ? '#fff' : 'var(--color-text-muted)',
                   }}
                 >
                   {ts.count}
@@ -248,8 +247,8 @@ export function StorageSidebar({
 
       {/* ── Folders card (if any) ── */}
       {distinctFolders.length > 0 && (
-        <div className="rounded-2xl border p-3" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
-          <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#74788D' }}>
+        <div className="rounded-2xl border border-border bg-surface p-3">
+          <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2 text-text-muted">
             Folders
           </p>
           <div className="flex flex-col gap-0.5">
@@ -264,8 +263,8 @@ export function StorageSidebar({
                   onClick={() => onFolderSelect(folder)}
                   className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12.5px] transition-colors"
                   style={{
-                    backgroundColor: isActive ? '#EEF2FF' : 'transparent',
-                    color: isActive ? '#4F46E5' : '#495057',
+                    backgroundColor: isActive ? 'var(--color-accent-subtle)' : 'transparent',
+                    color: isActive ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                     fontWeight: isActive ? 600 : 500,
                   }}
                 >
@@ -273,7 +272,7 @@ export function StorageSidebar({
                   <span className="flex-1 text-left truncate">{label}</span>
                   <span
                     className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0"
-                    style={{ backgroundColor: '#F1F5F9', color: '#74788D' }}
+                    style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text-muted)' }}
                   >
                     {fs.count}
                   </span>
@@ -285,16 +284,16 @@ export function StorageSidebar({
       )}
 
       {/* ── Storage Quota card ── */}
-      <div className="rounded-2xl border p-4" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
+      <div className="rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
             <HardDriveIcon />
-            <span className="text-[13px] font-bold" style={{ color: '#1E1B4B' }}>Storage Quota</span>
+            <span className="text-[13px] font-bold text-text-primary">Storage Quota</span>
           </div>
           {isFreePlan && (
             <span
               className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}
+              style={{ backgroundColor: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}
             >
               Free Plan
             </span>
@@ -302,20 +301,20 @@ export function StorageSidebar({
         </div>
 
         <div className="flex items-center justify-between text-[12px] mb-1.5">
-          <span className="font-semibold tabular-nums" style={{ color: '#1E1B4B' }}>
+          <span className="font-semibold tabular-nums text-text-primary">
             {formatBytes(totalUsedBytes)} used
           </span>
-          <span style={{ color: '#74788D' }}>
+          <span className="text-text-muted">
             {isUnlimited ? '∞ Unlimited' : formatBytes(storageLimitBytes ?? 0)}
           </span>
         </div>
 
-        <div className="h-[6px] w-full rounded-full overflow-hidden" style={{ backgroundColor: '#EEF2FF' }}>
+        <div className="h-[6px] w-full rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-border)' }}>
           <div
             className="h-full rounded-full"
             style={{
               width: `${barPct}%`,
-              background: 'linear-gradient(90deg, #4F46E5 0%, #818CF8 100%)',
+              background: 'var(--gradient-accent)',
             }}
           />
         </div>
@@ -323,8 +322,7 @@ export function StorageSidebar({
         {!isUnlimited && (
           <button
             onClick={onUpgradeClick}
-            className="mt-3.5 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold border transition-all hover:bg-[#EEF2FF] active:scale-[0.98]"
-            style={{ borderColor: '#4F46E5', color: '#4F46E5', backgroundColor: '#fff' }}
+            className="mt-3.5 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold border border-accent text-accent bg-surface hover:bg-accent/10 transition-all active:scale-[0.98]"
           >
             <SparkleIcon />
             Upgrade Storage

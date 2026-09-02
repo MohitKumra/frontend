@@ -22,7 +22,10 @@ import {
   ChevronLeft,
   Sparkles,
   Flag,
-  Clock,
+  PenSquare,
+  CheckSquare,
+  Sliders,
+  FileCheck2,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -144,18 +147,16 @@ function removeChatFromList(
 function getActiveGoals(goals: GoalDTO[]): GoalDTO[] {
   return [...goals]
     .filter((g) => g.status !== 'ARCHIVED')
-    .sort((a, b) => b.progress - a.progress)
-    .slice(0, 3);
+    .sort((a, b) => b.progress - a.progress);
 }
 
 function getTopHabits(habits: HabitDTO[]): HabitDTO[] {
   return [...habits]
     .filter((h) => h.isActive)
-    .sort((a, b) => b.currentStreak - a.currentStreak)
-    .slice(0, 4);
+    .sort((a, b) => b.currentStreak - a.currentStreak);
 }
 
-// Image file extensions — used as fallback when mimeType is blank
+// Image file extensions
 const IMAGE_EXTENSIONS = new Set([
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif',
   'bmp', 'tiff', 'tif', 'svg',
@@ -167,21 +168,18 @@ function isImageAttachment(attachment: ComposerAttachment): boolean {
   return IMAGE_EXTENSIONS.has(ext);
 }
 
-/** Returns only the non-image attachments as a text summary (for PDFs, docs, etc.) */
 function buildNonImageAttachmentSummary(attachments: ComposerAttachment[]): string {
   const nonImages = attachments.filter((a) => !isImageAttachment(a));
   if (nonImages.length === 0) return '';
   return `Attachments: ${nonImages.map((a) => a.name).join(', ')}`;
 }
 
-/** Returns image URLs for vision-capable LLMs */
 function extractImageUrls(attachments: ComposerAttachment[]): string[] {
   return attachments.filter(isImageAttachment).map((a) => a.url);
 }
 
 function buildOutboundMessage(text: string, attachments: ComposerAttachment[]): string {
   const trimmed = text.trim();
-  // Only append non-image file names as text — images go via imageUrls separately
   const fileSummary = buildNonImageAttachmentSummary(attachments);
   if (trimmed && fileSummary) return `${trimmed}\n\n${fileSummary}`;
   return trimmed || fileSummary;
@@ -191,14 +189,39 @@ function makeId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ─── Small sub-components ─────────────────────────────────────────────────────
+// ─── Group Chats by Date ──────────────────────────────────────────────────────
+
+function groupChatsByDate(chats: CoachChatListDTO[]) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const weekStart = todayStart - 6 * 86400000;
+
+  const today: CoachChatListDTO[] = [];
+  const previous7Days: CoachChatListDTO[] = [];
+  const older: CoachChatListDTO[] = [];
+
+  for (const chat of chats) {
+    const time = new Date(chat.lastMessageAt).getTime();
+    if (time >= todayStart) {
+      today.push(chat);
+    } else if (time >= weekStart) {
+      previous7Days.push(chat);
+    } else {
+      older.push(chat);
+    }
+  }
+
+  return { today, previous7Days, older };
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function TypingDots() {
   return (
     <div className="flex items-center gap-1.5 py-1 px-1">
-      <span className="h-2 w-2 animate-pulse rounded-full bg-current opacity-60 [animation-delay:0ms]" />
-      <span className="h-2 w-2 animate-pulse rounded-full bg-current opacity-60 [animation-delay:150ms]" />
-      <span className="h-2 w-2 animate-pulse rounded-full bg-current opacity-60 [animation-delay:300ms]" />
+      <span className="h-2 w-2 animate-pulse rounded-full opacity-70 [animation-delay:0ms]" style={{ background: 'var(--color-accent)' }} />
+      <span className="h-2 w-2 animate-pulse rounded-full opacity-70 [animation-delay:150ms]" style={{ background: 'var(--color-accent)' }} />
+      <span className="h-2 w-2 animate-pulse rounded-full opacity-70 [animation-delay:300ms]" style={{ background: 'var(--color-accent)' }} />
     </div>
   );
 }
@@ -219,35 +242,45 @@ function MessageBubble({
   const isUser = role === 'user';
   const hasImages = imageUrls && imageUrls.length > 0;
   const hasText = content.trim().length > 0;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (onCopy) {
+      onCopy();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex gap-3 sm:gap-3.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start group`}>
       {/* Avatar */}
       <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border mt-0.5"
+        className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl shadow-xs"
         style={{
           background: isUser
-            ? 'color-mix(in srgb, var(--color-accent) 14%, var(--color-surface))'
-            : 'color-mix(in srgb, var(--color-info) 12%, var(--color-surface))',
-          borderColor: isUser
-            ? 'color-mix(in srgb, var(--color-accent) 30%, var(--color-border))'
-            : 'color-mix(in srgb, var(--color-info) 25%, var(--color-border))',
-          color: isUser ? 'var(--color-accent)' : 'var(--color-info)',
+            ? 'color-mix(in srgb, var(--color-accent) 18%, var(--color-surface))'
+            : 'var(--color-accent)',
+          color: isUser ? 'var(--color-accent)' : '#ffffff',
+          borderRadius: isUser ? '9999px' : '12px',
         }}
       >
-        {isUser ? <User size={13} /> : <Bot size={13} />}
+        {isUser ? <User size={15} /> : <Bot size={16} />}
       </div>
 
-      {/* Bubble content */}
-      <div className={`flex flex-col gap-1.5 max-w-[85%] sm:max-w-[72%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
-        <span
-          className="text-[10px] font-bold uppercase tracking-widest px-1"
-          style={{ color: isUser ? 'var(--color-accent)' : 'var(--color-info)' }}
-        >
-          {isUser ? 'You' : 'Coach'}
-        </span>
+      {/* Bubble container */}
+      <div className={`flex flex-col gap-1 max-w-[85%] sm:max-w-[75%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
+        {/* Role label */}
+        <div className={`flex items-center gap-1.5 px-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+          <span
+            className="text-[11px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--color-accent)' }}
+          >
+            {isUser ? 'YOU' : 'COACH'}
+          </span>
+        </div>
 
-        {/* Image previews — shown above the text bubble */}
+        {/* Image attachments */}
         {hasImages && (
           <div className={`flex flex-wrap gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
             {imageUrls!.map((url) => (
@@ -255,16 +288,14 @@ function MessageBubble({
                 <img
                   src={url}
                   alt="Attached image"
-                  className="rounded-xl border object-cover shadow-sm transition-opacity group-hover:opacity-90"
+                  className="rounded-2xl border object-cover shadow-sm transition-opacity group-hover:opacity-90 max-w-[240px] max-h-[200px]"
                   style={{
-                    maxWidth: '240px',
-                    maxHeight: '200px',
                     borderColor: isUser
-                      ? 'color-mix(in srgb, var(--color-accent) 22%, var(--color-border))'
+                      ? 'color-mix(in srgb, var(--color-accent) 30%, var(--color-border))'
                       : 'var(--color-border)',
                   }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
                   <ImageIcon size={18} className="text-white drop-shadow" />
                 </div>
               </a>
@@ -272,36 +303,36 @@ function MessageBubble({
           </div>
         )}
 
-        {/* Text bubble — only render if there is text or it's pending */}
+        {/* Text bubble */}
         {(hasText || pending) && (
           <div
-            className="rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm"
+            className="rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 text-sm leading-relaxed shadow-xs border"
             style={{
               background: isUser
-                ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))'
+                ? 'color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-raised))'
                 : 'var(--color-surface)',
-              border: `1px solid ${
-                isUser
-                  ? 'color-mix(in srgb, var(--color-accent) 22%, var(--color-border))'
-                  : 'var(--color-border)'
-              }`,
+              borderColor: isUser
+                ? 'color-mix(in srgb, var(--color-accent) 26%, var(--color-border))'
+                : 'var(--color-border)',
               color: 'var(--color-text-primary)',
               borderTopRightRadius: isUser ? '4px' : '16px',
               borderTopLeftRadius: isUser ? '16px' : '4px',
             }}
           >
-            {pending ? <TypingDots /> : <p className="whitespace-pre-wrap">{content}</p>}
+            {pending ? <TypingDots /> : <p className="whitespace-pre-wrap select-text font-normal">{content}</p>}
           </div>
         )}
 
+        {/* Action button below message (Copy) */}
         {!isUser && !pending && onCopy && (
           <button
             type="button"
-            onClick={onCopy}
-            className="inline-flex items-center gap-1 px-1 text-[11px] font-semibold text-text-muted transition-colors hover:text-text-primary"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[11px] font-medium transition-colors hover:opacity-100 opacity-70"
+            style={{ color: 'var(--color-text-muted)' }}
           >
             <Copy size={11} />
-            Copy
+            <span>{copied ? 'Copied' : 'Copy'}</span>
           </button>
         )}
       </div>
@@ -318,23 +349,33 @@ function AttachmentChip({
 }) {
   return (
     <div
-      className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold"
+      className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
       style={{
-        background: 'var(--color-surface)',
-        borderColor: 'var(--color-border)',
-        color: 'var(--color-text-secondary)',
+        background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
+        borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
+        color: 'var(--color-text-primary)',
       }}
     >
-      {isImageAttachment(attachment) ? <ImageIcon size={11} /> : <FileText size={11} />}
+      {isImageAttachment(attachment) ? (
+        <ImageIcon size={12} style={{ color: 'var(--color-accent)' }} />
+      ) : (
+        <FileText size={12} style={{ color: 'var(--color-accent)' }} />
+      )}
       <span className="max-w-[140px] truncate">{clip(attachment.name, 24)}</span>
-      <button type="button" onClick={onRemove} className="text-text-muted hover:text-danger" aria-label="Remove">
-        <X size={11} />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="hover:text-red-500 transition-colors"
+        style={{ color: 'var(--color-text-muted)' }}
+        aria-label="Remove"
+      >
+        <X size={12} />
       </button>
     </div>
   );
 }
 
-// ─── History sidebar ──────────────────────────────────────────────────────────
+// ─── Left Sidebar (AI Coach Chats) ────────────────────────────────────────────
 
 function ChatHistorySidebar({
   chats,
@@ -349,6 +390,7 @@ function ChatHistorySidebar({
   collapsed,
   onToggle,
   isMobile,
+  onCloseMobile,
 }: {
   chats: CoachChatListDTO[];
   isLoading: boolean;
@@ -362,121 +404,232 @@ function ChatHistorySidebar({
   collapsed: boolean;
   onToggle: () => void;
   isMobile: boolean;
+  onCloseMobile?: () => void;
 }) {
+  const { today, previous7Days, older } = useMemo(() => groupChatsByDate(chats), [chats]);
+
+  const renderChatGroup = (groupTitle: string, groupChats: CoachChatListDTO[]) => {
+    if (groupChats.length === 0) return null;
+    return (
+      <div key={groupTitle} className="space-y-1 mb-3">
+        {!collapsed && (
+          <p className="px-2 text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>
+            {groupTitle}
+          </p>
+        )}
+        {groupChats.map((chat) => {
+          const isActive = chat.id === selectedChatId && !isDraftMode;
+          return (
+            <div
+              key={chat.id}
+              className="group relative rounded-xl transition-all"
+              style={{
+                background: isActive
+                  ? 'color-mix(in srgb, var(--color-accent) 14%, var(--color-surface))'
+                  : 'transparent',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onSelect(chat.id)}
+                className="w-full text-left rounded-xl p-2.5 transition-colors hover:bg-[var(--sidebar-item-hover)]"
+                title={collapsed ? chat.title : undefined}
+              >
+                {collapsed ? (
+                  <Sparkles
+                    size={16}
+                    className="mx-auto"
+                    style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                  />
+                ) : (
+                  <div className="pr-6">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Sparkles
+                        size={13}
+                        className="shrink-0"
+                        style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                      />
+                      <p
+                        className="text-xs font-bold truncate leading-snug"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {chat.title}
+                      </p>
+                    </div>
+                    <p
+                      className="text-[11px] truncate leading-relaxed"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      {chat.preview || 'No messages yet'}
+                    </p>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                      {formatRelativeTime(chat.lastMessageAt)}
+                    </p>
+                  </div>
+                )}
+              </button>
+
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(chat);
+                  }}
+                  className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 p-1 rounded-md transition-all hover:text-red-500"
+                  style={{ color: 'var(--color-text-muted)' }}
+                  aria-label={`Delete ${chat.title}`}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <aside
       className={`flex flex-col border-r shrink-0 transition-all duration-200 ${
-        isMobile ? 'absolute inset-y-0 left-0 z-20 bg-[var(--sidebar-bg)]' : ''
+        isMobile ? 'fixed inset-y-0 left-0 z-30 shadow-2xl' : ''
       }`}
       style={{
-        width: collapsed ? (isMobile ? '0' : '56px') : isMobile ? '280px' : '260px',
+        width: collapsed ? (isMobile ? '0' : '64px') : isMobile ? '290px' : '260px',
+        display: isMobile && collapsed ? 'none' : 'flex',
         background: 'var(--sidebar-bg)',
         borderColor: 'var(--sidebar-border)',
-        display: isMobile && collapsed ? 'none' : 'flex',
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between border-b px-3 shrink-0"
-        style={{ height: '56px', borderColor: 'var(--sidebar-border)' }}
+        className="flex items-center justify-between border-b px-3.5 h-14 shrink-0"
+        style={{ borderColor: 'var(--sidebar-border)' }}
       >
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
-            <Sparkles size={16} className="text-accent shrink-0" />
-            <span className="text-sm font-black text-text-primary truncate">Chats</span>
+            <Sparkles size={16} className="shrink-0" style={{ color: 'var(--color-accent)' }} />
+            <span className="text-sm font-black truncate tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+              AI Coach
+            </span>
           </div>
         )}
         <button
-          onClick={onToggle}
-          className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors ml-auto"
+          onClick={isMobile ? onCloseMobile : onToggle}
+          className="p-1.5 rounded-lg transition-colors ml-auto hover:bg-[var(--sidebar-item-hover)]"
+          style={{ color: 'var(--color-text-muted)' }}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+          {isMobile ? <X size={16} /> : collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
 
       {/* New chat button */}
-      <div className={`p-2 border-b shrink-0`} style={{ borderColor: 'var(--sidebar-border)' }}>
+      <div className="p-3 border-b shrink-0" style={{ borderColor: 'var(--sidebar-border)' }}>
         <button
           onClick={onNew}
           disabled={!canCreateChat || isBusy}
-          className="flex items-center gap-2 w-full rounded-lg px-2.5 py-2 text-xs font-bold transition-colors hover:bg-[var(--sidebar-item-hover)] disabled:opacity-40"
-          style={{ color: 'var(--color-accent)' }}
+          className={`flex items-center justify-center gap-2 w-full rounded-xl py-2.5 px-3 text-xs font-bold transition-all border disabled:opacity-40 shadow-2xs ${
+            collapsed ? 'px-0' : ''
+          }`}
+          style={{
+            background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
+            borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
+            color: 'var(--color-accent)',
+          }}
           aria-label="New chat"
         >
-          <Plus size={14} className="shrink-0" />
+          <Plus size={15} className="shrink-0" />
           {!collapsed && <span>New chat</span>}
         </button>
       </div>
 
       {/* Chat list */}
-      <div className="flex-1 overflow-y-auto py-2 space-y-0.5 px-1.5 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1 no-scrollbar">
         {isLoading ? (
           !collapsed && (
-            <p className="px-2 py-3 text-xs text-text-muted">Loading…</p>
+            <div className="flex items-center justify-center py-6 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="animate-pulse">Loading chats…</span>
+            </div>
           )
         ) : chats.length === 0 ? (
           !collapsed && (
-            <p className="px-2 py-3 text-xs text-text-muted leading-relaxed">
-              No chats yet. Send a message to start the first thread.
-            </p>
+            <div className="px-3 py-6 text-center text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+              No chats yet.<br />Send a message to start coaching.
+            </div>
           )
         ) : (
-          chats.map((chat) => {
-            const isActive = chat.id === selectedChatId && !isDraftMode;
-            return (
-              <div
-                key={chat.id}
-                className={`group relative rounded-lg transition-colors ${collapsed ? 'mx-0' : ''}`}
-                style={{
-                  background: isActive
-                    ? 'color-mix(in srgb, var(--color-accent) 9%, var(--color-surface))'
-                    : 'transparent',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => onSelect(chat.id)}
-                  className="w-full text-left rounded-lg px-2.5 py-2.5 transition-colors hover:bg-[var(--sidebar-item-hover)]"
-                  title={collapsed ? chat.title : undefined}
-                >
-                  {collapsed ? (
-                    <Sparkles
-                      size={16}
-                      className="mx-auto"
-                      style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
-                    />
-                  ) : (
-                    <div className="pr-5">
-                      <p className="text-xs font-bold text-text-primary truncate leading-snug">{chat.title}</p>
-                      <p className="text-[10px] text-text-muted truncate mt-0.5 leading-relaxed">
-                        {chat.preview || 'New chat'}
-                      </p>
-                      <p className="text-[10px] text-text-muted mt-1">{formatRelativeTime(chat.lastMessageAt)}</p>
-                    </div>
-                  )}
-                </button>
-
-                {!collapsed && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(chat)}
-                    className="absolute right-1.5 top-2.5 opacity-0 group-hover:opacity-100 p-1 rounded text-text-muted hover:text-danger transition-all"
-                    aria-label={`Delete ${chat.title}`}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </div>
-            );
-          })
+          <>
+            {renderChatGroup('Today', today.length > 0 ? today : chats.length > 0 && previous7Days.length === 0 && older.length === 0 ? chats : [])}
+            {today.length > 0 && renderChatGroup('Previous 7 Days', previous7Days)}
+            {today.length > 0 && renderChatGroup('Older', older)}
+          </>
         )}
       </div>
     </aside>
   );
 }
 
-// ─── Context panel ────────────────────────────────────────────────────────────
+// ─── Right Sidebar (Context Panel) ────────────────────────────────────────────
+
+type QuickPromptItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  promptText: string;
+  icon: any;
+  iconBg: string;
+  iconColor: string;
+};
+
+const RICH_QUICK_PROMPTS: QuickPromptItem[] = [
+  {
+    id: 'refine',
+    title: 'Refine Response',
+    subtitle: 'Make the response more concise and actionable',
+    promptText: 'Make the previous response more concise, structured, and immediately actionable.',
+    icon: PenSquare,
+    iconBg: 'color-mix(in srgb, var(--color-accent) 14%, var(--color-surface))',
+    iconColor: 'var(--color-accent)',
+  },
+  {
+    id: 'brainstorm',
+    title: 'Brainstorm Ideas',
+    subtitle: 'Generate more creative variations and possibilities',
+    promptText: 'Generate more creative variations, alternative ideas, and out-of-the-box possibilities for this.',
+    icon: Sparkles,
+    iconBg: 'color-mix(in srgb, #a855f7 14%, var(--color-surface))',
+    iconColor: '#a855f7',
+  },
+  {
+    id: 'examples',
+    title: 'Ask for Examples',
+    subtitle: 'Show real-world examples and use cases',
+    promptText: 'Show concrete real-world examples and practical use cases for this.',
+    icon: CheckSquare,
+    iconBg: 'color-mix(in srgb, var(--color-success) 14%, var(--color-surface))',
+    iconColor: 'var(--color-success)',
+  },
+  {
+    id: 'tone',
+    title: 'Change Tone',
+    subtitle: 'Adjust the tone to be more professional / casual',
+    promptText: 'Adjust the tone to be direct, structured, and highly professional.',
+    icon: Sliders,
+    iconBg: 'color-mix(in srgb, var(--color-warning) 14%, var(--color-surface))',
+    iconColor: 'var(--color-warning)',
+  },
+  {
+    id: 'summarize',
+    title: 'Summarize Chat',
+    subtitle: 'Summarize our conversation in key points',
+    promptText: 'Summarize our conversation so far into key takeaways, decisions, and immediate next steps.',
+    icon: FileCheck2,
+    iconBg: 'color-mix(in srgb, var(--color-danger) 14%, var(--color-surface))',
+    iconColor: 'var(--color-danger)',
+  },
+];
 
 function ContextPanel({
   goals,
@@ -494,6 +647,8 @@ function ContextPanel({
   collapsed,
   onToggle,
   onPromptSelect,
+  isMobile,
+  onCloseMobile,
 }: {
   goals: GoalDTO[];
   habits: HabitDTO[];
@@ -510,171 +665,164 @@ function ContextPanel({
   collapsed: boolean;
   onToggle: () => void;
   onPromptSelect?: (prompt: string) => void;
+  isMobile?: boolean;
+  onCloseMobile?: () => void;
 }) {
   const activeGoals = getActiveGoals(goals);
-  const topHabits = getTopHabits(habits);
+  const activeHabits = getTopHabits(habits);
 
   return (
     <aside
-      className="hidden lg:flex flex-col border-l shrink-0 overflow-y-auto no-scrollbar transition-all duration-200"
+      className={`flex flex-col border-l shrink-0 overflow-y-auto no-scrollbar transition-all duration-200 ${
+        isMobile ? 'fixed inset-y-0 right-0 z-30 shadow-2xl' : ''
+      }`}
       style={{
-        width: collapsed ? '48px' : '280px',
+        width: collapsed ? (isMobile ? '0' : '48px') : isMobile ? '300px' : '285px',
+        display: isMobile && collapsed ? 'none' : 'flex',
         background: 'var(--color-surface-raised)',
         borderColor: 'var(--color-border)',
       }}
     >
+      {/* Header */}
       <div
-        className="flex items-center justify-between border-b px-3 shrink-0"
-        style={{ height: '56px', borderColor: 'var(--color-border)' }}
+        className="flex items-center justify-between border-b px-4 h-14 shrink-0"
+        style={{ borderColor: 'var(--color-border)' }}
       >
         {!collapsed && (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Context</span>
+          <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+            CONTEXT
+          </span>
         )}
         <button
-          onClick={onToggle}
-          className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors ml-auto"
+          onClick={isMobile ? onCloseMobile : onToggle}
+          className="p-1.5 rounded-lg transition-colors ml-auto hover:bg-[var(--sidebar-item-hover)]"
+          style={{ color: 'var(--color-text-muted)' }}
           aria-label={collapsed ? 'Expand context' : 'Collapse context'}
         >
-          {collapsed ? <ChevronLeft size={15} /> : <ChevronRight size={15} />}
+          {isMobile ? <X size={16} /> : collapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>
       </div>
 
       {!collapsed && (
-        <div className="flex-1 p-3 space-y-4">
-          {/* Quick stats */}
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Snapshot</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { icon: Flag, label: 'Goals', value: activeGoals.length, color: 'var(--color-accent)' },
-                { icon: Target, label: 'Habits', value: topHabits.length, color: 'var(--color-success)' },
-              ].map(({ icon: Icon, label, value, color }) => (
-                <div
-                  key={label}
-                  className="rounded-xl border p-2.5 text-center"
-                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-                >
-                  <Icon size={14} style={{ color }} className="mx-auto mb-1" />
-                  <p className="text-base font-black text-text-primary">{value}</p>
-                  <p className="text-[10px] text-text-muted">{label}</p>
-                </div>
-              ))}
-            </div>
-            <div
-              className="rounded-xl border px-3 py-2.5"
-              style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Memory</p>
-              <p className="text-xs text-text-secondary leading-relaxed">
-                {selectedChatSummary ? clip(selectedChatSummary, 100) : 'No saved memory yet.'}
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-text-muted">
-              <Clock size={10} />
-              <span>Auto-refresh every {refreshLabel}</span>
-            </div>
-          </div>
-
-          {/* Quick prompts for entity creation */}
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Quick Prompts</p>
-            <div className="space-y-1.5">
-              {[
-                { 
-                  icon: '📝', 
-                  label: 'Task #1', 
-                  prompt: 'Create a critical task: prepare Q4 board presentation by next Friday at 2pm, remind me 1 hour before with message "final review time", recurring quarterly, with subtasks: gather financial data, create slide deck, get CEO approval' 
-                },
-                { 
-                  icon: '📝', 
-                  label: 'Task #2', 
-                  prompt: 'Create daily task: gym workout at 5am, remind me at 4:30am with message "rise and grind", skip Sundays, estimated 1.5 hours, link to my fitness project, high priority' 
-                },
-                { 
-                  icon: '✅', 
-                  label: 'Habit #1', 
-                  prompt: 'Create habit: morning workout for 30 minutes every day at 6am, remind me at 5:45am with message "time to move", skip Saturdays and Sundays, commit for 90 days, link to my fitness goal' 
-                },
-                { 
-                  icon: '✅', 
-                  label: 'Habit #2', 
-                  prompt: 'Create weekly habit: team standup meeting every Monday and Thursday at 10am, remind me 15 minutes before, duration 30 minutes, link to management project, track consistency for performance review' 
-                },
-                { 
-                  icon: '🎯', 
-                  label: 'Goal #1', 
-                  prompt: 'Create high priority career goal: launch freelance consulting business with 3 paying clients by March 31st 2027, focus on building sustainable side income, track with blue rocket icon' 
-                },
-                { 
-                  icon: '🎯', 
-                  label: 'Goal #2', 
-                  prompt: 'Create fitness goal: lose 15 pounds by summer 2027, medium priority, health category, description: combine strength training 3x week with calorie tracking, green dumbbell icon' 
-                },
-                { 
-                  icon: '📦', 
-                  label: 'Project #1', 
-                  prompt: 'Create active project: home office renovation starting today until December 15th, includes designing layout, purchasing furniture, hiring contractors, setting up tech equipment, purple color scheme, link to productivity goal' 
-                },
-                { 
-                  icon: '📦', 
-                  label: 'Project #2', 
-                  prompt: 'Create project: marketing campaign for product launch, active status, start March 1st 2027 end May 31st 2027, description: social media, email sequences, influencer outreach, paid ads, orange theme' 
-                },
-              ].map(({ icon, label, prompt }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => onPromptSelect?.(prompt)}
-                  className="w-full text-left rounded-lg border px-2.5 py-2 hover:border-accent transition-colors group"
-                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-                  title={prompt}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-base shrink-0 mt-0.5">{icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-text-secondary group-hover:text-accent transition-colors block">
-                        {label}
-                      </span>
-                      <p className="text-[10px] text-text-muted leading-relaxed mt-0.5 line-clamp-2">
-                        {prompt.length > 80 ? `${prompt.slice(0, 77)}...` : prompt}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Next step from coach */}
-          {lastCoachResult?.suggestion?.text && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Next step</p>
+        <div className="flex-1 p-4 space-y-5">
+          {/* SNAPSHOT Section */}
+          <div className="space-y-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+              SNAPSHOT
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Goals card */}
               <div
-                className="rounded-xl border px-3 py-2.5"
-                style={{
-                  borderColor: 'color-mix(in srgb, var(--color-info) 25%, var(--color-border))',
-                  background: 'color-mix(in srgb, var(--color-info) 6%, var(--color-surface))',
-                }}
+                className="rounded-2xl border p-3.5 flex flex-col items-center justify-center text-center shadow-2xs"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
               >
-                <p className="text-xs font-semibold text-text-primary leading-relaxed">
-                  {lastCoachResult.suggestion.text}
+                <div className="mb-1.5" style={{ color: 'var(--color-accent)' }}>
+                  <Flag size={18} />
+                </div>
+                <p className="text-xl font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                  {activeGoals.length}
+                </p>
+                <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                  Goals
+                </p>
+              </div>
+
+              {/* Habits card */}
+              <div
+                className="rounded-2xl border p-3.5 flex flex-col items-center justify-center text-center shadow-2xs"
+                style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+              >
+                <div className="mb-1.5" style={{ color: 'var(--color-success)' }}>
+                  <Target size={18} />
+                </div>
+                <p className="text-xl font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                  {activeHabits.length}
+                </p>
+                <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                  Habits
                 </p>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Plan section */}
+          {/* MEMORY Section */}
           <div className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Action plan</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+                MEMORY
+              </p>
+            </div>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+              Auto-refresh every {refreshLabel}
+            </p>
+            <div
+              className="rounded-2xl border p-3.5 text-xs leading-relaxed"
+              style={{
+                background: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {selectedChatSummary ? clip(selectedChatSummary, 140) : 'No saved memory yet. Chat with the coach to build long-term memory.'}
+            </div>
+          </div>
+
+          {/* QUICK PROMPTS Section */}
+          <div className="space-y-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+              QUICK PROMPTS
+            </p>
+            <div className="space-y-2">
+              {RICH_QUICK_PROMPTS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onPromptSelect?.(item.promptText)}
+                    className="w-full text-left rounded-2xl border p-3 transition-all hover:border-[var(--color-accent)] hover:shadow-xs group flex items-start gap-3"
+                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                  >
+                    <div
+                      className="h-8 w-8 rounded-xl shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform"
+                      style={{ background: item.iconBg, color: item.iconColor }}
+                    >
+                      <Icon size={15} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="text-xs font-bold transition-colors group-hover:text-[var(--color-accent)]"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {item.title}
+                      </p>
+                      <p className="text-[10px] mt-0.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+                        {item.subtitle}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Plan Section */}
+          <div className="space-y-2 pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+              ACTION PLAN
+            </p>
 
             {plan ? (
               <div className="space-y-2">
                 <div
-                  className="rounded-xl border px-3 py-2.5"
-                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+                  className="rounded-2xl border p-3"
+                  style={{
+                    background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
+                    borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
+                  }}
                 >
-                  <p className="text-xs font-black text-text-primary">{plan.goal.title}</p>
-                  <p className="text-[10px] text-text-muted mt-1 leading-relaxed">{clip(plan.summary, 80)}</p>
+                  <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>{plan.goal.title}</p>
+                  <p className="text-[10px] mt-1 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{clip(plan.summary, 80)}</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {[
                       { label: `${plan.milestones.length} milestones` },
@@ -683,11 +831,11 @@ function ContextPanel({
                     ].map(({ label }) => (
                       <span
                         key={label}
-                        className="text-[10px] font-bold rounded-full px-2 py-0.5 border"
+                        className="text-[9px] font-bold rounded-full px-2 py-0.5 border"
                         style={{
+                          background: 'var(--color-surface)',
                           borderColor: 'var(--color-border)',
-                          color: 'var(--color-text-secondary)',
-                          background: 'var(--color-surface-raised)',
+                          color: 'var(--color-accent)',
                         }}
                       >
                         {label}
@@ -700,8 +848,8 @@ function ContextPanel({
                 </Button>
               </div>
             ) : (
-              <p className="text-[11px] text-text-muted leading-relaxed">
-                Chat first, then build a structured plan from the conversation.
+              <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                Generate an executable goal workspace directly from your conversation.
               </p>
             )}
 
@@ -714,26 +862,24 @@ function ContextPanel({
               disabled={!canBuildPlan}
               leftIcon={<Wand2 size={12} />}
             >
-              {plan ? 'Regenerate' : 'Build plan'}
+              {plan ? 'Regenerate plan' : 'Build plan'}
             </Button>
           </div>
         </div>
       )}
 
       {collapsed && (
-        <div className="flex flex-col items-center gap-4 py-4">
-          <Flag size={15} className="text-text-muted" />
-          <Target size={15} className="text-text-muted" />
-          <Wand2 size={15} className="text-text-muted" />
+        <div className="flex flex-col items-center gap-4 py-4" style={{ color: 'var(--color-text-muted)' }}>
+          <Flag size={16} />
+          <Target size={16} />
+          <Wand2 size={16} />
         </div>
       )}
     </aside>
   );
 }
 
-// ─── Entity draft banner ──────────────────────────────────────────────────────
-// Shown inline in the chat area when the coach returns an entityDraft.
-// The user can confirm (create) or dismiss it.
+// ─── Entity Draft Banner ──────────────────────────────────────────────────────
 
 const ENTITY_LABELS: Record<CoachEntityDraft['entity'], string> = {
   task: 'Task',
@@ -762,44 +908,43 @@ function EntityDraftBanner({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.18 }}
-      className="mx-3 sm:mx-4 mb-3 rounded-2xl border p-3 sm:p-4"
+      className="mx-3 sm:mx-6 mb-3 rounded-2xl border p-3 sm:p-4 shadow-sm"
       style={{
-        background: 'color-mix(in srgb, var(--color-success) 6%, var(--color-surface))',
-        borderColor: 'color-mix(in srgb, var(--color-success) 28%, var(--color-border))',
+        background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-surface))',
+        borderColor: 'color-mix(in srgb, var(--color-success) 30%, var(--color-border))',
       }}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-start justify-between gap-3 mb-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
             style={{
-              background: 'color-mix(in srgb, var(--color-success) 14%, var(--color-surface))',
+              background: 'color-mix(in srgb, var(--color-success) 18%, var(--color-surface))',
               color: 'var(--color-success)',
             }}
           >
-            <CheckCircle2 size={14} />
+            <CheckCircle2 size={15} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black text-text-primary">
-              Create {entityLabel}: <span className="text-accent break-words">{draft.title}</span>
+            <p className="text-xs font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>
+              Create {entityLabel}: <span className="font-extrabold" style={{ color: 'var(--color-accent)' }}>{draft.title}</span>
             </p>
-            <p className="text-[10px] text-text-muted mt-0.5">
-              Coach is ready to create this {entityLabel.toLowerCase()} for you
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              Coach detected actionable items and prepared this draft
             </p>
           </div>
         </div>
         <button
           type="button"
           onClick={onDismiss}
-          className="shrink-0 p-1 rounded text-text-muted hover:text-text-primary transition-colors"
+          className="shrink-0 p-1 rounded-md transition-colors hover:text-red-500"
+          style={{ color: 'var(--color-text-muted)' }}
           aria-label="Dismiss"
         >
-          <X size={13} />
+          <X size={14} />
         </button>
       </div>
 
-      {/* Field summary chips */}
       {filledFields.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {filledFields.slice(0, 5).map(([field, value]) => (
@@ -816,23 +961,10 @@ function EntityDraftBanner({
               {field}: {value}
             </span>
           ))}
-          {filledFields.length > 5 && (
-            <span
-              className="rounded-full border px-2.5 py-0.5 text-[10px] font-semibold"
-              style={{
-                background: 'var(--color-surface)',
-                borderColor: 'var(--color-border)',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              +{filledFields.length - 5} more
-            </span>
-          )}
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2">
         <Button
           size="sm"
           onClick={onConfirm}
@@ -849,18 +981,7 @@ function EntityDraftBanner({
   );
 }
 
-// ─── Quick prompts ─────────────────────────────────────────────────────────────
-
-const QUICK_PROMPTS = [
-  'Summarize my latest progress and the next blocker.',
-  'Give me one honest next step for today.',
-  'Turn this chat into a practical plan.',
-  'Review my habits and show the weakest point.',
-  'What should I focus on in the next 30 minutes?',
-  'Help me make this goal more realistic.',
-];
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: CoachStudioPanelProps) {
   const coachEnabled = useAIFeatureEnabled('coachEnabled');
@@ -890,8 +1011,9 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   const [deleteTarget, setDeleteTarget] = useState<CoachChatListDTO | null>(null);
   const [historySidebarCollapsed, setHistorySidebarCollapsed] = useState(false);
   const [contextPanelCollapsed, setContextPanelCollapsed] = useState(false);
-  const [showQuickPrompts, setShowQuickPrompts] = useState(false);
-  // Entity draft — set when the coach returns an entityDraft in its response
+  const [showQuickPromptsPopover, setShowQuickPromptsPopover] = useState(false);
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const [mobileContextOpen, setMobileContextOpen] = useState(false);
   const [pendingEntityDraft, setPendingEntityDraft] = useState<CoachEntityDraft | null>(null);
   const [isConfirmingEntity, setIsConfirmingEntity] = useState(false);
   const [quotaUpgradeOpen, setQuotaUpgradeOpen] = useState(false);
@@ -933,7 +1055,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   const selectedChat = selectedChatQuery.data ?? null;
   const selectedChatListItem = chats.find((c) => c.id === selectedChatId) ?? null;
   const selectedChatTitle =
-    isDraftMode && !selectedChat ? 'New chat' : selectedChat?.title ?? selectedChatListItem?.title ?? 'Coach';
+    isDraftMode && !selectedChat ? 'New Chat' : selectedChat?.title ?? selectedChatListItem?.title ?? 'Coach';
   const selectedChatSummary = selectedChat?.summary ?? selectedChatListItem?.summary ?? '';
   const messages = selectedChat?.messages ?? [];
 
@@ -985,7 +1107,6 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   };
 
   const focusComposer = () => {
-    // Only auto-focus on desktop to avoid keyboard popping up on mobile
     if (!isDesktop) return;
     window.requestAnimationFrame(() => textareaRef.current?.focus());
   };
@@ -1037,6 +1158,9 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     setPendingExchange(null);
     setPendingEntityDraft(null);
     setStatus(null);
+    if (!isDesktop) {
+      setMobileHistoryOpen(false);
+    }
     focusComposer();
   }
 
@@ -1051,16 +1175,18 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     setPendingExchange(null);
     setPendingEntityDraft(null);
     setStatus(null);
-    // Close sidebar on mobile after selecting a chat
     if (!isDesktop) {
-      setHistorySidebarCollapsed(true);
+      setMobileHistoryOpen(false);
     }
     focusComposer();
   }
 
   function handlePromptClick(prompt: string) {
     setInput(prompt);
-    setShowQuickPrompts(false);
+    setShowQuickPromptsPopover(false);
+    if (!isDesktop) {
+      setMobileContextOpen(false);
+    }
     focusComposer();
   }
 
@@ -1085,7 +1211,6 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     const trimmed = promptText.trim();
     const outboundText = buildOutboundMessage(promptText, composerAttachments);
     const imageUrls = extractImageUrls(composerAttachments);
-    // Display text: use the raw text + image count hint if no text but images present
     const displayText =
       trimmed ||
       (imageUrls.length > 0
@@ -1133,12 +1258,11 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
       setIsDraftMode(false);
       setLastCoachResult(response.result);
       setAssistantPlanPrompt(response.result.planPrompt?.trim() || '');
-      // Surface entity draft if the coach gathered enough info to create an entity
       if (response.result.entityDraft) {
         setPendingEntityDraft(response.result.entityDraft);
         setStatus(null);
       } else if (response.result.suggestion?.actionType === 'create_plan') {
-        setStatus('Plan ready — hit Build plan when you\'re ready.');
+        setStatus('Plan ready — hit Build plan when you are ready.');
       } else if (response.result.suggestion?.text) {
         setStatus(`Next step: ${response.result.suggestion.text}`);
       } else {
@@ -1195,7 +1319,6 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
       setPendingEntityDraft(null);
       const entityLabel = ENTITY_LABELS[draft.entity] ?? draft.entity;
       setStatus(`${entityLabel} "${draft.title}" created.`);
-      // Invalidate the relevant list so the sidebar / page refreshes
       const queryKeyMap: Record<CoachEntityDraft['entity'], string> = {
         task: 'tasks',
         habit: 'habits',
@@ -1237,19 +1360,25 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
     finally { setDeleteTarget(null); setIsDeletingChat(false); focusComposer(); }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-full overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      {/* Mobile sidebar backdrop */}
-      {!isDesktop && !historySidebarCollapsed && (
+    <div className="flex h-full w-full overflow-hidden font-sans" style={{ background: 'var(--color-bg)' }}>
+      {/* Mobile History Backdrop */}
+      {!isDesktop && mobileHistoryOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-10"
-          onClick={() => setHistorySidebarCollapsed(true)}
-          style={{ backdropFilter: 'blur(2px)' }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-20"
+          onClick={() => setMobileHistoryOpen(false)}
         />
       )}
 
-      {/* ── History sidebar ─────────────────────────────────────────────── */}
+      {/* Mobile Context Backdrop */}
+      {!isDesktop && mobileContextOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-20"
+          onClick={() => setMobileContextOpen(false)}
+        />
+      )}
+
+      {/* ── 1. Left Sidebar: AI Coach Chats ───────────────────────────── */}
       <ChatHistorySidebar
         chats={chats}
         isLoading={chatsQuery.isLoading}
@@ -1260,112 +1389,144 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         onNew={handleCreateNewChat}
         onSelect={handleSelectChat}
         onDelete={(chat) => setDeleteTarget(chat)}
-        collapsed={historySidebarCollapsed}
+        collapsed={!isDesktop ? !mobileHistoryOpen : historySidebarCollapsed}
         onToggle={() => setHistorySidebarCollapsed((v) => !v)}
         isMobile={!isDesktop}
+        onCloseMobile={() => setMobileHistoryOpen(false)}
       />
 
-      {/* ── Chat area ────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
-
-        {/* Chat topbar */}
+      {/* ── 2. Center Main Chat Area ──────────────────────────────────── */}
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+        {/* Top bar */}
         <div
-          className="flex items-center justify-between gap-3 border-b px-4 shrink-0"
-          style={{ height: '56px', borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+          className="flex items-center justify-between gap-3 border-b px-4 sm:px-6 h-14 shrink-0 shadow-2xs"
+          style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            {/* Mobile menu toggle */}
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile history toggle button */}
             {!isDesktop && (
               <button
                 type="button"
-                onClick={() => setHistorySidebarCollapsed((v) => !v)}
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors shrink-0"
-                aria-label="Toggle menu"
+                onClick={() => setMobileHistoryOpen(true)}
+                className="p-1.5 -ml-1 rounded-lg transition-colors shrink-0 hover:bg-[var(--sidebar-item-hover)]"
+                style={{ color: 'var(--color-text-muted)' }}
+                aria-label="Open chats history"
               >
-                <Sparkles size={18} />
+                <Sparkles size={18} style={{ color: 'var(--color-accent)' }} />
               </button>
             )}
+
+            {/* Sparkle circle icon */}
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-xl shrink-0"
+              className="flex h-8 w-8 items-center justify-center rounded-full shrink-0"
               style={{
-                background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))',
+                background: 'color-mix(in srgb, var(--color-accent) 15%, var(--color-surface))',
                 color: 'var(--color-accent)',
               }}
             >
               <Sparkles size={15} />
             </div>
+
+            {/* Chat Title & Subtitle */}
             <div className="min-w-0">
-              <p className="text-sm font-black text-text-primary truncate">{selectedChatTitle}</p>
+              <p className="text-sm font-black truncate" style={{ color: 'var(--color-text-primary)' }}>
+                {selectedChatTitle}
+              </p>
               {selectedChatSummary && (
-                <p className="text-[10px] text-text-muted truncate hidden sm:block">
-                  {clip(selectedChatSummary, 60)}
+                <p className="text-[11px] truncate hidden sm:block max-w-[420px]" style={{ color: 'var(--color-text-muted)' }}>
+                  {clip(selectedChatSummary, 65)}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             {isSending && (
               <Badge variant="warning" size="sm" dot>
                 <span className="hidden sm:inline">Thinking…</span>
                 <span className="sm:hidden">...</span>
               </Badge>
             )}
-            {isDraftMode && !isSending && (
-              <Badge variant="default" size="sm">
-                Draft
-              </Badge>
+
+            {/* Pill badge: • AI ready */}
+            <div
+              className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+              style={{
+                background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))',
+                borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))',
+                color: 'var(--color-accent)',
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: 'var(--color-accent)' }} />
+              <span>{coachEnabled ? 'AI ready' : 'Coach off'}</span>
+            </div>
+
+            {/* Mobile context toggle button */}
+            {!isDesktop && (
+              <button
+                type="button"
+                onClick={() => setMobileContextOpen(true)}
+                className="p-1.5 rounded-lg transition-colors shrink-0 hover:bg-[var(--sidebar-item-hover)]"
+                style={{ color: 'var(--color-text-muted)' }}
+                aria-label="Open context"
+              >
+                <Target size={18} />
+              </button>
             )}
-            <Badge variant={coachEnabled ? 'accent' : 'warning'} size="sm" dot className="hidden sm:flex">
-              {coachEnabled ? 'AI ready' : 'Coach off'}
-            </Badge>
           </div>
         </div>
 
-        {/* Coach-off warning */}
+        {/* Coach Disabled Notice */}
         {!coachEnabled && (
           <div
-            className="mx-3 sm:mx-4 mt-3 rounded-xl border px-3 sm:px-4 py-3 text-xs leading-relaxed"
+            className="mx-4 sm:mx-6 mt-3 rounded-2xl border p-3.5 text-xs leading-relaxed"
             style={{
-              background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-surface))',
-              borderColor: 'color-mix(in srgb, var(--color-warning) 22%, var(--color-border))',
+              background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--color-warning) 25%, var(--color-border))',
               color: 'var(--color-text-secondary)',
             }}
           >
-            AI Coach is turned off in <strong>Settings → AI &amp; Tokens</strong>. You can read history but cannot send new messages.
+            AI Coach is turned off in <strong>Settings → AI &amp; Tokens</strong>. You can read chat history but cannot send new messages.
           </div>
         )}
 
-        {/* Messages scroll area */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-5">
+        {/* Messages Feed */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6">
           {displayMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-4 sm:gap-5 pb-20 text-center px-4">
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4 max-w-lg mx-auto py-12">
               <div
-                className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl"
+                className="flex h-16 w-16 items-center justify-center rounded-3xl shadow-sm"
                 style={{
-                  background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))',
+                  background: 'color-mix(in srgb, var(--color-accent) 14%, var(--color-surface))',
                   color: 'var(--color-accent)',
-                  border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
                 }}
               >
-                <Sparkles size={isDesktop ? 24 : 20} />
+                <Sparkles size={26} />
               </div>
-              <div className="space-y-2 max-w-sm">
-                <p className="text-base font-black text-text-primary">How can I help you today?</p>
-                <p className="text-sm text-text-muted leading-relaxed">
-                  Ask about your habits, goals, blockers, or focus. Your first message creates a saved thread.
+              <div className="space-y-1.5">
+                <p className="text-lg font-black" style={{ color: 'var(--color-text-primary)' }}>
+                  How can I help you today?
+                </p>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                  Ask for goal planning, habit strategies, deep focus advice, or quick ideas.
                 </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-                {QUICK_PROMPTS.slice(0, isDesktop ? 4 : 3).map((prompt) => (
+
+              {/* Quick suggestion chips */}
+              <div className="flex flex-wrap justify-center gap-2 pt-2">
+                {RICH_QUICK_PROMPTS.slice(0, 4).map((p) => (
                   <button
-                    key={prompt}
+                    key={p.id}
                     type="button"
-                    onClick={() => handlePromptClick(prompt)}
-                    className="rounded-full border px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-colors hover:border-accent hover:text-accent"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+                    onClick={() => handlePromptClick(p.promptText)}
+                    className="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all shadow-2xs hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    style={{
+                      background: 'var(--color-surface)',
+                      borderColor: 'var(--color-border)',
+                      color: 'var(--color-text-secondary)',
+                    }}
                   >
-                    {prompt}
+                    {p.title}
                   </button>
                 ))}
               </div>
@@ -1376,7 +1537,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
                 {displayMessages.map((msg) => (
                   <motion.div
                     key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.16 }}
@@ -1400,7 +1561,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           )}
         </div>
 
-        {/* Entity draft banner — shown when coach gathers enough info to create an entity */}
+        {/* Inline Entity Draft Confirmation */}
         <AnimatePresence>
           {pendingEntityDraft && !isSending && (
             <EntityDraftBanner
@@ -1412,144 +1573,154 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           )}
         </AnimatePresence>
 
-        {/* Status bar */}
+        {/* Status text */}
         {status && (
-          <div className="px-3 sm:px-4 pb-1">
-            <p className="text-[11px] text-text-muted">{status}</p>
+          <div className="px-4 sm:px-8 pb-1">
+            <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{status}</p>
           </div>
         )}
 
-        {/* Composer */}
-        <div
-          className="border-t p-2 sm:p-3 shrink-0"
-          style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-        >
-          {/* Attachments strip */}
-          {composerAttachments.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {composerAttachments.map((att) => (
-                <AttachmentChip
-                  key={att.id}
-                  attachment={att}
-                  onRemove={() => setComposerAttachments((cur) => cur.filter((a) => a.id !== att.id))}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Quick prompts popover */}
-          <AnimatePresence>
-            {showQuickPrompts && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                className="mb-2 rounded-xl border p-2 space-y-1 max-h-[50vh] overflow-y-auto"
-                style={{ background: 'var(--color-surface-raised)', borderColor: 'var(--color-border)' }}
-              >
-                {QUICK_PROMPTS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => handlePromptClick(p)}
-                    className="w-full text-left rounded-lg px-3 py-2 text-xs font-semibold transition-colors hover:bg-[var(--sidebar-item-hover)] text-text-secondary hover:text-text-primary"
-                  >
-                    {p}
-                  </button>
+        {/* Composer Input Area */}
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 pb-3 sm:pb-3 shrink-0" style={{ background: 'var(--color-bg)' }}>
+          <div className="max-w-3xl mx-auto">
+            {/* Attachments preview */}
+            {composerAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2 px-1">
+                {composerAttachments.map((att) => (
+                  <AttachmentChip
+                    key={att.id}
+                    attachment={att}
+                    onRemove={() => setComposerAttachments((cur) => cur.filter((a) => a.id !== att.id))}
+                  />
                 ))}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
-          {/* Input row */}
-          <div className="flex items-end gap-1.5 sm:gap-2">
-            {/* Left actions */}
-            <div className="flex items-center gap-0.5 sm:gap-1 pb-1">
-              <button
-                type="button"
-                onClick={() => setShowQuickPrompts((v) => !v)}
-                className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors"
-                aria-label="Quick prompts"
-                title="Quick prompts"
-              >
-                <Sparkles size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!canChat || isBusy}
-                className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)] transition-colors disabled:opacity-40"
-                aria-label="Attach file"
-              >
-                <Paperclip size={16} />
-              </button>
-              {transcription.isSupported && (
+            {/* Quick prompts dropdown popover */}
+            <AnimatePresence>
+              {showQuickPromptsPopover && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="mb-2 rounded-2xl border p-2 space-y-1 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+                >
+                  {RICH_QUICK_PROMPTS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handlePromptClick(p.promptText)}
+                      className="w-full text-left rounded-xl px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-2.5 hover:bg-[var(--sidebar-item-hover)]"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      <Sparkles size={14} style={{ color: 'var(--color-accent)' }} />
+                      <div>
+                        <p className="font-bold">{p.title}</p>
+                        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{p.subtitle}</p>
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Floating rounded composer container */}
+            <div
+              className="rounded-full border shadow-sm px-2 py-1 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 transition-all focus-within:border-[var(--color-accent)]"
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              {/* Left tool action buttons */}
+              <div className="flex items-center gap-0.5 pl-0.5">
                 <button
                   type="button"
-                  onClick={transcription.isListening ? transcription.stop : transcription.start}
-                  disabled={!transcription.isSupported || !canChat || isBusy}
-                  className={`p-1.5 sm:p-2 rounded-lg transition-colors disabled:opacity-40 ${
-                    transcription.isListening
-                      ? 'text-danger bg-danger/10'
-                      : 'text-text-muted hover:text-text-primary hover:bg-[var(--sidebar-item-hover)]'
-                  }`}
-                  aria-label={transcription.isListening ? 'Stop recording' : 'Voice input'}
+                  onClick={() => setShowQuickPromptsPopover((v) => !v)}
+                  className="p-1.5 rounded-full transition-colors hover:bg-[var(--sidebar-item-hover)]"
+                  style={{ color: 'var(--color-accent)' }}
+                  aria-label="Quick prompts"
+                  title="Quick prompts"
                 >
-                  {transcription.isListening ? <Square size={16} /> : <Mic size={16} />}
+                  <Sparkles size={17} />
                 </button>
-              )}
-            </div>
-
-            {/* Textarea */}
-            <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleComposerKeyDown}
-                placeholder={
-                  !canChat
-                    ? 'AI Coach is disabled'
-                    : transcription.isListening
-                    ? 'Listening…'
-                    : isDesktop
-                    ? 'Message the coach… (Enter to send, Shift+Enter for new line)'
-                    : 'Message the coach…'
-                }
-                disabled={!canChat || isBusy}
-                rows={1}
-                className="w-full resize-none rounded-xl border px-3 sm:px-4 py-2.5 sm:py-3 text-sm outline-none transition-colors disabled:opacity-50"
-                style={{
-                  background: 'var(--color-surface-raised)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-primary)', 
-                  maxHeight: '160px',
-                  lineHeight: '1.5',
-                }}
-                onInput={(e) => {
-                  const el = e.currentTarget;
-                  el.style.height = 'auto';
-                  el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-                }}
-              />
-            </div>
-
-            {/* Send */}
-            <div className="pb-1">
-              <button
-                type="button"
-                onClick={() => void handleSend()}
-                disabled={(!input.trim() && composerAttachments.length === 0) || !canChat || isBusy || isUploadingAttachments}
-                className="flex h-10 w-10 items-center justify-center rounded-xl transition-all disabled:opacity-40 active:scale-95"
-                style={{ background: 'var(--gradient-accent)', color: 'white' }}
-                aria-label="Send message"
-              >
-                {isSending ? (
-                  <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Send size={16} />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!canChat || isBusy}
+                  className="p-1.5 rounded-full transition-colors disabled:opacity-40 hover:bg-[var(--sidebar-item-hover)]"
+                  style={{ color: 'var(--color-text-muted)' }}
+                  aria-label="Attach file"
+                  title="Attach file"
+                >
+                  <Paperclip size={17} />
+                </button>
+                {transcription.isSupported && (
+                  <button
+                    type="button"
+                    onClick={transcription.isListening ? transcription.stop : transcription.start}
+                    disabled={!transcription.isSupported || !canChat || isBusy}
+                    className={`p-1.5 rounded-full transition-colors disabled:opacity-40 ${
+                      transcription.isListening
+                        ? 'text-red-500 bg-red-500/10 animate-pulse'
+                        : 'hover:bg-[var(--sidebar-item-hover)]'
+                    }`}
+                    style={{ color: transcription.isListening ? undefined : 'var(--color-text-muted)' }}
+                    aria-label={transcription.isListening ? 'Stop recording' : 'Voice input'}
+                    title="Voice input"
+                  >
+                    {transcription.isListening ? <Square size={15} /> : <Mic size={17} />}
+                  </button>
                 )}
-              </button>
+              </div>
+
+              {/* Textarea */}
+              <div className="flex-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleComposerKeyDown}
+                  placeholder={
+                    !canChat
+                      ? 'AI Coach is disabled'
+                      : transcription.isListening
+                      ? 'Listening…'
+                      : isDesktop
+                      ? 'Message the coach... (Enter to send, Shift+Enter for new line)'
+                      : 'Message the coach...'
+                  }
+                  disabled={!canChat || isBusy}
+                  rows={1}
+                  className="w-full resize-none bg-transparent border-0 px-2 py-1.5 text-sm outline-none disabled:opacity-50"
+                  style={{
+                    color: 'var(--color-text-primary)',
+                    maxHeight: '140px',
+                    lineHeight: '1.4',
+                  }}
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    el.style.height = 'auto';
+                    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+                  }}
+                />
+              </div>
+
+              {/* Send Button */}
+              <div className="pr-0.5">
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={(!input.trim() && composerAttachments.length === 0) || !canChat || isBusy || isUploadingAttachments}
+                  className="flex h-8.5 w-8.5 sm:h-9 sm:w-9 items-center justify-center rounded-full shadow-md transition-all active:scale-95 disabled:opacity-40 shrink-0"
+                  style={{ background: 'var(--color-accent)', color: '#ffffff' }}
+                  aria-label="Send message"
+                >
+                  {isSending ? (
+                    <span className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send size={15} className="-ml-0.5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1564,7 +1735,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         </div>
       </div>
 
-      {/* ── Context panel ───────────────────────────────────────────────── */}
+      {/* ── 3. Right Sidebar: Context Panel ───────────────────────────── */}
       <ContextPanel
         goals={goals}
         habits={habits}
@@ -1578,18 +1749,21 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         canBuildPlan={canBuildPlan}
         onBuildPlan={() => void handleBuildPlan()}
         onCreateWorkspace={() => void handleCreateWorkspace()}
-        collapsed={contextPanelCollapsed}
+        collapsed={!isDesktop ? !mobileContextOpen : contextPanelCollapsed}
         onToggle={() => setContextPanelCollapsed((v) => !v)}
         onPromptSelect={(prompt) => {
           setInput(prompt);
+          if (!isDesktop) setMobileContextOpen(false);
           focusComposer();
         }}
+        isMobile={!isDesktop}
+        onCloseMobile={() => setMobileContextOpen(false)}
       />
 
-      {/* ── Delete confirmation modal ────────────────────────────────────── */}
+      {/* ── Delete Confirmation Modal ─────────────────────────────────── */}
       <Modal open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} title="Delete chat">
         <div className="space-y-4">
-          <p className="text-sm leading-7 text-text-secondary">
+          <p className="text-sm leading-6" style={{ color: 'var(--color-text-secondary)' }}>
             Delete <strong>{deleteTarget?.title}</strong>? This removes the messages and memory from history.
           </p>
           <div className="flex items-center justify-end gap-2">

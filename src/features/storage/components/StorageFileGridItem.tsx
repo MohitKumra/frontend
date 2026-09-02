@@ -93,30 +93,30 @@ export function StorageFileGridItem({
       {/* ── MOBILE CARD LAYOUT (< lg) ── */}
       <div
         onClick={onPreview}
-        className={`flex lg:hidden items-center gap-3 p-3 rounded-2xl border transition-all duration-150 cursor-pointer bg-white relative ${
+        className={`flex lg:hidden items-center gap-3 p-3 rounded-2xl border transition-all duration-150 cursor-pointer bg-surface relative ${
           isSelected
-            ? 'border-[#4F46E5] ring-2 ring-[#4F46E5]/20 shadow-sm'
-            : 'border-[#E2E8F0] hover:border-[#C7D2FE] hover:shadow-xs'
+            ? 'border-accent ring-2 ring-accent/20 shadow-sm'
+            : 'border-border hover:border-accent/40 hover:shadow-xs'
         }`}
       >
         {/* Thumbnail */}
         <div
-          className="w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative bg-[#F8F9FD]"
+          className="w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative bg-surface-raised/80"
         >
           {isImage ? (
             <img
               src={file.url}
               alt={file.name}
               loading="lazy"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-1"
             />
           ) : isVideo ? (
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#F5F0FF]">
-              <VideoIcon size={20} style={{ color: '#8B5CF6' }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-500/10 text-purple-500">
+              <VideoIcon size={20} />
             </div>
           ) : isAudio ? (
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#ECFDF5]">
-              <Music2 size={20} style={{ color: '#10B981' }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/10 text-emerald-500">
+              <Music2 size={20} />
             </div>
           ) : (
             <div className="scale-75">
@@ -136,12 +136,12 @@ export function StorageFileGridItem({
             </span>
           </div>
           <p
-            className="text-[13px] font-bold text-[#1E1B4B] truncate mt-0.5"
+            className="text-[13px] font-bold text-text-primary truncate mt-0.5"
             title={file.name}
           >
             {file.name}
           </p>
-          <p className="text-[11.5px] text-[#A0AEC0] mt-0.5">
+          <p className="text-[11.5px] text-text-muted mt-0.5">
             {formatBytes(file.sizeBytes)} &bull; {fmtDate}
           </p>
         </div>
@@ -150,10 +150,10 @@ export function StorageFileGridItem({
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onStar}
-            className="p-1.5 rounded-lg text-[#A0AEC0] hover:text-[#F59E0B] transition-colors"
+            className="p-1.5 rounded-lg text-text-muted hover:text-amber-500 transition-colors"
             title={isStarred ? 'Unstar' : 'Star'}
           >
-            <Star size={16} fill={isStarred ? '#F59E0B' : 'none'} stroke={isStarred ? '#F59E0B' : '#A0AEC0'} />
+            <Star size={16} fill={isStarred ? '#F59E0B' : 'none'} className={isStarred ? 'text-amber-500' : ''} />
           </button>
           <div className="relative">
             <button
@@ -161,20 +161,19 @@ export function StorageFileGridItem({
                 e.stopPropagation();
                 setMenuOpen((o) => !o);
               }}
-              className="p-1.5 rounded-lg text-[#A0AEC0] hover:text-[#495057] transition-colors"
+              className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors"
               title="More options"
             >
               <MoreVertical size={16} />
             </button>
             {menuOpen && (
               <div
-                className="absolute right-0 bottom-full mb-1 w-36 rounded-lg border bg-white shadow-lg z-20 py-1"
-                style={{ borderColor: '#E2E8F0' }}
+                className="absolute right-0 bottom-full mb-1 w-36 rounded-lg border border-border bg-surface shadow-lg z-20 py-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { setMenuOpen(false); onPreview(); }}
-                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2 text-[#495057]"
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-surface-raised flex items-center gap-2 text-text-secondary"
                 >
                   <Eye size={12} /> Preview
                 </button>
@@ -183,21 +182,21 @@ export function StorageFileGridItem({
                   download={file.name}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2 text-[#495057]"
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-surface-raised flex items-center gap-2 text-text-secondary"
                   onClick={() => setMenuOpen(false)}
                 >
                   <Download size={12} /> Download
                 </a>
                 <button
                   onClick={(e) => { setMenuOpen(false); onCopyLink(e); }}
-                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2 text-[#495057]"
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-surface-raised flex items-center gap-2 text-text-secondary"
                 >
                   <Copy size={12} /> Copy link
                 </button>
-                <div className="my-1 h-px bg-[#F1F5F9]" />
+                <div className="my-1 h-px bg-border" />
                 <button
                   onClick={(e) => { setMenuOpen(false); onDelete(e); }}
-                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-red-50 flex items-center gap-2 text-[#EF4444]"
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-red-500/10 flex items-center gap-2 text-red-500"
                 >
                   <Trash2 size={12} /> Delete
                 </button>
@@ -210,37 +209,37 @@ export function StorageFileGridItem({
       {/* ── DESKTOP CARD LAYOUT (lg+) ── */}
       <div
         onClick={onPreview}
-        className={`group hidden lg:flex flex-col rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer bg-white ${
+        className={`group hidden lg:flex flex-col rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer bg-surface ${
           isSelected
-            ? 'border-[#4F46E5] ring-2 ring-[#4F46E5]/20 shadow-sm'
-            : 'border-[#E2E8F0] hover:border-[#C7D2FE] hover:shadow-sm'
+            ? 'border-accent ring-2 ring-accent/20 shadow-sm'
+            : 'border-border hover:border-accent/40 hover:shadow-sm'
         }`}
       >
         {/* ── Thumbnail ── */}
         <div
-          className="relative flex items-center justify-center overflow-hidden"
-          style={{ height: 172, backgroundColor: '#F8F9FD' }}
+          className="relative flex items-center justify-center overflow-hidden bg-surface-raised/80"
+          style={{ height: 172 }}
         >
           {isImage ? (
             <img
               src={file.url}
               alt={file.name}
               loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              className="w-full h-full object-contain p-1 transition-transform duration-300"
             />
           ) : isVideo ? (
             <div className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#F5F0FF' }}>
-                <VideoIcon size={28} style={{ color: '#8B5CF6' }} />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-purple-500/10 text-purple-500">
+                <VideoIcon size={28} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Video</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-purple-500">Video</span>
             </div>
           ) : isAudio ? (
             <div className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#ECFDF5' }}>
-                <Music2 size={28} style={{ color: '#10B981' }} />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-emerald-500/10 text-emerald-500">
+                <Music2 size={28} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#10B981' }}>Audio</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Audio</span>
             </div>
           ) : (
             <DocumentIllustration />
@@ -265,7 +264,7 @@ export function StorageFileGridItem({
                 : 'opacity-0 group-hover:opacity-100'
             }`}
             style={{
-              backgroundColor: isStarred ? '#FEF3C7' : 'rgba(0,0,0,0.25)',
+              backgroundColor: isStarred ? 'var(--icon-bg-warning)' : 'rgba(0,0,0,0.3)',
             }}
             title={isStarred ? 'Unstar' : 'Star'}
           >
@@ -276,7 +275,7 @@ export function StorageFileGridItem({
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-[5] flex items-center justify-center gap-2">
             <button
               onClick={(e) => { e.stopPropagation(); onPreview(); }}
-              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow transition-transform hover:scale-110"
+              className="p-2 rounded-lg bg-surface text-text-primary hover:bg-surface-raised shadow transition-transform hover:scale-110"
               title="Preview"
             >
               <Eye size={13} />
@@ -287,21 +286,21 @@ export function StorageFileGridItem({
               onClick={(e) => e.stopPropagation()}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow transition-transform hover:scale-110"
+              className="p-2 rounded-lg bg-surface text-text-primary hover:bg-surface-raised shadow transition-transform hover:scale-110"
               title="Download"
             >
               <Download size={13} />
             </a>
             <button
               onClick={onCopyLink}
-              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow transition-transform hover:scale-110"
+              className="p-2 rounded-lg bg-surface text-text-primary hover:bg-surface-raised shadow transition-transform hover:scale-110"
               title="Copy link"
             >
-              {isCopied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+              {isCopied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
             </button>
             <button
               onClick={onDelete}
-              className="p-2 rounded-lg bg-white text-red-500 hover:bg-red-50 shadow transition-transform hover:scale-110"
+              className="p-2 rounded-lg bg-surface text-red-500 hover:bg-red-500/10 shadow transition-transform hover:scale-110"
               title="Delete"
             >
               <Trash2 size={13} />
@@ -313,29 +312,24 @@ export function StorageFileGridItem({
         <div className="px-3.5 py-3 flex flex-col gap-1">
           {/* File name */}
           <p
-            className="text-[12px] font-semibold leading-snug"
-            style={{ color: '#1E1B4B' }}
+            className="text-[12px] font-semibold leading-snug text-text-primary"
             title={file.name}
           >
             {file.name}
           </p>
 
           {/* Size · Date */}
-          <div className="flex items-center justify-between text-[11px]" style={{ color: '#A0AEC0' }}>
+          <div className="flex items-center justify-between text-[11px] text-text-muted">
             <span className="tabular-nums font-medium">{formatBytes(file.sizeBytes)}</span>
             <span>{fmtDate}</span>
           </div>
 
           {/* Divider row */}
-          <div
-            className="flex items-center justify-between pt-2 mt-0.5"
-            style={{ borderTop: '1px solid #F1F5F9' }}
-          >
+          <div className="flex items-center justify-between pt-2 mt-0.5 border-t border-border">
             {/* Attachments */}
             <button
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-[11px] font-medium transition-colors hover:text-[#4F46E5]"
-              style={{ color: '#A0AEC0' }}
+              className="flex items-center gap-1 text-[11px] font-medium transition-colors text-text-muted hover:text-accent"
             >
               <AttachIcon />
               <span>Attachments</span>
@@ -348,22 +342,19 @@ export function StorageFileGridItem({
                   e.stopPropagation();
                   setMenuOpen((o) => !o);
                 }}
-                className="p-1 rounded transition-colors hover:bg-[#F1F5F9]"
-                style={{ color: '#A0AEC0' }}
+                className="p-1 rounded transition-colors hover:bg-surface-raised text-text-muted hover:text-text-primary"
                 title="More options"
               >
                 <MoreVertical size={14} />
               </button>
               {menuOpen && (
                 <div
-                  className="absolute right-0 bottom-full mb-1 w-36 rounded-lg border bg-white shadow-lg z-20 py-1"
-                  style={{ borderColor: '#E2E8F0' }}
+                  className="absolute right-0 bottom-full mb-1 w-36 rounded-lg border border-border bg-surface shadow-lg z-20 py-1"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     onClick={() => { setMenuOpen(false); onPreview(); }}
-                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2"
-                    style={{ color: '#495057' }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-surface-raised flex items-center gap-2 text-text-secondary"
                   >
                     <Eye size={12} /> Preview
                   </button>
@@ -372,24 +363,21 @@ export function StorageFileGridItem({
                     download={file.name}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2"
-                    style={{ color: '#495057' }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-surface-raised flex items-center gap-2 text-text-secondary"
                     onClick={() => setMenuOpen(false)}
                   >
                     <Download size={12} /> Download
                   </a>
                   <button
                     onClick={(e) => { setMenuOpen(false); onCopyLink(e); }}
-                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2"
-                    style={{ color: '#495057' }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-surface-raised flex items-center gap-2 text-text-secondary"
                   >
                     <Copy size={12} /> Copy link
                   </button>
-                  <div className="my-1 h-px" style={{ backgroundColor: '#F1F5F9' }} />
+                  <div className="my-1 h-px bg-border" />
                   <button
                     onClick={(e) => { setMenuOpen(false); onDelete(e); }}
-                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-red-50 flex items-center gap-2"
-                    style={{ color: '#EF4444' }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-red-500/10 flex items-center gap-2 text-red-500"
                   >
                     <Trash2 size={12} /> Delete
                   </button>
