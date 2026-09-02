@@ -317,7 +317,7 @@ export function StorageHero({
             />
           </div>
         </div>
-        <div className="shrink-0 -mr-3 -my-4 pointer-events-none" >
+        <div className="shrink-0 pointer-events-none flex items-center justify-center">
           <StorageBoxSVG />
         </div>
       </div>

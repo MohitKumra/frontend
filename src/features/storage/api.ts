@@ -39,7 +39,7 @@ export const storageApi = {
     mimeType: string;
     base64Data: string;
     folder?: string;
-  }) => apiClient.post('/uploads/upload', payload).then((r) => r.data),
+  }) => apiClient.post('/media/upload', payload).then((r) => r.data),
 };
 
 
