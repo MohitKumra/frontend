@@ -1,30 +1,15 @@
 /**
  * useWeather.ts
  * Fetches real weather data using free APIs:
- * 1. navigator.geolocation.getCurrentPosition() (GPS — most accurate)
- * 2. https://ipwho.is/
- * 3. https://ipapi.co/json/
- * 4. https://ipinfo.io/json
- * Weather: https://api.open-meteo.com/v1/forecast (free, no key)
- * Caches results in localStorage with a 5-minute TTL.
+ * 1. IP geolocation (fast, non-blocking) or quick GPS
+ * 2. Weather: https://api.open-meteo.com/v1/forecast (free, no key)
+ * Caches results in localStorage with a 15-minute TTL and TanStack Query deduplication.
  */
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { WEATHER_CACHE_KEY } from '../../../config/brand';
 
-interface Coords {
-  lat: number;
-  lon: number;
-}
-
-interface GeoResult {
-  latitude: number;
-  longitude: number;
-  city: string;
-  country: string;
-}
-
-interface WeatherData {
+export interface WeatherData {
   temp: number;
   high: number;
   low: number;
@@ -41,7 +26,7 @@ interface CachedWeather {
 }
 
 const CACHE_KEY = WEATHER_CACHE_KEY;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 function getWeatherCondition(code: number): WeatherData['condition'] {
   if (code === 0 || code === 1) return 'sunny';
@@ -53,22 +38,22 @@ function getWeatherCondition(code: number): WeatherData['condition'] {
 }
 
 function loadCache(): CachedWeather | null {
+  if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const cached: CachedWeather = JSON.parse(raw);
     if (Date.now() - cached.timestamp > CACHE_TTL_MS) {
-      localStorage.removeItem(CACHE_KEY);
       return null;
     }
     return cached;
   } catch {
-    localStorage.removeItem(CACHE_KEY);
     return null;
   }
 }
 
 function saveCache(data: WeatherData) {
+  if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {
@@ -76,178 +61,147 @@ function saveCache(data: WeatherData) {
   }
 }
 
-// ── Geolocation providers ──────────────────────────────────────────────
+interface GeoResult {
+  latitude: number;
+  longitude: number;
+  city: string;
+  country: string;
+}
 
-/** Try browser GPS. Resolves to lat/lon; city derived from reverse geocode or a fallback. */
-function getCoordsFromGPS(): Promise<Coords> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
-      return;
-    }
+/** Quick GPS probe (max 1200ms) only if supported and fast */
+async function probeGPS(): Promise<{ lat: number; lon: number } | null> {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) return null;
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), 1200);
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      (err) => reject(err),
-      { timeout: 5000, enableHighAccuracy: false }
+      (pos) => {
+        clearTimeout(timer);
+        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      },
+      { timeout: 1200, enableHighAccuracy: false, maximumAge: 600000 }
     );
   });
 }
 
-/** Parse ipwho.is response. */
-async function getGeoFromIpWho(): Promise<GeoResult | null> {
-  const res = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(5000) });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data.latitude || !data.longitude) return null;
-  return {
-    latitude: data.latitude,
-    longitude: data.longitude,
-    city: data.city || '',
-    country: data.country || '',
-  };
-}
-
-/** Parse ipapi.co response. */
-async function getGeoFromIpApi(): Promise<GeoResult | null> {
-  const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data.latitude || !data.longitude) return null;
-  return {
-    latitude: data.latitude,
-    longitude: data.longitude,
-    city: data.city || '',
-    country: data.country_name || '',
-  };
-}
-
-/** Parse ipinfo.io response. loc is "lat,lng" string. */
-async function getGeoFromIpInfo(): Promise<GeoResult | null> {
-  const res = await fetch('https://ipinfo.io/json', { signal: AbortSignal.timeout(5000) });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data.loc) return null;
-  const [lat, lon] = data.loc.split(',').map(Number);
-  if (!lat || !lon) return null;
-  return {
-    latitude: lat,
-    longitude: lon,
-    city: data.city || '',
-    country: data.country || '',
-  };
-}
-
-/** Try all geo providers in order, return the first success. */
-async function resolveGeo(): Promise<GeoResult> {
-  // 1. GPS – get lat/lon, then use BigDataCloud reverse geocode for exact city name
+/** Fast IP Geolocation fallback */
+async function getGeoFromIp(): Promise<GeoResult | null> {
   try {
-    const coords = await getCoordsFromGPS();
-    // Reverse geocode via BigDataCloud (free, no key, CORS-friendly)
-    const revRes = await fetch(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lon}&localityLanguage=en`,
-      { signal: AbortSignal.timeout(3000) }
-    );
-    let city = '';
-    let country = '';
-    if (revRes.ok) {
-      const revData = await revRes.json();
-      city = revData.city || revData.locality || '';
-      country = revData.countryName || '';
+    const res = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(2500) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.latitude && data.longitude) {
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          city: data.city || '',
+          country: data.country || '',
+        };
+      }
     }
-    return { latitude: coords.lat, longitude: coords.lon, city, country };
   } catch {
-    // GPS failed, continue to IP-based APIs
+    /* try secondary */
   }
 
-  // 2. ipwho.is
-  const fromIpWho = await getGeoFromIpWho();
-  if (fromIpWho) return fromIpWho;
+  try {
+    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2500) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.latitude && data.longitude) {
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          city: data.city || '',
+          country: data.country_name || '',
+        };
+      }
+    }
+  } catch {
+    /* fallback */
+  }
 
-  // 3. ipapi.co
-  const fromIpApi = await getGeoFromIpApi();
-  if (fromIpApi) return fromIpApi;
-
-  // 4. ipinfo.io
-  const fromIpInfo = await getGeoFromIpInfo();
-  if (fromIpInfo) return fromIpInfo;
-
-  throw new Error('All geolocation providers failed');
+  return null;
 }
 
-/** Fetch weather from Open-Meteo using lat/lon. */
-async function fetchWeatherFromOpenMeteo(lat: number, lon: number) {
-  const res = await fetch(
+async function resolveWeather(): Promise<WeatherData> {
+  let lat = 40.7128;
+  let lon = -74.006;
+  let city = 'Your Location';
+  let country = '';
+
+  const gps = await probeGPS();
+  if (gps) {
+    lat = gps.lat;
+    lon = gps.lon;
+    try {
+      const rev = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+        { signal: AbortSignal.timeout(2000) }
+      );
+      if (rev.ok) {
+        const revData = await rev.json();
+        city = revData.city || revData.locality || city;
+        country = revData.countryName || '';
+      }
+    } catch {
+      /* continue with coords */
+    }
+  } else {
+    const ipGeo = await getGeoFromIp();
+    if (ipGeo) {
+      lat = ipGeo.latitude;
+      lon = ipGeo.longitude;
+      city = ipGeo.city || city;
+      country = ipGeo.country || '';
+    }
+  }
+
+  const weatherRes = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
       `&current=temperature_2m,weathercode,apparent_temperature,relative_humidity_2m,wind_speed_10m` +
       `&daily=temperature_2m_max,temperature_2m_min&timezone=auto`,
-    { signal: AbortSignal.timeout(5000) }
+    { signal: AbortSignal.timeout(4000) }
   );
-  if (!res.ok) throw new Error('Weather API failed');
-  return res.json();
+
+  if (!weatherRes.ok) throw new Error('Weather API failed');
+  const weatherJson = await weatherRes.json();
+  const current = weatherJson.current;
+  const daily = weatherJson.daily;
+
+  if (!current || !daily) throw new Error('Unexpected weather structure');
+
+  const locationParts = [city, country].filter(Boolean);
+  const data: WeatherData = {
+    temp: Math.round(current.temperature_2m),
+    high: Math.round(daily.temperature_2m_max[0]),
+    low: Math.round(daily.temperature_2m_min[0]),
+    feelsLike: Math.round(current.apparent_temperature ?? current.temperature_2m),
+    humidity: Math.round(current.relative_humidity_2m ?? 0),
+    windSpeed: Math.round(current.wind_speed_10m ?? 0),
+    condition: getWeatherCondition(current.weathercode ?? 0),
+    location: locationParts.join(', ') || 'Your Location',
+  };
+
+  saveCache(data);
+  return data;
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────
-
 export function useWeather() {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['weather', 'current'],
+    queryFn: resolveWeather,
+    initialData: () => loadCache()?.data,
+    staleTime: CACHE_TTL_MS,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      // Check cache
-      const cached = loadCache();
-      if (cached) {
-        if (!cancelled) {
-          setWeather(cached.data);
-          setLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const geo = await resolveGeo();
-
-        const weatherJson = await fetchWeatherFromOpenMeteo(geo.latitude, geo.longitude);
-
-        const current = weatherJson.current;
-        const daily = weatherJson.daily;
-
-        if (!current || !daily) throw new Error('Unexpected weather response');
-
-        const locationParts = [geo.city, geo.country].filter(Boolean);
-        const data: WeatherData = {
-          temp: Math.round(current.temperature_2m),
-          high: Math.round(daily.temperature_2m_max[0]),
-          low: Math.round(daily.temperature_2m_min[0]),
-          feelsLike: Math.round(current.apparent_temperature ?? current.temperature_2m),
-          humidity: Math.round(current.relative_humidity_2m ?? 0),
-          windSpeed: Math.round(current.wind_speed_10m ?? 0),
-          condition: getWeatherCondition(current.weathercode ?? 0),
-          location: locationParts.join(', ') || 'Your Location',
-        };
-
-        saveCache(data);
-
-        if (!cancelled) {
-          setWeather(data);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setLoading(false);
-          setError(null); // Silently hide on failure
-        }
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { weather, loading, error };
+  return {
+    weather: query.data ?? null,
+    loading: query.isLoading && !query.data,
+    error: query.isError ? (query.error as Error).message : null,
+  };
 }

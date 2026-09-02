@@ -230,11 +230,7 @@ export function DashboardPage() {
         : 0;
   const scoreChangeStr = scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`;
 
-  if (isLoading && !dashboard) {
-    return <LoadingScreen />;
-  }
-
-  if (!dashboard || !user) {
+  if (!dashboard && !isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-text-muted">Unable to load dashboard</p>
@@ -242,8 +238,8 @@ export function DashboardPage() {
     );
   }
 
-  const displayName = user.name ?? user.email.split('@')[0];
-  const avatarInitial = (user.name ?? user.email)[0]?.toUpperCase() ?? '?';
+  const displayName = user?.name ?? user?.email?.split('@')[0] ?? 'there';
+  const avatarInitial = (user?.name ?? user?.email ?? '?')[0]?.toUpperCase();
 
   // Decorative weekly consistency dots for the Habit Streak card — filled
   // for each day of the current streak (capped at 5 slots), matching the
@@ -278,7 +274,7 @@ export function DashboardPage() {
           taskCompletion={taskCompletion}
           habitCompletion={habitCompletion}
           focusMinutesToday={todayFocusMinutes}
-          productivityScore={dashboard.productivityScore}
+          productivityScore={dashboard?.productivityScore ?? 0}
           scorePctChange={scorePctChange}
           currentHabitStreak={currentHabitStreak}
           activeProjects={projectStats.activeProjectsCount}
@@ -288,7 +284,7 @@ export function DashboardPage() {
       {/* ── Dedicated Mobile Hero Header & Filter Tabs ── */}
       <motion.div variants={itemVariants} className="md:hidden flex flex-col gap-3">
         <MobileHeroCard
-          productivityScore={dashboard.productivityScore}
+          productivityScore={dashboard?.productivityScore ?? 0}
           scorePctChange={scorePctChange}
           weeklyProgress={weeklyProgress}
         />
@@ -527,7 +523,7 @@ export function DashboardPage() {
 
                       <div>
                         <span className="text-3xl font-black text-text-primary leading-none block">
-                          {dashboard.productivityScore ?? 72}
+                          {dashboard?.productivityScore ?? 72}
                         </span>
                         <p
                           className="text-xs font-bold mt-1"
@@ -775,11 +771,11 @@ export function DashboardPage() {
                       <div className="space-y-3.5">
                         {(aiInsightsData?.insights && aiInsightsData.insights.length > 0
                           ? aiInsightsData.insights
-                          : dashboard.insights || []
+                          : dashboard?.insights || []
                         ).length > 0 ? (
                           (aiInsightsData?.insights && aiInsightsData.insights.length > 0
                             ? aiInsightsData.insights
-                            : dashboard.insights || []
+                            : dashboard?.insights || []
                           ).map((insight) => {
                             const iconMap: Record<string, React.ReactNode> = {
                               trend: <TrendingUp size={13} />,
@@ -929,9 +925,9 @@ export function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <div className="relative shrink-0">
                           <Avatar
-                            src={user.avatarUrl}
-                            name={user.name}
-                            email={user.email}
+                            src={user?.avatarUrl}
+                            name={user?.name}
+                            email={user?.email}
                             size="lg"
                             showBorder
                             onClick={() => navigate('/profile')}
@@ -950,7 +946,7 @@ export function DashboardPage() {
                           <h4 className="text-sm font-black text-text-primary truncate leading-snug">
                             {displayName}
                           </h4>
-                          <p className="text-[10px] text-text-muted truncate">{user.email}</p>
+                          <p className="text-[10px] text-text-muted truncate">{user?.email}</p>
                         </div>
                         {/* Score badge */}
                         <div
@@ -964,7 +960,7 @@ export function DashboardPage() {
                             className="text-lg font-black leading-none"
                             style={{ color: 'var(--color-accent)' }}
                           >
-                            {dashboard.productivityScore ?? 0}
+                            {dashboard?.productivityScore ?? 0}
                           </span>
                           <span className="text-[8px] font-bold uppercase tracking-wider text-text-muted mt-0.5">
                             Score
@@ -1034,7 +1030,7 @@ export function DashboardPage() {
                   {/* Productivity Score breakdown — full width in the sidebar */}
                   <div className="col-span-2">
                     <DashboardScore
-                      overallScore={dashboard.productivityScore ?? 72}
+                      overallScore={dashboard?.productivityScore ?? 72}
                       breakdown={{
                         taskCompletion,
                         focus: Math.min(100, Math.floor((focusMinutesTotal / 120) * 100)),

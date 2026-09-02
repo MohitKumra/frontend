@@ -6,7 +6,12 @@ import type { CreateHabitRequest, UpdateHabitRequest } from '../../../types';
 const HABITS_KEY = ['habits'] as const;
 
 export function useHabits() {
-  return useQuery({ queryKey: HABITS_KEY, queryFn: () => habitsApi.list() });
+  return useQuery({
+    queryKey: HABITS_KEY,
+    queryFn: () => habitsApi.list(),
+    placeholderData: (prev) => prev,
+    staleTime: 60_000,
+  });
 }
 
 /**
