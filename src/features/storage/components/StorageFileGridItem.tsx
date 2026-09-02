@@ -1,14 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Star,
-  Eye,
-  Download,
-  Copy,
-  Check,
-  Trash2,
-  Video as VideoIcon,
-  Music2,
-  MoreVertical,
+  Star, Eye, Download, Copy, Check, Trash2,
+  Video as VideoIcon, Music2, MoreVertical,
 } from 'lucide-react';
 import { formatBytes, FOLDER_LABELS } from '../storageUtils';
 import type { StorageFileDTO } from '../api';
@@ -25,54 +18,54 @@ interface StorageFileGridItemProps {
   onDelete: (e: React.MouseEvent) => void;
 }
 
-// Document file SVG illustration (orange stacked papers)
+/* ── Type badge colours ──────────────────────────────────────────────────── */
+const BADGE_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  image:    { bg: '#EFF6FF', text: '#3B82F6', label: 'IMAGE' },
+  video:    { bg: '#F5F0FF', text: '#8B5CF6', label: 'VIDEO' },
+  audio:    { bg: '#ECFDF5', text: '#10B981', label: 'AUDIO' },
+  document: { bg: '#FEF3C7', text: '#F59E0B', label: 'DOCUMENT' },
+  other:    { bg: '#F1F5F9', text: '#64748B', label: 'FILE' },
+};
+
+/* ── Document Illustration (single warm peach sheet with folded corner) ───── */
 function DocumentIllustration() {
   return (
-    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-      {/* Back page */}
-      <rect x="18" y="16" width="34" height="44" rx="4" fill="#fed7aa" />
-      {/* Front page */}
-      <rect x="14" y="12" width="34" height="44" rx="4" fill="#fdba74" />
-      {/* Lines */}
-      <rect x="20" y="24" width="22" height="2.5" rx="1.25" fill="#fb923c" opacity="0.7" />
-      <rect x="20" y="30" width="22" height="2.5" rx="1.25" fill="#fb923c" opacity="0.7" />
-      <rect x="20" y="36" width="15" height="2.5" rx="1.25" fill="#fb923c" opacity="0.7" />
+    <svg width="68" height="78" viewBox="0 0 68 78" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Soft shadow */}
+      <path
+        d="M10 14C10 8.47715 14.4772 4 20 4H44L58 18V64C58 69.5228 53.5228 74 48 74H20C14.4772 74 10 69.5228 10 64V14Z"
+        fill="#FFE8D2"
+        opacity="0.8"
+      />
+      {/* Main sheet */}
+      <path
+        d="M8 12C8 6.47715 12.4772 2 18 2H42L56 16V62C56 67.5228 51.5228 72 46 72H18C12.4772 72 8 67.5228 8 62V12Z"
+        fill="#FFF3E8"
+      />
+      {/* Folded corner */}
+      <path
+        d="M42 2V13C42 14.6569 43.3431 16 45 16H56L42 2Z"
+        fill="#FFD9BA"
+      />
+      {/* Orange content lines */}
+      <rect x="18" y="28" width="16" height="3" rx="1.5" fill="#F59E0B" opacity="0.85" />
+      <rect x="18" y="36" width="28" height="3" rx="1.5" fill="#F59E0B" opacity="0.85" />
+      <rect x="18" y="44" width="22" height="3" rx="1.5" fill="#F59E0B" opacity="0.65" />
     </svg>
   );
 }
 
-// Image badge label
-function TypeBadge({ fileType }: { fileType: string }) {
-  const config: Record<string, { label: string; bg: string; text: string }> = {
-    image: { label: 'IMAGE', bg: 'bg-[#eef2ff]', text: 'text-[#6366f1]' },
-    video: { label: 'VIDEO', bg: 'bg-[#f5f0ff]', text: 'text-[#a855f7]' },
-    audio: { label: 'AUDIO', bg: 'bg-[#ecfdf5]', text: 'text-[#10b981]' },
-    document: { label: 'DOCUMENT', bg: 'bg-[#fff7ed]', text: 'text-[#f97316]' },
-    other: { label: 'FILE', bg: 'bg-[#f1f5f9]', text: 'text-[#64748b]' },
-  };
-  const c = config[fileType] ?? config.other;
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider ${c.bg} ${c.text}`}>
-      {c.label}
-    </span>
-  );
-}
-
-// Attachments SVG icon
-function AttachmentIcon() {
+/* ── Attachment clip icon ────────────────────────────────────────────────── */
+function AttachIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-      <path
-        d="M11 6.5L6 11.5C4.5 13 2 13 1 11.5S1 8 2.5 6.5L8 1C9 0 10.5 0 11 1s0 2.5-1 3.5L4.5 10C4 10.5 3 10.5 3 9.5s1-1.5 1-1.5"
-        stroke="#8e8ea0"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        fill="none"
-      />
+      <path d="M11.3 6.3L6 11.6C4.6 13 2.3 13 1 11.6S1 8.3 2.4 6.9L7 2.2C8 1.1 9.6 1.1 10 2.2c.5 1.1 0 2.5-1 3.5L4.5 10.2C4 10.7 3.2 10.5 3.2 9.7s.8-1.5 1-1.5"
+        stroke="#A0AEC0" strokeWidth="1.1" strokeLinecap="round" fill="none" />
     </svg>
   );
 }
 
+/* ── Component ────────────────────────────────────────────────────────────── */
 export function StorageFileGridItem({
   file,
   isSelected,
@@ -84,156 +77,328 @@ export function StorageFileGridItem({
   onCopyLink,
   onDelete,
 }: StorageFileGridItemProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const badge = BADGE_STYLE[file.fileType] ?? BADGE_STYLE.other;
   const folderName = FOLDER_LABELS[file.folder] ?? file.folder;
+
+  const date = new Date(file.createdAt);
+  const fmtDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
   const isImage = file.fileType === 'image';
   const isVideo = file.fileType === 'video';
   const isAudio = file.fileType === 'audio';
-  const isDocument = file.fileType === 'document';
-
-  const date = new Date(file.createdAt);
-  const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <div
-      className={`group relative flex flex-col rounded-2xl border transition-all duration-200 overflow-hidden cursor-pointer bg-white dark:bg-[#18181b] ${
-        isSelected
-          ? 'border-[#7c6ff7] ring-2 ring-[#7c6ff7]/20 shadow-md'
-          : 'border-[#EBEBF0] dark:border-[#28282e] hover:border-[#c4bcff] hover:shadow-md'
-      }`}
-      onClick={onPreview}
-    >
-      {/* ── Thumbnail ── */}
-      <div className="relative h-44 w-full overflow-hidden bg-[#f8f8fc] dark:bg-[#111118] flex items-center justify-center">
-        {isImage ? (
-          <img
-            src={file.url}
-            alt={file.name}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : isVideo ? (
-          <div className="flex flex-col items-center gap-2 text-[#a855f7]">
-            <div className="w-14 h-14 rounded-2xl bg-[#f5f0ff] dark:bg-[#a855f7]/10 flex items-center justify-center">
-              <VideoIcon size={28} className="text-[#a855f7]" />
+    <>
+      {/* ── MOBILE CARD LAYOUT (< lg) ── */}
+      <div
+        onClick={onPreview}
+        className={`flex lg:hidden items-center gap-3 p-3 rounded-2xl border transition-all duration-150 cursor-pointer bg-white relative ${
+          isSelected
+            ? 'border-[#4F46E5] ring-2 ring-[#4F46E5]/20 shadow-sm'
+            : 'border-[#E2E8F0] hover:border-[#C7D2FE] hover:shadow-xs'
+        }`}
+      >
+        {/* Thumbnail */}
+        <div
+          className="w-16 h-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative bg-[#F8F9FD]"
+        >
+          {isImage ? (
+            <img
+              src={file.url}
+              alt={file.name}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          ) : isVideo ? (
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#F5F0FF]">
+              <VideoIcon size={20} style={{ color: '#8B5CF6' }} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#a855f7]">Video</span>
-          </div>
-        ) : isAudio ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-14 h-14 rounded-2xl bg-[#ecfdf5] dark:bg-[#10b981]/10 flex items-center justify-center">
-              <Music2 size={28} className="text-[#10b981]" />
+          ) : isAudio ? (
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#ECFDF5]">
+              <Music2 size={20} style={{ color: '#10B981' }} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#10b981]">Audio</span>
-          </div>
-        ) : isDocument ? (
-          <DocumentIllustration />
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-14 h-14 rounded-2xl bg-[#f1f5f9] flex items-center justify-center">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <rect x="5" y="4" width="14" height="18" rx="2" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
-                <path d="M14 4l5 5h-5V4z" fill="#94a3b8" opacity="0.4" />
-              </svg>
+          ) : (
+            <div className="scale-75">
+              <DocumentIllustration />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#94a3b8]">File</span>
-          </div>
-        )}
-
-        {/* Type badge overlay (top-left) */}
-        <div className="absolute top-2.5 left-2.5 z-10">
-          <TypeBadge fileType={file.fileType} />
+          )}
         </div>
 
-        {/* Star button (top-right) */}
-        <button
-          onClick={onStar}
-          className={`absolute top-2 right-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-            isStarred
-              ? 'bg-[#fef3c7] text-[#f59e0b] opacity-100 shadow-sm'
-              : 'bg-black/25 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-black/40'
-          }`}
-          title={isStarred ? 'Remove from starred' : 'Add to starred'}
-        >
-          <Star size={13} className={isStarred ? 'fill-[#f59e0b]' : ''} />
-        </button>
+        {/* Info */}
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <div className="flex items-center">
+            <span
+              className="inline-block px-2 py-0.5 rounded text-[9.5px] font-black tracking-wider"
+              style={{ backgroundColor: badge.bg, color: badge.text }}
+            >
+              {badge.label}
+            </span>
+          </div>
+          <p
+            className="text-[13px] font-bold text-[#1E1B4B] truncate mt-0.5"
+            title={file.name}
+          >
+            {file.name}
+          </p>
+          <p className="text-[11.5px] text-[#A0AEC0] mt-0.5">
+            {formatBytes(file.sizeBytes)} &bull; {fmtDate}
+          </p>
+        </div>
 
-        {/* Hover overlay actions */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-5">
+        {/* Right actions: Star + Kebab */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={(e) => { e.stopPropagation(); onPreview(); }}
-            className="p-2 rounded-xl bg-white text-slate-800 hover:bg-slate-100 transition-transform hover:scale-110 shadow"
-            title="Preview"
+            onClick={onStar}
+            className="p-1.5 rounded-lg text-[#A0AEC0] hover:text-[#F59E0B] transition-colors"
+            title={isStarred ? 'Unstar' : 'Star'}
           >
-            <Eye size={14} />
+            <Star size={16} fill={isStarred ? '#F59E0B' : 'none'} stroke={isStarred ? '#F59E0B' : '#A0AEC0'} />
           </button>
-          <a
-            href={file.url}
-            download={file.name}
-            onClick={(e) => e.stopPropagation()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-xl bg-white text-slate-800 hover:bg-slate-100 transition-transform hover:scale-110 shadow"
-            title="Download"
-          >
-            <Download size={14} />
-          </a>
-          <button
-            onClick={onCopyLink}
-            className="p-2 rounded-xl bg-white text-slate-800 hover:bg-slate-100 transition-transform hover:scale-110 shadow"
-            title="Copy link"
-          >
-            {isCopied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-2 rounded-xl bg-white text-red-600 hover:bg-red-50 transition-transform hover:scale-110 shadow"
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((o) => !o);
+              }}
+              className="p-1.5 rounded-lg text-[#A0AEC0] hover:text-[#495057] transition-colors"
+              title="More options"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {menuOpen && (
+              <div
+                className="absolute right-0 bottom-full mb-1 w-36 rounded-lg border bg-white shadow-lg z-20 py-1"
+                style={{ borderColor: '#E2E8F0' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => { setMenuOpen(false); onPreview(); }}
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2 text-[#495057]"
+                >
+                  <Eye size={12} /> Preview
+                </button>
+                <a
+                  href={file.url}
+                  download={file.name}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2 text-[#495057]"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Download size={12} /> Download
+                </a>
+                <button
+                  onClick={(e) => { setMenuOpen(false); onCopyLink(e); }}
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2 text-[#495057]"
+                >
+                  <Copy size={12} /> Copy link
+                </button>
+                <div className="my-1 h-px bg-[#F1F5F9]" />
+                <button
+                  onClick={(e) => { setMenuOpen(false); onDelete(e); }}
+                  className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-red-50 flex items-center gap-2 text-[#EF4444]"
+                >
+                  <Trash2 size={12} /> Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── File Info ── */}
-      <div className="px-3.5 py-3 flex flex-col gap-1.5">
-        {/* File name */}
-        <h3
-          className="text-[12.5px] font-bold text-[#1a1a2e] dark:text-white leading-snug truncate"
-          title={file.name}
-          style={{ maxWidth: '100%' }}
+      {/* ── DESKTOP CARD LAYOUT (lg+) ── */}
+      <div
+        onClick={onPreview}
+        className={`group hidden lg:flex flex-col rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer bg-white ${
+          isSelected
+            ? 'border-[#4F46E5] ring-2 ring-[#4F46E5]/20 shadow-sm'
+            : 'border-[#E2E8F0] hover:border-[#C7D2FE] hover:shadow-sm'
+        }`}
+      >
+        {/* ── Thumbnail ── */}
+        <div
+          className="relative flex items-center justify-center overflow-hidden"
+          style={{ height: 172, backgroundColor: '#F8F9FD' }}
         >
-          {file.name}
-        </h3>
+          {isImage ? (
+            <img
+              src={file.url}
+              alt={file.name}
+              loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+            />
+          ) : isVideo ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#F5F0FF' }}>
+                <VideoIcon size={28} style={{ color: '#8B5CF6' }} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#8B5CF6' }}>Video</span>
+            </div>
+          ) : isAudio ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#ECFDF5' }}>
+                <Music2 size={28} style={{ color: '#10B981' }} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#10B981' }}>Audio</span>
+            </div>
+          ) : (
+            <DocumentIllustration />
+          )}
 
-        {/* Size + Date */}
-        <div className="flex items-center justify-between text-[11.5px] text-[#8e8ea0] dark:text-[#6060780] font-medium">
-          <span className="tabular-nums">{formatBytes(file.sizeBytes)}</span>
-          <span>{formattedDate}</span>
-        </div>
+          {/* Type badge — top left */}
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span
+              className="inline-block px-2 py-0.5 rounded text-[9.5px] font-black tracking-wider"
+              style={{ backgroundColor: badge.bg, color: badge.text }}
+            >
+              {badge.label}
+            </span>
+          </div>
 
-        {/* Divider */}
-        <div className="border-t border-[#F0F0F8] dark:border-[#222230] pt-2 flex items-center justify-between">
-          {/* Attachments label */}
+          {/* Star — top right (circular badge) */}
           <button
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8e8ea0] hover:text-[#7c6ff7] transition-colors"
-          >
-            <AttachmentIcon />
-            <span>Attachments</span>
-          </button>
-
-          {/* More options */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={onStar}
+            className={`absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+              isStarred
+                ? 'opacity-100 shadow-xs'
+                : 'opacity-0 group-hover:opacity-100'
+            }`}
+            style={{
+              backgroundColor: isStarred ? '#FEF3C7' : 'rgba(0,0,0,0.25)',
             }}
-            className="p-1 rounded-lg text-[#b0b0c0] hover:text-[#7c6ff7] hover:bg-[#f0eeff] dark:hover:bg-[#2a2550] transition-colors"
-            title="More options"
+            title={isStarred ? 'Unstar' : 'Star'}
           >
-            <MoreVertical size={14} />
+            <Star size={13} fill={isStarred ? '#F59E0B' : 'none'} stroke={isStarred ? '#F59E0B' : '#fff'} />
           </button>
+
+          {/* Hover overlay actions */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-[5] flex items-center justify-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); onPreview(); }}
+              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow transition-transform hover:scale-110"
+              title="Preview"
+            >
+              <Eye size={13} />
+            </button>
+            <a
+              href={file.url}
+              download={file.name}
+              onClick={(e) => e.stopPropagation()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow transition-transform hover:scale-110"
+              title="Download"
+            >
+              <Download size={13} />
+            </a>
+            <button
+              onClick={onCopyLink}
+              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow transition-transform hover:scale-110"
+              title="Copy link"
+            >
+              {isCopied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-2 rounded-lg bg-white text-red-500 hover:bg-red-50 shadow transition-transform hover:scale-110"
+              title="Delete"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── File Info ── */}
+        <div className="px-3.5 py-3 flex flex-col gap-1">
+          {/* File name */}
+          <p
+            className="text-[12px] font-semibold leading-snug"
+            style={{ color: '#1E1B4B' }}
+            title={file.name}
+          >
+            {file.name}
+          </p>
+
+          {/* Size · Date */}
+          <div className="flex items-center justify-between text-[11px]" style={{ color: '#A0AEC0' }}>
+            <span className="tabular-nums font-medium">{formatBytes(file.sizeBytes)}</span>
+            <span>{fmtDate}</span>
+          </div>
+
+          {/* Divider row */}
+          <div
+            className="flex items-center justify-between pt-2 mt-0.5"
+            style={{ borderTop: '1px solid #F1F5F9' }}
+          >
+            {/* Attachments */}
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-[11px] font-medium transition-colors hover:text-[#4F46E5]"
+              style={{ color: '#A0AEC0' }}
+            >
+              <AttachIcon />
+              <span>Attachments</span>
+            </button>
+
+            {/* More options */}
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen((o) => !o);
+                }}
+                className="p-1 rounded transition-colors hover:bg-[#F1F5F9]"
+                style={{ color: '#A0AEC0' }}
+                title="More options"
+              >
+                <MoreVertical size={14} />
+              </button>
+              {menuOpen && (
+                <div
+                  className="absolute right-0 bottom-full mb-1 w-36 rounded-lg border bg-white shadow-lg z-20 py-1"
+                  style={{ borderColor: '#E2E8F0' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => { setMenuOpen(false); onPreview(); }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2"
+                    style={{ color: '#495057' }}
+                  >
+                    <Eye size={12} /> Preview
+                  </button>
+                  <a
+                    href={file.url}
+                    download={file.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2"
+                    style={{ color: '#495057' }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Download size={12} /> Download
+                  </a>
+                  <button
+                    onClick={(e) => { setMenuOpen(false); onCopyLink(e); }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-[#F8F9FA] flex items-center gap-2"
+                    style={{ color: '#495057' }}
+                  >
+                    <Copy size={12} /> Copy link
+                  </button>
+                  <div className="my-1 h-px" style={{ backgroundColor: '#F1F5F9' }} />
+                  <button
+                    onClick={(e) => { setMenuOpen(false); onDelete(e); }}
+                    className="w-full text-left px-3 py-1.5 text-[12px] font-medium hover:bg-red-50 flex items-center gap-2"
+                    style={{ color: '#EF4444' }}
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -9,7 +9,6 @@ interface StorageSidebarProps {
   totalCount: number;
   starredCount: number;
   largeFilesCount: number;
-  recentCount?: number;
   distinctFolders: string[];
   summary?: StorageSummaryDTO;
   effectivePlan: { planName: string };
@@ -22,151 +21,113 @@ interface StorageSidebarProps {
   onUpgradeClick: () => void;
 }
 
-// All Files icon
+/* ── SVG icons — DO NOT MODIFY ─────────────────────────────────────────────── */
 function AllFilesIcon({ active }: { active?: boolean }) {
+  const c = active ? '#4F46E5' : '#74788D';
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="2" y="2" width="5" height="5" rx="1.2" fill={active ? '#7c6ff7' : '#a0a0b8'} />
-      <rect x="9" y="2" width="5" height="5" rx="1.2" fill={active ? '#7c6ff7' : '#a0a0b8'} />
-      <rect x="2" y="9" width="5" height="5" rx="1.2" fill={active ? '#7c6ff7' : '#a0a0b8'} />
-      <rect x="9" y="9" width="5" height="5" rx="1.2" fill={active ? '#7c6ff7' : '#a0a0b8'} />
+      <rect x="1" y="1" width="6" height="6" rx="1.5" fill={c} />
+      <rect x="9" y="1" width="6" height="6" rx="1.5" fill={c} />
+      <rect x="1" y="9" width="6" height="6" rx="1.5" fill={c} />
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill={c} />
     </svg>
   );
 }
-
-// Star icon
 function StarIcon({ active }: { active?: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M8 2l1.545 3.13 3.455.5-2.5 2.435.59 3.435L8 9.75l-3.09 1.75.59-3.435L3 5.63l3.455-.5L8 2z"
-        fill={active ? '#f59e0b' : 'none'}
-        stroke={active ? '#f59e0b' : '#a0a0b8'}
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
+      <path d="M8 2l1.6 3.3 3.6.52-2.6 2.53.61 3.57L8 10.1l-3.21 1.82.61-3.57L2.8 5.82l3.6-.52L8 2z"
+        fill={active ? '#F59E0B' : 'none'} stroke={active ? '#F59E0B' : '#74788D'} strokeWidth="1.3" strokeLinejoin="round" />
     </svg>
   );
 }
-
-// Zap / large files icon
 function ZapIcon({ active }: { active?: boolean }) {
+  const c = active ? '#8B5CF6' : '#74788D';
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M9 2L3 9h5l-1 5 7-7H9l1-5z"
-        fill={active ? '#a855f7' : 'none'}
-        stroke={active ? '#a855f7' : '#a0a0b8'}
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
+      <path d="M9 2L3 9h5l-1 5 7-7H9l1-5z" fill={active ? '#8B5CF6' : 'none'} stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
-
-// Recent icon
-function RecentIcon({ active }: { active?: boolean }) {
+function ClockIcon({ active }: { active?: boolean }) {
+  const c = active ? '#4F46E5' : '#74788D';
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="5.5" stroke={active ? '#7c6ff7' : '#a0a0b8'} strokeWidth="1.3" fill="none" />
-      <path d="M8 5v3.5l2 1.5" stroke={active ? '#7c6ff7' : '#a0a0b8'} strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="8" cy="8" r="6" stroke={c} strokeWidth="1.3" fill="none" />
+      <path d="M8 5v3.5l2.5 1.5" stroke={c} strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
-
-// Images sidebar icon
-function SidebarImagesIcon() {
+function FolderColorIcon({ color }: { color: string }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="#6366f1" strokeWidth="1.3" fill="none" />
-      <path d="M2 10l3-3 2.5 2.5 2-2 4.5 4.5" stroke="#6366f1" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="6" cy="7" r="1" fill="#6366f1" />
+      <path d="M1.5 4.5C1.5 3.67 2.17 3 3 3h3l1.5 1.5H13c.83 0 1.5.67 1.5 1.5V11c0 .83-.67 1.5-1.5 1.5H3C2.17 12.5 1.5 11.83 1.5 11V4.5z"
+        fill={color} opacity="0.2" />
+      <path d="M1.5 4.5C1.5 3.67 2.17 3 3 3h3l1.5 1.5H13c.83 0 1.5.67 1.5 1.5V11c0 .83-.67 1.5-1.5 1.5H3C2.17 12.5 1.5 11.83 1.5 11V4.5z"
+        stroke={color} strokeWidth="1.3" fill="none" />
     </svg>
   );
 }
-
-// Videos sidebar icon
-function SidebarVideosIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="2" y="4" width="9" height="8" rx="1.5" stroke="#a855f7" strokeWidth="1.3" fill="none" />
-      <path d="M11 7l3-1.5v5L11 9V7z" stroke="#a855f7" strokeWidth="1.3" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
-}
-
-// Documents sidebar icon
-function SidebarDocsIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="3" y="2" width="10" height="12" rx="1.5" stroke="#f59e0b" strokeWidth="1.3" fill="none" />
-      <line x1="5.5" y1="6" x2="10.5" y2="6" stroke="#f59e0b" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="5.5" y1="8.5" x2="10.5" y2="8.5" stroke="#f59e0b" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="5.5" y1="11" x2="8.5" y2="11" stroke="#f59e0b" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// Audio sidebar icon
-function SidebarAudioIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="3" y="8" width="2" height="5" rx="1" fill="#10b981" />
-      <rect x="7" y="5" width="2" height="8" rx="1" fill="#10b981" />
-      <rect x="11" y="7" width="2" height="4" rx="1" fill="#10b981" />
-    </svg>
-  );
-}
-
-// Other files sidebar icon
-function SidebarOtherIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="3" y="2" width="8" height="10" rx="1.5" stroke="#94a3b8" strokeWidth="1.3" fill="none" />
-      <path d="M8 2l3 3H8V2z" fill="#94a3b8" opacity="0.5" />
-      <circle cx="11" cy="11" r="3" fill="#94a3b8" opacity="0.3" stroke="#94a3b8" strokeWidth="1.2" />
-      <path d="M10 11h2M11 10v2" stroke="#94a3b8" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// Storage HDD icon
-function StorageIcon() {
+function HardDriveIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="1" y="4" width="12" height="7" rx="2" stroke="#7c6ff7" strokeWidth="1.3" fill="none" />
-      <circle cx="10.5" cy="7.5" r="1" fill="#7c6ff7" />
-      <path d="M1 6.5h12" stroke="#7c6ff7" strokeWidth="1" />
+      <rect x="1" y="4" width="12" height="7" rx="2" stroke="#4F46E5" strokeWidth="1.3" fill="none" />
+      <circle cx="10.5" cy="7.5" r="1" fill="#4F46E5" />
+      <path d="M1 6.5h12" stroke="#4F46E5" strokeWidth="1" />
     </svg>
   );
 }
-
-// Sparkles icon
-function SparklesIcon() {
+function SparkleIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path d="M6 1l.9 2.6L9.5 5l-2.6.9L6 8.5l-.9-2.6L2.5 5l2.6-.9L6 1z" fill="white" />
-      <path d="M10 1v2M11 2H9" stroke="white" strokeWidth="1" strokeLinecap="round" />
+      <path d="M6 1l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" fill="#4F46E5" />
     </svg>
   );
 }
 
-const SIDEBAR_TYPE_ICONS: Record<string, React.ReactNode> = {
-  image: <SidebarImagesIcon />,
-  video: <SidebarVideosIcon />,
-  audio: <SidebarAudioIcon />,
-  document: <SidebarDocsIcon />,
-  other: <SidebarOtherIcon />,
+const TYPE_ICON_BG: Record<string, string> = {
+  image: '#EFF6FF', video: '#F5F0FF', audio: '#ECFDF5', document: '#FEF3C7', other: '#F1F5F9',
 };
-
-const SIDEBAR_TYPE_BG: Record<string, string> = {
-  image: 'bg-[#eef2ff]',
-  video: 'bg-[#f5f0ff]',
-  audio: 'bg-[#ecfdf5]',
-  document: 'bg-[#fff7ed]',
-  other: 'bg-[#f1f5f9]',
-};
+function TypeIcon({ t }: { t: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    image: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="3" width="12" height="9" rx="2" stroke="#3B82F6" strokeWidth="1.2" fill="none" />
+        <path d="M1 9l3-3 3 3 2-2 4 4" stroke="#3B82F6" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="5" cy="6.5" r="1" fill="#3B82F6" />
+      </svg>
+    ),
+    video: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="3" width="8" height="8" rx="2" stroke="#8B5CF6" strokeWidth="1.2" fill="none" />
+        <path d="M9 6l4-1.5V9.5L9 8V6z" stroke="#8B5CF6" strokeWidth="1.2" strokeLinejoin="round" fill="none" />
+      </svg>
+    ),
+    audio: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="9" width="2" height="4" rx="1" fill="#10B981" />
+        <rect x="6" y="6" width="2" height="7" rx="1" fill="#10B981" />
+        <rect x="10" y="7.5" width="2" height="5.5" rx="1" fill="#10B981" />
+      </svg>
+    ),
+    document: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="3" y="1" width="8" height="12" rx="2" stroke="#F59E0B" strokeWidth="1.2" fill="none" />
+        <line x1="5" y1="5" x2="9" y2="5" stroke="#F59E0B" strokeWidth="1.1" strokeLinecap="round" />
+        <line x1="5" y1="7.5" x2="9" y2="7.5" stroke="#F59E0B" strokeWidth="1.1" strokeLinecap="round" />
+        <line x1="5" y1="10" x2="7.5" y2="10" stroke="#F59E0B" strokeWidth="1.1" strokeLinecap="round" />
+      </svg>
+    ),
+    other: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="8" height="12" rx="2" stroke="#64748B" strokeWidth="1.2" fill="none" />
+        <path d="M8 1l4 4h-4V1z" fill="#64748B" opacity="0.3" />
+      </svg>
+    ),
+  };
+  return <>{icons[t] ?? icons.other}</>;
+}
+/* ── END SVG ────────────────────────────────────────────────────────────────── */
 
 export function StorageSidebar({
   quickTab,
@@ -186,166 +147,134 @@ export function StorageSidebar({
   onFolderSelect,
   onUpgradeClick,
 }: StorageSidebarProps) {
-  const isFreePlan = effectivePlan.planName.toLowerCase().includes('free');
+  const isFreePlan = !effectivePlan.planName.toLowerCase().includes('pro') &&
+    !effectivePlan.planName.toLowerCase().includes('premium');
 
-  const allFilesActive = quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all';
-  const starredActive = quickTab === 'starred';
+  const allActive = quickTab === 'all' && selectedFolder === 'all' && selectedType === 'all';
+  const starActive = quickTab === 'starred';
   const largeActive = quickTab === 'large';
 
-  // Approximate "recent" as all files (since we don't have a dedicated tab for it in the original)
-  const recentActive = false;
+  const limitBytes = storageLimitBytes ?? 1048576;
+  const barPct = !isUnlimited && limitBytes > 0 ? Math.min(100, (totalUsedBytes / limitBytes) * 100) : 100;
+
+  // ── Reusable nav item ──
+  const NavItem = ({
+    label, count, active, icon, onClick,
+  }: { label: string; count: number; active: boolean; icon: React.ReactNode; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors"
+      style={{
+        backgroundColor: active ? '#EEF2FF' : 'transparent',
+        color: active ? '#4F46E5' : '#495057',
+        fontWeight: active ? 600 : 500,
+      }}
+    >
+      {icon}
+      <span className="flex-1 text-left">{label}</span>
+      <span
+        className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0"
+        style={{
+          backgroundColor: active ? '#4F46E5' : '#F1F5F9',
+          color: active ? '#fff' : '#74788D',
+        }}
+      >
+        {count}
+      </span>
+    </button>
+  );
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ── Quick Access ── */}
-      <div className="rounded-2xl border border-[#EBEBF0] dark:border-[#28282e] bg-white dark:bg-[#18181b] p-3">
-        <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#8e8ea0] dark:text-[#5a5a70] mb-2">
+
+      {/* ── Quick Access card ── */}
+      <div className="rounded-2xl border p-3" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
+        <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#74788D' }}>
           Quick Access
         </p>
         <div className="flex flex-col gap-0.5">
-          {/* All Files */}
-          <button
-            onClick={() => onQuickTabChange('all')}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-semibold transition-all ${
-              allFilesActive
-                ? 'bg-[#f0eeff] dark:bg-[#2a2550] text-[#7c6ff7] font-bold'
-                : 'text-[#444460] dark:text-[#8888a0] hover:bg-[#f8f8fc] dark:hover:bg-[#1e1e26]'
-            }`}
-          >
-            <AllFilesIcon active={allFilesActive} />
-            <span className="flex-1 text-left">All Files</span>
-            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
-              allFilesActive
-                ? 'bg-[#7c6ff7] text-white'
-                : 'bg-[#f0f0f8] dark:bg-[#222230] text-[#8e8ea0]'
-            }`}>
-              {totalCount}
-            </span>
-          </button>
-
-          {/* Starred */}
-          <button
-            onClick={() => onQuickTabChange('starred')}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-semibold transition-all ${
-              starredActive
-                ? 'bg-[#fffbeb] dark:bg-[#2a2518] text-[#f59e0b] font-bold'
-                : 'text-[#444460] dark:text-[#8888a0] hover:bg-[#f8f8fc] dark:hover:bg-[#1e1e26]'
-            }`}
-          >
-            <StarIcon active={starredActive} />
-            <span className="flex-1 text-left">Starred</span>
-            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
-              starredActive
-                ? 'bg-[#f59e0b] text-white'
-                : 'bg-[#f0f0f8] dark:bg-[#222230] text-[#8e8ea0]'
-            }`}>
-              {starredCount}
-            </span>
-          </button>
-
-          {/* Large Files */}
-          <button
-            onClick={() => onQuickTabChange('large')}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-semibold transition-all ${
-              largeActive
-                ? 'bg-[#f5f0ff] dark:bg-[#22183a] text-[#a855f7] font-bold'
-                : 'text-[#444460] dark:text-[#8888a0] hover:bg-[#f8f8fc] dark:hover:bg-[#1e1e26]'
-            }`}
-          >
-            <ZapIcon active={largeActive} />
-            <span className="flex-1 text-left">Large Files (&gt;1MB)</span>
-            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
-              largeActive
-                ? 'bg-[#a855f7] text-white'
-                : 'bg-[#f0f0f8] dark:bg-[#222230] text-[#8e8ea0]'
-            }`}>
-              {largeFilesCount}
-            </span>
-          </button>
-
-          {/* Recent */}
-          <button
-            onClick={() => onQuickTabChange('all')}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-semibold transition-all ${
-              recentActive
-                ? 'bg-[#f0eeff] dark:bg-[#2a2550] text-[#7c6ff7] font-bold'
-                : 'text-[#444460] dark:text-[#8888a0] hover:bg-[#f8f8fc] dark:hover:bg-[#1e1e26]'
-            }`}
-          >
-            <RecentIcon active={recentActive} />
-            <span className="flex-1 text-left">Recent</span>
-            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums bg-[#f0f0f8] dark:bg-[#222230] text-[#8e8ea0]">
-              {totalCount}
-            </span>
-          </button>
+          <NavItem label="All Files"          count={totalCount}     active={allActive}  icon={<AllFilesIcon active={allActive} />}  onClick={() => onQuickTabChange('all')} />
+          <NavItem label="Starred"            count={starredCount}   active={starActive}  icon={<StarIcon active={starActive} />}       onClick={() => onQuickTabChange('starred')} />
+          <NavItem label="Large Files (>1MB)" count={largeFilesCount} active={largeActive} icon={<ZapIcon active={largeActive} />}      onClick={() => onQuickTabChange('large')} />
+          <NavItem label="Recent"             count={totalCount}     active={false}       icon={<ClockIcon />}                          onClick={() => onQuickTabChange('all')} />
         </div>
       </div>
 
-      {/* ── Categories ── */}
-      <div className="rounded-2xl border border-[#EBEBF0] dark:border-[#28282e] bg-white dark:bg-[#18181b] p-3">
-        <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#8e8ea0] dark:text-[#5a5a70] mb-2">
+      {/* ── Categories card ── */}
+      <div className="rounded-2xl border p-3" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
+        <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#74788D' }}>
           Categories
         </p>
         <div className="flex flex-col gap-0.5">
-          {TYPE_ORDER.map((typeKey) => {
-            const config = TYPE_CONFIG[typeKey];
-            const isSelected =
-              selectedType === typeKey && selectedFolder === 'all' && quickTab !== 'starred' && quickTab !== 'large';
-            const ts = summary?.byType[typeKey] ?? { count: 0, bytes: 0 };
+          {TYPE_ORDER.map((key) => {
+            const cfg = TYPE_CONFIG[key];
+            const ts = summary?.byType[key] ?? { count: 0, bytes: 0 };
+            const isActive = selectedType === key && selectedFolder === 'all' && quickTab !== 'starred' && quickTab !== 'large';
             return (
               <button
-                key={typeKey}
-                onClick={() => onTypeSelect(typeKey)}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition-all ${
-                  isSelected
-                    ? 'bg-[#f0eeff] dark:bg-[#2a2550] text-[#7c6ff7] font-bold'
-                    : 'text-[#444460] dark:text-[#8888a0] hover:bg-[#f8f8fc] dark:hover:bg-[#1e1e26]'
-                }`}
+                key={key}
+                onClick={() => onTypeSelect(key)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12.5px] transition-colors"
+                style={{
+                  backgroundColor: isActive ? '#EEF2FF' : 'transparent',
+                  color: isActive ? '#4F46E5' : '#495057',
+                  fontWeight: isActive ? 600 : 500,
+                }}
               >
-                <span className={`w-[22px] h-[22px] rounded-lg flex items-center justify-center shrink-0 ${SIDEBAR_TYPE_BG[typeKey]}`}>
-                  {SIDEBAR_TYPE_ICONS[typeKey]}
+                <span
+                  className="w-[22px] h-[22px] rounded-md flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: TYPE_ICON_BG[key] }}
+                >
+                  <TypeIcon t={key} />
                 </span>
-                <span className="flex-1 text-left truncate">{config.label}</span>
-                <div className="flex items-center gap-1.5 text-[#b0b0c0] dark:text-[#555568] text-[11px]">
-                  <span className="tabular-nums font-semibold">{formatBytes(ts.bytes)}</span>
-                  <span className="font-bold px-1.5 py-0.5 rounded-full bg-[#f0f0f8] dark:bg-[#222230] text-[#8e8ea0] min-w-[18px] text-center">
-                    {ts.count}
-                  </span>
-                </div>
+                <span className="flex-1 text-left truncate">{cfg.label}</span>
+                <span className="text-[11px] tabular-nums mr-1 shrink-0" style={{ color: '#74788D' }}>
+                  {formatBytes(ts.bytes)}
+                </span>
+                <span
+                  className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0"
+                  style={{
+                    backgroundColor: isActive ? '#4F46E5' : '#F1F5F9',
+                    color: isActive ? '#fff' : '#74788D',
+                  }}
+                >
+                  {ts.count}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── Folders (if any) ── */}
+      {/* ── Folders card (if any) ── */}
       {distinctFolders.length > 0 && (
-        <div className="rounded-2xl border border-[#EBEBF0] dark:border-[#28282e] bg-white dark:bg-[#18181b] p-3">
-          <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#8e8ea0] dark:text-[#5a5a70] mb-2">
+        <div className="rounded-2xl border p-3" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
+          <p className="px-2 text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: '#74788D' }}>
             Folders
           </p>
           <div className="flex flex-col gap-0.5">
             {distinctFolders.map((folder) => {
-              const isSelected = selectedFolder === folder && quickTab !== 'starred' && quickTab !== 'large';
+              const isActive = selectedFolder === folder && quickTab !== 'starred' && quickTab !== 'large';
               const fs = summary?.byFolder[folder] ?? { count: 0, bytes: 0 };
               const label = FOLDER_LABELS[folder] ?? folder;
-              const color = FOLDER_COLORS[folder] ?? '#6c63ff';
+              const color = FOLDER_COLORS[folder] ?? '#4F46E5';
               return (
                 <button
                   key={folder}
                   onClick={() => onFolderSelect(folder)}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition-all ${
-                    isSelected
-                      ? 'bg-[#f0eeff] dark:bg-[#2a2550] text-[#7c6ff7] font-bold'
-                      : 'text-[#444460] dark:text-[#8888a0] hover:bg-[#f8f8fc] dark:hover:bg-[#1e1e26]'
-                  }`}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[12.5px] transition-colors"
+                  style={{
+                    backgroundColor: isActive ? '#EEF2FF' : 'transparent',
+                    color: isActive ? '#4F46E5' : '#495057',
+                    fontWeight: isActive ? 600 : 500,
+                  }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color }} className="shrink-0">
-                    <path d="M1 3.5C1 2.67 1.67 2 2.5 2H5l1.5 1.5H11.5C12.33 3.5 13 4.17 13 5v5.5C13 11.33 12.33 12 11.5 12h-9C1.67 12 1 11.33 1 10.5V3.5z" fill={color} opacity="0.2" />
-                    <path d="M1 3.5C1 2.67 1.67 2 2.5 2H5l1.5 1.5H11.5C12.33 3.5 13 4.17 13 5v5.5C13 11.33 12.33 12 11.5 12h-9C1.67 12 1 11.33 1 10.5V3.5z" stroke={color} strokeWidth="1.2" fill="none" />
-                  </svg>
+                  <FolderColorIcon color={color} />
                   <span className="flex-1 text-left truncate">{label}</span>
-                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[#f0f0f8] dark:bg-[#222230] text-[#8e8ea0] tabular-nums">
+                  <span
+                    className="text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0"
+                    style={{ backgroundColor: '#F1F5F9', color: '#74788D' }}
+                  >
                     {fs.count}
                   </span>
                 </button>
@@ -355,50 +284,49 @@ export function StorageSidebar({
         </div>
       )}
 
-      {/* ── Storage Quota ── */}
-      <div className="rounded-2xl border border-[#EBEBF0] dark:border-[#28282e] bg-white dark:bg-[#18181b] p-3.5">
+      {/* ── Storage Quota card ── */}
+      <div className="rounded-2xl border p-4" style={{ backgroundColor: '#fff', borderColor: '#E2E8F0' }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
-            <StorageIcon />
-            <span className="text-[13px] font-bold text-[#1a1a2e] dark:text-white">Storage Quota</span>
+            <HardDriveIcon />
+            <span className="text-[13px] font-bold" style={{ color: '#1E1B4B' }}>Storage Quota</span>
           </div>
           {isFreePlan && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#f0eeff] dark:bg-[#2a2550] text-[#7c6ff7] border border-[#d4ccff] dark:border-[#3d3580]">
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: '#EEF2FF', color: '#4F46E5' }}
+            >
               Free Plan
             </span>
           )}
         </div>
 
-        {/* Used amount */}
         <div className="flex items-center justify-between text-[12px] mb-1.5">
-          <span className="font-bold text-[#1a1a2e] dark:text-white tabular-nums">{formatBytes(totalUsedBytes)} used</span>
-          <span className="text-[#8e8ea0] font-medium">
-            {isUnlimited ? '∞ Unlimited' : formatBytes(storageLimitBytes || 0)}
+          <span className="font-semibold tabular-nums" style={{ color: '#1E1B4B' }}>
+            {formatBytes(totalUsedBytes)} used
+          </span>
+          <span style={{ color: '#74788D' }}>
+            {isUnlimited ? '∞ Unlimited' : formatBytes(storageLimitBytes ?? 0)}
           </span>
         </div>
 
-        {/* Progress bar */}
-        <div className="h-2 w-full rounded-full bg-[#f0f0f8] dark:bg-[#28282e] overflow-hidden">
-          {isUnlimited ? (
-            <div className="h-full w-full rounded-full" style={{ background: 'linear-gradient(90deg, #7c6ff7, #5b4ef5)' }} />
-          ) : (
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${Math.min(100, Math.round((totalUsedBytes / (storageLimitBytes || 1)) * 100))}%`,
-                background: 'linear-gradient(90deg, #7c6ff7, #5b4ef5)',
-              }}
-            />
-          )}
+        <div className="h-[6px] w-full rounded-full overflow-hidden" style={{ backgroundColor: '#EEF2FF' }}>
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${barPct}%`,
+              background: 'linear-gradient(90deg, #4F46E5 0%, #818CF8 100%)',
+            }}
+          />
         </div>
 
         {!isUnlimited && (
           <button
             onClick={onUpgradeClick}
-            className="mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] border border-[#d4ccff] dark:border-[#3d3580]"
-            style={{ background: 'linear-gradient(135deg, #7c6ff7 0%, #5b4ef5 100%)' }}
+            className="mt-3.5 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold border transition-all hover:bg-[#EEF2FF] active:scale-[0.98]"
+            style={{ borderColor: '#4F46E5', color: '#4F46E5', backgroundColor: '#fff' }}
           >
-            <SparklesIcon />
+            <SparkleIcon />
             Upgrade Storage
           </button>
         )}
