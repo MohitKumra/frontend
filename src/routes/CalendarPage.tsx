@@ -149,21 +149,21 @@ export function CalendarPage() {
   const isSyncing = syncGoogleCalendar.isPending;
   const handleSync = () => syncGoogleCalendar.mutate();
 
-  const range = getRange(view, reference);
-  const calendarRange = useMemo(
-    () => ({
+  const referenceKey = format(reference, 'yyyy-MM-dd');
+  const todayKey = format(new Date(), 'yyyy-MM-dd');
+
+  const calendarRange = useMemo(() => {
+    const range = getRange(view, reference);
+    return {
       from: format(range.from, 'yyyy-MM-dd'),
       to: format(range.to, 'yyyy-MM-dd'),
-    }),
-    [range.from, range.to]
-  );
+    };
+  }, [view, referenceKey]);
 
   const { data, isLoading } = useCalendarOverview(calendarRange);
 
   const events = data?.events ?? [];
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
-  const referenceKey = format(reference, 'yyyy-MM-dd');
-  const todayKey = format(new Date(), 'yyyy-MM-dd');
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, CalendarEventDTO[]>();

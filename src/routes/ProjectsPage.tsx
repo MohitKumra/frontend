@@ -121,44 +121,55 @@ export function ProjectsPage() {
   };
 
   // ---- Stats ----
-  const totalCount = projects.length;
-  const completedCount = projects.filter((p) => p.status === 'COMPLETED').length;
-  const activeCount = projects.filter((p) => p.status === 'ACTIVE').length;
-  const onHoldCount = projects.filter((p) => p.status === 'ON_HOLD').length;
-  const overdueCount = projects.filter(isProjectOverdue).length;
-  const pct = (n: number) => (totalCount > 0 ? Math.round((n / totalCount) * 100) : 0);
+  const { totalCount, completedCount, activeCount, onHoldCount, overdueCount, statCards } = useMemo(() => {
+    const total = projects.length;
+    const completed = projects.filter((p) => p.status === 'COMPLETED').length;
+    const active = projects.filter((p) => p.status === 'ACTIVE').length;
+    const onHold = projects.filter((p) => p.status === 'ON_HOLD').length;
+    const overdue = projects.filter(isProjectOverdue).length;
+    const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
-  const statCards = [
-    { label: 'Total Projects', value: totalCount, sub: 'Active projects', icon: Folder, tone: 'accent' as const },
-    {
-      label: 'Completed',
-      value: completedCount,
-      sub: `${pct(completedCount)}% of total`,
-      icon: CheckCircle2,
-      tone: 'success' as const,
-    },
-    {
-      label: 'In Progress',
-      value: activeCount,
-      sub: `${pct(activeCount)}% of total`,
-      icon: Clock,
-      tone: 'warning' as const,
-    },
-    {
-      label: 'On Hold',
-      value: onHoldCount,
-      sub: `${pct(onHoldCount)}% of total`,
-      icon: Pause,
-      tone: 'warning' as const,
-    },
-    {
-      label: 'Overdue',
-      value: overdueCount,
-      sub: `${overdueCount === 1 ? 'project' : 'projects'} overdue`,
-      icon: AlertTriangle,
-      tone: 'danger' as const,
-    },
-  ];
+    const cards = [
+      { label: 'Total Projects', value: total, sub: 'Active projects', icon: Folder, tone: 'accent' as const },
+      {
+        label: 'Completed',
+        value: completed,
+        sub: `${pct(completed)}% of total`,
+        icon: CheckCircle2,
+        tone: 'success' as const,
+      },
+      {
+        label: 'In Progress',
+        value: active,
+        sub: `${pct(active)}% of total`,
+        icon: Clock,
+        tone: 'warning' as const,
+      },
+      {
+        label: 'On Hold',
+        value: onHold,
+        sub: `${pct(onHold)}% of total`,
+        icon: Pause,
+        tone: 'warning' as const,
+      },
+      {
+        label: 'Overdue',
+        value: overdue,
+        sub: `${overdue === 1 ? 'project' : 'projects'} overdue`,
+        icon: AlertTriangle,
+        tone: 'danger' as const,
+      },
+    ];
+
+    return {
+      totalCount: total,
+      completedCount: completed,
+      activeCount: active,
+      onHoldCount: onHold,
+      overdueCount: overdue,
+      statCards: cards,
+    };
+  }, [projects]);
 
   const toneStyles: Record<string, { bg: string; color: string }> = {
     accent: { bg: 'var(--icon-bg-accent)', color: 'var(--icon-text-accent)' },

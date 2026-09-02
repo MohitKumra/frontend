@@ -1247,13 +1247,13 @@ export function TasksPage() {
     clearSelection();
   }, [filter, view, searchQuery, datePreset, customFrom, customTo, clearSelection]);
 
-  const toggleTaskSelection = (taskId: string) => {
+  const toggleTaskSelection = useCallback((taskId: string) => {
     setSelectedTaskIds((prev) => {
       const next = new Set(prev);
       next.has(taskId) ? next.delete(taskId) : next.add(taskId);
       return next;
     });
-  };
+  }, []);
 
   const toggleVisibleSelection = () => {
     setSelectedTaskIds((prev) => {
@@ -1317,6 +1317,50 @@ export function TasksPage() {
     (id: string, val: string) => setSubtaskDraft((prev) => ({ ...prev, [id]: val })),
     []
   );
+
+  const handleToggleSubtask = useCallback(
+    (taskId: string, subTaskId: string, completed: boolean) => {
+      updateSubTaskMutation.mutate({ taskId, subTaskId, data: { completed } });
+    },
+    [updateSubTaskMutation]
+  );
+
+  const handleDeleteSubtask = useCallback(
+    (taskId: string, subTaskId: string) => {
+      deleteSubTaskMutation.mutate({ taskId, subTaskId });
+    },
+    [deleteSubTaskMutation]
+  );
+
+  const handleFocusTask = useCallback(
+    (taskId: string) => {
+      if (isFeatureLocked('focusAdvanced')) {
+        openUpgrade(
+          'focusAdvanced',
+          'Linking tasks to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.'
+        );
+        return;
+      }
+      navigate(`/focus?taskId=${taskId}`);
+    },
+    [isFeatureLocked, openUpgrade, navigate]
+  );
+
+  const handleOpenTask = useCallback(
+    (taskId: string) => {
+      navigate(`/tasks/${taskId}`);
+    },
+    [navigate]
+  );
+
+  const handleOpenCreateTaskFromEngine = useCallback(() => {
+    setCreateModalOpen(true);
+  }, []);
+
+  const handleHighlightTaskFromEngine = useCallback((id: string) => {
+    setHighlightedTaskId(id);
+    setTimeout(() => setHighlightedTaskId(null), 3000);
+  }, []);
 
   const handleRescheduleAll = useCallback(async () => {    const today = dateKeyInTimeZone(new Date(), accountTimeZone);
     await Promise.all(overdueTasks.map((t) => tasksApi.update(t.id, { dueDate: today })));
@@ -1714,18 +1758,10 @@ export function TasksPage() {
                           onChangeStatus={changeTaskStatus}
                           onSubtaskDraftChange={handleSubtaskDraftChange}
                           onAddSubtask={handleAddSubtask}
-                          onToggleSubtask={(taskId, subTaskId, completed) =>
-                            updateSubTaskMutation.mutate({ taskId, subTaskId, data: { completed } })
-                          }
-                          onDeleteSubtask={(taskId, subTaskId) => deleteSubTaskMutation.mutate({ taskId, subTaskId })}
-                          onFocus={(taskId) => {
-                            if (isFeatureLocked('focusAdvanced')) {
-                              openUpgrade('focusAdvanced', 'Linking tasks to the Focus timer is an Advanced Focus feature available on Pro & Ultimate plans.');
-                              return;
-                            }
-                            navigate(`/focus?taskId=${taskId}`);
-                          }}
-                          onOpen={(taskId) => navigate(`/tasks/${taskId}`)}
+                          onToggleSubtask={handleToggleSubtask}
+                          onDeleteSubtask={handleDeleteSubtask}
+                          onFocus={handleFocusTask}
+                          onOpen={handleOpenTask}
                         />
                       ))}
                     </div>
@@ -1759,13 +1795,8 @@ export function TasksPage() {
               context="tasks"
               tasks={tasks}
               focusSessions={[]}
-              onOpenCreateTask={(t, d) => {
-                setCreateModalOpen(true);
-              }}
-              onHighlightTask={(id) => {
-                setHighlightedTaskId(id);
-                setTimeout(() => setHighlightedTaskId(null), 3000);
-              }}
+              onOpenCreateTask={handleOpenCreateTaskFromEngine}
+              onHighlightTask={handleHighlightTaskFromEngine}
             />
           </motion.div>
 

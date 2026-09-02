@@ -138,7 +138,7 @@ export function ProductivityEngine({
     }
 
     return gaps;
-  }, [tasks, onOpenCreateTask, onOpenCreateProject]);
+  }, [tasks, onOpenCreateTask, onOpenCreateProject, onHighlightTask]);
 
   // ── Common habit suggestions (title keywords to detect) ─────────────
   const COMMON_HABITS = [

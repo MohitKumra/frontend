@@ -52,10 +52,10 @@ apiClient.interceptors.response.use(
   (response) => {
     const url = response.config?.url || '';
     const method = response.config?.method?.toUpperCase() || '';
-    // Instantly invalidate storage and plan usage if any upload, media, or storage mutation succeeded
+    // Invalidate storage file lists and usage only when media/file mutations succeed
     if (
       (method === 'POST' || method === 'DELETE' || method === 'PUT' || method === 'PATCH') &&
-      (url.includes('/upload') || url.includes('/media') || url.includes('/storage') || url.includes('/avatars') || url.includes('/notes') || url.includes('/tasks') || url.includes('/projects'))
+      (url.includes('/upload') || url.includes('/media') || url.includes('/storage') || url.includes('/avatars'))
     ) {
       void queryClient.invalidateQueries({ queryKey: ['billing', 'subscription'] });
       void queryClient.invalidateQueries({ queryKey: ['storage', 'files'] });

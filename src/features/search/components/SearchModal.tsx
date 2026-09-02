@@ -27,15 +27,22 @@ const getIconForType = (type: SearchResult['type']) => {
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const { data: results, isLoading } = useSearch(query);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const { data: results, isLoading } = useSearch(debouncedQuery);
 
   // Reset query and focus input when opening
   useEffect(() => {
     if (isOpen) {
       setQuery('');
+      setDebouncedQuery('');
       // Slight delay so the sheet entrance animation doesn't fight the
       // virtual keyboard appearing on mobile
       setTimeout(() => inputRef.current?.focus(), 180);

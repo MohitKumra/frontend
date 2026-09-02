@@ -165,22 +165,31 @@ export function StoragePage() {
   // live on the server (favorites are stored in localStorage), so for that tab we
   // ask for a large batch and filter/paginate the starred subset client-side.
   const isStarredTab = quickTab === 'starred';
-  const query = {
-    tab: quickTab,
-    type: selectedType,
-    folder: selectedFolder,
-    search: searchQuery,
-    sortBy,
-    page: isStarredTab ? 1 : currentPage,
-    pageSize: isStarredTab ? 1000 : PAGE_SIZE,
-  };
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const query = useMemo(
+    () => ({
+      tab: quickTab,
+      type: selectedType,
+      folder: selectedFolder,
+      search: debouncedSearch.trim(),
+      sortBy,
+      page: isStarredTab ? 1 : currentPage,
+      pageSize: isStarredTab ? 1000 : PAGE_SIZE,
+    }),
+    [quickTab, selectedType, selectedFolder, debouncedSearch, sortBy, isStarredTab, currentPage]
+  );
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['storage', 'files', query],
     queryFn: () => storageApi.list(query),
-    staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: true,
+    staleTime: 30_000,
   });
-  useEffect(() => { void queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY }); }, [queryClient]);
 
   const serverFiles = data?.files ?? DEFAULT_REAL_FILES;
   const summary = useMemo(() => {

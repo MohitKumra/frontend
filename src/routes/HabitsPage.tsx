@@ -58,20 +58,30 @@ export function HabitsPage() {
   const habits = data?.data ?? [];
   const tasks = tasksData?.pages.flatMap((p) => p.data) ?? [];
   const focusSessions = focusSessionsData?.data ?? [];
-  const completedToday = habits.filter((h) => h.completedToday).length;
-  const totalHabits = habits.length;
 
-  const dailyProgress = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
-  const streakDays = habits.length > 0 ? Math.max(...habits.map((h) => h.currentStreak)) : 0;
-  const activeStreaks = habits.filter((h) => h.currentStreak > 0).length;
+  const { completedToday, totalHabits, dailyProgress, streakDays, activeStreaks, successRate } = useMemo(() => {
+    const total = habits.length;
+    const completed = habits.filter((h) => h.completedToday).length;
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const streak = total > 0 ? Math.max(...habits.map((h) => h.currentStreak)) : 0;
+    const active = habits.filter((h) => h.currentStreak > 0).length;
+    const rate =
+      total > 0
+        ? Math.round(
+            (habits.reduce((sum, h) => sum + h.completionsThisWeek / Math.max(h.targetPerWeek, 1), 0) / total) * 100
+          )
+        : 0;
+    return {
+      completedToday: completed,
+      totalHabits: total,
+      dailyProgress: progress,
+      streakDays: streak,
+      activeStreaks: active,
+      successRate: rate,
+    };
+  }, [habits]);
+
   const xpEarned = gamification?.totalPoints ?? 0;
-  const successRate =
-    habits.length > 0
-      ? Math.round(
-          (habits.reduce((sum, h) => sum + h.completionsThisWeek / Math.max(h.targetPerWeek, 1), 0) / habits.length) *
-            100
-        )
-      : 0;
 
   const longestStreakHabit = useMemo(() => {
     if (habits.length === 0) return null;
@@ -143,12 +153,15 @@ export function HabitsPage() {
     [setFilter]
   );
 
-  const filterCounts = {
-    all: habits.length,
-    active: habits.filter((h) => h.currentStreak > 0).length,
-    pending: habits.filter((h) => !h.completedToday).length,
-    completed: habits.filter((h) => h.completedToday).length,
-  };
+  const filterCounts = useMemo(
+    () => ({
+      all: habits.length,
+      active: habits.filter((h) => h.currentStreak > 0).length,
+      pending: habits.filter((h) => !h.completedToday).length,
+      completed: habits.filter((h) => h.completedToday).length,
+    }),
+    [habits]
+  );
 
   // ─── All hooks and callbacks must be defined BEFORE the early return ───
 
@@ -361,135 +374,65 @@ export function HabitsPage() {
     </>
   );
 
-  // Early return AFTER all hooks/callbacks — this ensures hook count never changes between renders
-  if (isLoading) return <LoadingScreen />;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.4 }}
       className="flex w-full min-w-0 flex-col px-3.5 pt-3.5 pb-6 sm:px-0 sm:pt-0 sm:pb-8"
     >
-      {/* ================================================================
-          MOBILE LAYOUT (< sm)
-          ================================================================ */}
-      <div className="sm:hidden flex flex-col gap-4">
-        <HabitHero {...heroProps} />
-        {habits.length === 0 ? (
-          <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-2 items-stretch">
-              <WeatherWidget compact />
-              {longestStreakHabit && (
-                <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2 items-stretch">
-              <QuoteCard quotes={getDailyQuotes()} />
-              <HabitHeatmapCombined habits={habits} compact />
-            </div>
-            {renderFiltersAndList()}
+      <HabitHero {...heroProps} />
+
+      {habits.length === 0 && !isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-4 sm:gap-6 mt-4 sm:mt-6">
+          <div className="flex flex-col gap-6">
+            <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
+          </div>
+          <aside className="flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6 lg:sticky lg:top-6 min-w-0">
             <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
             <ProductivityEngine {...engineProps} />
-            <AchievementsPanel />
-          </>
-        )}
-      </div>
-
-      {/* ================================================================
-          TABLET (sm–lg)
-          ================================================================ */}
-      <div className="hidden sm:flex lg:hidden flex-col gap-4 sm:gap-6">
-        <HabitHero {...heroProps} />
-        {habits.length === 0 ? (
-          <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_320px] items-stretch gap-4 sm:gap-6">
+            <QuoteCard quotes={getDailyQuotes()} />
+            <WeatherWidget />
+          </aside>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-4 sm:gap-6 mt-4 sm:mt-6">
+          {/* Main Column */}
+          <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+              className="grid min-w-0 grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
+            >
               <WeekOverview habits={habits} />
               {longestStreakHabit && (
                 <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
               )}
-            </div>
+            </motion.div>
+
             {renderFiltersAndList()}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6">
+
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6"
+            >
               <AchievementsPanel />
               <HabitHeatmapCombined habits={habits} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
-              <ProductivityEngine {...engineProps} />
-              <QuoteCard quotes={getDailyQuotes()} />
-              <WeatherWidget />
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* ================================================================
-          DESKTOP (lg+)
-          ================================================================ */}
-      <div className="hidden lg:block">
-        {habits.length === 0 ? (
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-6">
-            <div className="flex flex-col gap-6">
-              <HabitHero {...heroProps} />
-              <HabitEmptyState onCreateHabit={() => setShowCreate(true)} />
-            </div>
-            <div className="flex flex-col gap-4 sticky top-6 self-start">
-                <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
-              <ProductivityEngine {...engineProps} />
-              <QuoteCard quotes={getDailyQuotes()} />
-              <WeatherWidget />
-            </div>
+            </motion.div>
           </div>
-        ) : (
-          <>
-            <HabitHero {...heroProps} />
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px] items-start gap-4 sm:gap-6">
-              <div className="flex flex-col gap-4 sm:gap-6 min-w-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                  className="grid min-w-0 grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]"
-                >
-                  <WeekOverview habits={habits} />
-                  {longestStreakHabit && (
-                    <LongestStreakCard habit={longestStreakHabit.habit} streak={longestStreakHabit.streak} />
-                  )}
-                </motion.div>
 
-                {renderFiltersAndList()}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.6 }}
-                  className="grid grid-cols-1 xl:grid-cols-[1.3fr_1fr] items-start gap-4 sm:gap-6"
-                >
-                  <AchievementsPanel />
-                  <HabitHeatmapCombined habits={habits} />
-                </motion.div>
-              </div>
-
-              <motion.div
-                className="flex flex-col gap-4 sm:gap-6 sticky top-6 self-start min-w-0"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-              >
-                  <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
-                <ProductivityEngine {...engineProps} />
-                <QuoteCard quotes={getDailyQuotes()} />
-                <WeatherWidget />
-              </motion.div>
-            </div>
-          </>
-        )}
-      </div>
+          {/* Sidebar: Responsive - Stacks below on mobile, 2-col on tablet, sticky right on desktop */}
+          <aside className="flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-col gap-4 sm:gap-6 lg:sticky lg:top-6 min-w-0">
+            <AICoachWidget context="habits" completedToday={completedToday} totalHabits={totalHabits} />
+            <ProductivityEngine {...engineProps} />
+            <QuoteCard quotes={getDailyQuotes()} />
+            <WeatherWidget />
+          </aside>
+        </div>
+      )}
 
       {/* Create Habit Wizard Modal */}
       <AnimatePresence>
