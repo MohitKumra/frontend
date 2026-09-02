@@ -18,6 +18,7 @@ import {
   Bell,
   HardDrive,
   CircleAlert,
+  BandageIcon,
 } from "lucide-react";
 import { adminApiClient } from "../../lib/adminApiClient";
 import { Spinner } from "../../components/ui/Spinner";
@@ -322,10 +323,10 @@ export function AdminSystemPage(): React.JSX.Element {
         {/* Runtime + storage */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <SubsystemCard
-            icon={<Clock className="w-6 h-6" />}
+            icon={<BandageIcon className="w-6 h-6" />}
             tint="#FFF7ED"
             iconColor="#F97316"
-            label="System Uptime"
+            label="Last Patch"
             value={formatUptime(health.uptimeSeconds || m.systemUptimeSeconds)}
             sub={`Node ${health.nodeVersion || "?"}`}
             status="healthy"
