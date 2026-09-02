@@ -1035,32 +1035,54 @@ export function TasksPage() {
   );
 
   // ── subtask mutations ────────────────────────────────────────────────────
-  // Use optimistic cache updates instead of full invalidation so toggling/adding
-  // a subtask doesn't trigger a full tasks list refetch.
+  // Use optimistic cache updates supporting both offset query { data: [] }
+  // and cursor query { pages: [{ data: [] }] } cache shapes.
 
   const updateSubTaskMutation = useMutation({
     mutationFn: ({ taskId, subTaskId, data }: { taskId: string; subTaskId: string; data: { completed?: boolean } }) =>
       tasksApi.updateSubTask(taskId, subTaskId, data),
     onMutate: async ({ taskId, subTaskId, data }) => {
       // Optimistically update the subtask in all task list cache entries
-      queryClient.setQueriesData<{ pages: { data: typeof tasks }[] }>(
+      queryClient.setQueriesData(
         { queryKey: ['tasks'] },
-        (old) => {
+        (old: any) => {
           if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              data: page.data.map((task: (typeof tasks)[number]) =>
+          if (old.id === taskId) {
+            return {
+              ...old,
+              subTasks: old.subTasks?.map((s: any) => (s.id === subTaskId ? { ...s, ...data } : s)),
+            };
+          }
+          if (Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((task: any) =>
                 task.id !== taskId
                   ? task
                   : {
                       ...task,
-                      subTasks: task.subTasks?.map((s) => (s.id === subTaskId ? { ...s, ...data } : s)),
+                      subTasks: task.subTasks?.map((s: any) => (s.id === subTaskId ? { ...s, ...data } : s)),
                     }
               ),
-            })),
-          };
+            };
+          }
+          if (Array.isArray(old.pages)) {
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                data: page.data?.map((task: any) =>
+                  task.id !== taskId
+                    ? task
+                    : {
+                        ...task,
+                        subTasks: task.subTasks?.map((s: any) => (s.id === subTaskId ? { ...s, ...data } : s)),
+                      }
+                ),
+              })),
+            };
+          }
+          return old;
         }
       );
     },
@@ -1076,21 +1098,40 @@ export function TasksPage() {
       tasksApi.createSubTask(taskId, { title, order }),
     onSuccess: (newSubTask, { taskId }) => {
       // Append the new subtask returned by the server into the cache
-      queryClient.setQueriesData<{ pages: { data: typeof tasks }[] }>(
+      queryClient.setQueriesData(
         { queryKey: ['tasks'] },
-        (old) => {
+        (old: any) => {
           if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              data: page.data.map((task: (typeof tasks)[number]) =>
+          if (old.id === taskId) {
+            return {
+              ...old,
+              subTasks: [...(old.subTasks ?? []), newSubTask],
+            };
+          }
+          if (Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((task: any) =>
                 task.id !== taskId
                   ? task
                   : { ...task, subTasks: [...(task.subTasks ?? []), newSubTask] }
               ),
-            })),
-          };
+            };
+          }
+          if (Array.isArray(old.pages)) {
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                data: page.data?.map((task: any) =>
+                  task.id !== taskId
+                    ? task
+                    : { ...task, subTasks: [...(task.subTasks ?? []), newSubTask] }
+                ),
+              })),
+            };
+          }
+          return old;
         }
       );
     },
@@ -1104,21 +1145,40 @@ export function TasksPage() {
     mutationFn: ({ taskId, subTaskId }: { taskId: string; subTaskId: string }) =>
       tasksApi.deleteSubTask(taskId, subTaskId),
     onMutate: async ({ taskId, subTaskId }) => {
-      queryClient.setQueriesData<{ pages: { data: typeof tasks }[] }>(
+      queryClient.setQueriesData(
         { queryKey: ['tasks'] },
-        (old) => {
+        (old: any) => {
           if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              data: page.data.map((task: (typeof tasks)[number]) =>
+          if (old.id === taskId) {
+            return {
+              ...old,
+              subTasks: old.subTasks?.filter((s: any) => s.id !== subTaskId),
+            };
+          }
+          if (Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((task: any) =>
                 task.id !== taskId
                   ? task
-                  : { ...task, subTasks: task.subTasks?.filter((s) => s.id !== subTaskId) }
+                  : { ...task, subTasks: task.subTasks?.filter((s: any) => s.id !== subTaskId) }
               ),
-            })),
-          };
+            };
+          }
+          if (Array.isArray(old.pages)) {
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                data: page.data?.map((task: any) =>
+                  task.id !== taskId
+                    ? task
+                    : { ...task, subTasks: task.subTasks?.filter((s: any) => s.id !== subTaskId) }
+                ),
+              })),
+            };
+          }
+          return old;
         }
       );
     },
@@ -1283,19 +1343,21 @@ export function TasksPage() {
 
   const handleDeleteTask = useCallback(
     (id: string) => {
-      const task = tasks.find((t) => t.id === id);
+      const allActiveTasks = view === 'board' ? tasks : cardTasks;
+      const task = allActiveTasks.find((t) => t.id === id);
       if (task) {
         setDeleteConfirmation({ type: 'single', task });
       }
     },
-    [tasks]
+    [view, tasks, cardTasks]
   );
 
   const handleAddSubtask = useCallback(
     async (taskId: string) => {
       const title = (subtaskDraft[taskId] ?? '').trim();
       if (!title) return;
-      const task = tasks.find((t) => t.id === taskId);
+      const allActiveTasks = view === 'board' ? tasks : cardTasks;
+      const task = allActiveTasks.find((t) => t.id === taskId);
       const orders = task?.subTasks?.map((s) => s.order) ?? [];
       const order = orders.length > 0 ? Math.max(...orders) + 1 : 0;
       try {
@@ -1305,7 +1367,7 @@ export function TasksPage() {
         /* toast handled by mutation */
       }
     },
-    [subtaskDraft, tasks, createSubTaskMutation]
+    [subtaskDraft, view, tasks, cardTasks, createSubTaskMutation]
   );
 
   const handleToggleSubtasks = useCallback(

@@ -463,10 +463,10 @@ function FocusModeFullScreen({
       />
 
       {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 sm:p-6 z-10">
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-2.5 sm:p-6 [@media(max-height:500px)]:py-1.5 [@media(max-height:500px)]:px-3 z-10">
         <button
           onClick={onExit}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold border shadow-sm shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold border shadow-sm shrink-0"
           style={{
             background: mixBg(22),
             borderColor: mixBorder(35),
@@ -496,7 +496,7 @@ function FocusModeFullScreen({
           <button
             onClick={() => setStatsVisible((v) => !v)}
             aria-label="Toggle stats panel"
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border shadow-sm shrink-0"
+            className="hidden [@media(min-height:580px)]:flex w-8 h-8 sm:w-10 sm:h-10 rounded-full items-center justify-center border shadow-sm shrink-0"
             style={{
               background: statsVisible ? mixIcon(35) : mixBg(18),
               borderColor: mixBorder(30),
@@ -518,9 +518,9 @@ function FocusModeFullScreen({
         </div>
       </div>
 
-      {/* Left stats panel */}
+      {/* Left stats panel — hidden on landscape mobile / short viewports to prevent overlap */}
       {statsVisible && (
-        <div className="hidden md:flex flex-col gap-3 absolute left-6 sm:left-8 top-1/2 -translate-y-1/2 w-60 z-10">
+        <div className="hidden lg:flex [@media(max-height:580px)]:!hidden flex-col gap-3 absolute left-6 sm:left-8 top-1/2 -translate-y-1/2 w-56 xl:w-60 z-10">
           <FocusModeStatCard
             icon={<Target size={18} />}
             label="Focus Sessions"
@@ -556,17 +556,17 @@ function FocusModeFullScreen({
         </div>
       )}
 
-      <div className="relative h-full flex items-center justify-center px-3 sm:px-4 pointer-events-none z-10">
+      <div className="relative h-full flex items-center justify-center px-2 sm:px-4 pointer-events-none z-10">
         <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={mode}
-          className="flex flex-col items-center gap-4 sm:gap-8 w-full max-w-[94vw] sm:max-w-lg p-4 sm:p-8 pointer-events-auto"
+          className="flex flex-col items-center gap-2 sm:gap-6 [@media(max-height:540px)]:gap-1.5 w-full max-w-[94vw] sm:max-w-lg p-2 sm:p-6 [@media(max-height:540px)]:p-0 pointer-events-auto"
           initial={{ opacity: 0, scale: 0.93, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 1.04, y: -20 }}
           transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="flex flex-col items-center gap-2 sm:gap-3 w-full px-2">
+          <div className="flex flex-col items-center gap-1 sm:gap-2 w-full px-2">
             <p
               className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-[0.25em] sm:tracking-[0.35em]"
               style={{ color: strong }}
@@ -574,18 +574,18 @@ function FocusModeFullScreen({
               {mode === 'focus' ? 'FOCUS' : mode === 'short_break' ? 'SHORT BREAK' : 'LONG BREAK'}
             </p>
             <p
-              className="text-xs sm:text-sm font-semibold text-center max-w-full break-words"
+              className="text-xs sm:text-sm font-semibold text-center max-w-full break-words [@media(max-height:540px)]:hidden"
               style={{ color: 'var(--color-text-secondary)' }}
             >
               {MODE_COPY[mode]}
             </p>
             {selectedTaskTitle && mode === 'focus' && (
-              <div className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
+              <div className="px-2.5 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-0.5">
                 🎯 {selectedTaskTitle}
               </div>
             )}
             {selectedProjectTitle && mode === 'focus' && (
-              <div className="px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-1">
+              <div className="px-2.5 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold text-text-secondary bg-white/60 border border-white/40 max-w-[min(320px,85vw)] truncate mt-0.5">
                 {selectedProjectTitle}
               </div>
             )}
@@ -595,35 +595,35 @@ function FocusModeFullScreen({
             className="relative flex items-center justify-center"
             style={{ animation: running ? 'focus-breathe 4s ease-in-out infinite' : 'none' }}
           >
-            <div className="w-[clamp(200px,58vw,380px)] h-[clamp(200px,58vw,380px)]">
+            <div className="w-[clamp(150px,min(54vw,48vh),380px)] h-[clamp(150px,min(54vw,48vh),380px)]">
               <ProgressRing logicalSize={380} progress={progress} colors={colors} running={running} isNight={false} />
             </div>
-            <div className="absolute flex flex-col items-center gap-2 sm:gap-3 select-none px-2">
+            <div className="absolute flex flex-col items-center gap-1.5 sm:gap-3 select-none px-2">
               <span
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tabular-nums tracking-tight"
+                className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl [@media(max-height:540px)]:text-3xl sm:[@media(max-height:540px)]:text-4xl font-black tabular-nums tracking-tight"
                 style={{ color: 'var(--color-text-primary)' }}
               >
                 {minutes}:{seconds}
               </span>
               <span
-                className="text-[9px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap"
+                className="text-[8px] sm:text-[11px] font-black uppercase tracking-[0.12em] sm:tracking-[0.2em] px-2 sm:px-3.5 py-0.5 sm:py-1.5 rounded-full inline-flex items-center gap-1 sm:gap-1.5 whitespace-nowrap"
                 style={{
                   background: colors.subtle,
                   color: strong,
                 }}
               >
-                <Target size={11} className="sm:hidden" />
+                <Target size={10} className="sm:hidden" />
                 <Target size={12} className="hidden sm:block" />
                 {mode === 'focus' ? 'Focus Session' : mode === 'short_break' ? 'Short Break' : 'Long Break'}
               </span>
             </div>
           </div>
 
-          <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-3 w-full ">
+          <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-3 w-full [@media(max-height:540px)]:gap-1.5">
             <button
               onClick={onSkipBack}
               aria-label="Previous mode"
-              className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
+              className="w-8 h-8 sm:w-11 sm:h-11 [@media(max-height:540px)]:w-8 [@media(max-height:540px)]:h-8 flex items-center justify-center rounded-full border shadow-sm shrink-0"
               style={{
                 background: mixBg(20),
                 borderColor: mixBorder(35),
@@ -637,7 +637,7 @@ function FocusModeFullScreen({
 
             <button
               onClick={onReset}
-              className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-6 py-2.5 sm:py-4 rounded-full text-[10px] sm:text-sm font-bold border shadow-sm shrink-0"
+              className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-6 py-1.5 sm:py-4 [@media(max-height:540px)]:py-1.5 [@media(max-height:540px)]:px-3.5 rounded-full text-[10px] sm:text-sm font-bold border shadow-sm shrink-0"
               style={{
                 background: mixBg(22),
                 borderColor: mixBorder(35),
@@ -652,7 +652,7 @@ function FocusModeFullScreen({
 
             <button
               onClick={onStartPause}
-              className="flex items-center justify-center gap-1 sm:gap-2.5 px-3 sm:px-10 h-11 sm:h-14 md:h-16 text-xs sm:text-base md:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
+              className="flex items-center justify-center gap-1 sm:gap-2.5 px-3.5 sm:px-10 h-9 sm:h-14 md:h-16 [@media(max-height:540px)]:h-9 [@media(max-height:540px)]:px-4 text-xs sm:text-base md:text-lg font-bold shadow-xl rounded-full shrink-0 border backdrop-blur-sm"
               style={{
                 background: mixBg(30),
                 borderColor: mixBorder(45),
@@ -661,20 +661,20 @@ function FocusModeFullScreen({
             >
               {running ? (
                 <>
-                  <Pause size={17} className="sm:hidden" />
+                  <Pause size={15} className="sm:hidden" />
                   <Pause size={20} className="hidden sm:block" />
                   Pause
                 </>
               ) : mode === 'focus' ? (
                 <>
-                  <Play size={17} className="sm:hidden" />
+                  <Play size={15} className="sm:hidden" />
                   <Play size={20} className="hidden sm:block" />
                   <span className="hidden min-[380px]:inline">Start Focus</span>
                   <span className="min-[380px]:hidden">Start</span>
                 </>
               ) : (
                 <>
-                  <Play size={17} className="sm:hidden" />
+                  <Play size={15} className="sm:hidden" />
                   <Play size={20} className="hidden sm:block" />
                   Start Break
                 </>
@@ -684,7 +684,7 @@ function FocusModeFullScreen({
             <button
               onClick={onSkipForward}
               aria-label="Next mode"
-              className="w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-full border shadow-sm shrink-0"
+              className="w-8 h-8 sm:w-11 sm:h-11 [@media(max-height:540px)]:w-8 [@media(max-height:540px)]:h-8 flex items-center justify-center rounded-full border shadow-sm shrink-0"
               style={{
                 background: mixBg(20),
                 borderColor: mixBorder(35),
@@ -698,7 +698,7 @@ function FocusModeFullScreen({
           </div>
 
           <p
-            className="text-[11px] sm:text-xs font-semibold text-center max-w-full break-words px-2"
+            className="text-[11px] sm:text-xs font-semibold text-center max-w-full break-words px-2 [@media(max-height:540px)]:hidden"
             style={{ color: 'var(--color-text-muted)' }}
           >
             💡 Tip: Take short breaks to recharge. You'll come back stronger!
@@ -708,7 +708,7 @@ function FocusModeFullScreen({
 
         {quotes.length > 0 && (
           <div
-            className="hidden lg:block absolute bottom-[15%] right-10 max-w-[320px] p-6 rounded-2xl border shadow-lg pointer-events-auto z-10"
+            className="hidden xl:block [@media(max-height:580px)]:!hidden absolute bottom-[15%] right-10 max-w-[320px] p-6 rounded-2xl border shadow-lg pointer-events-auto z-10"
             style={{
               background: mixBg(22),
               borderColor: mixBorder(35),
@@ -740,9 +740,9 @@ function FocusModeFullScreen({
         )}
       </div>
 
-      <div className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 z-10">
+      <div className="absolute bottom-2 left-2 sm:bottom-6 sm:left-6 [@media(max-height:500px)]:scale-90 [@media(max-height:500px)]:origin-bottom-left z-10">
         <div
-          className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl border shadow-sm"
+          className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 sm:py-3 rounded-2xl border shadow-sm"
           style={{
             background: mixBg(20),
             borderColor: mixBorder(30),
@@ -750,34 +750,34 @@ function FocusModeFullScreen({
           }}
         >
           <span
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
+            className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: mixIcon(30),
               color: strong,
             }}
           >
-            <Music size={14} />
+            <Music size={13} />
           </span>
           <div className="min-w-0">
-            <p className="text-[11px] sm:text-xs font-bold truncate" style={{ color: mixText(90) }}>
+            <p className="text-[10px] sm:text-xs font-bold truncate max-w-[90px] xs:max-w-none" style={{ color: mixText(90) }}>
               {ambientSound}
             </p>
-            <p className="text-[9px] sm:text-[10px] font-semibold truncate" style={{ color: mixSub(70) }}>
+            <p className="text-[8px] sm:text-[10px] font-semibold truncate" style={{ color: mixSub(70) }}>
               Concentration
             </p>
           </div>
           <button
             onClick={onToggleAmbient}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0"
+            className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0"
             style={{ color: strong }}
             aria-label={ambientPlaying ? 'Pause ambient sound' : 'Play ambient sound'}
           >
-            <AudioLines size={16} />
+            <AudioLines size={15} />
           </button>
         </div>
       </div>
 
-      <div className="hidden sm:block absolute bottom-6 right-6 z-10">
+      <div className="hidden md:block [@media(max-height:540px)]:!hidden absolute bottom-6 right-6 z-10">
         <div
           className="px-5 py-3.5 rounded-2xl border shadow-sm"
           style={{
