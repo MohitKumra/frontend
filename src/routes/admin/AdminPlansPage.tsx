@@ -13,6 +13,7 @@ import {
   Sparkles,
   CircleDot,
   ChevronDown,
+  Trash2,
 } from 'lucide-react';
 import { adminApiClient } from '../../lib/adminApiClient';
 import { Badge } from '../../components/ui/Badge';
@@ -73,6 +74,8 @@ export function AdminPlansPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [confirming, setConfirming] = useState<Plan | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function fetchPlans() {
     setLoading(true);
@@ -187,6 +190,21 @@ export function AdminPlansPage() {
       setMessage({ type: 'error', text: err.response?.data?.error?.message || 'Failed to update plan status' });
     } finally {
       setConfirming(null);
+    }
+  }
+
+  async function handleDeletePlan() {
+    if (!planToDelete) return;
+    setDeleting(true);
+    try {
+      await adminApiClient.delete(`/plans/${planToDelete.id}`);
+      setMessage({ type: 'success', text: `Plan "${planToDelete.name}" was deleted successfully.` });
+      setPlanToDelete(null);
+      fetchPlans();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.error?.message || 'Failed to delete plan' });
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -338,6 +356,15 @@ export function AdminPlansPage() {
                         >
                           {p.isActive ? 'Deactivate' : 'Activate'}
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full px-3 text-danger border-danger/30 hover:bg-danger/10 hover:border-danger/50"
+                          onClick={() => setPlanToDelete(p)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -395,6 +422,41 @@ export function AdminPlansPage() {
                 onClick={() => togglePlanActive(confirming)}
               >
                 {confirming.isActive ? 'Deactivate' : 'Activate'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Confirm Delete Plan ─────────────────────────────── */}
+      {planToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md bg-surface border border-border rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-danger/10 text-danger border border-danger/20">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-text-primary">
+                  Delete "{planToDelete.name}"?
+                </h3>
+                <p className="text-sm text-text-muted mt-1">
+                  Are you sure you want to permanently delete plan <strong className="text-text-primary">{planToDelete.name}</strong> (<code className="text-xs">{planToDelete.slug}</code>)?
+                  This action cannot be undone. Plans with active subscribers cannot be deleted.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="secondary" size="sm" onClick={() => setPlanToDelete(null)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDeletePlan}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete Plan'}
               </Button>
             </div>
           </div>

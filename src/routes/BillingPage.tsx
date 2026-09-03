@@ -94,6 +94,7 @@ export function BillingPage() {
     verifyPayment,
     updateBillingProfile,
     downgradeSubscription,
+    cancelScheduledDowngrade,
     refetch,
   } =
     useUserPlan();
@@ -294,6 +295,16 @@ export function BillingPage() {
     anchor.click();
     anchor.remove();
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  }
+
+  async function handleCancelScheduledDowngrade() {
+    try {
+      await cancelScheduledDowngrade();
+      toast.success('Scheduled downgrade cancelled. Auto-renewal for your current plan restored.');
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to cancel scheduled downgrade');
+    }
   }
 
   async function handleCheckout() {
@@ -910,6 +921,38 @@ export function BillingPage() {
             </div>
             <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
               Your previous subscription was cancelled. You can purchase and reactivate your Pro workspace with any plan below.
+            </p>
+          </div>
+        ) : null}
+
+        {subscription?.scheduledDowngradePlan ? (
+          <div className="rounded-2xl p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-xs">
+              <Clock3 className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Downgrade to {subscription.scheduledDowngradePlan.name} Scheduled</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
+              Downgrade takes effect on {effectivePlan.expiresAt ? new Date(effectivePlan.expiresAt).toLocaleDateString('en-GB') : 'period end'}. You maintain all {effectivePlan.planName} features until then.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-7 rounded-lg"
+              onClick={handleCancelScheduledDowngrade}
+            >
+              Cancel Scheduled Downgrade
+            </Button>
+          </div>
+        ) : null}
+
+        {subscription?.cancelAtPeriodEnd && !subscription?.scheduledDowngradePlan ? (
+          <div className="rounded-2xl p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-xs">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Subscription Ending at Period End</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-200/90">
+              Your subscription will not renew after {effectivePlan.expiresAt ? new Date(effectivePlan.expiresAt).toLocaleDateString('en-GB') : 'your current billing cycle'}.
             </p>
           </div>
         ) : null}

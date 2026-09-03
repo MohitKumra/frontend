@@ -1,6 +1,5 @@
-// frontend/src/routes/admin/AdminCouponsPage.tsx
 import React, { useEffect, useState } from 'react';
-import { Tag, Plus, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
+import { Tag, Plus, CheckCircle, AlertCircle, Check, X, Trash2 } from 'lucide-react';
 import { adminApiClient } from '../../lib/adminApiClient';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -36,6 +35,8 @@ export function AdminCouponsPage() {
   const [expiresAt, setExpiresAt] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function fetchCoupons() {
     setLoading(true);
@@ -89,6 +90,21 @@ export function AdminCouponsPage() {
       fetchCoupons();
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.error?.message || 'Failed to update coupon status' });
+    }
+  }
+
+  async function handleDeleteCoupon() {
+    if (!couponToDelete) return;
+    setDeleting(true);
+    try {
+      await adminApiClient.delete(`/coupons/${couponToDelete.id}`);
+      setMessage({ type: 'success', text: `Coupon "${couponToDelete.code}" was deleted successfully.` });
+      setCouponToDelete(null);
+      fetchCoupons();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.response?.data?.error?.message || 'Failed to delete coupon' });
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -269,13 +285,24 @@ export function AdminCouponsPage() {
                       </Badge>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <Button
-                        variant={c.isActive ? 'outline' : 'secondary'}
-                        size="sm"
-                        onClick={() => toggleStatus(c)}
-                      >
-                        {c.isActive ? 'Disable' : 'Enable'}
-                      </Button>
+                      <div className="inline-flex items-center gap-2">
+                        <Button
+                          variant={c.isActive ? 'outline' : 'secondary'}
+                          size="sm"
+                          onClick={() => toggleStatus(c)}
+                        >
+                          {c.isActive ? 'Disable' : 'Enable'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-danger border-danger/30 hover:bg-danger/10 hover:border-danger/50"
+                          onClick={() => setCouponToDelete(c)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -284,6 +311,41 @@ export function AdminCouponsPage() {
           </table>
         </div>
       </Card>
+
+      {/* ─── Confirm Delete Coupon ─────────────────────────────── */}
+      {couponToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md bg-surface border border-border rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-danger/10 text-danger border border-danger/20">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-text-primary">
+                  Delete Coupon "{couponToDelete.code}"?
+                </h3>
+                <p className="text-sm text-text-muted mt-1">
+                  Are you sure you want to permanently delete coupon <strong className="text-text-primary">{couponToDelete.code}</strong>?
+                  This action cannot be undone. Coupons with prior redemptions cannot be deleted.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="secondary" size="sm" onClick={() => setCouponToDelete(null)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteCoupon}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete Coupon'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
