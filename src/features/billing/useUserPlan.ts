@@ -232,7 +232,8 @@ export function useUserPlan() {
 
   const verifyPaymentMutation = useMutation({
     mutationFn: async (payload: {
-      razorpayOrderId: string;
+      razorpayOrderId?: string;
+      razorpaySubscriptionId?: string;
       razorpayPaymentId: string;
       razorpaySignature: string;
       orderId?: string;

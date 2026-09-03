@@ -267,21 +267,26 @@ export function BillingPage() {
     }
   }
 
-  async function openInvoicePdf(pdfUrl: string) {
-    const previewWindow = window.open('', '_blank');
-    const response = await apiClient.get(pdfUrl, { responseType: 'blob' });
-    const blobUrl = URL.createObjectURL(response.data);
-    if (previewWindow) {
-      previewWindow.location.href = blobUrl;
-    } else {
-      window.open(blobUrl, '_blank');
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  async function openInvoicePdf(invoiceId: string) {
+    const token = useAuthStore.getState().accessToken;
+    const backendBase = import.meta.env.VITE_BACKEND_URL || '';
+    const directUrl = `${backendBase}/billing/invoices/${invoiceId}/pdf?token=${encodeURIComponent(token || '')}`;
+    window.open(directUrl, '_blank');
   }
 
-  async function downloadInvoicePdf(pdfUrl: string, invoiceNumber: string) {
-    const response = await apiClient.get(`${pdfUrl}?download=1`, { responseType: 'blob' });
-    const blobUrl = URL.createObjectURL(response.data);
+  async function downloadInvoicePdf(invoiceId: string, invoiceNumber: string) {
+    const response = await apiClient.get(`/billing/invoices/${invoiceId}/pdf?download=1`, { responseType: 'blob' });
+    if (response.data.type && response.data.type.includes('json')) {
+      const text = await response.data.text();
+      let msg = 'Failed to download invoice PDF';
+      try {
+        const parsed = JSON.parse(text);
+        msg = parsed.error?.message || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = blobUrl;
     anchor.download = `invoice-${invoiceNumber}.pdf`;
@@ -309,7 +314,9 @@ export function BillingPage() {
         idempotencyKey,
       });
 
-      const { providerOrderId, keyId, amountCents, noPaymentRequired } = checkoutRes;
+      const { providerOrderId, providerSubscriptionId, isSubscription, keyId, amountCents, noPaymentRequired, offerId } = checkoutRes;
+      const isSub = Boolean(isSubscription || providerSubscriptionId);
+
       if (noPaymentRequired || Number(amountCents) === 0) {
         setVerificationModal({
           isOpen: true,
@@ -318,7 +325,8 @@ export function BillingPage() {
         });
         try {
           await verifyPayment({
-            razorpayOrderId: providerOrderId,
+            razorpayOrderId: isSub ? undefined : providerOrderId,
+            razorpaySubscriptionId: isSub ? (providerSubscriptionId || providerOrderId) : undefined,
             razorpayPaymentId: `pay_free_${Date.now()}`,
             razorpaySignature: 'sig_mock_verified',
           });
@@ -351,13 +359,18 @@ export function BillingPage() {
         });
       }
 
-      const options = {
+      const options: any = {
         key: keyId || 'rzp_test_dummy',
         amount: amountCents,
         currency: selectedPlan.currency || 'INR',
         name: company.name,
         description: `${selectedPlan.name} plan`,
-        order_id: providerOrderId,
+        ...(isSub
+          ? {
+              subscription_id: providerSubscriptionId || providerOrderId,
+              ...(offerId ? { offer_id: offerId } : {}),
+            }
+          : { order_id: providerOrderId }),
         handler: async (response: any) => {
           setVerificationModal({
             isOpen: true,
@@ -366,7 +379,10 @@ export function BillingPage() {
           });
           try {
             await verifyPayment({
-              razorpayOrderId: response.razorpay_order_id || providerOrderId,
+              razorpayOrderId: isSub ? undefined : (response.razorpay_order_id || providerOrderId),
+              razorpaySubscriptionId: isSub
+                ? (response.razorpay_subscription_id || providerSubscriptionId || providerOrderId)
+                : undefined,
               razorpayPaymentId: response.razorpay_payment_id || `pay_mock_${Date.now()}`,
               razorpaySignature: response.razorpay_signature || 'sig_mock_verified',
             });
@@ -394,13 +410,14 @@ export function BillingPage() {
         theme: { color: '#0f766e' },
       };
 
-      if ((window as any).Razorpay) {
+      if ((window as any).Razorpay && keyId && !keyId.startsWith('rzp_test_dummy')) {
         const rzp = new (window as any).Razorpay(options);
         rzp.on('payment.failed', (response: any) => {
           toast.error(response.error?.description || 'Payment failed');
+          setIsProcessing(false);
         });
         rzp.open();
-      } else {
+      } else if (keyId?.startsWith('rzp_test_dummy')) {
         setVerificationModal({
           isOpen: true,
           status: 'verifying',
@@ -408,7 +425,8 @@ export function BillingPage() {
         });
         try {
           await verifyPayment({
-            razorpayOrderId: providerOrderId,
+            razorpayOrderId: isSub ? undefined : providerOrderId,
+            razorpaySubscriptionId: isSub ? (providerSubscriptionId || providerOrderId) : undefined,
             razorpayPaymentId: `pay_mock_${Date.now()}`,
             razorpaySignature: 'sig_mock_verified',
           });
@@ -427,6 +445,15 @@ export function BillingPage() {
             errorMessage: err?.response?.data?.error?.message || 'Verification failed',
           });
         }
+      } else if ((window as any).Razorpay) {
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          toast.error(response.error?.description || 'Payment failed');
+          setIsProcessing(false);
+        });
+        rzp.open();
+      } else {
+        throw new Error('Razorpay Checkout failed to load. Please check your internet connection or disable adblockers.');
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.error?.message || err?.message || 'Failed to initialize checkout');
@@ -955,7 +982,7 @@ export function BillingPage() {
                     onClick={async (e) => {
                       e.stopPropagation();
                       try {
-                        await openInvoicePdf(invoice.pdfUrl);
+                        await openInvoicePdf(invoice.id);
                       } catch (err: any) {
                         toast.error(err?.response?.data?.error?.message || 'Failed to open invoice PDF');
                       }
@@ -970,7 +997,7 @@ export function BillingPage() {
                     onClick={async (e) => {
                       e.stopPropagation();
                       try {
-                        await downloadInvoicePdf(invoice.pdfUrl, invoice.invoiceNumber);
+                        await downloadInvoicePdf(invoice.id, invoice.invoiceNumber);
                       } catch (err: any) {
                         toast.error(err?.response?.data?.error?.message || 'Failed to download invoice PDF');
                       }

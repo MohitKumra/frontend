@@ -36,6 +36,7 @@ import { DowngradeConfirmModal } from '../billing/DowngradeConfirmModal';
 import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { PlanCard } from '../billing/PlanCard';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 export function BillingSettingsPanel() {
@@ -102,21 +103,26 @@ export function BillingSettingsPanel() {
     }
   }
 
-  async function openInvoicePdf(pdfUrl: string) {
-    const previewWindow = window.open('', '_blank');
-    const response = await apiClient.get(pdfUrl, { responseType: 'blob' });
-    const blobUrl = URL.createObjectURL(response.data);
-    if (previewWindow) {
-      previewWindow.location.href = blobUrl;
-    } else {
-      window.open(blobUrl, '_blank');
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  async function openInvoicePdf(invoiceId: string) {
+    const token = useAuthStore.getState().accessToken;
+    const backendBase = import.meta.env.VITE_BACKEND_URL || '';
+    const directUrl = `${backendBase}/billing/invoices/${invoiceId}/pdf?token=${encodeURIComponent(token || '')}`;
+    window.open(directUrl, '_blank');
   }
 
-  async function downloadInvoicePdf(pdfUrl: string, invoiceNumber: string) {
-    const response = await apiClient.get(`${pdfUrl}?download=1`, { responseType: 'blob' });
-    const blobUrl = URL.createObjectURL(response.data);
+  async function downloadInvoicePdf(invoiceId: string, invoiceNumber: string) {
+    const response = await apiClient.get(`/billing/invoices/${invoiceId}/pdf?download=1`, { responseType: 'blob' });
+    if (response.data.type && response.data.type.includes('json')) {
+      const text = await response.data.text();
+      let msg = 'Failed to download invoice PDF';
+      try {
+        const parsed = JSON.parse(text);
+        msg = parsed.error?.message || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = blobUrl;
     anchor.download = `invoice-${invoiceNumber}.pdf`;
@@ -644,7 +650,7 @@ export function BillingSettingsPanel() {
                       size="md"
                       onClick={async () => {
                         try {
-                          await openInvoicePdf(viewUrl);
+                          await openInvoicePdf(invoice.id);
                         } catch (err: any) {
                           toast.error(err?.response?.data?.error?.message || 'Failed to open invoice PDF');
                         }
@@ -657,7 +663,7 @@ export function BillingSettingsPanel() {
                       size="md"
                       onClick={async () => {
                         try {
-                          await downloadInvoicePdf(viewUrl, invoice.invoiceNumber);
+                          await downloadInvoicePdf(invoice.id, invoice.invoiceNumber);
                         } catch (err: any) {
                           toast.error(err?.response?.data?.error?.message || 'Failed to download invoice PDF');
                         }
