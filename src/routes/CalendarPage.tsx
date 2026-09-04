@@ -1,3 +1,4 @@
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -485,21 +486,9 @@ export function CalendarPage() {
   );
 }
 
-/* ====== Calendar Hero ====== */
+/* ====== Calendar Hero — shared prop type ====== */
 
-function CalendarHero({
-  view,
-  setView,
-  onJumpToday,
-  onNewMenuOpen,
-  newMenuOpen,
-  setNewMenuOpen,
-  summary,
-  todaysTasks,
-  todaysDone,
-  weekRate,
-  navigate,
-}: {
+type CalendarHeroProps = {
   view: CalendarView;
   setView: (v: CalendarView) => void;
   onJumpToday: () => void;
@@ -511,7 +500,306 @@ function CalendarHero({
   todaysDone: number;
   weekRate: number;
   navigate: ReturnType<typeof useNavigate>;
-}) {
+};
+
+/* ── Mobile hero (< md) — illustrated calendar design ── */
+
+function CalendarHeroMobile({
+  view,
+  setView,
+  onJumpToday,
+  summary,
+  todaysTasks,
+  todaysDone,
+  weekRate,
+  onNewMenuOpen,
+  newMenuOpen,
+  setNewMenuOpen,
+  navigate,
+}: CalendarHeroProps) {
+  const todaysTotal = todaysTasks.length;
+  const today = new Date();
+  const monthYear = today.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
+  const dayOfMonth = today.getDate();
+
+  const viewTabs = [
+    { id: 'day' as CalendarView, label: 'Day' },
+    { id: 'week' as CalendarView, label: 'Week' },
+    { id: 'month' as CalendarView, label: 'Month' },
+  ];
+
+  const stats = [
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#22c55e" strokeWidth="2" />
+          <path d="M8 12l3 3 5-5" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      value: `${todaysDone}/${todaysTotal}`,
+      label: 'Done today',
+      bg: 'rgba(34,197,94,0.08)',
+      border: 'rgba(34,197,94,0.2)',
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <line x1="8" y1="6" x2="21" y2="6" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
+          <line x1="8" y1="12" x2="21" y2="12" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
+          <line x1="8" y1="18" x2="21" y2="18" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="3.5" cy="6" r="1.5" fill="#6366f1" />
+          <circle cx="3.5" cy="12" r="1.5" fill="#6366f1" />
+          <circle cx="3.5" cy="18" r="1.5" fill="#6366f1" />
+        </svg>
+      ),
+      value: todaysTotal,
+      label: 'Scheduled',
+      bg: 'rgba(99,102,241,0.08)',
+      border: 'rgba(99,102,241,0.2)',
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#3b82f6" strokeWidth="2" />
+          <circle cx="12" cy="12" r="3" fill="#3b82f6" />
+        </svg>
+      ),
+      value: summary.focus,
+      label: 'Focus session',
+      bg: 'rgba(59,130,246,0.08)',
+      border: 'rgba(59,130,246,0.2)',
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" fill="none" />
+        </svg>
+      ),
+      value: `${weekRate}%`,
+      label: 'This week',
+      bg: 'rgba(245,158,11,0.08)',
+      border: 'rgba(245,158,11,0.2)',
+    },
+  ];
+
+  return (
+    <div
+      className="rounded-2xl"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+    >
+      {/* ── Illustrated hero banner ── */}
+      <div
+        className="relative w-full rounded-t-2xl"
+        style={{ background: 'linear-gradient(135deg,#f8f6ff 0%,#eee9ff 100%)', minHeight: 180 }}
+      >
+        {/* Decorative glows */}
+        <div
+          className="absolute top-0 right-16 w-32 h-32 rounded-full pointer-events-none"
+          style={{ background: 'rgba(201,192,255,0.35)', filter: 'blur(28px)' }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute bottom-0 left-8 w-24 h-24 rounded-full pointer-events-none"
+          style={{ background: 'rgba(217,243,236,0.45)', filter: 'blur(22px)' }}
+          aria-hidden="true"
+        />
+
+        {/* Leaves bottom-left */}
+        <svg className="absolute bottom-0 left-2 pointer-events-none" width="52" height="72" viewBox="0 0 80 100" fill="none" aria-hidden="true">
+          <path d="M20 80C4 59 8 34 30 21C36 43 34 65 20 80Z" fill="#A8DCCB" />
+          <path d="M29 83C32 54 50 35 72 34C68 58 52 78 29 83Z" fill="#7BC7B0" />
+          <path d="M18 78C28 63 41 50 55 42" stroke="#5BAE98" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+        {/* Content row: text + SVG illustration */}
+        <div className="relative z-10 flex items-start justify-between px-4 pt-5 pb-2">
+          {/* Left: text */}
+          <div className="flex-1 min-w-0 pr-2">
+            <div
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest mb-2"
+              style={{ background: 'rgba(99,102,241,0.12)', color: '#6353f4' }}
+            >
+              <CalendarDays size={9} /> TIME PLANNER
+            </div>
+            <h1 className="text-[18px] font-black leading-tight whitespace-nowrap mt-4" style={{ color: '#1e1a3f' }}>
+              Your day at a <span style={{ color: '#5b4cf5' }}>glance</span>
+            </h1>
+            <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'rgba(55,50,92,0.60)' }}>
+              Stay on track with your<br />tasks, events and focus time.
+            </p>
+          </div>
+
+          {/* Right: calendar + clock illustration */}
+          <div className="shrink-0 relative" style={{ width: 168, height: 160 }}>
+            <svg width="168" height="160" viewBox="20 20 380 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" overflow="visible">
+              <defs>
+                <linearGradient id="ch-paper" x1="100" y1="70" x2="270" y2="250" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FFFFFF" />
+                  <stop offset="1" stopColor="#F5F3FF" />
+                </linearGradient>
+                <linearGradient id="ch-purple" x1="120" y1="40" x2="260" y2="160" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#8D7BFF" />
+                  <stop offset="1" stopColor="#6353F4" />
+                </linearGradient>
+                <filter id="ch-ss" x="-30%" y="-30%" width="160%" height="170%">
+                  <feDropShadow dx="0" dy="10" stdDeviation="10" floodColor="#5043C7" floodOpacity=".14" />
+                </filter>
+                <filter id="ch-cs" x="-30%" y="-30%" width="160%" height="170%">
+                  <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#5043C7" floodOpacity=".13" />
+                </filter>
+                <clipPath id="ch-cc">
+                  <rect x="115" y="72" width="177" height="176" rx="15" />
+                </clipPath>
+              </defs>
+
+              {/* Calendar body */}
+              <g filter="url(#ch-ss)">
+                <rect x="108" y="57" width="191" height="193" rx="18" fill="url(#ch-paper)" />
+                <path d="M108 75C108 65 116 57 126 57H281C291 57 299 65 299 75V103H108V75Z" fill="url(#ch-purple)" />
+                {/* Rings */}
+                <g fill="none" stroke="#6857EA" strokeWidth="8" strokeLinecap="round">
+                  <path d="M139 42V72" /><path d="M180 42V72" /><path d="M221 42V72" /><path d="M262 42V72" />
+                </g>
+                <g fill="none" stroke="#A59BFF" strokeWidth="3.5" strokeLinecap="round">
+                  <path d="M139 43C132 33 139 26 147 32C153 36 151 45 145 49" />
+                  <path d="M180 43C173 33 180 26 188 32C194 36 192 45 186 49" />
+                  <path d="M221 43C214 33 221 26 229 32C235 36 233 45 227 49" />
+                  <path d="M262 43C255 33 262 26 270 32C276 36 274 45 268 49" />
+                </g>
+                {/* Month label */}
+                <text x="203" y="88" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="14" fontWeight="700" letterSpacing="1" fill="#FFFFFF">{monthYear}</text>
+                {/* Week labels */}
+                <g fontFamily="Inter,Arial,sans-serif" fontSize="8" fontWeight="700" fill="#9B94B9" textAnchor="middle">
+                  {['S','M','T','W','T','F','S'].map((l, i) => (
+                    <text key={i} x={129 + i * 27} y="121">{l}</text>
+                  ))}
+                </g>
+                {/* Calendar cells */}
+                <g clipPath="url(#ch-cc)">
+                  {[130, 158, 186, 214].map((row) =>
+                    [119, 146, 173, 200, 227, 254, 281].map((col) => (
+                      <rect key={`${row}-${col}`} x={col} y={row} width="20" height="20" rx="5" fill="#F0EEFF" />
+                    ))
+                  )}
+                  {/* Highlighted today */}
+                  <rect x="227" y="158" width="20" height="20" rx="5" fill="#7160F5" />
+                  <text x="237" y="172" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="9" fontWeight="800" fill="#FFFFFF">{dayOfMonth}</text>
+                  {/* Event dots */}
+                  <circle cx="156" cy="167" r="3" fill="#48CFA3" />
+                  <circle cx="183" cy="195" r="3" fill="#7160F5" />
+                  <circle cx="210" cy="195" r="3" fill="#7160F5" />
+                  <circle cx="264" cy="223" r="3" fill="#48A7FF" />
+                </g>
+              </g>
+
+              {/* Sticky note */}
+              <g filter="url(#ch-cs)">
+                <rect x="294" y="66" width="82" height="77" rx="9" fill="#FFF3D5" transform="rotate(-5 294 66)" />
+                {['Plan','Focus','Achieve'].map((t, i) => (
+                  <text key={t} x="336" y={91 + i * 17} textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="11" fontWeight="700" fill="#37325C" transform={`rotate(-5 336 ${91 + i * 17})`}>{t}</text>
+                ))}
+                <path d="M319 130L351 127" stroke="#7867F5" strokeWidth="2.5" strokeLinecap="round" />
+              </g>
+
+              {/* Clock */}
+              <g filter="url(#ch-cs)">
+                <circle cx="313" cy="218" r="46" fill="#FFFFFF" />
+                <circle cx="313" cy="218" r="38" fill="#F5F2FF" stroke="#DDD8FF" strokeWidth="2" />
+                <g stroke="#A39BC8" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M313 182V187" /><path d="M347 218H342" /><path d="M313 254V249" /><path d="M279 218H284" />
+                </g>
+                <path d="M313 218V197" stroke="#6252E9" strokeWidth="3.5" strokeLinecap="round" />
+                <path d="M313 218L329 226" stroke="#6252E9" strokeWidth="3.5" strokeLinecap="round" />
+                <circle cx="313" cy="218" r="4.5" fill="#6252E9" />
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stat chips row ── */}
+      <div className="grid grid-cols-4 gap-2 px-3 pt-3 pb-2">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="flex flex-col items-center gap-1 rounded-xl py-2 px-1"
+            style={{ background: s.bg, border: `1px solid ${s.border}` }}
+          >
+            {s.icon}
+            <span className="text-[12px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
+              {s.value}
+            </span>
+            <span className="text-[9px] font-medium text-center leading-tight" style={{ color: 'var(--color-text-muted)' }}>
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── View tabs + Today button ── */}
+      <div className="flex items-center gap-2 px-3 pb-3 pt-1">
+        {/* Segmented view tabs */}
+        <div
+          className="flex flex-1 items-center rounded-xl p-0.5"
+          style={{ background: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}
+        >
+          {viewTabs.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setView(id)}
+              className="flex-1 rounded-lg py-1.5 text-xs font-bold transition-all active:scale-95"
+              style={
+                view === id
+                  ? { background: 'linear-gradient(135deg,#6366f1,#818cf8)', color: '#fff', boxShadow: '0 2px 6px rgba(99,102,241,0.28)' }
+                  : { color: 'var(--color-text-muted)' }
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Today shortcut */}
+        <button
+          type="button"
+          onClick={onJumpToday}
+          className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold border transition-all active:scale-95"
+          style={{
+            background: 'var(--color-surface-raised)',
+            borderColor: 'var(--color-border)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          <CalendarDays size={12} style={{ color: '#6366f1' }} />
+          Today
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ====== Calendar Hero — entry point (conditionally renders desktop or mobile) ====== */
+
+function CalendarHero(props: CalendarHeroProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  if (isMobile) return <CalendarHeroMobile {...props} />;
+  return <CalendarHeroDesktop {...props} />;
+}
+
+/* ====== Calendar Hero Desktop (md+) ====== */
+
+function CalendarHeroDesktop({
+  view,
+  setView,
+  onJumpToday,
+  onNewMenuOpen,
+  newMenuOpen,
+  setNewMenuOpen,
+  summary,
+  todaysTasks,
+  todaysDone,
+  weekRate,
+  navigate,
+}: CalendarHeroProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0.5);
   const mouseY = useMotionValue(0.5);

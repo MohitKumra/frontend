@@ -35,6 +35,7 @@ import {
   Zap,
   Calendar,
   ListChecks,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 // ─── Types (mirrored from TasksPage so no circular import) ────────────────
@@ -316,25 +317,17 @@ export function MobileTasksHero({
       cardBg: 'var(--color-surface)',
       border: 'var(--color-border)',
       onClick: onNewTask,
-      isToggleActive: false,
     },
     {
       key: 'view',
-      label: isBoard ? 'Board' : 'Card',
+      label: isBoard ? 'Card' : 'Board',
       icon: isBoard
-        ? <Columns3 size={20} style={{ color: isBoard ? '#fff' : '#6366f1' }} />
-        : <CreditCard size={20} style={{ color: '#6366f1' }} />,
-      iconBg: isBoard
-        ? 'linear-gradient(135deg,#6366f1 0%,#818cf8 100%)'
-        : 'rgba(99,102,241,0.10)',
-      cardBg: isBoard
-        ? 'rgba(99,102,241,0.08)'
-        : 'var(--color-surface)',
-      border: isBoard
-        ? 'rgba(99,102,241,0.35)'
-        : 'var(--color-border)',
+        ? <CreditCard size={20} style={{ color: '#6366f1' }} />
+        : <Columns3    size={20} style={{ color: '#6366f1' }} />,
+      iconBg: 'rgba(99,102,241,0.10)',
+      cardBg: 'var(--color-surface)',
+      border: 'var(--color-border)',
       onClick: () => onViewChange(isBoard ? 'list' : 'board'),
-      isToggleActive: isBoard,
     },
     {
       key: 'import',
@@ -356,7 +349,6 @@ export function MobileTasksHero({
       cardBg: 'var(--color-surface)',
       border: 'var(--color-border)',
       onClick: onNotionImport,
-      isToggleActive: false,
     },
     {
       key: 'ai',
@@ -366,7 +358,6 @@ export function MobileTasksHero({
       cardBg: 'rgba(251,191,36,0.05)',
       border: 'rgba(251,191,36,0.28)',
       onClick: onAIPlan,
-      isToggleActive: false,
     },
   ];
 
@@ -478,18 +469,26 @@ export function MobileTasksHero({
               border: `1px solid ${a.border}`,
             }}
           >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: a.iconBg }}
-            >
-              {a.icon}
+            {/* Icon wrapper — view-toggle gets a swap badge in the corner */}
+            <div className="relative">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: a.iconBg }}
+              >
+                {a.icon}
+              </div>
+              {a.key === 'view' && (
+                <div
+                  className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center shadow-sm"
+                  style={{ background: '#6366f1' }}
+                >
+                  <ArrowLeftRight size={8} className="text-white" />
+                </div>
+              )}
             </div>
             <span
               className="text-[10.5px] font-semibold text-center leading-tight"
-              style={{
-                color: a.isToggleActive ? '#6366f1' : 'var(--color-text-primary)',
-                fontWeight: a.isToggleActive ? 700 : 600,
-              }}
+              style={{ color: 'var(--color-text-primary)' }}
             >
               {a.label}
             </span>

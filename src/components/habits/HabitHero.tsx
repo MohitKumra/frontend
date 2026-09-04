@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Flame, Zap, Trophy, TrendingUp, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { usePageVariants } from '../../lib/motionVariants';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface HabitHeroProps {
   userName: string;
@@ -82,7 +83,268 @@ function FloatingStatCard({ icon, iconColor, label, value, suffix, trend, delay 
   );
 }
 
-export function HabitHero({
+// ─── Mobile hero (< md) ───────────────────────────────────────────────────────
+
+function HabitHeroMobile({
+  greeting,
+  streakDays,
+  xpEarned,
+  successRate,
+  activeStreaks,
+  onCreateHabit,
+}: HabitHeroProps) {
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'myhabits' | 'insights'>('overview');
+
+  const stats = [
+    {
+      icon: <Flame size={20} style={{ color: '#ff6b35' }} />,
+      value: streakDays,
+      label: 'Day Streak',
+      sub: streakDays === 0 ? 'Start today!' : 'Keep it up!',
+      bg: 'rgba(255,107,53,0.08)',
+      border: 'rgba(255,107,53,0.18)',
+    },
+    {
+      icon: <Zap size={20} style={{ color: '#f5b72d' }} />,
+      value: xpEarned,
+      label: 'Total XP',
+      sub: "You're growing!",
+      bg: 'rgba(245,183,45,0.08)',
+      border: 'rgba(245,183,45,0.18)',
+    },
+    {
+      icon: (
+        // target / consistency icon
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#43c79a" strokeWidth="2" />
+          <circle cx="12" cy="12" r="5" stroke="#43c79a" strokeWidth="2" />
+          <circle cx="12" cy="12" r="2" fill="#43c79a" />
+        </svg>
+      ),
+      value: `${successRate}%`,
+      label: 'Consistency',
+      sub: 'Keep it steady!',
+      bg: 'rgba(67,199,154,0.08)',
+      border: 'rgba(67,199,154,0.18)',
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <rect x="3" y="3" width="8" height="8" rx="2" stroke="#7160f6" strokeWidth="2" />
+          <rect x="13" y="3" width="8" height="8" rx="2" stroke="#7160f6" strokeWidth="2" />
+          <rect x="3" y="13" width="8" height="8" rx="2" stroke="#7160f6" strokeWidth="2" />
+          <rect x="13" y="13" width="8" height="8" rx="2" stroke="#7160f6" strokeWidth="2" />
+        </svg>
+      ),
+      value: activeStreaks,
+      label: 'Active Habits',
+      sub: activeStreaks === 0 ? 'Add your first!' : 'Going strong',
+      bg: 'rgba(113,96,246,0.08)',
+      border: 'rgba(113,96,246,0.18)',
+    },
+  ];
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden mb-4"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+    >
+      {/* ── Illustrated banner ── */}
+      <div
+        className="relative w-full"
+        style={{
+          background: 'linear-gradient(135deg,#f5f3ff 0%,#ede9ff 60%,#e8f5f0 100%)',
+          minHeight: 196,
+        }}
+      >
+        {/* Soft radial glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 60% 80% at 70% 50%, rgba(231,227,255,0.7) 0%, transparent 70%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Content row */}
+        <div className="relative z-10 flex items-start justify-between px-4 pt-5 pb-2 gap-2">
+          {/* Left: text + CTA */}
+          <div className="flex-1 min-w-0 flex flex-col gap-2 pt-1">
+            <div
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest w-fit"
+              style={{ background: 'rgba(113,96,246,0.12)', color: '#6554f4' }}
+            >
+              {timeGreeting}
+            </div>
+
+            <h1 className="text-[20px] font-black leading-tight" style={{ color: '#1a1640' }}>
+              Small habits.<br />
+              <span style={{ color: '#6355f5' }}>A better you.</span>
+            </h1>
+
+            <p className="text-[11px] leading-snug" style={{ color: 'rgba(40,36,80,0.55)' }}>
+              Consistency today creates<br />the life you want tomorrow.
+            </p>
+
+            <button
+              onClick={onCreateHabit}
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold text-white transition-all active:scale-95 w-fit mt-1"
+              style={{
+                background: 'linear-gradient(135deg,#7160f5,#8b7bff)',
+                boxShadow: '0 4px 12px rgba(113,96,245,0.30)',
+              }}
+            >
+              <Plus size={13} /> New Habit
+            </button>
+          </div>
+
+          {/* Right: illustration SVG — full viewBox, no clipping */}
+          <div className="shrink-0" style={{ width: 148, height: 190, marginTop: -4 }}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="248"
+              height="190"
+              viewBox="90 0 240 190"
+              fill="none"
+              aria-hidden="true"
+              overflow="visible"
+            >
+              <defs>
+                <radialGradient id="hh-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(150 94) rotate(90) scale(92)">
+                  <stop offset="0" stopColor="#E7E3FF"/>
+                  <stop offset="1" stopColor="#F5F3FF" stopOpacity="0"/>
+                </radialGradient>
+                <linearGradient id="hh-purple" x1="110" y1="40" x2="170" y2="150" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#8B7CFF"/><stop offset="1" stopColor="#6554F4"/>
+                </linearGradient>
+                <linearGradient id="hh-leaf" x1="145" y1="65" x2="190" y2="125" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#68D9AC"/><stop offset="1" stopColor="#2BB783"/>
+                </linearGradient>
+                <linearGradient id="hh-pot" x1="130" y1="120" x2="165" y2="165" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#FFFFFF"/><stop offset="1" stopColor="#F0EFF8"/>
+                </linearGradient>
+                <linearGradient id="hh-card" x1="0" y1="0" x2="1" y2="1">
+                  <stop stopColor="#FFFFFF"/><stop offset="1" stopColor="#F8F7FF"/>
+                </linearGradient>
+                <filter id="hh-shadow" x="-50%" y="-50%" width="200%" height="220%">
+                  <feDropShadow dx="0" dy="6" stdDeviation="7" floodColor="#5D50D5" floodOpacity=".16"/>
+                </filter>
+              </defs>
+
+              {/* Glow */}
+              <circle cx="145" cy="96" r="94" fill="url(#hh-glow)"/>
+
+              {/* Better Focus card */}
+              <g transform="rotate(-7 124 24)" filter="url(#hh-shadow)">
+                <rect x="112" y="11" width="63" height="32" rx="9" fill="url(#hh-card)"/>
+                <circle cx="126" cy="27" r="7" fill="#EFECFF"/>
+                <circle cx="126" cy="27" r="4" stroke="#7160F6" strokeWidth="1.5"/>
+                <circle cx="126" cy="27" r="1.5" fill="#7160F6"/>
+                <text x="138" y="25" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">Better</text>
+                <text x="138" y="34" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">Focus</text>
+              </g>
+
+              {/* Healthier You card */}
+              <g transform="rotate(6 187 28)" filter="url(#hh-shadow)">
+                <rect x="166" y="12" width="62" height="34" rx="9" fill="url(#hh-card)"/>
+                <circle cx="179" cy="29" r="7" fill="#FFF0F3"/>
+                <path d="M179 34 C175 31 175 28 175 27 C175 24.5 178 24 179 26 C180 24 183 24.5 183 27 C183 29 182 31 179 34Z" fill="#F26486"/>
+                <text x="191" y="27" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">Healthier</text>
+                <text x="191" y="36" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">You</text>
+              </g>
+
+              {/* More Energy card */}
+              <g transform="rotate(-5 82 73)" filter="url(#hh-shadow)">
+                <rect x="51" y="58" width="64" height="34" rx="9" fill="url(#hh-card)"/>
+                <circle cx="65" cy="75" r="7" fill="#FFF4D9"/>
+                <path d="M67 68L62 76H66L64 82L70 73H66L67 68Z" fill="#F5B72D"/>
+                <text x="77" y="73" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">More</text>
+                <text x="77" y="82" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">Energy</text>
+              </g>
+
+              {/* Happier Days card */}
+              <g transform="rotate(-3 188 79)" filter="url(#hh-shadow)">
+                <rect x="166" y="62" width="62" height="35" rx="9" fill="url(#hh-card)"/>
+                <circle cx="180" cy="79" r="7" fill="#E9FAF4"/>
+                <circle cx="180" cy="79" r="4.5" stroke="#43C79A" strokeWidth="1.4"/>
+                <circle cx="178.5" cy="77.5" r=".8" fill="#43C79A"/>
+                <circle cx="181.5" cy="77.5" r=".8" fill="#43C79A"/>
+                <path d="M178 81C179 82 181 82 182 81" stroke="#43C79A" strokeWidth="1" strokeLinecap="round"/>
+                <text x="192" y="77" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">Happier</text>
+                <text x="192" y="86" fontFamily="Inter,Arial,sans-serif" fontSize="6.5" fontWeight="700" fill="#273049">Days</text>
+              </g>
+
+              {/* Ground shadow */}
+              <ellipse cx="147" cy="172" rx="52" ry="8" fill="#D8D3F5" opacity=".7"/>
+
+              {/* Pot */}
+              <g filter="url(#hh-shadow)">
+                <path d="M116 121 H178 L172 159 C171 166 166 170 159 170 H136 C129 170 124 166 123 159 Z" fill="url(#hh-pot)"/>
+                <path d="M113 120 H181 C184 120 185 123 183 126 L180 130 H114 L111 126 C109 123 110 120 113 120Z" fill="#F0EEF8"/>
+                <ellipse cx="147" cy="121" rx="31" ry="7" fill="#805F45"/>
+              </g>
+
+              {/* Plant */}
+              <path d="M147 120 C147 103 149 87 159 71" stroke="#39B98A" strokeWidth="4" strokeLinecap="round"/>
+              <path d="M148 107 C139 99 134 91 133 82" stroke="#39B98A" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M148 107 C135 106 127 98 130 87 C141 88 148 96 148 107Z" fill="url(#hh-leaf)"/>
+              <path d="M154 96 C155 79 166 69 181 70 C179 85 169 95 154 96Z" fill="url(#hh-leaf)"/>
+              <path d="M157 80 C153 69 157 59 166 53 C172 64 168 75 157 80Z" fill="#75DAB5"/>
+              <path d="M147 115 C138 113 134 108 135 101 C143 102 147 107 147 115Z" fill="#79DDB8"/>
+
+              {/* Pot text */}
+              <text x="147" y="143" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="7" fontWeight="800" fill="#625D73">GOOD</text>
+              <text x="147" y="153" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="7" fontWeight="800" fill="#625D73">HABITS</text>
+              <text x="147" y="163" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="7" fontWeight="800" fill="#6C63A1">GROW</text>
+
+              {/* Sparkles */}
+              <path d="M91 42V51 M86.5 46.5H95.5" stroke="#8374F8" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M207 108V116 M203 112H211" stroke="#A59AFF" strokeWidth="2" strokeLinecap="round"/>
+              <circle cx="72" cy="107" r="3" fill="#9A8EFF"/>
+              <circle cx="204" cy="55" r="3" fill="#B9B1FF"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stat chips row ── */}
+      <div className="grid grid-cols-4 gap-2 px-3 py-3">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="flex flex-col items-center gap-1 rounded-xl py-2 px-1"
+            style={{ background: s.bg, border: `1px solid ${s.border}` }}
+          >
+            {s.icon}
+            <span className="text-sm font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
+              {s.value}
+            </span>
+            <span className="text-[8.5px] font-semibold text-center leading-tight" style={{ color: 'var(--color-text-muted)' }}>
+              {s.label}
+            </span>
+            <span className="text-[8px] text-center leading-tight" style={{ color: 'var(--color-text-muted)' }}>
+              {s.sub}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Entry point — conditionally renders mobile or desktop ────────────────────
+
+export function HabitHero(props: HabitHeroProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  if (isMobile) return <HabitHeroMobile {...props} />;
+  return <HabitHeroDesktop {...props} />;
+}
+
+// ─── Desktop hero (md+) — original, renamed ───────────────────────────────────
+
+function HabitHeroDesktop({
   userName,
   greeting,
   dailyProgress,
