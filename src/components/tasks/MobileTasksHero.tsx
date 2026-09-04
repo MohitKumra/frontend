@@ -85,31 +85,31 @@ function LandscapeSVG({ isDark }: { isDark: boolean }) {
 // ─── Circular progress ring (0 % shown when nothing done) ─────────────────
 
 function ProgressRing({ pct }: { pct: number }) {
-  const r = 22;
+  const r = 26;
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
   const color = pct >= 75 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#6366f1';
 
   return (
-    <div className="relative flex-shrink-0 w-14 h-14 flex items-center justify-center">
-      <svg width="56" height="56" viewBox="0 0 56 56">
-        <circle cx="28" cy="28" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4.5" />
+    <div className="relative flex-shrink-0 flex items-center justify-center" style={{ width: 68, height: 68 }}>
+      <svg width="68" height="68" viewBox="0 0 68 68">
+        <circle cx="34" cy="34" r={r} fill="none" stroke="#e5e7eb" strokeWidth="5" />
         <motion.circle
-          cx="28" cy="28" r={r}
+          cx="34" cy="34" r={r}
           fill="none"
           stroke={color}
-          strokeWidth="5"
+          strokeWidth="5.5"
           strokeLinecap="round"
           strokeDasharray={circ}
-          transform="rotate(-90 28 28)"
+          transform="rotate(-90 34 34)"
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-[11px] font-black" style={{ color: 'var(--color-text-primary)' }}>{pct}%</span>
-        <span className="text-[8px] font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Today</span>
+        <span className="text-[13px] font-black" style={{ color: 'var(--color-text-primary)' }}>{pct}%</span>
+        <span className="text-[9px] font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Today</span>
       </div>
     </div>
   );
@@ -254,7 +254,7 @@ export function MobileTasksHero({
     <div className="md:hidden flex flex-col" style={{ background: 'var(--color-bg)' }}>
 
       {/* ── Hero banner with SVG landscape ─────────────────────────────── */}
-      <div className="relative w-full overflow-hidden" style={{ height: 210 }}>
+      <div className="relative w-full overflow-hidden" style={{ height: 230 }}>
         <LandscapeSVG isDark={isDark} />
 
         {/* Thin fetch-progress bar */}
@@ -268,31 +268,34 @@ export function MobileTasksHero({
           />
         )}
 
-        {/* ── Text content overlaid on the sky ─── */}
-        <div className="relative z-10 px-4 pt-5">
-          <p
-            className="text-[10px] font-bold tracking-widest uppercase"
-            style={{ color: isDark ? 'rgba(200,190,255,0.70)' : 'rgba(40,40,90,0.55)' }}
-          >
-            {dayName}, {dateNum}
-          </p>
+        {/* ── Text content — fills full hero height, text at top, pill near bottom ─── */}
+        <div className="absolute inset-0 z-10 flex flex-col justify-between px-4 pt-10 pb-5">
+          {/* Top: date + headline + subtitle */}
+          <div>
+            <p
+              className="text-[10px] font-bold tracking-widest uppercase"
+              style={{ color: isDark ? 'rgba(247, 247, 247, 0.7)' : 'rgba(40,40,90,0.55)' }}
+            >
+              {dayName}, {dateNum}
+            </p>
 
-          <h1
-            className="mt-1 text-[22px] font-black leading-tight"
-            style={{ color: isDark ? '#e8e0ff' : '#1e1e40' }}
-          >
-            {headline}{' '}
-            <span style={{ color: '#818cf8' }}>count</span>
-          </h1>
+            <h1
+              className="mt-1.5 text-[24px] font-black tracking-wide"
+              style={{ color: isDark ? '#e8e0ff' : '#1e1e40' }}
+            >
+              {headline} <span style={{ color: '#818cf8' }}>count</span>
+            </h1>
 
-          <p className="text-[12px] mt-0.5" style={{ color: isDark ? 'rgba(200,190,255,0.55)' : 'rgba(40,40,90,0.50)' }}>
-            Small steps. Big progress.
-          </p>
+            <p className="text-[12px] mt-4" style={{ color: isDark ? 'rgba(247, 247, 247, 0.7)' : 'rgba(40,40,90,0.50)' }}>
+              Small steps. Big progress.
+            </p>
+          </div>
 
+          {/* Bottom: pill button anchored to the bottom of the hero */}
           {pendingCount > 0 && (
             <button
               onClick={onNewTask}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold shadow-sm transition-all active:scale-95 self-start"
               style={{
                 background: isDark ? 'rgba(30,25,60,0.82)' : 'rgba(255,255,255,0.82)',
                 color: isDark ? '#c4b8ff' : '#374151',
@@ -315,26 +318,43 @@ export function MobileTasksHero({
             border: '1px solid var(--color-border)',
           }}
         >
-          <div className="flex items-center gap-3 px-3 py-3">
-            {/* Progress ring */}
-            <ProgressRing pct={completionPct} />
+          {/* Two-row layout: ring + label on top, 4 stats below */}
+          <div className="flex flex-col gap-0">
+            {/* Row 1: Progress ring + label */}
+            <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+              <ProgressRing pct={completionPct} />
+              <div className="flex flex-col">
+                <span className="text-[13px] font-black leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                  {completionPct}% Complete
+                </span>
+                <span className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  Today's progress
+                </span>
+              </div>
+            </div>
 
-            {/* Divider */}
-            <div className="w-px self-stretch" style={{ background: 'var(--color-border)' }} />
+            {/* Thin divider */}
+            <div className="mx-4 h-px" style={{ background: 'var(--color-border)' }} />
 
-            {/* Stat columns */}
-            <div className="flex-1 grid grid-cols-4 gap-0">
-              {stats.map((s) => (
-                <div key={s.label} className="flex flex-col items-center gap-0.5 py-1">
+            {/* Row 2: 4 stat columns */}
+            <div className="grid grid-cols-4 px-2 py-3">
+              {stats.map((s, i) => (
+                <div
+                  key={s.label}
+                  className="flex flex-col items-center gap-1.5 py-1"
+                  style={{
+                    borderRight: i < stats.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  }}
+                >
                   {s.icon}
                   <span
-                    className="text-sm font-black leading-none mt-0.5"
+                    className="text-[17px] font-black leading-none"
                     style={{ color: 'var(--color-text-primary)' }}
                   >
                     {s.value}
                   </span>
                   <span
-                    className="text-[9px] font-medium text-center leading-tight"
+                    className="text-[9.5px] font-medium text-center leading-tight px-1"
                     style={{ color: 'var(--color-text-muted)' }}
                   >
                     {s.label}
