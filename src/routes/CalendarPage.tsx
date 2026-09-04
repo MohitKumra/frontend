@@ -586,7 +586,7 @@ function CalendarHeroMobile({
 
   return (
     <div
-      className="rounded-2xl"
+      className="rounded-2xl overflow-hidden"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
     >
       {/* ── Illustrated hero banner ── */}
@@ -594,7 +594,7 @@ function CalendarHeroMobile({
         className="relative w-full rounded-t-2xl"
         style={{
           background: isDark
-            ? 'linear-gradient(135deg,#0c0a28 0%,#181040 100%)'
+            ? 'linear-gradient(135deg,#202a47 0%,#1c2542 60%,#18213a 100%)'
             : 'linear-gradient(135deg,#f8f6ff 0%,#eee9ff 100%)',
           minHeight: 180,
         }}
@@ -602,12 +602,12 @@ function CalendarHeroMobile({
         {/* Decorative glows */}
         <div
           className="absolute top-0 right-16 w-32 h-32 rounded-full pointer-events-none"
-          style={{ background: isDark ? 'rgba(113,96,246,0.22)' : 'rgba(201,192,255,0.35)', filter: 'blur(28px)' }}
+          style={{ background: isDark ? 'rgba(113,96,246,0.18)' : 'rgba(201,192,255,0.35)', filter: 'blur(28px)' }}
           aria-hidden="true"
         />
         <div
           className="absolute bottom-0 left-8 w-24 h-24 rounded-full pointer-events-none"
-          style={{ background: isDark ? 'rgba(40,180,130,0.12)' : 'rgba(217,243,236,0.45)', filter: 'blur(22px)' }}
+          style={{ background: isDark ? 'rgba(40,180,130,0.14)' : 'rgba(217,243,236,0.45)', filter: 'blur(22px)' }}
           aria-hidden="true"
         />
 
@@ -623,14 +623,14 @@ function CalendarHeroMobile({
           <div className="flex-1 min-w-0 pr-2">
             <div
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest mb-2"
-              style={{ background: isDark ? 'rgba(113,96,246,0.25)' : 'rgba(99,102,241,0.12)', color: isDark ? '#b8aaff' : '#6353f4' }}
+              style={{ background: isDark ? 'rgba(113,96,246,0.18)' : 'rgba(99,102,241,0.12)', color: isDark ? '#a78bfa' : '#6353f4' }}
             >
               <CalendarDays size={9} /> TIME PLANNER
             </div>
-            <h1 className="text-[18px] font-black leading-tight whitespace-nowrap mt-4" style={{ color: isDark ? '#e8e0ff' : '#1e1a3f' }}>
-              Your day at a <span style={{ color: isDark ? '#a899ff' : '#5b4cf5' }}>glance</span>
+            <h1 className="text-[18px] font-black leading-tight whitespace-nowrap mt-4" style={{ color: isDark ? '#f1f5fb' : '#1e1a3f' }}>
+              Your day at a <span style={{ color: isDark ? '#a78bfa' : '#5b4cf5' }}>glance</span>
             </h1>
-            <p className="text-[11px] mt-1.5 leading-snug" style={{ color: isDark ? 'rgba(200,190,255,0.55)' : 'rgba(55,50,92,0.60)' }}>
+            <p className="text-[11px] mt-1.5 leading-snug" style={{ color: isDark ? 'rgba(226,232,248,0.6)' : 'rgba(55,50,92,0.60)' }}>
               Stay on track with your<br />tasks, events and focus time.
             </p>
           </div>
