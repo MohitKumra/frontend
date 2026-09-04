@@ -1343,113 +1343,146 @@ function MobileHeroCard({
 
   return (
     <div
-      className="relative rounded-[26px] border p-5 overflow-hidden transition-all shadow-sm"
+      className="relative rounded-[26px] border overflow-hidden shadow-sm"
       style={{
-        background: 'var(--color-surface)',
         borderColor: 'var(--color-border)',
+        minHeight: 196,
       }}
     >
-      {/* Top row */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-accent">
-          <Sparkles className="w-3.5 h-3.5 text-accent" />
-          <span>Command Center</span>
-        </div>
-        <div className="flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-surface-raised text-xs font-bold text-text-primary">
-          <span>This Week</span>
-          <ChevronRight className="w-3.5 h-3.5 rotate-90 text-text-muted" />
-        </div>
-      </div>
+      {/* Background image — fills the card */}
+      <img
+        src="/dashboard-hero.png"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+        style={{ zIndex: 0 }}
+      />
 
-      {/* Titles */}
-      <div className="mt-2.5">
-        <h2 className="text-xl font-extrabold text-text-primary tracking-tight">Productivity snapshot</h2>
-        <p className="text-xs text-text-muted mt-0.5">Track. Focus. Achieve.</p>
-      </div>
+      {/* Soft dark scrim so text reads clearly over the image */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 1,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(245,242,255,0.70) 50%, rgba(235,230,255,0.40) 100%)',
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Main 2-Column Content */}
-      <div className="mt-4 grid grid-cols-[1fr_1.1fr] gap-3 items-center">
-        {/* Left: Gauge + Score text */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="relative w-18 h-18 shrink-0 flex items-center justify-center">
-            <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
-              <defs>
-                <linearGradient id="scoreGaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#6C63FF" />
-                  <stop offset="100%" stopColor="#A78BFA" />
-                </linearGradient>
-              </defs>
-              <circle cx="36" cy="36" r="30" fill="none" stroke="currentColor" strokeWidth="6.5" className="text-slate-100 dark:text-slate-800" />
-              <circle
-                cx="36"
-                cy="36"
-                r="30"
-                fill="none"
-                stroke="url(#scoreGaugeGrad)"
-                strokeWidth="6.5"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 30}`}
-                strokeDashoffset={`${2 * Math.PI * 30 * (1 - Math.min(100, Math.max(5, productivityScore)) / 100)}`}
-                style={{ transition: 'stroke-dashoffset 1s ease-out' }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-lg font-black text-text-primary leading-none">{productivityScore}</span>
-              <span className="text-[9px] font-bold text-text-muted uppercase leading-tight mt-0.5">score</span>
+      {/* Content — sits above the image + scrim */}
+      <div className="relative p-5" style={{ zIndex: 2 }}>
+        {/* Top row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--color-accent)' }}>
+            <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
+            <span>Command Center</span>
+          </div>
+          <div
+            className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+            style={{ border: '1px solid var(--color-border)', background: 'rgba(255,255,255,0.75)', color: 'var(--color-text-primary)' }}
+          >
+            <span>This Week</span>
+            <ChevronRight className="w-3.5 h-3.5 rotate-90" style={{ color: 'var(--color-text-muted)' }} />
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="mt-2.5">
+          <h2 className="text-xl font-extrabold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+            Productivity snapshot
+          </h2>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            Track. Focus. Achieve.
+          </p>
+        </div>
+
+        {/* Main 2-column: score ring + sparkline */}
+        <div className="mt-4 grid grid-cols-[1fr_1.1fr] gap-3 items-center">
+          {/* Left: ring + text */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative w-18 h-18 shrink-0 flex items-center justify-center" style={{ width: 72, height: 72 }}>
+              <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
+                <defs>
+                  <linearGradient id="mobScoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#6C63FF" />
+                    <stop offset="100%" stopColor="#A78BFA" />
+                  </linearGradient>
+                </defs>
+                <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(99,102,241,0.15)" strokeWidth="6.5" />
+                <circle
+                  cx="36" cy="36" r="30"
+                  fill="none"
+                  stroke="url(#mobScoreGrad)"
+                  strokeWidth="6.5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 30}`}
+                  strokeDashoffset={`${2 * Math.PI * 30 * (1 - Math.min(100, Math.max(5, productivityScore)) / 100)}`}
+                  style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-lg font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
+                  {productivityScore}
+                </span>
+                <span className="text-[9px] font-bold uppercase leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  score
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-black" style={{ color: 'var(--color-accent)' }}>
+                {scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`}
+                <span className="text-[10px] font-normal ml-1" style={{ color: 'var(--color-text-muted)' }}>this week</span>
+              </span>
+              <p className="text-[10px] mt-0.5 leading-snug line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+                Small steps today, big wins…
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-black text-accent">
-              {scorePctChange >= 0 ? `+${scorePctChange}%` : `${scorePctChange}%`}
-              <span className="text-[10px] font-normal text-text-muted ml-1">this week</span>
-            </span>
-            <p className="text-[10px] text-text-muted mt-0.5 leading-snug line-clamp-2">
-              Small steps today, big wins tomorrow.
-            </p>
-          </div>
-        </div>
-
-        {/* Right: Sparkline Chart */}
-        <div className="flex flex-col justify-end">
-          <div className="h-16 w-full relative">
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 200 80" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="mobSparkGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6C63FF" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#6C63FF" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-              <path d={fillD} fill="url(#mobSparkGrad)" />
-              <path d={pathD} fill="none" stroke="#6C63FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              {points.map((pt, i) => (
-                <circle
-                  key={i}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={i === todayIdx ? 3.5 : 2}
-                  fill={i === todayIdx ? '#6C63FF' : '#8B83FF'}
-                  stroke="white"
-                  strokeWidth={i === todayIdx ? 1.5 : 1}
-                />
-              ))}
-            </svg>
-          </div>
-          {/* Day initials */}
-          <div className="flex items-center justify-between px-1 mt-1">
-            {dayNames.map((d, idx) => {
-              const isToday = idx === todayIdx;
-              return (
-                <span
-                  key={idx}
-                  className={`w-4.5 h-4.5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    isToday ? 'bg-accent text-white shadow-sm' : 'text-text-muted'
-                  }`}
-                >
-                  {d}
-                </span>
-              );
-            })}
+          {/* Right: sparkline + day dots */}
+          <div className="flex flex-col justify-end">
+            <div className="h-16 w-full relative">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 200 80" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="mobSparkGrad2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6C63FF" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="#6C63FF" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d={fillD} fill="url(#mobSparkGrad2)" />
+                <path d={pathD} fill="none" stroke="#6C63FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                {points.map((pt, i) => (
+                  <circle
+                    key={i}
+                    cx={pt.x} cy={pt.y}
+                    r={i === todayIdx ? 3.5 : 2}
+                    fill={i === todayIdx ? '#6C63FF' : '#8B83FF'}
+                    stroke="white"
+                    strokeWidth={i === todayIdx ? 1.5 : 1}
+                  />
+                ))}
+              </svg>
+            </div>
+            {/* Day initials */}
+            <div className="flex items-center justify-between px-1 mt-1">
+              {dayNames.map((d, idx) => {
+                const isToday = idx === todayIdx;
+                return (
+                  <span
+                    key={idx}
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={
+                      isToday
+                        ? { background: '#6C63FF', color: '#fff', boxShadow: '0 1px 4px rgba(108,99,255,0.35)' }
+                        : { color: 'var(--color-text-muted)' }
+                    }
+                  >
+                    {d}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
