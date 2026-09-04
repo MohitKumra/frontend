@@ -1298,7 +1298,10 @@ function DashboardHero({
   );
 }
 
+import { useDarkMode } from '../hooks/useDarkMode';
+
 // ─── Mobile Hero Card ────────────────────────────────────────────────────────
+
 function MobileHeroCard({
   productivityScore,
   scorePctChange,
@@ -1308,6 +1311,9 @@ function MobileHeroCard({
   scorePctChange: number;
   weeklyProgress: Array<{ week?: string; date?: string; tasksCompleted: number; habitsCompleted: number; focusMinutes: number; score?: number }>;
 }) {
+  const isDark = useDarkMode();
+  const heroBg = isDark ? '/dashboard-hero-dark.png' : '/dashboard-hero.png';
+
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const todayIdx = (new Date().getDay() + 6) % 7; // 0=Mon..6=Sun
 
@@ -1349,21 +1355,23 @@ function MobileHeroCard({
         minHeight: 196,
       }}
     >
-      {/* Background image — fills the card */}
+      {/* Background image — switches between light and dark variants */}
       <img
-        src="/dashboard-hero.png"
+        src={heroBg}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
         style={{ zIndex: 0 }}
       />
 
-      {/* Soft dark scrim so text reads clearly over the image */}
+      {/* Scrim — lighter in light mode, darker in dark mode so text stays readable */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           zIndex: 1,
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(245,242,255,0.70) 50%, rgba(235,230,255,0.40) 100%)',
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(0,8,30,0.80) 0%, rgba(18, 14, 50, 0.44) 50%, rgba(25, 18, 60, 0) 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(245,242,255,0.70) 50%, rgba(235,230,255,0.40) 100%)',
         }}
         aria-hidden="true"
       />

@@ -37,6 +37,7 @@ import {
   ListChecks,
   ArrowLeftRight,
 } from 'lucide-react';
+import { useDarkMode } from '../../hooks/useDarkMode';
 
 // ─── Types (mirrored from TasksPage so no circular import) ────────────────
 
@@ -70,127 +71,14 @@ export interface MobileTasksHeroProps {
 
 // ─── SVG landscape background ─────────────────────────────────────────────
 
-function LandscapeSVG() {
+function LandscapeSVG({ isDark }: { isDark: boolean }) {
   return (
-    // <svg
-    //   viewBox="0 0 600 260"
-    //   preserveAspectRatio="xMidYMid slice"
-    //   xmlns="http://www.w3.org/2000/svg"
-    //   aria-hidden="true"
-    //   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-    // >
-    //   <defs>
-    //     {/* Sky gradient: pale lavender top → blush pink left → warm white */}
-    //     <linearGradient id="mh-sky" x1="0%" y1="0%" x2="100%" y2="100%">
-    //       <stop offset="0%"   stopColor="#dde1f8" />
-    //       <stop offset="45%"  stopColor="#eee8f5" />
-    //       <stop offset="100%" stopColor="#fdf6f0" />
-    //     </linearGradient>
-
-    //     {/* Pink cloud bloom left */}
-    //     <radialGradient id="mh-cloud-l" cx="30%" cy="55%" r="50%">
-    //       <stop offset="0%"   stopColor="#f9c8c8" stopOpacity="0.55" />
-    //       <stop offset="100%" stopColor="#f9c8c8" stopOpacity="0"   />
-    //     </radialGradient>
-
-    //     {/* Sun glow */}
-    //     <radialGradient id="mh-sun-glow" cx="50%" cy="50%" r="50%">
-    //       <stop offset="0%"   stopColor="#fff3b0" stopOpacity="0.80" />
-    //       <stop offset="100%" stopColor="#fff3b0" stopOpacity="0"   />
-    //     </radialGradient>
-
-    //     {/* Sun body */}
-    //     <radialGradient id="mh-sun" cx="50%" cy="50%" r="50%">
-    //       <stop offset="0%"  stopColor="#ffe566" />
-    //       <stop offset="70%" stopColor="#ffd93d" />
-    //       <stop offset="100%" stopColor="#ffb700" stopOpacity="0.6" />
-    //     </radialGradient>
-
-    //     {/* White cloud */}
-    //     <radialGradient id="mh-cloud-w" cx="50%" cy="50%" r="50%">
-    //       <stop offset="0%"   stopColor="#f0ecff" stopOpacity="0.9" />
-    //       <stop offset="100%" stopColor="#f0ecff" stopOpacity="0"  />
-    //     </radialGradient>
-    //   </defs>
-
-    //   {/* Sky fill */}
-    //   <rect width="600" height="260" fill="url(#mh-sky)" />
-
-    //   {/* Pink cloud bloom — left */}
-    //   <ellipse cx="90"  cy="145" rx="130" ry="90" fill="url(#mh-cloud-l)" />
-    //   <ellipse cx="160" cy="120" rx="85"  ry="60" fill="#f9c8c8" fillOpacity="0.22" />
-
-    //   {/* White/lavender cloud puffs — centre-left */}
-    //   <ellipse cx="220" cy="100" rx="55" ry="36" fill="url(#mh-cloud-w)" />
-    //   <ellipse cx="260" cy="88"  rx="40" ry="28" fill="#f0ecff" fillOpacity="0.55" />
-    //   <ellipse cx="185" cy="108" rx="38" ry="26" fill="#f0ecff" fillOpacity="0.40" />
-
-    //   {/* Sun glow halo */}
-    //   <circle cx="460" cy="95" r="72" fill="url(#mh-sun-glow)" />
-    //   {/* Sun disc */}
-    //   <circle cx="460" cy="95" r="36" fill="url(#mh-sun)" />
-
-    //   {/* ── Mountains — back layer (lightest) ── */}
-    //   <path
-    //     d="M0 205 Q70 130 155 170 Q215 130 295 168 Q360 128 440 162 Q500 130 600 150 L600 260 L0 260Z"
-    //     fill="#c8ceee" fillOpacity="0.55"
-    //   />
-
-    //   {/* ── Mountains — mid layer ── */}
-    //   <path
-    //     d="M0 235 Q55 178 130 210 Q190 172 265 205 Q325 168 400 200 Q460 172 540 196 Q570 188 600 195 L600 260 L0 260Z"
-    //     fill="#a8b0e0" fillOpacity="0.72"
-    //   />
-
-    //   {/* ── Mountains — front left peak ── */}
-    //   <path
-    //     d="M-10 260 Q18 222 60 238 Q88 210 120 228 Q148 210 175 230 Q198 215 220 232 L240 260Z"
-    //     fill="#8890cc"
-    //   />
-
-    //   {/* ── Mountains — front right peak ── */}
-    //   <path
-    //     d="M340 260 Q360 215 395 232 Q428 200 465 225 Q495 204 530 222 Q558 208 590 220 L600 218 L600 260Z"
-    //     fill="#8890cc"
-    //   />
-
-    //   {/* ── Rolling green hill ── */}
-    //   <path
-    //     d="M0 252 Q80 228 180 242 Q280 226 380 240 Q460 228 550 238 Q575 234 600 240 L600 260 L0 260Z"
-    //     fill="#7aad6e"
-    //   />
-    //   <path
-    //     d="M0 258 Q150 248 300 255 Q450 247 600 256 L600 260 L0 260Z"
-    //     fill="#6a9d5e"
-    //   />
-
-    //   {/* ── Pine trees ── */}
-    //   {([340, 356, 371, 385] as const).map((x, i) => (
-    //     <g key={i} transform={`translate(${x}, ${230 - i * 3})`}>
-    //       {/* trunk */}
-    //       <rect x="-1.5" y="0" width="3" height="7" fill="#1a4a30" fillOpacity="0.65" />
-    //       {/* lower tier */}
-    //       <polygon points="0,-22 9,2 -9,2"  fill="#2d6a4f" fillOpacity="0.88" />
-    //       {/* upper tier */}
-    //       <polygon points="0,-32 6,-12 -6,-12" fill="#2d6a4f" />
-    //     </g>
-    //   ))}
-
-    //   {/* ── Plant / sapling — bottom-right ── */}
-    //   <g transform="translate(558, 212)">
-    //     {/* stem */}
-    //     <path d="M6 48 Q6 30 6 8" stroke="#2d6a4f" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-    //     {/* left leaves */}
-    //     <path d="M6 36 Q-10 24 -12 6  Q3 20 6 32"  fill="#3a7d5e" fillOpacity="0.9" />
-    //     <path d="M6 22 Q-4  12 -6 -2  Q4  10 6 18"  fill="#2d6a4f" />
-    //     {/* right leaves */}
-    //     <path d="M6 36 Q22 22 24 4   Q9 18 6 32"   fill="#3a7d5e" fillOpacity="0.85" />
-    //     <path d="M6 22 Q18  10 20 -4  Q8  8 6 18"   fill="#2d6a4f" />
-    //     {/* top bud */}
-    //     <path d="M6 8  Q2 -4 6 -10 Q10 -4 6 8"     fill="#2d6a4f" />
-    //   </g>
-    // </svg>
-    <img className='absolute -top-8' src="/task-hero.png" alt="task hero" />
+    <img
+      className="absolute -top-8 w-full h-auto object-cover pointer-events-none select-none"
+      src={isDark ? '/task-hero-dark.png' : '/task-hero.png'}
+      alt=""
+      aria-hidden="true"
+    />
   );
 }
 
@@ -256,6 +144,7 @@ export function MobileTasksHero({
   const dayName  = today.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
   const dateNum  = today.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   const pendingCount = counts.pending + counts.today;
+  const isDark = useDarkMode();
 
   const initial = (user?.name?.[0] ?? user?.email?.[0] ?? 'U').toUpperCase();
 
@@ -366,7 +255,7 @@ export function MobileTasksHero({
 
       {/* ── Hero banner with SVG landscape ─────────────────────────────── */}
       <div className="relative w-full overflow-hidden" style={{ height: 210 }}>
-        <LandscapeSVG />
+        <LandscapeSVG isDark={isDark} />
 
         {/* Thin fetch-progress bar */}
         {isFetching && (
@@ -383,20 +272,20 @@ export function MobileTasksHero({
         <div className="relative z-10 px-4 pt-5">
           <p
             className="text-[10px] font-bold tracking-widest uppercase"
-            style={{ color: 'rgba(40,40,90,0.55)' }}
+            style={{ color: isDark ? 'rgba(200,190,255,0.70)' : 'rgba(40,40,90,0.55)' }}
           >
             {dayName}, {dateNum}
           </p>
 
           <h1
             className="mt-1 text-[22px] font-black leading-tight"
-            style={{ color: '#1e1e40' }}
+            style={{ color: isDark ? '#e8e0ff' : '#1e1e40' }}
           >
             {headline}{' '}
-            <span style={{ color: '#6366f1' }}>count</span>
+            <span style={{ color: '#818cf8' }}>count</span>
           </h1>
 
-          <p className="text-[12px] mt-0.5" style={{ color: 'rgba(40,40,90,0.50)' }}>
+          <p className="text-[12px] mt-0.5" style={{ color: isDark ? 'rgba(200,190,255,0.55)' : 'rgba(40,40,90,0.50)' }}>
             Small steps. Big progress.
           </p>
 
@@ -405,9 +294,9 @@ export function MobileTasksHero({
               onClick={onNewTask}
               className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold shadow-sm transition-all active:scale-95"
               style={{
-                background: 'rgba(255,255,255,0.82)',
-                color: '#374151',
-                border: '1px solid rgba(0,0,0,0.08)',
+                background: isDark ? 'rgba(30,25,60,0.82)' : 'rgba(255,255,255,0.82)',
+                color: isDark ? '#c4b8ff' : '#374151',
+                border: isDark ? '1px solid rgba(130,110,255,0.30)' : '1px solid rgba(0,0,0,0.08)',
               }}
             >
               {pendingCount} task{pendingCount !== 1 ? 's' : ''} left

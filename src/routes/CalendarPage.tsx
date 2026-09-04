@@ -1,4 +1,5 @@
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useDarkMode } from '../hooks/useDarkMode';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -521,6 +522,7 @@ function CalendarHeroMobile({
   const today = new Date();
   const monthYear = today.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
   const dayOfMonth = today.getDate();
+  const isDark = useDarkMode();
 
   const viewTabs = [
     { id: 'day' as CalendarView, label: 'Day' },
@@ -538,8 +540,8 @@ function CalendarHeroMobile({
       ),
       value: `${todaysDone}/${todaysTotal}`,
       label: 'Done today',
-      bg: 'rgba(34,197,94,0.08)',
-      border: 'rgba(34,197,94,0.2)',
+      bg: isDark ? 'rgba(34,197,94,0.14)' : 'rgba(34,197,94,0.08)',
+      border: isDark ? 'rgba(34,197,94,0.30)' : 'rgba(34,197,94,0.2)',
     },
     {
       icon: (
@@ -554,8 +556,8 @@ function CalendarHeroMobile({
       ),
       value: todaysTotal,
       label: 'Scheduled',
-      bg: 'rgba(99,102,241,0.08)',
-      border: 'rgba(99,102,241,0.2)',
+      bg: isDark ? 'rgba(99,102,241,0.14)' : 'rgba(99,102,241,0.08)',
+      border: isDark ? 'rgba(99,102,241,0.30)' : 'rgba(99,102,241,0.2)',
     },
     {
       icon: (
@@ -566,8 +568,8 @@ function CalendarHeroMobile({
       ),
       value: summary.focus,
       label: 'Focus session',
-      bg: 'rgba(59,130,246,0.08)',
-      border: 'rgba(59,130,246,0.2)',
+      bg: isDark ? 'rgba(59,130,246,0.14)' : 'rgba(59,130,246,0.08)',
+      border: isDark ? 'rgba(59,130,246,0.30)' : 'rgba(59,130,246,0.2)',
     },
     {
       icon: (
@@ -577,8 +579,8 @@ function CalendarHeroMobile({
       ),
       value: `${weekRate}%`,
       label: 'This week',
-      bg: 'rgba(245,158,11,0.08)',
-      border: 'rgba(245,158,11,0.2)',
+      bg: isDark ? 'rgba(245,158,11,0.14)' : 'rgba(245,158,11,0.08)',
+      border: isDark ? 'rgba(245,158,11,0.30)' : 'rgba(245,158,11,0.2)',
     },
   ];
 
@@ -590,17 +592,22 @@ function CalendarHeroMobile({
       {/* ── Illustrated hero banner ── */}
       <div
         className="relative w-full rounded-t-2xl"
-        style={{ background: 'linear-gradient(135deg,#f8f6ff 0%,#eee9ff 100%)', minHeight: 180 }}
+        style={{
+          background: isDark
+            ? 'linear-gradient(135deg,#0c0a28 0%,#181040 100%)'
+            : 'linear-gradient(135deg,#f8f6ff 0%,#eee9ff 100%)',
+          minHeight: 180,
+        }}
       >
         {/* Decorative glows */}
         <div
           className="absolute top-0 right-16 w-32 h-32 rounded-full pointer-events-none"
-          style={{ background: 'rgba(201,192,255,0.35)', filter: 'blur(28px)' }}
+          style={{ background: isDark ? 'rgba(113,96,246,0.22)' : 'rgba(201,192,255,0.35)', filter: 'blur(28px)' }}
           aria-hidden="true"
         />
         <div
           className="absolute bottom-0 left-8 w-24 h-24 rounded-full pointer-events-none"
-          style={{ background: 'rgba(217,243,236,0.45)', filter: 'blur(22px)' }}
+          style={{ background: isDark ? 'rgba(40,180,130,0.12)' : 'rgba(217,243,236,0.45)', filter: 'blur(22px)' }}
           aria-hidden="true"
         />
 
@@ -616,14 +623,14 @@ function CalendarHeroMobile({
           <div className="flex-1 min-w-0 pr-2">
             <div
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest mb-2"
-              style={{ background: 'rgba(99,102,241,0.12)', color: '#6353f4' }}
+              style={{ background: isDark ? 'rgba(113,96,246,0.25)' : 'rgba(99,102,241,0.12)', color: isDark ? '#b8aaff' : '#6353f4' }}
             >
               <CalendarDays size={9} /> TIME PLANNER
             </div>
-            <h1 className="text-[18px] font-black leading-tight whitespace-nowrap mt-4" style={{ color: '#1e1a3f' }}>
-              Your day at a <span style={{ color: '#5b4cf5' }}>glance</span>
+            <h1 className="text-[18px] font-black leading-tight whitespace-nowrap mt-4" style={{ color: isDark ? '#e8e0ff' : '#1e1a3f' }}>
+              Your day at a <span style={{ color: isDark ? '#a899ff' : '#5b4cf5' }}>glance</span>
             </h1>
-            <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'rgba(55,50,92,0.60)' }}>
+            <p className="text-[11px] mt-1.5 leading-snug" style={{ color: isDark ? 'rgba(200,190,255,0.55)' : 'rgba(55,50,92,0.60)' }}>
               Stay on track with your<br />tasks, events and focus time.
             </p>
           </div>
@@ -669,7 +676,7 @@ function CalendarHeroMobile({
                 <text x="203" y="88" textAnchor="middle" fontFamily="Inter,Arial,sans-serif" fontSize="14" fontWeight="700" letterSpacing="1" fill="#FFFFFF">{monthYear}</text>
                 {/* Week labels */}
                 <g fontFamily="Inter,Arial,sans-serif" fontSize="8" fontWeight="700" fill="#9B94B9" textAnchor="middle">
-                  {['S','M','T','W','T','F','S'].map((l, i) => (
+                  {['M','T','W','T','F','S','S'].map((l, i) => (
                     <text key={i} x={129 + i * 27} y="121">{l}</text>
                   ))}
                 </g>
@@ -717,7 +724,7 @@ function CalendarHeroMobile({
       </div>
 
       {/* ── Stat chips row ── */}
-      <div className="grid grid-cols-4 gap-2 px-3 pt-3 pb-2">
+      <div className="grid grid-cols-4 gap-2 px-3 pt-3 pb-2" style={{ background: 'var(--color-surface)' }}>
         {stats.map((s) => (
           <div
             key={s.label}
