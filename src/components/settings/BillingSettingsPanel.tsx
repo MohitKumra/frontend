@@ -610,7 +610,12 @@ export function BillingSettingsPanel() {
             <CardTitle>Invoices & PDF Receipts</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
+          <div
+            className={`space-y-3 ${
+              invoices.length > 5 ? 'max-h-[520px] overflow-y-auto pr-1 scroll-smooth' : ''
+            }`}
+          >
           {invoices.length === 0 ? (
             <div className="text-sm text-text-muted py-6 text-center">
               No invoices found yet. Paid receipts will appear here after checkout or renewal.
@@ -681,6 +686,7 @@ export function BillingSettingsPanel() {
               );
             })
           )}
+          </div>
         </CardContent>
       </Card>
 
@@ -693,9 +699,12 @@ export function BillingSettingsPanel() {
           </div>
         </CardHeader>
         <div className="overflow-x-auto">
+          <div
+            className={transactions.length > 5 ? 'max-h-[300px] overflow-y-auto pr-1 scroll-smooth' : ''}
+          >
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-surface-raised/60 text-text-secondary uppercase font-bold text-[11px] tracking-wider">
+            <thead className={transactions.length > 5 ? 'sticky top-0 z-10' : ''}>
+              <tr className="border-b border-border bg-surface-raised text-text-secondary uppercase font-bold text-[11px] tracking-wider">
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Plan / Description</th>
                 <th className="px-5 py-3">Amount</th>
@@ -739,6 +748,7 @@ export function BillingSettingsPanel() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </Card>
 

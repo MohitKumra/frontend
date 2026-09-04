@@ -45,6 +45,7 @@ import { TaskBoardView } from '../components/tasks/TaskBoardView';
 import { TaskCard } from '../components/tasks/TaskCard';
 import { PageControls } from '../components/tasks/PageControls';
 import { TasksEmptyState } from '../components/tasks/TasksEmptyState';
+import { MobileTasksHero } from '../components/tasks/MobileTasksHero';
 import { ProductivityEngine } from '../components/habits/ProductivityEngine';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
@@ -1547,43 +1548,65 @@ export function TasksPage() {
       <div className="xl:flex xl:gap-6 xl:flex-1 xl:min-h-0">
         {/* ── Left column: header + task content ───────────────────────── */}
         <div className="xl:flex xl:flex-col xl:flex-1 xl:min-w-0">
-          {/* ── PREMIUM HEADER HERO ──────────────────────────────────── */}
-          <TasksHero
+
+          {/* ── MOBILE HERO (< md) ───────────────────────────────────── */}
+          <MobileTasksHero
             user={user}
-            greeting={greeting}
             counts={counts}
             filter={filter}
             setFilter={handleFilterChange}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            searchRef={searchRef}
-            view={view}
-            setView={setView}
-            setTaskViewPreference={setTaskViewPreference}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            sortMenuOpen={sortMenuOpen}
-            setSortMenuOpen={setSortMenuOpen}
-            sortLabel={sortLabel}
             notionConnected={!!notionStatus?.connected}
-            onNotionImport={() => setNotionImportOpen(true)}
+            view={view}
+            onViewChange={(v) => {
+              setView(v);
+              setTaskViewPreference(v);
+            }}
             onNewTask={() => setCreateModalOpen(true)}
-            capacityUsedPct={capacityUsedPct}
-            capacityLabel={capacityLabel}
-            tasksScheduledToday={tasksScheduledToday}
-            plannedMinutesToday={plannedMinutesToday}
-            completedCount={counts.completed}
-            overdueCount={counts.overdue}
-            analyticsWindow={analyticsWindow}
-            dashboardSummary={dashboardSummary}
-            datePreset={datePreset}
-            setDatePreset={setDatePreset}
-            customFrom={customFrom}
-            setCustomFrom={setCustomFrom}
-            customTo={customTo}
-            setCustomTo={setCustomTo}
+            onNotionImport={() => setNotionImportOpen(true)}
+            onAIPlan={() => setCreateModalOpen(true)}
+            completionPct={capacityUsedPct}
             isFetching={isFetching && !isFetchingNextPage}
           />
+
+          {/* ── DESKTOP HERO (md+) ───────────────────────────────────── */}
+          <div className="hidden md:block">
+            <TasksHero
+              user={user}
+              greeting={greeting}
+              counts={counts}
+              filter={filter}
+              setFilter={handleFilterChange}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              searchRef={searchRef}
+              view={view}
+              setView={setView}
+              setTaskViewPreference={setTaskViewPreference}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortMenuOpen={sortMenuOpen}
+              setSortMenuOpen={setSortMenuOpen}
+              sortLabel={sortLabel}
+              notionConnected={!!notionStatus?.connected}
+              onNotionImport={() => setNotionImportOpen(true)}
+              onNewTask={() => setCreateModalOpen(true)}
+              capacityUsedPct={capacityUsedPct}
+              capacityLabel={capacityLabel}
+              tasksScheduledToday={tasksScheduledToday}
+              plannedMinutesToday={plannedMinutesToday}
+              completedCount={counts.completed}
+              overdueCount={counts.overdue}
+              analyticsWindow={analyticsWindow}
+              dashboardSummary={dashboardSummary}
+              datePreset={datePreset}
+              setDatePreset={setDatePreset}
+              customFrom={customFrom}
+              setCustomFrom={setCustomFrom}
+              customTo={customTo}
+              setCustomTo={setCustomTo}
+              isFetching={isFetching && !isFetchingNextPage}
+            />
+          </div>
 
           {/* Overdue banner — right after filters */}
           {overdueTasks.length > 0 && filter !== 'overdue' && (
