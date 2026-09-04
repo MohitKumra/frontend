@@ -26,6 +26,7 @@ import {
   CheckSquare,
   Sliders,
   FileCheck2,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -1023,6 +1024,14 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Recalculate textarea height whenever input value changes (covers prefill & prompt clicks)
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [input]);
+
   const transcription = useSpeechTranscription({
     onTranscript: (text) => {
       setInput((cur) => appendTranscriptText(cur, text));
@@ -1403,16 +1412,27 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
           style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
         >
           <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile history toggle button */}
+            {/* Back button — always visible */}
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="p-1.5 -ml-1 rounded-lg transition-colors shrink-0 hover:bg-[var(--sidebar-item-hover)]"
+              style={{ color: 'var(--color-text-muted)' }}
+              aria-label="Go back"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            {/* Mobile history toggle button — uses MessageSquare so it's distinct from the composer sparkle */}
             {!isDesktop && (
               <button
                 type="button"
                 onClick={() => setMobileHistoryOpen(true)}
                 className="p-1.5 -ml-1 rounded-lg transition-colors shrink-0 hover:bg-[var(--sidebar-item-hover)]"
-                style={{ color: 'var(--color-text-muted)' }}
+                style={{ color: 'var(--color-accent)' }}
                 aria-label="Open chats history"
               >
-                <Sparkles size={18} style={{ color: 'var(--color-accent)' }} />
+                <MessageSquare size={18} />
               </button>
             )}
 
@@ -1491,7 +1511,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         )}
 
         {/* Messages Feed */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6">
           {displayMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4 max-w-lg mx-auto py-12">
               <div
@@ -1581,7 +1601,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
         )}
 
         {/* Composer Input Area */}
-        <div className="px-3 sm:px-6 py-2.5 sm:py-3 pb-3 sm:pb-3 shrink-0" style={{ background: 'var(--color-bg)' }}>
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 pb-3 sm:pb-3 shrink-0 border-t" style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)' }}>
           <div className="max-w-3xl mx-auto">
             {/* Attachments preview */}
             {composerAttachments.length > 0 && (
@@ -1627,11 +1647,11 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
 
             {/* Floating rounded composer container */}
             <div
-              className="rounded-full border shadow-sm px-2 py-1 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 transition-all focus-within:border-[var(--color-accent)]"
+              className="rounded-2xl border shadow-sm px-2 py-1 sm:px-2.5 sm:py-1.5 flex items-end gap-1 sm:gap-1.5 transition-all focus-within:border-[var(--color-accent)]"
               style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
             >
               {/* Left tool action buttons */}
-              <div className="flex items-center gap-0.5 pl-0.5">
+              <div className="flex items-center gap-0.5 pl-0.5 self-end pb-0.5">
                 <button
                   type="button"
                   onClick={() => setShowQuickPromptsPopover((v) => !v)}
@@ -1705,7 +1725,7 @@ export function CoachStudioPanelV3({ initialPrompt = '', autoSend = false }: Coa
               </div>
 
               {/* Send Button */}
-              <div className="pr-0.5">
+              <div className="pr-0.5 self-end pb-0.5">
                 <button
                   type="button"
                   onClick={() => void handleSend()}

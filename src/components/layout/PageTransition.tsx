@@ -31,13 +31,12 @@ export function PageTransition({ children, className }: PageTransitionProps) {
   return (
     <motion.div
       className={className}
-      // Initial render is instant (no animation on first paint)
-      // Only animate on enter (page navigation)
       initial={false}
       animate={{ opacity: 1 }}
       style={{
         position: 'relative',
         zIndex: 1,
+        height: className?.includes('h-full') ? '100%' : undefined,
       }}
     >
       {children}

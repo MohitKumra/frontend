@@ -17,7 +17,7 @@ export function AIControlsPage() {
   const coachLocked = isFeatureLocked('aiCoach');
 
   return (
-    <div className="h-[calc(100dvh-var(--topbar-height))] w-full overflow-hidden flex flex-col">
+    <div className="h-full w-full overflow-hidden flex flex-col">
       <LockedFeatureWrapper isLocked={coachLocked} featureName="AI Coach" minPlanName="Basic" className="h-full w-full">
         <CoachStudioPanelV3 initialPrompt={initialPrompt} autoSend={autoSend} />
       </LockedFeatureWrapper>

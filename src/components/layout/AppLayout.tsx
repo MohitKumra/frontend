@@ -363,6 +363,7 @@ export function AppLayout() {
     };
   }, [navigate, showShortcuts, searchOpen, mobileMoreOpen]);
 
+  const isFullHeightRoute = location.pathname === '/coach' || location.pathname.startsWith('/coach/');
   const isClassicPaddedRoute = ['/tasks', '/projects', '/focus'].some(
     (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
   );
@@ -530,8 +531,8 @@ export function AppLayout() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto pb-24 md:pb-0 relative min-w-0">
-          <PageTransition key={location.pathname} className={contentPaddingClass}>
+        <div className={`flex-1 min-h-0 relative min-w-0 ${isFullHeightRoute ? 'overflow-hidden' : 'overflow-y-auto pb-24 md:pb-0'}`}>
+          <PageTransition key={location.pathname} className={isFullHeightRoute ? 'h-full' : contentPaddingClass}>
             <PageOutlet />
           </PageTransition>
         </div>
