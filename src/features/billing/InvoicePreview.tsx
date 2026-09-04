@@ -286,6 +286,18 @@ export function InvoicePreview({ data }: { data: InvoicePreviewData }) {
                 <span>Sub total</span>
                 <span style={{ fontWeight: 600 }}>{subtotal}</span>
               </div>
+              {(invoice?.discountCents || 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#dc2626', padding: '4px 0' }}>
+                  <span>Discount</span>
+                  <span style={{ fontWeight: 600 }}>-{discount}</span>
+                </div>
+              )}
+              {(invoice?.discountCents || 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#1e293b', padding: '4px 0', borderTop: '1px dashed #e2e8f0', fontWeight: 600 }}>
+                  <span>Base Total</span>
+                  <span>{moneyText(Math.max(0, (invoice?.subtotalCents || 0) - (invoice?.discountCents || 0)))}</span>
+                </div>
+              )}
               {cgstRaw > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#475569', padding: '4px 0' }}>
                   <span>CGST</span>
@@ -304,10 +316,6 @@ export function InvoicePreview({ data }: { data: InvoicePreviewData }) {
                   <span>{igst}</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#dc2626', padding: '4px 0' }}>
-                <span>Discount</span>
-                <span style={{ fontWeight: 600 }}>-{discount}</span>
-              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #111827', marginTop: '6px', paddingTop: '9px', fontWeight: 800, fontSize: '14px', color: '#111827' }}>
                 <span>Total</span>
                 <span style={{ color: '#6c63ff' }}>{itemAmount}</span>

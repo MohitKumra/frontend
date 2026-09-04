@@ -35,6 +35,7 @@ import { UpgradeModal } from '../billing/UpgradeModal';
 import { DowngradeConfirmModal } from '../billing/DowngradeConfirmModal';
 import { useUpgradeModalStore } from '../../store/upgradeModalStore';
 import { PlanCard } from '../billing/PlanCard';
+import { PaymentMethodSettingsCard } from '../billing/PaymentMethodSettingsCard';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
@@ -321,6 +322,9 @@ export function BillingSettingsPanel() {
           </div>
         </div>
       </Card>
+
+      {/* ─── Payment Method & Auto-Pay ────────────────────────────── */}
+      <PaymentMethodSettingsCard />
 
       {/* ─── Usage Quotas & Limits ────────────────────────────────── */}
       <Card variant="default">

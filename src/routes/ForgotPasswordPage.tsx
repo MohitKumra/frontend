@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Mail, ShieldQuestion, HelpCircle } from 'lucide-react';
+import { Mail, ShieldQuestion, HelpCircle } from 'lucide-react';
 import { useForgotPassword, useForgotPasswordByRecoveryEmail } from '../features/auth/hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -37,7 +37,7 @@ export function ForgotPasswordPage() {
             className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-accent/15"
             style={{ background: 'var(--gradient-accent)' }}
           >
-            <Zap size={26} className="text-white" />
+            <img src="/logo.svg" alt="Account recovery" className="w-full h-full object-cover rounded-2xl" />
           </div>
           <h1 className="text-2xl font-black text-text-primary tracking-tight">Account recovery</h1>
           <p className="text-sm text-text-muted mt-1.5 font-medium">Choose how to recover</p>

@@ -33,6 +33,7 @@ import { APP_NAME, SUPPORT_EMAIL } from '../config/brand';
 import { Input } from '../components/ui/Input';
 import { PlanCard } from '../components/billing/PlanCard';
 import { DowngradeConfirmModal } from '../components/billing/DowngradeConfirmModal';
+import { PaymentMethodSettingsCard } from '../components/billing/PaymentMethodSettingsCard';
 import { useUserPlan, useUpgradePreview, type PlanDTO } from '../features/billing/useUserPlan';
 import { useUpgradeModalStore } from '../store/upgradeModalStore';
 import { useCustomPlanModalStore } from '../store/customPlanModalStore';
@@ -820,25 +821,6 @@ export function BillingPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setPaymentMode('SUBSCRIPTION_INITIAL')}
-            className={`rounded-2xl border p-3 text-left transition-all ${paymentMode === 'SUBSCRIPTION_INITIAL' ? 'border-accent bg-accent-subtle/40' : 'border-border bg-surface'}`}
-          >
-            <p className="text-xs font-semibold">Auto-pay</p>
-            <p className="text-[10px] text-text-muted">Renews at full price</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPaymentMode('ONE_TIME')}
-            className={`rounded-2xl border p-3 text-left transition-all ${paymentMode === 'ONE_TIME' ? 'border-accent bg-accent-subtle/40' : 'border-border bg-surface'}`}
-          >
-            <p className="text-xs font-semibold">One-time</p>
-            <p className="text-[10px] text-text-muted">No auto-renew</p>
-          </button>
-        </div>
-
         {(() => {
           const isUpgrade = Boolean(
             upgradePreview?.isUpgrade &&
@@ -881,13 +863,18 @@ export function BillingPage() {
                 </div>
               )}
 
+              <div className="flex items-center justify-between pt-2 border-t border-dashed border-border/80 font-medium text-text-primary">
+                <span>Base Plan Total</span>
+                <span className="font-semibold text-text-primary">{formatINR(taxableAmount)}</span>
+              </div>
+
               <div className="flex items-center justify-between text-text-secondary">
                 <span>GST ({gstPercent}%)</span>
                 <span className="font-semibold text-text-primary">{formatINR(taxAmount)}</span>
               </div>
 
               <div className="flex items-center justify-between pt-2.5 border-t border-border font-bold text-sm sm:text-base">
-                <span className="text-text-primary">Amount due today</span>
+                <span className="text-text-primary">Total Amount</span>
                 <span className="text-accent text-base sm:text-lg font-extrabold">{formatINR(amountDue)}</span>
               </div>
             </div>
@@ -1312,11 +1299,13 @@ export function BillingPage() {
         {mobileTab === 'plans' && (
           <div className="space-y-4">
             {renderPlansSection()}
+            <PaymentMethodSettingsCard />
             {renderSupportSection()}
           </div>
         )}
         {mobileTab === 'invoices' && (
           <div className="space-y-4">
+            <PaymentMethodSettingsCard />
             {renderInvoicesHistorySection()}
             {renderSupportSection()}
           </div>
@@ -1331,6 +1320,7 @@ export function BillingPage() {
         </div>
 
         <div className="space-y-6">
+          <PaymentMethodSettingsCard />
           {renderBillToSection()}
           {renderCheckoutSection()}
           {renderInvoicesHistorySection()}

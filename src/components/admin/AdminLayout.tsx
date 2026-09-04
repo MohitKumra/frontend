@@ -15,7 +15,6 @@ import {
   Activity,
   Settings,
   LogOut,
-  ShieldAlert,
   Wand2,
 } from 'lucide-react';
 import { useAdminStore } from '../../store/adminStore';
@@ -74,7 +73,7 @@ export function AdminLayout() {
           {/* Header */}
           <div className="p-5 border-b border-border flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent-subtle border border-accent-border flex items-center justify-center text-accent">
-              <ShieldAlert className="w-5 h-5" />
+              <img src="/logo.svg" alt="Admin Console" className="w-full h-full object-cover rounded-xl" />
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold uppercase tracking-wider text-accent">Admin Console</p>

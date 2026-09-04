@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
-  Zap,
+  
   ArrowLeft,
   FileCheck,
   User,
@@ -178,7 +178,7 @@ export function TermsConditionsPage() {
               className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-accent/15"
               style={{ background: 'var(--gradient-accent)' }}
             >
-              <Zap size={22} className="text-white" />
+              <img src="/logo.svg" alt="Terms of Service" className="w-full h-full object-cover rounded-2xl" />
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-text-muted">{LEGAL_HEADER_LABEL}</p>

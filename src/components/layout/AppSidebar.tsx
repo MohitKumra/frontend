@@ -330,7 +330,7 @@ export function AppSidebar({
               className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
               style={{ background: 'var(--gradient-accent)' }}
             >
-              <Sparkles size={18} className="text-white" />
+              <img src="/logo.svg" alt="PMS" className="w-full h-full object-cover rounded-2xl" />
             </div>
             <div className="min-w-0 leading-tight">
               <p className="font-extrabold text-lg text-text-primary tracking-tight truncate">PMS</p>
@@ -342,7 +342,7 @@ export function AppSidebar({
             className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-sm mx-auto"
             style={{ background: 'var(--gradient-accent)' }}
           >
-            <Sparkles size={18} className="text-white" />
+            <img src="/logo.svg" alt="PMS" className="w-full h-full object-cover rounded-2xl" />
           </div>
         )}
         {sidebarOpen && (

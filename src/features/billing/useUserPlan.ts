@@ -32,6 +32,10 @@ export interface EffectivePlanDTO {
 export interface UserSubscriptionResponse {
   effectivePlan: EffectivePlanDTO;
   subscription: any | null;
+  paymentMethod?: {
+    method: string;
+    summary: string;
+  } | null;
   billingProfile: {
     companyName: string | null;
     contactName: string | null;
@@ -302,11 +306,33 @@ export function useUserPlan() {
     },
   });
 
+  const setupPaymentMethodMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/billing/setup-payment-method');
+      return res.data.data;
+    },
+  });
+
+  const confirmPaymentMethodMutation = useMutation({
+    mutationFn: async (payload: {
+      razorpaySubscriptionId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+    }) => {
+      const res = await apiClient.post('/billing/confirm-payment-method', payload);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BILLING_QUERY_KEY });
+    },
+  });
+
   return {
     subscriptionQuery,
     plansQuery,
     effectivePlan,
     subscription: subscriptionQuery.data?.subscription,
+    paymentMethod: subscriptionQuery.data?.paymentMethod || null,
     company,
     billingProfile,
     usage,
@@ -324,6 +350,8 @@ export function useUserPlan() {
     cancelSubscription: cancelSubscriptionMutation.mutateAsync,
     downgradeSubscription: downgradeSubscriptionMutation.mutateAsync,
     cancelScheduledDowngrade: cancelScheduledDowngradeMutation.mutateAsync,
+    setupPaymentMethod: setupPaymentMethodMutation.mutateAsync,
+    confirmPaymentMethod: confirmPaymentMethodMutation.mutateAsync,
     applyCoupon: applyCouponMutation.mutateAsync,
     updateBillingProfile: updateBillingProfileMutation.mutateAsync,
     refetch: () => {

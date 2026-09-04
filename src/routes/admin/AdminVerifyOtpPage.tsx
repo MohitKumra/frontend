@@ -1,7 +1,7 @@
 // frontend/src/routes/admin/AdminVerifyOtpPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { adminApiClient } from '../../lib/adminApiClient';
 import { useAdminStore } from '../../store/adminStore';
 import { Card } from '../../components/ui/Card';
@@ -50,7 +50,7 @@ export function AdminVerifyOtpPage() {
         <Card variant="elevated" className="p-8">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-subtle text-accent mb-4 border border-accent-border shadow-md shadow-accent/10">
-              <KeyRound className="w-7 h-7" />
+              <img src="/logo.svg" alt="Verification" className="w-full h-full object-cover rounded-2xl" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary tracking-tight">Enter Verification OTP</h1>
             <p className="text-sm text-text-muted mt-1">

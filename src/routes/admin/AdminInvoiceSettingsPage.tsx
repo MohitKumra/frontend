@@ -25,6 +25,7 @@ export function AdminInvoiceSettingsPage() {
   const [addressLine2, setAddressLine2] = useState('');
   const [cityState, setCityState] = useState('');
   const [pincode, setPincode] = useState('');
+  const [website, setWebsite] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -47,6 +48,7 @@ export function AdminInvoiceSettingsPage() {
       setAddressLine2(data.addressLine2 || '');
       setCityState(data.cityState || '');
       setPincode(data.pincode || '');
+      setWebsite(data.website || '');
     } catch (err) {
       console.error('Failed to fetch invoice settings', err);
       setError('Failed to load invoice settings. Make sure you have billing.read permission.');
@@ -78,6 +80,7 @@ export function AdminInvoiceSettingsPage() {
         addressLine2: addressLine2.trim(),
         cityState: cityState.trim(),
         pincode: pincode.trim(),
+        website: website.trim(),
       });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 4000);
@@ -220,6 +223,13 @@ export function AdminInvoiceSettingsPage() {
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
                   placeholder="141010"
+                />
+                <Input
+                  label="Website Name / Domain"
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="finamite.in"
                 />
               </div>
             </div>

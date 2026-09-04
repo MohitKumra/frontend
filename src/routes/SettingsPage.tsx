@@ -653,11 +653,16 @@ export function SettingsPage() {
   const disconnectGoogleCalendar = useDisconnectGoogleCalendar();
 
   const googleCalendarOAuth = useGoogleOAuthPopup({
-    buildUrl: useCallback(
-      (nonce: string) =>
-        `${import.meta.env.VITE_BACKEND_URL}/settings/google-calendar/start?redirect=1&nonce=${encodeURIComponent(nonce)}`,
-      []
-    ),
+    buildUrl: useCallback((nonce: string) => {
+      // The calendar-connect OAuth start endpoint is behind the `authenticate`
+      // middleware. Since popup navigation (window.open) bypasses the axios
+      // interceptor that normally injects the Authorization header, we pass the
+      // access token via query param — the authenticate middleware accepts
+      // `?token=` and this matches the existing invoice PDF download pattern.
+      const token = useAuthStore.getState().accessToken || '';
+      const params = new URLSearchParams({ redirect: '1', nonce, token });
+      return `${import.meta.env.VITE_BACKEND_URL}/settings/google-calendar/start?${params.toString()}`;
+    }, []),
     onSuccess: useCallback(() => {
       void queryClient.invalidateQueries({ queryKey: ['settings'] });
       toast.success('Google Calendar connected');

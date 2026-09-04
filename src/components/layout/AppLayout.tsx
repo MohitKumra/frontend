@@ -447,15 +447,16 @@ export function AppLayout() {
           <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-initial">
             <div className="md:hidden flex items-center gap-2.5 min-w-0">
               <div
-                className="w-8.5 h-8.5 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
                 style={{ background: 'var(--gradient-accent)' }}
               >
-                <Sparkles size={16} className="text-white" />
+                <img src="/logo.svg" alt={APP_NAME} className="w-full h-full object-cover rounded-lg" />
               </div>
               <span className="font-extrabold text-base text-text-primary tracking-tight truncate">{APP_NAME}</span>
             </div>
 
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-2">
+              <img src="/logo.svg" alt="" className="h-12 w-12 object-cover rounded" />
               <span className="text-sm font-bold text-text-muted uppercase tracking-wider">{APP_NAME}</span>
             </div>
           </div>

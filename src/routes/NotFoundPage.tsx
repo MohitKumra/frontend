@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, CheckSquare, Target, ArrowLeft, Sparkles, MapPin } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Target, ArrowLeft, Sparkles } from 'lucide-react';
 import { useFloatingEnabled } from '../hooks/useAnimationPrefs';
 import { APP_NAME_FULL } from '../config/brand';
 
@@ -52,7 +52,7 @@ export function NotFoundPage() {
               boxShadow: '0 20px 48px color-mix(in srgb, var(--color-accent) 18%, transparent)',
             }}
           >
-            <MapPin size={44} style={{ color: 'var(--color-accent)' }} strokeWidth={1.5} />
+            <img src="/logo.svg" alt={APP_NAME_FULL} className="w-full h-full object-cover rounded-[32px]" />
           </div>
 
           {/* floating sparkle */}

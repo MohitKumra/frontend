@@ -1,7 +1,7 @@
 // frontend/src/routes/admin/AdminLoginPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, AlertCircle, Shield } from 'lucide-react';
+import { Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { adminApiClient } from '../../lib/adminApiClient';
 import { useAdminStore } from '../../store/adminStore';
 import { Card } from '../../components/ui/Card';
@@ -45,7 +45,7 @@ export function AdminLoginPage() {
         <Card variant="elevated" className="p-8">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent-subtle text-accent mb-4 border border-accent-border shadow-md shadow-accent/10">
-              <Shield className="w-7 h-7" />
+              <img src="/logo.svg" alt="Admin Portal" className="w-full h-full object-cover rounded-2xl" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary tracking-tight">Admin Portal</h1>
             <p className="text-sm text-text-muted mt-1">Sign in to the administrative control panel</p>

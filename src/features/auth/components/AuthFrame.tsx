@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarDays, CheckCircle2, Circle, Flame, Heart, Shield, Sparkles, Target, Trophy, Zap } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Circle, Flame, Heart, Shield, Sparkles, Target, Trophy } from 'lucide-react';
 import { APP_NAME, APP_TAGLINE, COMPANY_NAME } from '../../../config/brand';
 
 type AuthMode = 'login' | 'signup';
@@ -97,7 +97,7 @@ function MobileBrandHeader() {
       {/* Logo + name */}
       <div className="auth-mobile-logo-row">
         <div className="auth-mobile-logo-icon">
-          <Zap size={18} className="text-white" fill="none" />
+          <img src="/logo.svg" alt={APP_NAME} className="w-full h-full object-cover" />
         </div>
         <div>
           <p className="auth-mobile-logo-name">{APP_NAME}</p>
@@ -144,7 +144,7 @@ export function AuthFrame({ mode, title, subtitle, children }: AuthFrameProps) {
                 boxShadow: '0 8px 20px color-mix(in srgb, var(--color-accent) 38%, transparent)',
               }}
             >
-              <Zap size={19} className="text-white" fill="none" />
+              <img src="/logo.svg" alt={APP_NAME} className="w-full h-full object-cover rounded-[8px]" />
             </div>
             <div>
               <p className="text-[16px] font-black leading-none" style={{ color: 'var(--color-text-primary)' }}>
